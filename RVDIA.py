@@ -1,4 +1,5 @@
 import discord
+from time import time
 from discord import app_commands
 import os
 from dotenv import load_dotenv
@@ -25,6 +26,7 @@ rvdia = commands.AutoShardedBot(
 )
 rvdia.synced = False
 rvdia.__version__ = "In-Development Stage 1"
+rvdia.runtime = time()
 
 @rvdia.event
 async def on_connect():

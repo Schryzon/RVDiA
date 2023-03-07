@@ -1,5 +1,6 @@
 import pymongo
 import discord
+from discord.ui import View, Button
 from cogs.Handler import NotInGTechServer, NotGTechMember, NotGTechAdmin
 from discord.ext import commands
 import os
@@ -7,6 +8,32 @@ from dotenv import load_dotenv
 load_dotenv('./.gitignore/secrets.env')
 
 client = pymongo.MongoClient(os.getenv('mongodburl'))
+
+class Url_Buttons(View):
+  def __init__(self):
+    super().__init__(timeout=None)
+
+    add_me = Button(
+            label='Tambahkan Aku!', 
+            emoji='<:rvdia:1082789733001875518>',
+            style=discord.ButtonStyle.green, 
+            url=os.getenv('oauthlink')
+            )
+    
+    github_repo = Button(
+        label = "Github Repo",
+        emoji = '<:githublogo:1082789555897384961>',
+        style = discord.ButtonStyle.gray,
+        url = 'https://github.com/Schryzon/rvdia'
+    )
+
+    support_server = Button(
+        label= "Support Server",
+        emoji = '<:cyron:1082789553263349851>',
+        style = discord.ButtonStyle.blurple,
+        url = 'discord.gg/QqWCnk6zxw'
+    )
+    self.add_item(item=[add_me, github_repo, support_server])
 
 def connectdb(collection:str):
     db = client.Main

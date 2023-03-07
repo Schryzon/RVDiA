@@ -1,7 +1,7 @@
 import discord
 import requests
 from os import getenv
-from scripts.main import wind_heading
+from scripts.main import wind_heading, Url_Buttons
 from discord import app_commands
 from discord.ext import commands
 from scripts.main import client
@@ -30,13 +30,16 @@ day_of_week = {
 
 class General(commands.Cog):
     """
-    Basically just some general purpose commands.
+    Kumpulan command umum.
     """
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="about", aliases=['intro', 'bot'])
+    @commands.command(name="about", aliases=['intro', 'bot', 'botinfo'])
     async def about(self, ctx:commands.Context) -> None:
+        """
+        Memperlihatkan status saya saat ini.
+        """
         m = 0
         for k in self.bot.guilds:
             m += k.member_count -1
@@ -48,10 +51,11 @@ class General(commands.Cog):
         embed.add_field(name = "Prefix", value = f"`r-` | `rvd` | `/`")
         embed.add_field(name = "Library", value = f"discord.py ({discord.__version__})", inline = False)
         embed.add_field(name = "Tipe Bot", value="General, Utilitas, Humor, Anime, Moderasi, Khusus, Slash", inline=False)
+        embed.add_field(name = "Runtime", value = f"{self.bot.runtime}", inline = False)
         embed.add_field(name = "Jumlah Server", value = f"{len(self.bot.guilds)} Server")
         embed.add_field(name = "Jumlah Pengguna", value = f"{m} Pengguna")
         embed.set_footer(text="Jangan lupa tambahkan aku ke servermu! ❤️")
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed, view=Url_Buttons)
     
     @commands.hybrid_command(name="ping",
         description = "Shows my latency to Discord's API. Measured in miliseconds."
