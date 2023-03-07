@@ -4,7 +4,7 @@ from discord.ext import commands
 
 class Moderation(commands.Cog):
     """
-    Moderation commands, just like my purpose.
+    Command untuk moderasi server.
     """
     def __init__(self, bot):
         self.bot = bot

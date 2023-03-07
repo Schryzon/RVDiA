@@ -1,6 +1,5 @@
 import discord
 from time import time
-from discord import app_commands
 import os
 from dotenv import load_dotenv
 from pretty_help import PrettyHelp
@@ -25,7 +24,7 @@ rvdia = commands.AutoShardedBot(
   intents=intents, help_command=helper
 )
 rvdia.synced = False
-rvdia.__version__ = "In-Development Stage 1"
+rvdia.__version__ = "In-Development Stage 2"
 rvdia.runtime = time()
 
 @rvdia.event

@@ -7,7 +7,7 @@ class Slash(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     """
-    Versi "Slash" dari command yang ada.
+    Versi "Slash" dari command-command yang sudah ada.
     """
 
     @app_commands.command(name="ping", 
@@ -24,10 +24,13 @@ class Slash(commands.Cog):
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="avatar",
-    description="Lihat avatar pengguna Discord."
+    description="Memperlihatkan avatar pengguna Discord."
     )
     async def avatar(self, interaction:discord.Interaction, pengguna:discord.Member = None, id:str = None):
         """Lihat avatar pengguna Discord."""
+        if pengguna and id:
+            await interaction.response.send_message("Hey! Kamu hanya perlu mengisi salah satu parameter saja!")
+            return
         if not id is None:
             id = await self.bot.fetch_user(int(id))
         global_user = pengguna or id or interaction.user

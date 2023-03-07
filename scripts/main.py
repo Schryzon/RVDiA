@@ -31,9 +31,11 @@ class Url_Buttons(View):
         label= "Support Server",
         emoji = '<:cyron:1082789553263349851>',
         style = discord.ButtonStyle.blurple,
-        url = 'discord.gg/QqWCnk6zxw'
+        url = 'https://discord.gg/QqWCnk6zxw'
     )
-    self.add_item(item=[add_me, github_repo, support_server])
+    self.add_item(add_me)
+    self.add_item(github_repo)
+    self.add_item(support_server)
 
 def connectdb(collection:str):
     db = client.Main
@@ -68,7 +70,7 @@ def is_perangkat():
         return True
     return commands.check(predicate)
 
-def wind_heading(direction:int):
+def heading(direction:int):
         result =[]
         ranges = [
                 [0, 46], [46, 91],
@@ -81,7 +83,7 @@ def wind_heading(direction:int):
             if direction in range(i[0], i[1]):
               result.append(i)
         
-        if len(result) == 2:
+        if len(result) == 2: # Cannot use match cases here!
             if result == [ranges[1], ranges[2]]:
                 return "Timur"
             elif result == [ranges[3], ranges[4]]:

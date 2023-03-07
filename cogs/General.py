@@ -1,7 +1,7 @@
 import discord
 import requests
 from os import getenv
-from scripts.main import wind_heading, Url_Buttons
+from scripts.main import heading, Url_Buttons
 from discord import app_commands
 from discord.ext import commands
 from scripts.main import client
@@ -38,7 +38,7 @@ class General(commands.Cog):
     @commands.command(name="about", aliases=['intro', 'bot', 'botinfo'])
     async def about(self, ctx:commands.Context) -> None:
         """
-        Memperlihatkan status saya saat ini.
+        Memperlihatkan segalanya tentang aku!
         """
         m = 0
         for k in self.bot.guilds:
@@ -51,11 +51,11 @@ class General(commands.Cog):
         embed.add_field(name = "Prefix", value = f"`r-` | `rvd` | `/`")
         embed.add_field(name = "Library", value = f"discord.py ({discord.__version__})", inline = False)
         embed.add_field(name = "Tipe Bot", value="General, Utilitas, Humor, Anime, Moderasi, Khusus, Slash", inline=False)
-        embed.add_field(name = "Runtime", value = f"{self.bot.runtime}", inline = False)
+        embed.add_field(name = "Nyala Sejak", value = f"<t:{round(self.bot.runtime)}>\n(<t:{round(self.bot.runtime)}:R>)", inline = False)
         embed.add_field(name = "Jumlah Server", value = f"{len(self.bot.guilds)} Server")
         embed.add_field(name = "Jumlah Pengguna", value = f"{m} Pengguna")
         embed.set_footer(text="Jangan lupa tambahkan aku ke servermu! ❤️")
-        await ctx.send(embed=embed, view=Url_Buttons)
+        await ctx.send(embed=embed, view=Url_Buttons())
     
     @commands.hybrid_command(name="ping",
         description = "Shows my latency to Discord's API. Measured in miliseconds."
@@ -74,9 +74,12 @@ class General(commands.Cog):
         await ctx.reply(embed=embed)
 
 
-    @commands.command(description="View ANY Discord user's avatar.")
+    @commands.command(description="Memperlihatkan avatar pengguna Discord.")
     async def avatar(self, ctx, *, global_user: commands.UserConverter = None):
-        """View ANY Discord user avatar."""
+        """
+        Memperlihatkan avatar pengguna Discord.
+        Support: (ID, @Mention, username, name#tag)
+        """
         global_user = global_user or ctx.author
         png = global_user.avatar.with_format("png").url
         jpg = global_user.avatar.with_format("jpg").url
@@ -92,11 +95,12 @@ class General(commands.Cog):
         embed.set_footer(text=f"{ctx.author}", icon_url=ctx.author.avatar.url)
         await ctx.reply(embed=embed)
 
-    @commands.command(aliases = ['whois'], description="View info about someone in the server.")
+    @commands.command(aliases = ['whois'], description="Lihat info tentang seseorang di server ini.")
     @commands.guild_only()
     async def userinfo(self, ctx, *, member:commands.MemberConverter = None):
         """
-        View info regarding a user.
+        Lihat info tentang seseorang di server ini.
+        Support: (ID, @Mention, username, name#tag)
         """
         member = member or ctx.author
         avatar_url = member.avatar.url
@@ -133,17 +137,19 @@ class General(commands.Cog):
             embed.add_field(name=f"Roles [{str(role_length)}]", value=" ".join(roles), inline=False)
         embed.add_field(name=f"Permissions [{str(perm_len)}]", value="`"+", ".join(lol)+"`", inline=False)
         owner = await self.bot.fetch_user(ctx.guild.owner_id)
-        if member.id == 877008612021661726:
-            ack = "Pencipta Bot"
-        elif member.id == 957471338577166417:
-            ack = "The One True Love"
+        match member.id: # First use of match case wowwwww
+            case 877008612021661726:
+                ack = "Pencipta Bot"
+            case 957471338577166417:
+                ack = "The One True Love"
+            case 865429287691878430:
+                ack = "Yassalam Bro"
+
+        if member.bot == True and not member.id == 957471338577166417:
+            ack = "Server Bot"
         elif member.id == 498414156723126283 or member.id == 840569855337300018 or member.id == 744109318554648616:
             ack = "That Funny Dude"
-        elif member.id == 865429287691878430:
-            ack = "Yassalam Bro"
-        elif member.bot == True and not member.id == 957471338577166417:
-            ack = "Server Bot"
-        elif owner.id == member.id:
+        elif owner.id == member.id and not member.id == 877008612021661726:
             ack = "Pemilik Server"
         elif member.guild_permissions.administrator == True:
             ack = "Server Admin"
@@ -207,11 +213,17 @@ class General(commands.Cog):
 
 
 class Utilities(commands.Cog):
+    """
+    Kategori command berupa alat-alat dan fitur bermanfaat.
+    """
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
+    @commands.command(aliases = ['cuaca'], description="Lihat info tentang cuaca di suatu kota atau daerah!")
     async def weather(self, ctx, *, location:str):
+        """
+        Lihat info tentang keadaan cuaca di suatu kota atau daerah! (Realtime)
+        """
         try:
             # Need to decode geocode consisting of latitude and longitude
             data = requests.get(f'http://api.openweathermap.org/geo/1.0/direct?q={location}&limit=1&appid={getenv("openweatherkey")}').json()
@@ -225,16 +237,14 @@ class Utilities(commands.Cog):
             embed.add_field(
                     name=f"Suhu ({temp['temp']}°C)",
                     value = 
-                    f"""**Terasa seperti:** ``{temp['feels_like']}°C``\n**Minimum:** ``{temp['temp_min']}°C``\n**Maksimum:** ``{temp['temp_max']}°C``\n
-                    **Tekanan Atmosfir:** ``{temp['pressure']} hPa``
-                    **Kelembaban:** ``{temp['humidity']}%``
-                    **Persentase Awan:** ``{result['clouds']['all']}%``
-                    """, inline=False
+                    f"**Terasa seperti:** ``{temp['feels_like']}°C``\n**Minimum:** ``{temp['temp_min']}°C``\n**Maksimum:** ``{temp['temp_max']}°C``\n"+
+                    f"**Tekanan Atmosfir:** ``{temp['pressure']} hPa``\n**Kelembaban:** ``{temp['humidity']}%``\n**Persentase Awan:** ``{result['clouds']['all']}%``",
+                    inline=False
                     )
             wind = result['wind']
             embed.add_field(
                 name = "Angin",
-                value = f"""**Kecepatan:** ``{wind['speed']} m/s``\n**Arah:** ``{wind['deg']}° ({wind_heading(wind['deg'])})``
+                value = f"""**Kecepatan:** ``{wind['speed']} m/s``\n**Arah:** ``{wind['deg']}° ({heading(wind['deg'])})``
                 """, inline=False
             )
             embed.add_field(

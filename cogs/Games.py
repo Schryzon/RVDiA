@@ -7,6 +7,9 @@ from PIL import Image
 from io import BytesIO
 
 class Games(commands.Cog):
+    """
+    Command khusus untuk bersenang-senang
+    """
     def __init__(self, bot):
         self.bot = bot
     
