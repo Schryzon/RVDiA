@@ -30,4 +30,8 @@ Join [CyroN Central server](https://discord.gg/QqWCnk6zxw) di Discord dan hubung
 ### Credits
 Terima kasih iMaze, Mouchi, Dez, Zenchew, Ismita, Pockii, Kyuu, Kazama, Bcntt, Nateflakes, dan masih banyak lagi karena telah membantu saya pada proyek-proyek sebelumnya!
 
+<<<<<<< HEAD
 **Made with ❤️ and dedication, Jayananda**
+=======
+**Made with ❤️ and dedication, Jayananda**
+>>>>>>> b9cc39447849ce210d5fd8cb7087533febe17721
