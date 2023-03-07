@@ -7,7 +7,7 @@ from discord.ext import commands, tasks
 from random import choice as rand
 from contextlib import suppress
 from scripts.suburl import SurblChecker, DomainInexistentException
-load_dotenv('./.gitignore/secrets.env') # Loads the .env file from python-dotenv pack
+load_dotenv('./secrets.env') # Loads the .env file from python-dotenv pack
 
 helper = PrettyHelp(
   no_category = "Tak tergolongkan", 
