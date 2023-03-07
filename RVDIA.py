@@ -13,7 +13,7 @@ helper = PrettyHelp(
   no_category = "Tak tergolongkan", 
   color = 0xff4df0,
   active_time = 60,
-  ending_note = f"Untuk info lebih lanjut mengenai sebuah command,\nr-help (command/kategori)",
+  ending_note = "Untuk info lebih lanjut mengenai sebuah command,\nr-help (command/kategori)",
   image_url = os.getenv('bannerhelp'),
   index_title = "Kategori Command"
   )
