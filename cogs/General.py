@@ -1,4 +1,5 @@
 import discord
+import openai
 import requests
 from os import getenv
 from scripts.main import heading, Url_Buttons
@@ -281,6 +282,23 @@ class Utilities(commands.Cog):
         embed = discord.Embed(title=f"Waktu di {area[1]}", description=f"UTC{data['utc_offset']}")
         embed.add_field(name="Akronim Timezone", value=data['abbreviation'], inline=False)
         embed.add_field(name="Hari di Lokasi", value=day, inline=False)
+        await ctx.send(embed=embed)
+
+    @commands.command(
+            aliases = ['chat', 'chatgpt'],
+            description = 'Command yang menggunakan Open AI ChatGPT model.'
+        )
+    @commands.cooldown(type=commands.BucketType.user, per=2)
+    async def ask(self, ctx:commands.Context, *, message:str):
+        """
+        Tanyakan atau perhintahkan aku untuk melakukan sesuatu!
+        """
+        result = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo", 
+            messages=[{"role": "user", "content": message}]
+        )
+        embed = discord.Embed(title=message.title(), color=ctx.author.color, timestamp=ctx.message.created_at)
+        embed.description = result['choices'][0]['message']['content']
         await ctx.send(embed=embed)
 
 async def setup(bot:commands.Bot):

@@ -2,12 +2,14 @@ import discord
 from time import time
 import os
 from dotenv import load_dotenv
+from openai import api_key, ChatCompletion
 from pretty_help import PrettyHelp
 from discord.ext import commands, tasks
 from random import choice as rand
 from contextlib import suppress
 from scripts.suburl import SurblChecker, DomainInexistentException
 load_dotenv('./secrets.env') # Loads the .env file from python-dotenv pack
+api_key = os.getenv('openaikey')
 
 helper = PrettyHelp(
   no_category = "Tak tergolongkan", 
@@ -133,7 +135,7 @@ async def serverlist(ctx):
        await ctx.send('`S`\n'.join(url))
 
 @rvdia.event
-async def on_message(msg):
+async def on_message(msg:discord.Message):
     await rvdia.process_commands(msg)
     if msg.author.bot == True:
         return
@@ -141,6 +143,18 @@ async def on_message(msg):
         return
     if msg.content == "RVDIA":
         await msg.reply(f"Haii, {msg.author.name}! Silahkan tambahkan prefix `r-` atau `rvd` untuk menggunakan command!")
+
+    # Chat command, I wanna make something cool here
+    if msg.content.lower().startswith('rvdia, ') and msg.content.endswith('?'):
+        message = msg.content.lower().lstrip('rvdia, ')
+        result = ChatCompletion.create(
+              model="gpt-3.5-turbo", 
+              messages=[{"role": "user", "content": message}]
+          )
+        embed = discord.Embed(title=message.title(), color=msg.author.color, timestamp=msg.created_at)
+        embed.description = result['choices'][0]['message']['content']
+        await msg.channel.send(embed=embed)
+        return
     
     # Took me 2 hours to figure this out.
     if msg.content.startswith("http://") or msg.content.startswith("https://") or msg.content.startswith('www.'):
