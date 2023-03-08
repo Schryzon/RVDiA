@@ -288,7 +288,7 @@ class Utilities(commands.Cog):
             aliases = ['chat', 'chatgpt'],
             description = 'Command yang menggunakan Open AI ChatGPT model.'
         )
-    @commands.cooldown(type=commands.BucketType.user, per=2)
+    @commands.cooldown(type=commands.BucketType.user, per=2, rate=1)
     async def ask(self, ctx:commands.Context, *, message:str):
         """
         Tanyakan atau perhintahkan aku untuk melakukan sesuatu!
