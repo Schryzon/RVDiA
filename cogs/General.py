@@ -1,3 +1,4 @@
+import os
 import discord
 import openai
 import requests
@@ -293,6 +294,7 @@ class Utilities(commands.Cog):
         """
         Tanyakan atau perhintahkan aku untuk melakukan sesuatu!
         """
+        openai.api_key = os.getenv('openaikey')
         result = openai.ChatCompletion.create(
             model="gpt-3.5-turbo", 
             messages=[{"role": "user", "content": message}]

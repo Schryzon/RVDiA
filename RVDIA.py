@@ -2,14 +2,14 @@ import discord
 from time import time
 import os
 from dotenv import load_dotenv
-from openai import api_key, ChatCompletion
+import openai
+from openai import ChatCompletion
 from pretty_help import PrettyHelp
 from discord.ext import commands, tasks
 from random import choice as rand
 from contextlib import suppress
 from scripts.suburl import SurblChecker, DomainInexistentException
 load_dotenv('./secrets.env') # Loads the .env file from python-dotenv pack
-api_key = os.getenv('openaikey')
 
 helper = PrettyHelp(
   no_category = "Tak tergolongkan", 
@@ -146,7 +146,8 @@ async def on_message(msg:discord.Message):
 
     # Chat command, I wanna make something cool here
     if msg.content.lower().startswith('rvdia, ') and msg.content.endswith('?'):
-        message = msg.content.lower().lstrip('rvdia, ')
+        openai.api_key = os.getenv('openaikey')
+        message = msg.content.lower().lstrip('rvdia,')
         result = ChatCompletion.create(
               model="gpt-3.5-turbo", 
               messages=[{"role": "user", "content": message}]
