@@ -119,6 +119,11 @@ async def refresh(ctx):
         rvdia.load_extension(f"cogs.{cog[:-3]}")
   await ctx.reply('Cogs refreshed.')
 
+@rvdia.command(hidden = True)
+@commands.is_owner()
+async def serverlist(ctx):
+    await ctx.send('\n'.join(guild.name for guild in rvdia.guilds))
+
 @rvdia.event
 async def on_message(msg):
     await rvdia.process_commands(msg)
