@@ -145,7 +145,7 @@ async def on_message(msg:discord.Message):
         await msg.reply(f"Haii, {msg.author.name}! Silahkan tambahkan prefix `r-` atau `rvd` untuk menggunakan command!")
 
     # Chat command, I wanna make something cool here
-    if msg.content.lower().startswith('rvdia, ') and msg.content.endswith('?'):
+    if msg.content.lower().startswith('rvdia, ') and msg.content.endswith('?') or msg.content.endswith('!'):
         openai.api_key = os.getenv('openaikey')
         message = msg.content.lower().lstrip('rvdia,')
         result = ChatCompletion.create(

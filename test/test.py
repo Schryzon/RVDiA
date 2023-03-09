@@ -1,3 +1,3 @@
-string = 'RVDIA, you ok?'
-string = string.lower().lstrip('rvdia, ')
-print(string)
+string = 'RVDIA, you ok!'
+if string.lower().startswith('rvdia, ') and string.endswith('?') or string.endswith('!'):
+    print('success')
