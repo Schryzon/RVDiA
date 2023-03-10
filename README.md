@@ -1,7 +1,7 @@
 # RVDIA
 ## "Virtual, Revolusioner, Independen."
 <p align="center">
-  <img src="https://cdn.discordapp.com/avatars/957471338577166417/97d70a5769552db26474cad16f7431fa.png?size=512" alt="Historia's Profile Picture">
+  <img src="https://cdn.discordapp.com/avatars/957471338577166417/97d70a5769552db26474cad16f7431fa.png?size=512" alt="RVDIA's Profile Picture">
 </p>
 
 <p align="center">
@@ -9,18 +9,20 @@
   <img src="https://img.shields.io/badge/SCHRYZON-RVDIA-ff4df0?style=for-the-badge&logo=python&logoColor=yellow" alt="SCHRYZON - RVDIA"></a>
   <a href="https://github.com/Schryzon/rvdia"><img src="https://img.shields.io/github/stars/Schryzon/rvdia?style=social" alt="stars - rvdia"></a>
   <a href="https://github.com/Schryzon/rvdia"><img src="https://img.shields.io/github/forks/Schryzon/rvdia?style=social" alt="forks - rvdia"></a>
+  <a href="https://discord.gg/QqWCnk6zxw"><img alt="Discord" src="https://img.shields.io/discord/877009215271604275?style=for-the-badge"></a>
 </p>
 
-Sebuah **Multi-purpose Discord Bot** yang terinspirasi dari karakter "Haruna Sakurai" (Ongeki).
+Sebuah **Multipurpose Discord Bot** yang terinspirasi dari karakter "Haruna Sakurai" (Ongeki).
 
 ## Apa yang Spesial dari Bot ini?
-Bot ini menggunakan Bahasa Indonesia (jelas sekali ya) dan memiliki command khusus untuk anggota-anggota G-Tech Re'sman.
+Bot ini menggunakan Bahasa Indonesia (jelas sekali yah) dan memiliki command khusus untuk anggota-anggota G-Tech Re'sman.
 
 ## Mau Coba Utak-atik Sendiri?
 1. Clone repo ini (`git clone https://github.com/Schryzon/rvdia`)
-2. Ganti key Discord bot (Untuk format `.env` silahkan hubungi saya)
-3. Dapatkan MongoDB URI (Untuk struktur database silahkan baca code)
-4. Dapatkan OpenWeather API key
+2. Dapatkan token Discord bot
+3. Dapatkan MongoDB URI
+4. Dapatkan OpenWeather API key dan OpenAI key
+(Untuk format `secrets.env` dan MongoDB, silahkan hubungi saya!)
 
 ## Informasi Tambahan
 Proyek ini __hanya untuk sekedar hobi__ dan tidak untuk kepentingan komersial dan lain-lain. Oleh sebab itu, RVDIA menggunakan semua priviliged intents `discord.Intents.all()`
