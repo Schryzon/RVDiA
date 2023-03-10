@@ -44,7 +44,7 @@ class Error(commands.Cog):
       await ctx.reply('Command ini hanya bisa dijalankan oleh admin database G-Tech!')
 
     elif isinstance(error, commands.CommandNotFound):
-      await ctx.reply(f"Tidak bisa menemukan command! Cari command yang ada dengan `r-help`")
+      await ctx.reply(f"Tidak dapat menemukan command! Cari command yang ada dengan `r-help`")
 
     elif isinstance(error, commands.NoPrivateMessage):
       await ctx.reply("Command ini tidak bisa dijalankan melalui DM.")
@@ -53,13 +53,13 @@ class Error(commands.Cog):
       await ctx.reply("Tidak dapat menemukan pengguna, pastikan dia ada di server ini!")
       
     elif isinstance(error, commands.TooManyArguments):
-      await ctx.reply("Unable to take many arguments for this command. Please see the required arguments.")
+      await ctx.reply("Bagian yang kamu berlebihan, silahkan lihat help command untuk mengetahui berapa banyak yang ku butuhkan!")
 
     elif isinstance(error, commands.UserNotFound):
       await ctx.reply("Tidak dapat menemukan pengguna di database Discord!")
 
     elif isinstance(error, commands.NSFWChannelRequired):
-      await ctx.reply("You can only use this command in NSFW channels!")
+      await ctx.reply("Command ini hanya bisa digunakan di channel NSFW!")
 
     elif isinstance(error, commands.MissingRole):
       await ctx.reply("`Role` kamu tidak cukup untuk menjalankan command ini!")
@@ -91,10 +91,10 @@ class Error(commands.Cog):
       )
 
     elif "Forbidden" in str(error):
-      await ctx.reply("Kode error: `Forbidden`, mungkin `Role` saya terlalu rendah!")
+      await ctx.reply("Kode error: `Forbidden`, mungkin `Role` saya terlalu rendah, atau saya kekurangan `Permissions`!")
 
     elif "Invalid base64-encoded string" in str(error) or "Incorrect padding" in str(error):
-      await ctx.reply("I don't think that's base64. Please provide a real base64 text!")
+      await ctx.reply("Sepertinya itu bukan Base64, tolong berikan teks dalam format Base64!")
 
     #I wonder why I made this loll
     else:

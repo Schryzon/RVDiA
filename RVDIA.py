@@ -1,10 +1,14 @@
+"""
+Schryzon/Jayananda (11)
+G-Tech Re'sman Programming Division
+"""
 import discord
 from time import time
 import os
 from dotenv import load_dotenv
 import openai
 from openai import ChatCompletion
-from pretty_help import PrettyHelp
+from scripts.help_menu.help import PrettyHelp
 from discord.ext import commands, tasks
 from random import choice as rand
 from contextlib import suppress
@@ -15,9 +19,9 @@ helper = PrettyHelp(
   no_category = "Tak tergolongkan", 
   color = 0xff4df0,
   active_time = 60,
-  ending_note = "Untuk info lebih lanjut mengenai sebuah command,\nr-help (command/kategori)",
   image_url = os.getenv('bannerhelp'),
-  index_title = "Kategori Command"
+  index_title = "Kategori Command",
+  timeout=20
   )
 
 intents = discord.Intents.all()
@@ -26,7 +30,7 @@ rvdia = commands.AutoShardedBot(
   intents=intents, help_command=helper
 )
 rvdia.synced = False
-rvdia.__version__ = "In-Development Stage 2"
+rvdia.__version__ = "In-Development Stage 3"
 rvdia.runtime = time()
 
 @rvdia.event
