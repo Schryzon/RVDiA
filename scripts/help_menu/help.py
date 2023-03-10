@@ -136,7 +136,7 @@ class Paginator:
                 embed = self._new_page(page_title, embed.description)
 
             embed.add_field(
-                name=f"🔗 command.name" if group else f"{command.name}", # MARKED
+                name=f"🔗 {command.name}" if group else f"{command.name}", # MARKED
                 value=f'{self.prefix}{short_doc or "Tidak ada deskripsi"}{self.suffix}',
                 inline=False,
             )
@@ -161,7 +161,7 @@ class Paginator:
             command (app_commands.commands.Command): The application command to add
         """
         page = self._new_page(
-            f"command.name", f"{self.prefix}{command.description}{self.suffix}" # MARKED
+            f"{command.name}", f"{self.prefix}{command.description}{self.suffix}" # MARKED
         )
         page.add_field(
             name="Penggunaan",
