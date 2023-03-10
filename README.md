@@ -15,13 +15,14 @@
 Sebuah **Multipurpose Discord Bot** yang terinspirasi dari karakter "Haruna Sakurai" (Ongeki).
 
 ## Apa yang Spesial dari Bot ini?
-Bot ini menggunakan Bahasa Indonesia (jelas sekali yah) dan memiliki command khusus untuk anggota-anggota G-Tech Re'sman.
+Bot ini menggunakan Bahasa Indonesia (jelas sekali yah) dan memiliki command khusus untuk anggota-anggota club G-Tech Re'sman.
 
 ## Mau Coba Utak-atik Sendiri?
 1. Clone repo ini (`git clone https://github.com/Schryzon/rvdia`)
 2. Dapatkan token Discord bot
 3. Dapatkan MongoDB URI
 4. Dapatkan OpenWeather API key dan OpenAI key
+
 (Untuk format `secrets.env` dan MongoDB, silahkan hubungi saya!)
 
 ## Informasi Tambahan
