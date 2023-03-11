@@ -62,7 +62,7 @@ async def change_status():
   for guilds in rvdia.guilds:
     users += guilds.member_count -1
   user_count_status = f'{users} users'
-  status = rand(['in my room', 'in G-Tech Server', 'my code', 'trance music', 'r- help', 'G-Tech members',
+  status = rand(['in my room', 'in G-Tech Server', 'my code', 'trance music', 'r-help', 'G-Tech members',
                   'Ephotech Competition', user_count_status, 'maimai DX'
                 ])
   if status == "my code" or status == "G-Tech members" or status == user_count_status:
@@ -140,24 +140,25 @@ async def serverlist(ctx):
 
 @rvdia.event
 async def on_message(msg:discord.Message):
+    if not msg.guild:
+        return
     await rvdia.process_commands(msg)
     if msg.author.bot == True:
-        return
-    if not msg.guild:
         return
     if msg.content == "RVDIA":
         await msg.reply(f"Haii, {msg.author.name}! Silahkan tambahkan prefix `r-` atau `rvd` untuk menggunakan command!")
 
     # Chat command, I wanna make something cool here
     if msg.content.lower().startswith('rvdia, ') and msg.content.endswith('?') or msg.content.endswith('!'):
-        openai.api_key = os.getenv('openaikey')
-        message = msg.content.lower().lstrip('rvdia,')
-        result = ChatCompletion.create(
-              model="gpt-3.5-turbo", 
-              messages=[{"role": "user", "content": message}]
-          )
-        embed = discord.Embed(title=message.title(), color=msg.author.color, timestamp=msg.created_at)
-        embed.description = result['choices'][0]['message']['content']
+        async with msg.channel.typing():
+          openai.api_key = os.getenv('openaikey')
+          message = msg.content.lower().lstrip('rvdia,')
+          result = ChatCompletion.acreate(
+                model="gpt-3.5-turbo", 
+                messages=[{"role": "user", "content": message}]
+            )
+          embed = discord.Embed(title=message.title(), color=msg.author.color, timestamp=msg.created_at)
+          embed.description = result['choices'][0]['message']['content']
         await msg.channel.send(embed=embed)
         return
     

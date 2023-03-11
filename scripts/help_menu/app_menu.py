@@ -47,6 +47,16 @@ class AppNav(View):
                 )
 
     @discord.ui.button(
+        label="◀◀",
+        style=discord.ButtonStyle.primary,
+        row=1,
+        custom_id="pretty_help:dblprevious",
+    )
+    async def dblprevious(self, interaction: discord.Interaction, button: Button):
+        self.index -= 2
+        await self.update(interaction)
+
+    @discord.ui.button(
         label="◀",
         style=discord.ButtonStyle.primary,
         row=1,
@@ -75,6 +85,15 @@ class AppNav(View):
         self.index += 1
         await self.update(interaction)
 
+    @discord.ui.button(
+        label="▶▶",
+        style=discord.ButtonStyle.primary,
+        row=1,
+        custom_id="pretty_help:dblnext",
+    )
+    async def dblnext(self, interaction: discord.Interaction, button: Button):
+        self.index += 2
+        await self.update(interaction)
 
     @discord.ui.select(row=2, custom_id="pretty_help:select", placeholder="Tekan untuk memilih kategori!")
     async def select(self, interatcion: discord.Interaction, select: Select):

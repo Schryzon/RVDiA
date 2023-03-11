@@ -136,7 +136,7 @@ class Paginator:
                 embed = self._new_page(page_title, embed.description)
 
             embed.add_field(
-                name=f"🔗 {command.name}" if group else f"{command.name}", # MARKED
+                name=f"🔗 r-{command.name}" if group else f"r-{command.name}", # MARKED
                 value=f'{self.prefix}{short_doc or "Tidak ada deskripsi"}{self.suffix}',
                 inline=False,
             )
@@ -161,7 +161,7 @@ class Paginator:
             command (app_commands.commands.Command): The application command to add
         """
         page = self._new_page(
-            f"{command.name}", f"{self.prefix}{command.description}{self.suffix}" # MARKED
+            f"{command.name.title()}", f"{self.prefix}{command.description}{self.suffix}" # MARKED
         )
         page.add_field(
             name="Penggunaan",
@@ -203,7 +203,7 @@ class Paginator:
             signature (str): The command signature/usage string
         """
         page = self._new_page(
-            command.qualified_name,
+            command.qualified_name.title(),
             f"{self.prefix}{self.__command_info(command)}{self.suffix}" or "",
         )
         if command.aliases:
@@ -269,7 +269,7 @@ class Paginator:
         for page_no, page in enumerate(self._pages, start):
             page: discord.Embed
             if not self.show_index or page_no != 0:
-                page.description = f"`Halaman: {page_no}/{pages}`\n{page.description}\nEksekusi command: `r-(command)`"
+                page.description = f"`Halaman: {page_no}/{pages}`\n{page.description}"
             lst.append(page)
         return lst
 

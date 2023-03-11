@@ -294,13 +294,14 @@ class Utilities(commands.Cog):
         """
         Tanyakan atau perhintahkan aku untuk melakukan sesuatu!
         """
-        openai.api_key = os.getenv('openaikey')
-        result = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo", 
-            messages=[{"role": "user", "content": message}]
-        )
-        embed = discord.Embed(title=message.title(), color=ctx.author.color, timestamp=ctx.message.created_at)
-        embed.description = result['choices'][0]['message']['content']
+        async with ctx.typing():
+            openai.api_key = os.getenv('openaikey')
+            result = openai.ChatCompletion.acreate(
+                model="gpt-3.5-turbo", 
+                messages=[{"role": "user", "content": message}]
+            )
+            embed = discord.Embed(title=message.title(), color=ctx.author.color, timestamp=ctx.message.created_at)
+            embed.description = result['choices'][0]['message']['content'] # Might improve for >4096 chrs
         await ctx.send(embed=embed)
 
 async def setup(bot:commands.Bot):
