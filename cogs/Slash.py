@@ -4,13 +4,13 @@ from discord import app_commands
 from scripts.main import client
 
 class Slash(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
     """
     Versi "Slash" dari command-command yang sudah ada.
     """
+    def __init__(self, bot):
+        self.bot = bot
 
-    @app_commands.command(name="ping", 
+    """@app_commands.command(name="ping", 
     description= "Menampilkan latency ke Discord API dan MongoDB Atlas",
     )
     async def ping(self, interaction:discord.Interaction) -> None:
@@ -21,7 +21,7 @@ class Slash(commands.Cog):
             mongoping = 'ERROR - STATUS CODE 0'
         embed= discord.Embed(title= "Ping--Pong!", color=0x964b00, timestamp=interaction.created_at)
         embed.description = f"**Discord API:** `{round(self.bot.latency*1000)} ms`\n**MongoDB:** `{mongoping}`"
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message(embed=embed)"""
 
     @app_commands.command(name="avatar",
     description="Memperlihatkan avatar pengguna Discord."
@@ -29,10 +29,12 @@ class Slash(commands.Cog):
     async def avatar(self, interaction:discord.Interaction, pengguna:discord.Member = None, id:str = None):
         """Lihat avatar pengguna Discord."""
         if pengguna and id:
-            await interaction.response.send_message("Hey! Kamu hanya perlu mengisi salah satu parameter saja!")
-            return
+            return await interaction.response.send_message("Hey! Kamu hanya perlu mengisi salah satu parameter saja!")
         if not id is None:
-            id = await self.bot.fetch_user(int(id))
+            try:
+                id = await self.bot.fetch_user(int(id))
+            except:
+                return await interaction.response.send_message("Tidak bisa menemukan pengguna dengan ID itU!")
         global_user = pengguna or id or interaction.user
         png = global_user.avatar.with_format("png").url
         jpg = global_user.avatar.with_format("jpg").url
@@ -50,4 +52,4 @@ class Slash(commands.Cog):
 
     
 async def setup(bot:commands.Bot):
-    await bot.add_cog(Slash(bot), guilds = [discord.Object(id=997500206511833128)])
+    await bot.add_cog(Slash(bot))

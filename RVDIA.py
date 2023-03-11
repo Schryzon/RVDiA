@@ -21,7 +21,8 @@ helper = PrettyHelp(
   active_time = 60,
   image_url = os.getenv('bannerhelp'),
   index_title = "Kategori Command",
-  timeout=20
+  timeout=20,
+  case_insensitive = True
   )
 
 intents = discord.Intents.all()
@@ -30,7 +31,7 @@ rvdia = commands.AutoShardedBot(
   intents=intents, help_command=helper
 )
 rvdia.synced = False
-rvdia.__version__ = "In-Development Stage 3"
+rvdia.__version__ = "アルファ [Alpha] v1"
 rvdia.runtime = time()
 
 @rvdia.event
@@ -46,7 +47,7 @@ async def on_ready():
     print('Internal cogs loaded!')
     
     if not rvdia.synced:
-      await rvdia.tree.sync(guild = discord.Object(id=997500206511833128))
+      await rvdia.tree.sync()
       rvdia.synced = True
       print('Slash Commands up for syncing!')
 
@@ -167,10 +168,11 @@ async def on_message(msg:discord.Message):
           await msg.channel.send(embed=embed)
           return
         
-        except:
+        except Exception as e:
            await msg.channel.send('Ada yang bermasalah dengan fitur ini, aku sudah mengirimkan laporan ke developer!')
            channel = rvdia.get_channel(906123251997089792)
-           await channel.send(f'{Exception} Untuk Chat-GPT feature!')
+           await channel.send(f'{e} Untuk Chat-GPT feature!')
+           print(e)
            
     
     # Took me 2 hours to figure this out.

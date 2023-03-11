@@ -31,6 +31,8 @@ class AppNav(View):
         self.pages = pages
 
         if pages and len(pages) == 1:
+            self.remove_item(self.dblnext)
+            self.remove_item(self.dblprevious)
             self.remove_item(self.previous)
             self.remove_item(self.next)
             self.remove_item(self.select)

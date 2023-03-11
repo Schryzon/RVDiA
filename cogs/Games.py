@@ -228,15 +228,17 @@ class Games(commands.Cog):
         else:
             return
         
-    @commands.command()
-    @commands.guild_only()
+    @commands.command(aliases=['jodohkan', 'jodoh'], description="Jodohkan seseorang denganmu!")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def ship(self, ctx, member1: commands.MemberConverter = None, member2: commands.MemberConverter=None):
+        """
+        Jodohkan seorang teman atau orang lain dengan pengguna lainnya!
+        """
         if member1 == None:
-            await ctx.send(":negative_squared_cross_mark: **Please provide the user that you want to be shipped with or the user that you want to ship with another!**")
+            await ctx.send("Kamu harus mention orang yang ingin dijodohkan!")
             return
         if member1 == ctx.author and member2 == None:
-            await ctx.send(":negative_squared_cross_mark: **I can't ship you with yourself!**")
+            await ctx.send("Aku tidak bisa menjodohkanmu dengan dirimu sendiri! TwT")
             return
 
         elif member2 == None:
@@ -245,25 +247,25 @@ class Games(commands.Cog):
         
         success = random.randint(1, 100)
         if success == 100:
-            ss = f"__Match made in Heaven!__ The perfect ship. {member1.name} and {member2.name}! ❤️"
+            ss = f"__Match made in Heaven!__\n{member1.name} dan {member2.name} akan menjadi pasangan terbaik! ❤️"
             sus = Image.open("./src/ship.jpg")
         elif success >= 90:
-            ss = f"It's __true love!__ {member1.name} fits perfectly with {member2.name}! ❤️"
+            ss = f"It's __true love!__\n{member1.name} sangat cocok berpasangan dengan {member2.name}! ❤️"
             sus = Image.open("./src/ship.jpg")
         elif success >= 80:
-            ss = f"{member1.name} __loves__ {member2.name} and {member2.name} thinks the same! ❤️"
+            ss = f"__Lovey, dovey!__\n{member1.name} dan {member2.name} akan menjalin hubungan yang dekat! ❤️"
             sus = Image.open("./src/ship.jpg")
         elif success >= 70:
-            ss = f"{member1.name} will be a __great bestie__ for {member2.name}! <:hug:857104180892401694>"
+            ss = f" __Besties for life!__\n{member1.name} akan menjadi sahabat setia untuk {member2.name}! <:hug:1084251318073438289>"
             sus = Image.open("./src/fship.jpg")
         elif success >= 50:
-            ss = f"Surprisingly, {member1.name} __fits kinda well__ with {member2.name}. 👍"
+            ss = f"__They somehow fit together.__\n{member1.name} cocok menjadi temannya {member2.name}. 👍"
             sus = Image.open("./src/gship.jpg")
         elif success >= 25:
-            ss = f"The relationship between {member1.name} and {member2.name} __will not be a happy one__. 👎"
+            ss = f"__Not good!__\n{member1.name} dan {member2.name} tidak akan berbahagia saat berpasangan. 👎"
             sus = Image.open("./src/bship.jpg")
         else:
-            ss = f"{member1.name} and {member2.name} __will not have a good relationship__ and it's a bad idea to ship them! 💔"
+            ss = f"__This is bad!__\n{member1.name} dan {member2.name} merupakan pasangan yang tidak cocok! 💔"
             sus = Image.open("./src/shship.jpg")
 
         asset1 = member1.avatar.with_size(128)
@@ -280,8 +282,8 @@ class Games(commands.Cog):
 
         L = len(member1.name)//2
         LL = len(member2.name)//2
-        embed = discord.Embed(title="Ship Result", description = f"**Love percentage = {success}%**\n**Details:**\n{ss}\n**Ship name:** {member1.name[:L] + member2.name[LL:]}", color=ctx.author.colour)
-        embed.set_footer(text=f"A ship between {member1.name} and {member2.name}", icon_url=ctx.author.avatar.url)
+        embed = discord.Embed(title="Hasil Penjodohan", description = f"**Love percentage = ``{success}%``**\n**Details:**\n{ss}\n**Nama ship:** {member1.name[:L] + member2.name[LL:]}", color=ctx.author.colour)
+        embed.set_footer(text=f"{member1.name} dan {member2.name}", icon_url=ctx.author.avatar.url)
         file = discord.File("shipres.jpg")
         embed.set_image(url= "attachment://shipres.jpg")
         await ctx.send(file = file, embed = embed)

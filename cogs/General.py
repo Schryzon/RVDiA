@@ -37,7 +37,7 @@ class General(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="about", aliases=['intro', 'bot', 'botinfo'])
+    @commands.hybrid_command(name="about", aliases=['intro', 'bot', 'botinfo'])
     async def about(self, ctx:commands.Context) -> None:
         """
         Memperlihatkan segalanya tentang aku!
@@ -60,11 +60,11 @@ class General(commands.Cog):
         await ctx.send(embed=embed, view=Url_Buttons())
     
     @commands.hybrid_command(name="ping",
-        description = "Shows my latency to Discord's API. Measured in miliseconds."
+        description = "Menampilkan latency ke Discord API dan MongoDB Atlas."
         )
     async def ping(self, ctx:commands.Context) -> None:
         """
-        Shows my latency to Discord's API.
+        Menampilkan latency ke Discord API dan MongoDB Atlas.
         """
         mongoping = client.admin.command('ping')
         if mongoping['ok'] == 1:
@@ -83,6 +83,8 @@ class General(commands.Cog):
         Support: (ID, @Mention, username, name#tag)
         """
         global_user = global_user or ctx.author
+        if global_user.avatar.url is None:
+            return await ctx.reply(f'{global_user} tidak memiliki foto profil!')
         png = global_user.avatar.with_format("png").url
         jpg = global_user.avatar.with_format("jpg").url
         webp = global_user.avatar.with_format("webp").url
@@ -105,7 +107,7 @@ class General(commands.Cog):
         Support: (ID, @Mention, username, name#tag)
         """
         member = member or ctx.author
-        avatar_url = member.avatar.url
+        avatar_url = member.avatar.url if not member.avatar.url is None else getenv('normalpfp')
         bot = member.bot
 
         if bot == True:
@@ -157,7 +159,7 @@ class General(commands.Cog):
             ack = "Server Admin"
         else:
             ack = "Anggota Server"
-        embed.add_field(name = "Acknowledgement", value = ack)
+        embed.add_field(name = "Dapat disebut sebagai", value = ack)
         embed.set_footer(text=f"ID: {member.id}", icon_url=avatar_url)
         await ctx.reply(embed=embed)
 
@@ -186,27 +188,27 @@ class General(commands.Cog):
         embed.set_image(url = ctx.guild.banner_url)
         await ctx.reply(embed=embed)
 
-    @commands.command(aliases=['math'], description="Calculate mathematical expressions, refer to Python operators.")
+    """@commands.command(aliases=['math'], description="Calculate mathematical expressions, refer to Python operators.")
     async def calc(self, ctx, *, calcs):
-        """Low-level calculating system"""
-        await ctx.reply(f'Result: {eval(calcs)}') #Lazy coding
+        "Low-level calculating system"
+        await ctx.reply(f'Result: {eval(calcs)}') #Lazy coding"""
 
-    @commands.command(aliases=['grayscale'], description="Turn any Discord avatar to grayscale, including yours.")
+    @commands.command(aliases=['grayscale'], description="Ubah foto profil menjadi grayscale (hitam putih).")
     async def greyscale(self, ctx, *, user:commands.UserConverter = None):
-        """Turn any Discord user avatar to grayscale."""
+        """Ubah foto profil menjadi grayscale."""
         user = user or ctx.author
-        avatar = user.avatar.with_format("png").url
+        avatar = user.avatar.with_format("png").url if not user.avatar.url is None else getenv('normalpfp')
         async with aiohttp.ClientSession() as session:
             async with session.get(f'https://some-random-api.ml/canvas/greyscale?avatar={avatar}') as data:
                 image = BytesIO(await data.read())
                 await session.close()
                 await ctx.reply(file=discord.File(image, 'Grayscale.png'))
 
-    @commands.command(description="Turn any Discord avatar to grayscale, including yours.")
+    @commands.command(description="Ubah foto profil menjadi inverted (warna terbalik).")
     async def invert(self, ctx, *, user:commands.UserConverter = None):
-        """Turn any Discord user avatar to inverted color."""
+        """Ubah foto profil menjadi inverted."""
         user = user or ctx.author
-        avatar = user.avatar.with_format("png").url
+        avatar = user.avatar.with_format("png").url if not user.avatar.url is None else getenv('normalpfp')
         async with aiohttp.ClientSession() as session:
             async with session.get(f'https://some-random-api.ml/canvas/invert?avatar={avatar}') as data:
                 image = BytesIO(await data.read())
@@ -221,7 +223,7 @@ class Utilities(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(aliases = ['cuaca'], description="Lihat info tentang cuaca di suatu kota atau daerah!")
+    @commands.hybrid_command(aliases = ['cuaca'], description="Lihat info tentang cuaca di suatu kota atau daerah!")
     async def weather(self, ctx, *, location:str):
         """
         Lihat info tentang keadaan cuaca di suatu kota atau daerah! (Realtime)
@@ -263,7 +265,7 @@ class Utilities(commands.Cog):
         except(IndexError):
             await ctx.send('Aku tidak bisa menemukan lokasi itu!')
 
-    @commands.command()
+    @commands.hybrid_command()
     async def time(self, ctx, *, location:str):
         check_timezone = requests.get(f'http://worldtimeapi.org/api/timezone').json()
         area = []
@@ -280,12 +282,12 @@ class Utilities(commands.Cog):
         data = requests.get(f'http://worldtimeapi.org/api/timezone/{req_data}').json()
         day = str(data['day_of_week'])
         day = day_of_week[day]
-        embed = discord.Embed(title=f"Waktu di {area[1]}", description=f"UTC{data['utc_offset']}")
+        embed = discord.Embed(title=f"Waktu di {area[1]}", description=f"UTC{data['utc_offset']}", color=0x00ffff)
         embed.add_field(name="Akronim Timezone", value=data['abbreviation'], inline=False)
         embed.add_field(name="Hari di Lokasi", value=day, inline=False)
         await ctx.send(embed=embed)
 
-    @commands.command(
+    @commands.hybrid_command(
             aliases = ['chat', 'chatgpt'],
             description = 'Command yang menggunakan Open AI ChatGPT model.'
         )
