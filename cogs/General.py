@@ -300,7 +300,11 @@ class Utilities(commands.Cog):
                 model="gpt-3.5-turbo", 
                 messages=[{"role": "user", "content": message}]
             )
-            embed = discord.Embed(title=message.title(), color=ctx.author.color, timestamp=ctx.message.created_at)
+            embed = discord.Embed(
+                title=' '.join((word.title() if not word.isupper() else word for word in message.split(' '))), 
+                color=ctx.author.color, 
+                timestamp=ctx.message.created_at
+                )
             embed.description = result['choices'][0]['message']['content'] # Might improve for >4096 chrs
         await ctx.send(embed=embed)
 

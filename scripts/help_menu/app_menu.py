@@ -96,15 +96,19 @@ class AppNav(View):
         await self.update(interaction)
 
     @discord.ui.select(row=2, custom_id="pretty_help:select", placeholder="Tekan untuk memilih kategori!")
-    async def select(self, interatcion: discord.Interaction, select: Select):
+    async def select(self, interaction: discord.Interaction, select: Select):
         self.index = int(select.values[0])
-        await self.update(interatcion)
+        await self.update(interaction)
 
     async def update(self, interaction: discord.Interaction):
         await interaction.response.edit_message(
             embed=self.pages[self.index % self.page_count], view=self
         )
 
+    @discord.ui.View()
+    async def on_timeout(self, interaction: discord.Interaction) -> None:
+        self.clear_items()
+        await self.update(interaction)
 
 class AppMenu(PrettyMenu):
     """

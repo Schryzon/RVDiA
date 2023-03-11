@@ -137,7 +137,7 @@ class Paginator:
 
             embed.add_field(
                 name=f"🔗 r-{command.name}" if group else f"r-{command.name}", # MARKED
-                value=f'{self.prefix}{short_doc or "Tidak ada deskripsi"}{self.suffix}',
+                value=f'{self.prefix}{short_doc or "Tidak ada deskripsi."}{self.suffix}',
                 inline=False,
             )
 

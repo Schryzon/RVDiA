@@ -116,7 +116,7 @@ class Error(commands.Cog):
       finally:
           em.set_footer(text = "Please fix the error immediately!", icon_url = self.historia.user.avatar.url)
           await channel.send(f"<@877008612021661726> **Error from console!**", embed = em)
-          await ctx.reply("An error occured while executing this command. I have sent a report to the developer!")
+          await ctx.reply("Ada yang bermasalah dengan command ini, aku sudah memberikan laporan ke developer!")
           print(error)
 
 async def setup(pandora):

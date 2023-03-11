@@ -150,17 +150,25 @@ async def on_message(msg:discord.Message):
 
     # Chat command, I wanna make something cool here
     if msg.content.lower().startswith('rvdia, ') and msg.content.endswith('?') or msg.content.endswith('!'):
-        async with msg.channel.typing():
-          openai.api_key = os.getenv('openaikey')
-          message = msg.content.lower().lstrip('rvdia,')
-          result = await ChatCompletion.acreate(
-                model="gpt-3.5-turbo", 
-                messages=[{"role": "user", "content": message}]
-            )
-          embed = discord.Embed(title=message.title(), color=msg.author.color, timestamp=msg.created_at)
-          embed.description = result['choices'][0]['message']['content']
-        await msg.channel.send(embed=embed)
-        return
+        try:
+          async with msg.channel.typing():
+            openai.api_key = os.getenv('openaikey')
+            message = msg.content.lower().lstrip('rvdia,')
+            result = await ChatCompletion.acreate(
+                  model="gpt-3.5-turbo", 
+                  messages=[{"role": "user", "content": message}]
+              )
+            embed = discord.Embed(
+              title=' '.join((word.title() if not word.isupper() else word for word in message.split(' '))), 
+              color=msg.author.color, 
+              timestamp=msg.created_at
+              )
+            embed.description = result['choices'][0]['message']['content']
+          await msg.channel.send(embed=embed)
+          return
+        
+        except:
+           await msg.channel.send('Ada yang bermasalah dengan fitur ini, aku sudah mengirimkan laporan ke developer!')
     
     # Took me 2 hours to figure this out.
     if msg.content.startswith("http://") or msg.content.startswith("https://") or msg.content.startswith('www.'):
