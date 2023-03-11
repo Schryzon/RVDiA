@@ -153,7 +153,7 @@ async def on_message(msg:discord.Message):
         async with msg.channel.typing():
           openai.api_key = os.getenv('openaikey')
           message = msg.content.lower().lstrip('rvdia,')
-          result = ChatCompletion.acreate(
+          result = await ChatCompletion.acreate(
                 model="gpt-3.5-turbo", 
                 messages=[{"role": "user", "content": message}]
             )

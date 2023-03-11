@@ -296,7 +296,7 @@ class Utilities(commands.Cog):
         """
         async with ctx.typing():
             openai.api_key = os.getenv('openaikey')
-            result = openai.ChatCompletion.acreate(
+            result = await openai.ChatCompletion.acreate(
                 model="gpt-3.5-turbo", 
                 messages=[{"role": "user", "content": message}]
             )
