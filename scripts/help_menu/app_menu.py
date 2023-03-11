@@ -105,11 +105,6 @@ class AppNav(View):
             embed=self.pages[self.index % self.page_count], view=self
         )
 
-    @discord.ui.View()
-    async def on_timeout(self, interaction: discord.Interaction) -> None:
-        self.clear_items()
-        await self.update(interaction)
-
 class AppMenu(PrettyMenu):
     """
     Navigate pages using the Discord UI components.

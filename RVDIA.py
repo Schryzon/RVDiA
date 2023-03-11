@@ -169,6 +169,9 @@ async def on_message(msg:discord.Message):
         
         except:
            await msg.channel.send('Ada yang bermasalah dengan fitur ini, aku sudah mengirimkan laporan ke developer!')
+           channel = rvdia.get_channel(906123251997089792)
+           await channel.send(f'{Exception} Untuk Chat-GPT feature!')
+           
     
     # Took me 2 hours to figure this out.
     if msg.content.startswith("http://") or msg.content.startswith("https://") or msg.content.startswith('www.'):
