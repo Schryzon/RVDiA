@@ -96,6 +96,9 @@ class Error(commands.Cog):
     elif "Invalid base64-encoded string" in str(error) or "Incorrect padding" in str(error):
       await ctx.reply("Sepertinya itu bukan Base64, tolong berikan teks dalam format Base64!")
 
+    elif "'NoneType' object has no attribute 'url'" in str(error) and ctx.args['global_user'] is not None:
+      await ctx.reply('Pengguna itu tidak memiliki foto profil! Aku tidak bisa menjalankan command ini!')
+
     #I wonder why I made this loll
     else:
       channel = self.historia.get_channel(906123251997089792)

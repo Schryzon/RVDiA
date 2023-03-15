@@ -352,13 +352,13 @@ class PrettyHelp(HelpCommand, commands.Cog):
     # Hackey, but it works I guess.
     # Might figure out a better solution later 🤷‍♂️
     @app_commands.describe(
-        command="The command or chain of commands/subcommands to get help for"
+        command="Nama dari command."
     )
     @app_commands.command(name="help")
     async def _app_command_callback(
         self, interaction: discord.Interaction, command: str = None
     ):
-        """Application help command"""
+        """Menampilkan daftar command dan panduan command."""
         bot = interaction.client
         ctx = await commands.Context.from_interaction(interaction)
         ctx.bot = bot

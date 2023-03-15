@@ -2,6 +2,7 @@
 Schryzon/Jayananda (11)
 G-Tech Re'sman Programming Division
 """
+
 import discord
 from time import time
 import os
@@ -147,7 +148,7 @@ async def on_message(msg:discord.Message):
     if msg.author.bot == True:
         return
     if msg.content == "RVDIA":
-        await msg.reply(f"Haii, {msg.author.name}! Silahkan tambahkan prefix `r-` atau `rvd` untuk menggunakan command!")
+        await msg.reply(f"Haii, {msg.author.name}! Silahkan tambahkan prefix `r-` atau `/` untuk menggunakan command!")
 
     # Chat command, I wanna make something cool here
     if msg.content.lower().startswith('rvdia, ') and msg.content.endswith('?') or msg.content.endswith('!'):

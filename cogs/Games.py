@@ -228,7 +228,7 @@ class Games(commands.Cog):
         else:
             return
         
-    @commands.command(aliases=['jodohkan', 'jodoh'], description="Jodohkan seseorang denganmu!")
+    @commands.hybrid_command(aliases=['jodohkan', 'jodoh'], description="Jodohkan seseorang denganmu atau orang lain!")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def ship(self, ctx, member1: commands.MemberConverter = None, member2: commands.MemberConverter=None):
         """

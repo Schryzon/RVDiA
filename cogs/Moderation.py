@@ -84,6 +84,7 @@ class Moderation(commands.Cog):
 
     @commands.command(description="Ban pengguna dari server, walaupun dia di luar server ini.")
     @commands.has_permissions(ban_members=True)
+    @commands.bot_has_permissions(ban_members=True)
     async def ban(self, ctx:commands.Context, user:commands.UserConverter, *, reason = None):
         """
         Ban pengguna dari server
@@ -100,6 +101,7 @@ class Moderation(commands.Cog):
     @commands.command(description="Unban seseorang yang telah diban sebelumnya.")
     @commands.guild_only()
     @commands.has_permissions(ban_members=True)
+    @commands.bot_has_permissions(manage_guild=True)
     async def unban(self, ctx, user: commands.UserConverter):
         """
         Unban pengguna yang telah diban.
@@ -116,6 +118,7 @@ class Moderation(commands.Cog):
                       description="Menghilangkan pesan berdasarkan jumlah yang diinginkan (amount -> integer), (channel : opsional)")
     @commands.guild_only()
     @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True)
     async def clear(self, ctx:commands.Context, amount:int, channel:commands.TextChannelConverter = None):
         """
         Menghilangkan pesan berdasarkan jumlah yang diinginkan.

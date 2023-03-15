@@ -99,7 +99,7 @@ class General(commands.Cog):
         embed.set_footer(text=f"{ctx.author}", icon_url=ctx.author.avatar.url)
         await ctx.reply(embed=embed)
 
-    @commands.command(aliases = ['whois'], description="Lihat info tentang seseorang di server ini.")
+    @commands.hybrid_command(aliases = ['whois'], description="Lihat info tentang seseorang di server ini.")
     @commands.guild_only()
     async def userinfo(self, ctx, *, member:commands.MemberConverter = None):
         """
@@ -193,7 +193,7 @@ class General(commands.Cog):
         "Low-level calculating system"
         await ctx.reply(f'Result: {eval(calcs)}') #Lazy coding"""
 
-    @commands.command(aliases=['grayscale'], description="Ubah foto profil menjadi grayscale (hitam putih).")
+    @commands.hybrid_command(aliases=['grayscale'], description="Ubah foto profil menjadi grayscale (hitam putih).")
     async def greyscale(self, ctx, *, user:commands.UserConverter = None):
         """Ubah foto profil menjadi grayscale."""
         user = user or ctx.author
@@ -204,7 +204,7 @@ class General(commands.Cog):
                 await session.close()
                 await ctx.reply(file=discord.File(image, 'Grayscale.png'))
 
-    @commands.command(description="Ubah foto profil menjadi inverted (warna terbalik).")
+    @commands.hybrid_command(description="Ubah foto profil menjadi inverted (warna terbalik).")
     async def invert(self, ctx, *, user:commands.UserConverter = None):
         """Ubah foto profil menjadi inverted."""
         user = user or ctx.author
