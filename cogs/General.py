@@ -76,14 +76,16 @@ class General(commands.Cog):
         await ctx.reply(embed=embed)
 
 
-    @commands.command(description="Memperlihatkan avatar pengguna Discord.")
-    async def avatar(self, ctx, *, global_user: commands.UserConverter = None):
+    @commands.hybrid_command(description="Memperlihatkan avatar pengguna Discord.")
+    @app_commands.rename(global_user='pengguna')
+    @app_commands.describe(global_user='Pengguna yang ingin diambil foto profilnya')
+    async def avatar(self, ctx, *, global_user: discord.User = None):
         """
         Memperlihatkan avatar pengguna Discord.
         Support: (ID, @Mention, username, name#tag)
         """
         global_user = global_user or ctx.author
-        if global_user.avatar.url is None:
+        if global_user.avatar is None:
             return await ctx.reply(f'{global_user} tidak memiliki foto profil!')
         png = global_user.avatar.with_format("png").url
         jpg = global_user.avatar.with_format("jpg").url
@@ -100,14 +102,15 @@ class General(commands.Cog):
         await ctx.reply(embed=embed)
 
     @commands.hybrid_command(aliases = ['whois'], description="Lihat info tentang seseorang di server ini.")
+    @app_commands.rename(member='pengguna')
     @commands.guild_only()
-    async def userinfo(self, ctx, *, member:commands.MemberConverter = None):
+    async def userinfo(self, ctx, *, member:discord.Member = None):
         """
         Lihat info tentang seseorang di server ini.
         Support: (ID, @Mention, username, name#tag)
         """
         member = member or ctx.author
-        avatar_url = member.avatar.url if not member.avatar.url is None else getenv('normalpfp')
+        avatar_url = member.avatar.url if not member.avatar is None else getenv('normalpfp')
         bot = member.bot
 
         if bot == True:
@@ -128,7 +131,7 @@ class General(commands.Cog):
 
         status = status_converter(str(member.status)) #Status
         embed=discord.Embed(title=member, color=member.colour, timestamp=ctx.message.created_at)
-        embed.set_author(name="User Info:", icon_url = avatar_url)
+        embed.set_author(name="User Info:")
         embed.set_thumbnail(url=avatar_url)
         embed.add_field(name="Nama Panggilan", value=nick, inline=False)
         embed.add_field(name="Status", value=status, inline=False)
@@ -149,17 +152,18 @@ class General(commands.Cog):
             case 865429287691878430:
                 ack = "Yassalam Bro"
 
-        if member.bot == True and not member.id == 957471338577166417:
-            ack = "Server Bot"
-        elif member.id == 498414156723126283 or member.id == 840569855337300018 or member.id == 744109318554648616:
-            ack = "That Funny Dude"
-        elif owner.id == member.id and not member.id == 877008612021661726:
-            ack = "Pemilik Server"
-        elif member.guild_permissions.administrator == True:
-            ack = "Server Admin"
-        else:
-            ack = "Anggota Server"
-        embed.add_field(name = "Dapat disebut sebagai", value = ack)
+        if ack is None:
+            if member.bot == True:
+                ack = "Server Bot"
+            elif member.id == 498414156723126283 or member.id == 840569855337300018 or member.id == 744109318554648616:
+                ack = "That Funny Dude"
+            elif owner.id == member.id:
+                ack = "Pemilik Server"
+            elif member.guild_permissions.administrator == True:
+                ack = "Server Admin"
+            else:
+                ack = "Anggota Server"
+        embed.add_field(name = "Dikenal Sebagai", value = ack)
         embed.set_footer(text=f"ID: {member.id}", icon_url=avatar_url)
         await ctx.reply(embed=embed)
 
@@ -194,10 +198,11 @@ class General(commands.Cog):
         await ctx.reply(f'Result: {eval(calcs)}') #Lazy coding"""
 
     @commands.hybrid_command(aliases=['grayscale'], description="Ubah foto profil menjadi grayscale (hitam putih).")
-    async def greyscale(self, ctx, *, user:commands.UserConverter = None):
+    @app_commands.rename(user='pengguna')
+    async def greyscale(self, ctx, *, user:discord.User = None):
         """Ubah foto profil menjadi grayscale."""
         user = user or ctx.author
-        avatar = user.avatar.with_format("png").url if not user.avatar.url is None else getenv('normalpfp')
+        avatar = user.avatar.with_format("png").url if not user.avatar is None else getenv('normalpfp')
         async with aiohttp.ClientSession() as session:
             async with session.get(f'https://some-random-api.ml/canvas/greyscale?avatar={avatar}') as data:
                 image = BytesIO(await data.read())
@@ -205,10 +210,11 @@ class General(commands.Cog):
                 await ctx.reply(file=discord.File(image, 'Grayscale.png'))
 
     @commands.hybrid_command(description="Ubah foto profil menjadi inverted (warna terbalik).")
-    async def invert(self, ctx, *, user:commands.UserConverter = None):
+    @app_commands.rename(user='pengguna')
+    async def invert(self, ctx, *, user:discord.User = None):
         """Ubah foto profil menjadi inverted."""
         user = user or ctx.author
-        avatar = user.avatar.with_format("png").url if not user.avatar.url is None else getenv('normalpfp')
+        avatar = user.avatar.with_format("png").url if not user.avatar is None else getenv('normalpfp')
         async with aiohttp.ClientSession() as session:
             async with session.get(f'https://some-random-api.ml/canvas/invert?avatar={avatar}') as data:
                 image = BytesIO(await data.read())
@@ -224,6 +230,7 @@ class Utilities(commands.Cog):
         self.bot = bot
 
     @commands.hybrid_command(aliases = ['cuaca'], description="Lihat info tentang cuaca di suatu kota atau daerah!")
+    @app_commands.rename(location='lokasi')
     async def weather(self, ctx, *, location:str):
         """
         Lihat info tentang keadaan cuaca di suatu kota atau daerah! (Realtime)
@@ -266,6 +273,7 @@ class Utilities(commands.Cog):
             await ctx.send('Aku tidak bisa menemukan lokasi itu!')
 
     @commands.hybrid_command()
+    @app_commands.rename(location='lokasi')
     async def time(self, ctx, *, location:str):
         check_timezone = requests.get(f'http://worldtimeapi.org/api/timezone').json()
         area = []
@@ -291,6 +299,8 @@ class Utilities(commands.Cog):
             aliases = ['chat', 'chatgpt'],
             description = 'Command yang menggunakan Open AI ChatGPT model.'
         )
+    @app_commands.rename(message='pesan')
+    @app_commands.describe(message='Apa yang ingin kamu tanyakan?')
     @commands.cooldown(type=commands.BucketType.user, per=2, rate=1)
     async def ask(self, ctx:commands.Context, *, message:str):
         """

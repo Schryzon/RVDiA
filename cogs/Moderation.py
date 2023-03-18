@@ -1,4 +1,5 @@
 import discord
+from discord import app_commands
 from scripts.main import connectdb
 from os import getenv
 from discord.ext import commands
@@ -10,11 +11,19 @@ class Moderation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     
-    @commands.command(
+    @commands.hybrid_command(
         description="Memberikan pelanggaran kepada pengguna. (Harus berada di server ini)"
         )
+    @app_commands.describe(
+        member = 'Pengguna yang melanggar',
+        reason = 'Mengapa memberikan pelanggaran?'
+    )
+    @app_commands.rename(
+        member='pengguna',
+        reason='alasan'
+    )
     @commands.has_permissions(kick_members = True)
-    async def warn(self, ctx:commands.Context, member:commands.MemberConverter, *, reason = None):
+    async def warn(self, ctx:commands.Context, member:discord.Member, *, reason = None):
         """
         Memberikan pelanggaran kepada pengguna.
         """
@@ -40,12 +49,12 @@ class Moderation(commands.Cog):
         em.set_footer(text=f"Pelanggaran diberikan oleh {ctx.author} | ID:{ctx.author.id}", icon_url=ctx.author.avatar.url)
         await ctx.reply(embed = em)
 
-    @commands.command(
+    @commands.hybrid_command(
         aliases=['wnhistory'], 
         description="Lihat riwayat pelanggaran pengguna di server ini.",
     )
     @commands.has_permissions(kick_members = True)
-    async def warnhistory(self, ctx, member:commands.MemberConverter = None):
+    async def warnhistory(self, ctx, member:discord.Member = None):
             """Lihat riwayat pelanggaran pengguna."""
             member = member or ctx.author
             db = connectdb("Warns")
@@ -62,9 +71,9 @@ class Moderation(commands.Cog):
             emb.set_thumbnail(url = member.avatar.url if not member.avatar.url is None else getenv('normalpfp'))
             await ctx.reply(embed = emb)
 
-    @commands.command(aliases=["rmwarn"], description="Menghilangkan segala data pelanggaran pengguna.")
+    @commands.hybrid_command(aliases=["rmwarn"], description="Menghilangkan segala data pelanggaran pengguna.")
     @commands.has_permissions(kick_members=True)
-    async def removewarn(self, ctx, member:commands.MemberConverter):
+    async def removewarn(self, ctx, member:discord.Member):
         """
         Menghilangkan segala data pelanggaran pengguna.
         """
@@ -85,7 +94,7 @@ class Moderation(commands.Cog):
     @commands.command(description="Ban pengguna dari server, walaupun dia di luar server ini.")
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
-    async def ban(self, ctx:commands.Context, user:commands.UserConverter, *, reason = None):
+    async def ban(self, ctx:commands.Context, user:discord.User, *, reason = None):
         """
         Ban pengguna dari server
         """
@@ -98,11 +107,11 @@ class Moderation(commands.Cog):
         embed.set_footer(text=f"Dieksekusi oleh {ctx.author} | ID:{ctx.author.id}", icon_url=ctx.author.avatar.url)
         await ctx.reply(embed = embed)
 
-    @commands.command(description="Unban seseorang yang telah diban sebelumnya.")
+    @commands.hybrid_command(description="Unban seseorang yang telah diban sebelumnya.")
     @commands.guild_only()
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(manage_guild=True)
-    async def unban(self, ctx, user: commands.UserConverter):
+    async def unban(self, ctx, user: discord.User):
         """
         Unban pengguna yang telah diban.
         """
@@ -114,7 +123,7 @@ class Moderation(commands.Cog):
             await ctx.send(f"Aku tidak bisa menemukan {user} di ban list!")
             return
 
-    @commands.command(aliases = ['clean', 'purge', 'delete', 'hapus'], 
+    @commands.hybrid_command(aliases = ['clean', 'purge', 'delete', 'hapus'], 
                       description="Menghilangkan pesan berdasarkan jumlah yang diinginkan (amount -> integer), (channel : opsional)")
     @commands.guild_only()
     @commands.has_permissions(manage_messages=True)

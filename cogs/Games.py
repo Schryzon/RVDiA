@@ -1,7 +1,9 @@
 import asyncio
+from os import getenv
 import random
 import aiohttp
 import discord
+from discord import app_commands
 from discord.ext import commands
 from PIL import Image
 from io import BytesIO
@@ -90,7 +92,7 @@ class Games(commands.Cog):
 
     @commands.command(aliases = ['battle'])
     @commands.guild_only()
-    async def fight(self, ctx, *, member: commands.MemberConverter = None):
+    async def fight(self, ctx, *, member: discord.Member = None):
         if member == None:
             await ctx.send(":negative_squared_cross_mark: **Please specify the user that you want to fight!**")
             return
@@ -229,8 +231,9 @@ class Games(commands.Cog):
             return
         
     @commands.hybrid_command(aliases=['jodohkan', 'jodoh'], description="Jodohkan seseorang denganmu atau orang lain!")
+    @app_commands.rename(member1='pengguna_1', member2='pengguna_2')
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def ship(self, ctx, member1: commands.MemberConverter = None, member2: commands.MemberConverter=None):
+    async def ship(self, ctx, member1: discord.Member = None, member2:discord.Member=None):
         """
         Jodohkan seorang teman atau orang lain dengan pengguna lainnya!
         """
@@ -268,8 +271,8 @@ class Games(commands.Cog):
             ss = f"__This is bad!__\n{member1.name} dan {member2.name} merupakan pasangan yang tidak cocok! 💔"
             sus = Image.open("./src/shship.jpg")
 
-        asset1 = member1.avatar.with_size(128)
-        asset2 = member2.avatar.with_size(128)
+        asset1 = member1.avatar.with_format('png').with_size(128) if not member1.avatar is None else getenv('normalpfp')
+        asset2 = member2.avatar.with_format('png').with_size(128) if not member2.avatar is None else getenv('normalpfp') # HOW TO FIX???
         data1 = BytesIO(await asset1.read())
         data2 = BytesIO(await asset2.read())
         pfp1 = Image.open(data1)
@@ -282,8 +285,8 @@ class Games(commands.Cog):
 
         L = len(member1.name)//2
         LL = len(member2.name)//2
-        embed = discord.Embed(title="Hasil Penjodohan", description = f"**Love percentage = ``{success}%``**\n**Details:**\n{ss}\n**Nama ship:** {member1.name[:L] + member2.name[LL:]}", color=ctx.author.colour)
-        embed.set_footer(text=f"{member1.name} dan {member2.name}", icon_url=ctx.author.avatar.url)
+        embed = discord.Embed(title="Hasil Penjodohan", description = f"❤️ **{success}%** ❤️\n{ss}\n**Nama ship:** {member1.name[:L] + member2.name[LL:]}", color=ctx.author.colour)
+        embed.set_footer(text=f"{member1.name} dan {member2.name}")
         file = discord.File("shipres.jpg")
         embed.set_image(url= "attachment://shipres.jpg")
         await ctx.send(file = file, embed = embed)

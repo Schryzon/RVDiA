@@ -77,17 +77,17 @@ class Error(commands.Cog):
       await ctx.reply("Hanya Jayananda yang memiliki akses ke command ini!")
 
     elif isinstance(error, commands.BotMissingPermissions):
-      lel = [kol.replace('_', ' ') for kol in error.missing_perms]
-      lol = [what.title() for what in lel]
+      permlist = [req_perms.replace('_', ' ') for req_perms in error.missing_perms]
+      perms = [missing_perms.title() for missing_perms in permlist]
       await ctx.reply("Saya kekurangan `permissions` untuk menjalankan command! (**"
-      + "`" + ",".join(lol) + "`**)"
+      + "`" + ",".join(perms) + "`**)"
       )
 
     elif isinstance(error, commands.MissingPermissions):
-      lel = [kol.replace('_', ' ') for kol in error.missing_perms]
-      lol = [what.title() for what in lel]
+      permlist = [req_perms.replace('_', ' ') for req_perms in error.missing_perms]
+      perms = [missing_perms.title() for missing_perms in permlist]
       await ctx.reply("Kamu kekurangan `permissions` untuk menjalankan command! (**"
-      + "`" + ",".join(lol) + "`**)"
+      + "`" + ",".join(perms) + "`**)"
       )
 
     elif "Forbidden" in str(error):
@@ -96,10 +96,7 @@ class Error(commands.Cog):
     elif "Invalid base64-encoded string" in str(error) or "Incorrect padding" in str(error):
       await ctx.reply("Sepertinya itu bukan Base64, tolong berikan teks dalam format Base64!")
 
-    elif "'NoneType' object has no attribute 'url'" in str(error) and ctx.args['global_user'] is not None:
-      await ctx.reply('Pengguna itu tidak memiliki foto profil! Aku tidak bisa menjalankan command ini!')
-
-    #I wonder why I made this loll
+    # If all else fails (get it?)
     else:
       channel = self.historia.get_channel(906123251997089792)
       em = discord.Embed(title = "An Error Occurred!", color = 0xff4df0, timestamp = ctx.message.created_at)

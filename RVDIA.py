@@ -32,7 +32,7 @@ rvdia = commands.AutoShardedBot(
   intents=intents, help_command=helper
 )
 rvdia.synced = False
-rvdia.__version__ = "アルファ [Alpha] v1"
+rvdia.__version__ = "アルファ [Alpha] v2"
 rvdia.runtime = time()
 
 @rvdia.event
@@ -131,14 +131,14 @@ async def refresh(ctx):
 @rvdia.command(hidden = True)
 @commands.is_owner()
 async def serverlist(ctx):
-    await ctx.send('`S`\n'.join(guild.name for guild in rvdia.guilds))
+    await ctx.send('\n'.join(guild.name for guild in rvdia.guilds))
     with suppress(discord.Forbidden):
        list = []
        for guild in rvdia.guilds:
           invites = await guild.invites()
           url = [invite.url for invite in invites]
           list.append(url)
-       await ctx.send('`S`\n'.join(url))
+       await ctx.send('\n'.join(url))
 
 @rvdia.event
 async def on_message(msg:discord.Message):
