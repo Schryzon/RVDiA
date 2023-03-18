@@ -1,6 +1,8 @@
 """
 Schryzon/Jayananda (11)
 G-Tech Re'sman Programming Division
+RVDIA (Revolutionary Virtual Independent Discord Application)
+Inspired by Haruna Sakurai from Ongeki!
 """
 
 import discord
@@ -8,7 +10,6 @@ from time import time
 import os
 from dotenv import load_dotenv
 import openai
-from openai import ChatCompletion
 from scripts.help_menu.help import PrettyHelp
 from discord.ext import commands, tasks
 from random import choice as rand
@@ -156,10 +157,14 @@ async def on_message(msg:discord.Message):
           async with msg.channel.typing():
             openai.api_key = os.getenv('openaikey')
             message = msg.content.lower().lstrip('rvdia,')
-            result = await ChatCompletion.acreate(
-                  model="gpt-3.5-turbo", 
-                  messages=[{"role": "user", "content": message}]
-              )
+            result = await openai.ChatCompletion.acreate(
+                model="gpt-3.5-turbo",
+                temperature=1.2,
+                messages=[
+                {"role":'system', 'content':os.getenv('rolesys')},
+                {"role": "user", "content": message}
+                ]
+            )
             embed = discord.Embed(
               title=' '.join((word.title() if not word.isupper() else word for word in message.split(' '))), 
               color=msg.author.color, 

@@ -2,6 +2,10 @@
 import discord
 from discord.ext import commands
 
+"""
+Error handlers, it's where the ifs and elifs go crazy!
+"""
+
 class NotGTechMember(commands.CommandError):
   """Raised when command is not being run by a G-Tech Resman member"""
   pass
@@ -12,6 +16,10 @@ class NotInGTechServer(commands.CommandError):
 
 class NotGTechAdmin(commands.CommandError):
   """Raised when the command was not executed by a G-Tech Admin, replaces is_owner()"""
+  pass
+
+class NoProfilePicture(commands.CommandError):
+  """Raised when the user doesn't have a profile picture (automatically aborts command)"""
   pass
 
 class Error(commands.Cog):
@@ -75,6 +83,9 @@ class Error(commands.Cog):
 
     elif isinstance(error, commands.NotOwner):
       await ctx.reply("Hanya Jayananda yang memiliki akses ke command ini!")
+
+    elif isinstance(error, NoProfilePicture):
+      await ctx.reply('Kamu harus memasang foto profil untuk menjalankan command ini!') # Maybe add a note in github somewhere
 
     elif isinstance(error, commands.BotMissingPermissions):
       permlist = [req_perms.replace('_', ' ') for req_perms in error.missing_perms]

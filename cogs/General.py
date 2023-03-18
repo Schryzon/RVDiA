@@ -3,7 +3,7 @@ import discord
 import openai
 import requests
 from os import getenv
-from scripts.main import heading, Url_Buttons
+from scripts.main import heading, Url_Buttons, has_pfp
 from discord import app_commands
 from discord.ext import commands
 from scripts.main import client
@@ -79,6 +79,7 @@ class General(commands.Cog):
     @commands.hybrid_command(description="Memperlihatkan avatar pengguna Discord.")
     @app_commands.rename(global_user='pengguna')
     @app_commands.describe(global_user='Pengguna yang ingin diambil foto profilnya')
+    @has_pfp()
     async def avatar(self, ctx, *, global_user: discord.User = None):
         """
         Memperlihatkan avatar pengguna Discord.
@@ -144,6 +145,7 @@ class General(commands.Cog):
             embed.add_field(name=f"Roles [{str(role_length)}]", value=" ".join(roles), inline=False)
         embed.add_field(name=f"Permissions [{str(perm_len)}]", value="`"+", ".join(lol)+"`", inline=False)
         owner = await self.bot.fetch_user(ctx.guild.owner_id)
+        ack = None
         match member.id: # First use of match case wowwwww
             case 877008612021661726:
                 ack = "Pencipta Bot"
@@ -199,6 +201,7 @@ class General(commands.Cog):
 
     @commands.hybrid_command(aliases=['grayscale'], description="Ubah foto profil menjadi grayscale (hitam putih).")
     @app_commands.rename(user='pengguna')
+    @has_pfp()
     async def greyscale(self, ctx, *, user:discord.User = None):
         """Ubah foto profil menjadi grayscale."""
         user = user or ctx.author
@@ -211,6 +214,7 @@ class General(commands.Cog):
 
     @commands.hybrid_command(description="Ubah foto profil menjadi inverted (warna terbalik).")
     @app_commands.rename(user='pengguna')
+    @has_pfp()
     async def invert(self, ctx, *, user:discord.User = None):
         """Ubah foto profil menjadi inverted."""
         user = user or ctx.author
@@ -272,9 +276,12 @@ class Utilities(commands.Cog):
         except(IndexError):
             await ctx.send('Aku tidak bisa menemukan lokasi itu!')
 
-    @commands.hybrid_command()
+    @commands.hybrid_command(description="Lihat info tentang waktu di suatu kota atau daerah!")
     @app_commands.rename(location='lokasi')
     async def time(self, ctx, *, location:str):
+        """
+        Lihat info tentang waktu di suatu kota atau daerah! (Realtime)
+        """
         check_timezone = requests.get(f'http://worldtimeapi.org/api/timezone').json()
         area = []
         for elements in check_timezone:
@@ -296,7 +303,7 @@ class Utilities(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.hybrid_command(
-            aliases = ['chat', 'chatgpt'],
+            aliases = ['chat', 'chatbot'],
             description = 'Command yang menggunakan Open AI ChatGPT model.'
         )
     @app_commands.rename(message='pesan')
@@ -309,8 +316,12 @@ class Utilities(commands.Cog):
         async with ctx.typing():
             openai.api_key = os.getenv('openaikey')
             result = await openai.ChatCompletion.acreate(
-                model="gpt-3.5-turbo", 
-                messages=[{"role": "user", "content": message}]
+                model="gpt-3.5-turbo",
+                temperature=1.2,
+                messages=[
+                {"role":'system', 'content':getenv('rolesys')},
+                {"role": "user", "content": message}
+                ]
             )
             embed = discord.Embed(
                 title=' '.join((word.title() if not word.isupper() else word for word in message.split(' '))), 

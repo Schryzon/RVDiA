@@ -1,7 +1,7 @@
 import pymongo
 import discord
 from discord.ui import View, Button
-from cogs.Handler import NotInGTechServer, NotGTechMember, NotGTechAdmin
+from cogs.Handler import NotInGTechServer, NotGTechMember, NotGTechAdmin, NoProfilePicture
 from discord.ext import commands
 import os
 from dotenv import load_dotenv
@@ -69,6 +69,14 @@ def is_perangkat():
             raise NotGTechAdmin('Not a G-Tech admin!')
         return True
     return commands.check(predicate)
+
+def has_pfp():
+    async def predicate(ctx):
+        if not ctx.author.avatar:
+            raise NoProfilePicture('No profile picture!')
+        return True
+    return commands.check(predicate)
+
 
 def heading(direction:int):
         result =[]
