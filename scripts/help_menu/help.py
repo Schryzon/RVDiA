@@ -1,3 +1,7 @@
+"""
+Taken from discord-pretty-help, credits goes to the creator.
+"""
+
 __all__ = ["PrettyHelp", "Paginator"]
 from random import randint
 from typing import Any, Dict, List, Optional, Union
@@ -274,7 +278,7 @@ class Paginator:
         return lst
 
 
-class PrettyHelp(HelpCommand, commands.Cog):
+class Help(HelpCommand, commands.Cog):
     """The implementation of the prettier help command.
     A more refined help command format
     This inherits from :class:`HelpCommand`.

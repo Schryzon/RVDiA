@@ -5,19 +5,20 @@ RVDIA (Revolutionary Virtual Independent Discord Application)
 Inspired by Haruna Sakurai from Ongeki!
 """
 
+import asyncio
 import discord
 from time import time
 import os
 from dotenv import load_dotenv
 import openai
-from scripts.help_menu.help import PrettyHelp
+from scripts.help_menu.help import Help
 from discord.ext import commands, tasks
 from random import choice as rand
 from contextlib import suppress
 from scripts.suburl import SurblChecker, DomainInexistentException
 load_dotenv('./secrets.env') # Loads the .env file from python-dotenv pack
 
-helper = PrettyHelp(
+helper = Help(
   no_category = "Tak tergolongkan", 
   color = 0xff4df0,
   active_time = 60,
@@ -65,14 +66,16 @@ async def change_status():
   for guilds in rvdia.guilds:
     users += guilds.member_count -1
   user_count_status = f'{users} users'
-  status = rand(['in my room', 'in G-Tech Server', 'my code', 'trance music', 'r-help', 'G-Tech members',
-                  'Ephotech Competition', user_count_status, 'maimai DX'
-                ])
-  if status == "my code" or status == "G-Tech members" or status == user_count_status:
+  all_status=['in my room', 'in G-Tech Server', 'my code', 'trance music', 'r-help', 'G-Tech members',
+                  'Ephotech Competition', user_count_status, 'maimai DX', 'with Jay', 'github.com/Schryzon/rvdia'
+                ]
+  status = rand(all_status)
+  # Just count, I'm trying to save space!
+  if status == all_status[2] or status == all_status[5] or status == user_count_status:
     type = discord.Activity(type=discord.ActivityType.watching, name=status)
-  elif status == "trance music":
+  elif status == all_status[3]:
     type = discord.Activity(type=discord.ActivityType.listening, name=status)
-  elif status == "Ephotech Competition":
+  elif status == all_status[6]:
     type = discord.Activity(name = status, type = 5)
   else:
     type = discord.Game(status)
@@ -141,6 +144,15 @@ async def serverlist(ctx):
           list.append(url)
        await ctx.send('\n'.join(url))
 
+@rvdia.command(hidden=True)
+@commands.is_owner()
+async def restart(ctx:commands.Context): # In case for timeout
+   message = await ctx.send('Restarting...')
+   await rvdia.close()
+   await asyncio.sleep(2)
+   await rvdia.start(token=os.getenv('token'))
+   await message.edit(content='✅ Restart complete!')
+
 @rvdia.event
 async def on_message(msg:discord.Message):
     if not msg.guild:
@@ -177,9 +189,8 @@ async def on_message(msg:discord.Message):
         except Exception as e:
            await msg.channel.send('Ada yang bermasalah dengan fitur ini, aku sudah mengirimkan laporan ke developer!')
            channel = rvdia.get_channel(906123251997089792)
-           await channel.send(f'{e} Untuk Chat-GPT feature!')
+           await channel.send(f'`{e}` Untuk Chat-GPT feature!')
            print(e)
-           
     
     # Took me 2 hours to figure this out.
     if msg.content.startswith("http://") or msg.content.startswith("https://") or msg.content.startswith('www.'):
@@ -190,4 +201,4 @@ async def on_message(msg:discord.Message):
           await msg.delete()
           await msg.channel.send(f'{msg.author.mention} Spam website terdeteksi. Apabila ini sebuah kesalahan, mohon beri tahu pembuat bot.')
 
-rvdia.run(os.getenv('token'))
+rvdia.run(token=os.getenv('token'))
