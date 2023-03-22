@@ -1,3 +1,4 @@
+import base64
 import os
 import discord
 import openai
@@ -304,7 +305,7 @@ class Utilities(commands.Cog):
 
     @commands.hybrid_command(
             aliases = ['chat', 'chatbot'],
-            description = 'Command yang menggunakan Open AI ChatGPT model.'
+            description = 'Tanyakan atau perhintahkan aku untuk melakukan sesuatu!'
         )
     @app_commands.rename(message='pesan')
     @app_commands.describe(message='Apa yang ingin kamu tanyakan?')
@@ -315,11 +316,12 @@ class Utilities(commands.Cog):
         """
         async with ctx.typing():
             openai.api_key = os.getenv('openaikey')
+            role=getenv('rolesys') if not ctx.author.id == self.bot.owner_id else getenv('roleown')
             result = await openai.ChatCompletion.acreate(
                 model="gpt-3.5-turbo",
                 temperature=1.2,
                 messages=[
-                {"role":'system', 'content':getenv('rolesys')},
+                {"role":'system', 'content':role},
                 {"role": "user", "content": message}
                 ]
             )
@@ -329,7 +331,37 @@ class Utilities(commands.Cog):
                 timestamp=ctx.message.created_at
                 )
             embed.description = result['choices'][0]['message']['content'] # Might improve for >4096 chrs
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed)
+
+    @commands.hybrid_command(
+            aliases = ['image', 'create'],
+            description = 'Ciptakan sebuah karya seni!'
+        )
+    @app_commands.describe(prompt='Apa yang ingin diciptakan?')
+    @commands.cooldown(type=commands.BucketType.user, per=2, rate=1)
+    async def generate(self, ctx:commands.Context, *, prompt:str):
+        """
+        Ciptakan sebuah karya seni dua dimensi dengan perintah!
+        """
+        async with ctx.typing():
+            openai.api_key = os.getenv('openaikey')
+            result = await openai.Image.acreate(
+                prompt=prompt,
+                size='1024x1024',
+                response_format='b64_json',
+                n=1
+            )
+            b64_data = result['data'][0]['b64_json']
+            decoded_data = base64.b64decode(b64_data)
+            image=open('generated.png', 'wb')
+            image.write(decoded_data)
+            image.close()
+
+            embed = discord.Embed(title=prompt.title(), color=ctx.author.colour, timestamp=ctx.message.created_at)
+            file = discord.File("generated.png")
+            embed.set_image(url= "attachment://generated.png")
+        
+        await ctx.reply(file=file, embed=embed)
 
 async def setup(bot:commands.Bot):
     await bot.add_cog(General(bot))

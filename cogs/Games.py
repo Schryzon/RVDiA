@@ -8,7 +8,7 @@ from discord.ext import commands
 from PIL import Image
 from io import BytesIO
 
-class Games(commands.Cog):
+class Fun(commands.Cog):
     """
     Command khusus untuk bersenang-senang
     """
@@ -292,4 +292,4 @@ class Games(commands.Cog):
         await ctx.send(file = file, embed = embed)
 
 async def setup (bot):
-    await bot.add_cog(Games(bot))
+    await bot.add_cog(Fun(bot))
