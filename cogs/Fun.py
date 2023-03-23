@@ -230,7 +230,6 @@ class Fun(commands.Cog):
         else:
             return
     
-    @commands.hybrid_group(name='user')
     @commands.hybrid_command(aliases=['jodohkan', 'jodoh'], description="Jodohkan seseorang denganmu atau orang lain!")
     @app_commands.rename(member1='pengguna_1', member2='pengguna_2')
     @commands.cooldown(1, 5, commands.BucketType.user)

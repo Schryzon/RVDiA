@@ -42,13 +42,14 @@ class Error(commands.Cog):
     if isinstance(error, commands.MissingRequiredArgument):
       await ctx.reply(f"Ada beberapa bagian yang belum kamu isi!\nDibutuhkan: **`{error.param}`**")
 
-    elif isinstance(error, NotGTechMember):
+  # Hack-ish, I'm still figuring out why it didnt work
+    elif 'Not a G-Tech member!' in str(error):
       await ctx.reply('Akun Discordmu harus didaftarkan dulu ke data G-Tech sebelum menjalankan command ini!')
 
-    elif isinstance(error, NotInGTechServer):
+    elif 'Not in the G-Tech server!' in str(error):
       await ctx.reply('Command ini hanya bisa dijalankan di G-Tech server!')
 
-    elif isinstance(error, NotGTechAdmin):
+    elif 'Not a G-Tech admin!' in str(error):
       await ctx.reply('Command ini hanya bisa dijalankan oleh admin database G-Tech!')
 
     elif isinstance(error, commands.CommandNotFound):
@@ -84,7 +85,7 @@ class Error(commands.Cog):
     elif isinstance(error, commands.NotOwner):
       await ctx.reply("Hanya Jayananda yang memiliki akses ke command ini!")
 
-    elif isinstance(error, NoProfilePicture):
+    elif 'No profile picture!' in str(error):
       await ctx.reply('Kamu harus memasang foto profil untuk menjalankan command ini!') # Maybe add a note in github somewhere
 
     elif isinstance(error, commands.BotMissingPermissions):

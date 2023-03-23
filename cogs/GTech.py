@@ -13,6 +13,10 @@ class GTech(commands.Cog):
         db = connectdb("Gtech")
         data = db.find_one({'_id':id})
         return data
+    
+    @commands.hybrid_group(name='gtech')
+    async def gtech_command(self, ctx:commands.Context) -> None:
+        pass
 
     async def send_news(self, channel_id:int):
         db = connectdb("Technews")
@@ -27,8 +31,7 @@ class GTech(commands.Cog):
             embed.set_image(url = news['attachments'])
         await channel.send("*Knock, knock!* Ada yang baru nih di G-Tech!", embed = embed)
 
-    @commands.hybrid_group(name='gtech')
-    @commands.hybrid_command(aliases=['reg'], description="Tambahkan pengguna ke database.")
+    @gtech_command.command(aliases=['reg'], description="Tambahkan pengguna ke database.")
     @is_perangkat()
     @in_gtech_server()
     async def register(self, ctx, user:commands.MemberConverter, kelas, divisi, *, nama):
@@ -42,8 +45,7 @@ class GTech(commands.Cog):
         db.insert_one({'_id':user.id, 'kelas':kelas, 'divisi':divisi, 'nama':nama})
         await ctx.reply(f'User {user} has been registered to the G-Tech database.')
 
-    @commands.hybrid_group(name='gtech')
-    @commands.hybrid_command(aliases=['gtechmember'], description="Lihat status anggota G-Tech dari database.")
+    @gtech_command.command(aliases=['gtechmember'], description="Lihat status anggota G-Tech dari database.")
     @in_gtech_server()
     @is_member_check()
     async def member(self, ctx, *, user:commands.MemberConverter = None):
@@ -62,8 +64,7 @@ class GTech(commands.Cog):
         e.description = f"Nama: {nama}\nKelas: {kelas}\nDivisi: {divisi}"
         await ctx.reply(embed = e)
 
-    @commands.hybrid_group(name='gtech')
-    @commands.hybrid_command(aliases=['erreg', 'unreg', 'unregister'], description="Removes a registered user data.\nOnly G-Tech admins are allowed to use this command.")
+    @gtech_command.command(aliases=['erreg', 'unreg', 'unregister'], description="Removes a registered user data.\nOnly G-Tech admins are allowed to use this command.")
     @is_perangkat()
     @in_gtech_server()
     async def erasemember(self, ctx, *, user:commands.MemberConverter = None):
@@ -79,9 +80,8 @@ class GTech(commands.Cog):
         await ctx.reply(f'{user} has been deleted from the G-Tech database.')
 
 
-    @commands.hybrid_group(name='gtech')
-    @commands.hybrid_command(description="Post sesuatu yang menarik ke channel pengumuman!\n"+
-                                "Format: Judul | Deskripsi\n*Attachment support hanya untuk gambar pertama."
+    @gtech_command.command(description="Post sesuatu yang menarik ke channel pengumuman!\n"+
+                                "Format: Judul | Deskripsi"
     )
     @is_perangkat()
     @in_gtech_server()
@@ -106,8 +106,7 @@ class GTech(commands.Cog):
         await ctx.reply('Successfully posted a *new* news!')
         await self.send_news(997749511432712263)
 
-    @commands.hybrid_group(name='gtech')
-    @commands.hybrid_command(description="Lihat berita terbaru tentang G-Tech!")
+    @gtech_command.command(description="Lihat berita terbaru tentang G-Tech!")
     @in_gtech_server()
     @is_member_check()
     async def news(self, ctx):
@@ -127,8 +126,7 @@ class GTech(commands.Cog):
             embed.set_image(url = news['attachments'])
         await ctx.reply(embed = embed)
 
-    @commands.hybrid_group(name='gtech')
-    @commands.hybrid_command(aliases = ['rmnews'], description="Hapus berita terbaru dari database.")
+    @gtech_command.command(aliases = ['rmnews'], description="Hapus berita terbaru dari database.")
     @is_perangkat()
     @in_gtech_server()
     async def deletenews(self, ctx):
