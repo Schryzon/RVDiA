@@ -327,12 +327,11 @@ class Utilities(commands.Cog):
         """
         async with ctx.typing():
             openai.api_key = os.getenv('openaikey')
-            role=getenv('rolesys') if not ctx.author.id == self.bot.owner_id else getenv('roleown')
             result = await openai.ChatCompletion.acreate(
                 model="gpt-3.5-turbo",
                 temperature=1.2,
                 messages=[
-                {"role":'system', 'content':role},
+                {"role":'system', 'content':getenv('rolesys')},
                 {"role": "user", "content": message}
                 ]
             )

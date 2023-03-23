@@ -153,6 +153,13 @@ async def restart(ctx:commands.Context): # In case for timeout
    await rvdia.start(token=os.getenv('token'))
    await message.edit(content='✅ Restart complete!')
 
+@rvdia.command(hidden=True)
+@commands.is_owner()
+async def status(ctx:commands.Context, *, status):
+   change_status.cancel()
+   await rvdia.change_presence(status = discord.Status.idle, activity=discord.Game(status))
+   await ctx.reply('Changed my status!')
+
 @rvdia.event
 async def on_message(msg:discord.Message):
     if not msg.guild:

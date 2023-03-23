@@ -10,8 +10,12 @@ class Moderation(commands.Cog):
     """
     def __init__(self, bot):
         self.bot = bot
+
+    @commands.hybrid_group(name='moderation')
+    async def mod_command(self, ctx:commands.Context) -> None:
+        pass
     
-    @commands.hybrid_command(
+    @mod_command.command(
         description="Memberikan pelanggaran kepada pengguna. (Harus berada di server ini)"
         )
     @app_commands.describe(
@@ -49,7 +53,7 @@ class Moderation(commands.Cog):
         em.set_footer(text=f"Pelanggaran diberikan oleh {ctx.author} | ID:{ctx.author.id}", icon_url=ctx.author.avatar.url)
         await ctx.reply(embed = em)
 
-    @commands.hybrid_command(
+    @mod_command.command(
         aliases=['wnhistory'], 
         description="Lihat riwayat pelanggaran pengguna di server ini.",
     )
@@ -71,7 +75,7 @@ class Moderation(commands.Cog):
             emb.set_thumbnail(url = member.avatar.url if not member.avatar.url is None else getenv('normalpfp'))
             await ctx.reply(embed = emb)
 
-    @commands.hybrid_command(aliases=["rmwarn"], description="Menghilangkan segala data pelanggaran pengguna.")
+    @mod_command.command(aliases=["rmwarn"], description="Menghilangkan segala data pelanggaran pengguna.")
     @commands.has_permissions(kick_members=True)
     async def removewarn(self, ctx, member:discord.Member):
         """
@@ -91,23 +95,23 @@ class Moderation(commands.Cog):
         docs = db.find({})
         print(docs)""" #Unused for the moment.
 
-    @commands.command(description="Ban pengguna dari server, walaupun dia di luar server ini.")
+    @mod_command.command(name='ultban', description="Ban pengguna dari server, walaupun dia di luar server ini.")
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
-    async def ban(self, ctx:commands.Context, user:discord.User, *, reason = None):
+    async def ultban(self, ctx:commands.Context, user:discord.User, *, reason = None):
         """
         Ban pengguna dari server
         """
         reason = reason or "Tidak ada alasan dispesifikasi."
         await ctx.guild.ban(user)
-        embed = discord.Embed(title="Ban ❗", color = ctx.author.colour)
+        embed = discord.Embed(title="Ultimate Ban ❗", color = ctx.author.colour)
         embed.description = f"**`{user}`** telah diban!"
         embed.add_field(name = "Alasan", value = reason, inline = False)
         embed.set_thumbnail(url = user.avatar.url if not user.avatar.url is None else getenv('normalpfp'))
         embed.set_footer(text=f"Dieksekusi oleh {ctx.author} | ID:{ctx.author.id}", icon_url=ctx.author.avatar.url)
         await ctx.reply(embed = embed)
 
-    @commands.hybrid_command(description="Unban seseorang yang telah diban sebelumnya.")
+    @mod_command.command(description="Unban seseorang yang telah diban sebelumnya.")
     @commands.guild_only()
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(manage_guild=True)
