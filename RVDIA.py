@@ -34,7 +34,7 @@ rvdia = commands.AutoShardedBot(
   intents=intents, help_command=helper
 )
 rvdia.synced = False
-rvdia.__version__ = "アルファ [Alpha] v2"
+rvdia.__version__ = "アルファ [Alpha] v3"
 rvdia.runtime = time()
 
 @rvdia.event

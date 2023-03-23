@@ -107,6 +107,9 @@ class Error(commands.Cog):
     elif "Invalid base64-encoded string" in str(error) or "Incorrect padding" in str(error):
       await ctx.reply("Sepertinya itu bukan Base64, tolong berikan teks dalam format Base64!")
 
+    elif "Your prompt may contain text that is not allowed by our safety system." in str(error):
+      await ctx.reply('Prompt yang diberikan kurang pantas untuk ditampilkan!')
+
     # If all else fails (get it?)
     else:
       channel = self.historia.get_channel(906123251997089792)
@@ -118,12 +121,14 @@ class Error(commands.Cog):
         em.add_field(name=f"Args",value=ctx.args,inline=False)
         em.add_field(name=f"Kwargs",value=ctx.kwargs,inline=False)
         em.add_field(name=f"Error Message",value=error,inline=False)
-      except AttributeError:
+
+      except AttributeError: # If not invoked within a cog
         em.add_field(name=f"Command Name",value=ctx.command,inline=False)
         em.add_field(name=f"Invoked By",value=ctx.message.content,inline=False)
         em.add_field(name=f"Args",value=ctx.args,inline=False)
         em.add_field(name=f"Kwargs",value=ctx.kwargs,inline=False)
         em.add_field(name=f"Error Message",value=error,inline=False)
+
       finally:
           em.set_footer(text = "Please fix the error immediately!", icon_url = self.historia.user.avatar.url)
           await channel.send(f"<@877008612021661726> **Error from console!**", embed = em)

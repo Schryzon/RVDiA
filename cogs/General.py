@@ -38,6 +38,7 @@ class General(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.hybrid_group(name='rvdia')
     @commands.hybrid_command(name="about", aliases=['intro', 'bot', 'botinfo'])
     async def about(self, ctx:commands.Context) -> None:
         """
@@ -60,6 +61,7 @@ class General(commands.Cog):
         embed.set_footer(text="Jangan lupa tambahkan aku ke servermu! ❤️")
         await ctx.send(embed=embed, view=Url_Buttons())
     
+    @commands.hybrid_group(name='rvdia')
     @commands.hybrid_command(name="ping",
         description = "Menampilkan latency ke Discord API dan MongoDB Atlas."
         )
@@ -76,7 +78,7 @@ class General(commands.Cog):
         embed.description = f"**Discord API:** `{round(self.bot.latency*1000)} ms`\n**MongoDB:** `{mongoping}`"
         await ctx.reply(embed=embed)
 
-
+    @commands.hybrid_group(name='user')
     @commands.hybrid_command(description="Memperlihatkan avatar pengguna Discord.")
     @app_commands.rename(global_user='pengguna')
     @app_commands.describe(global_user='Pengguna yang ingin diambil foto profilnya')
@@ -103,7 +105,8 @@ class General(commands.Cog):
         embed.set_footer(text=f"{ctx.author}", icon_url=ctx.author.avatar.url)
         await ctx.reply(embed=embed)
 
-    @commands.hybrid_command(aliases = ['whois'], description="Lihat info tentang seseorang di server ini.")
+    @commands.hybrid_group(name='user')
+    @commands.hybrid_command(name='info', aliases = ['whois'], description="Lihat info tentang seseorang di server ini.")
     @app_commands.rename(member='pengguna')
     @commands.guild_only()
     async def userinfo(self, ctx, *, member:discord.Member = None):
@@ -200,6 +203,7 @@ class General(commands.Cog):
         "Low-level calculating system"
         await ctx.reply(f'Result: {eval(calcs)}') #Lazy coding"""
 
+    @commands.hybrid_group(name='avatar')
     @commands.hybrid_command(aliases=['grayscale'], description="Ubah foto profil menjadi grayscale (hitam putih).")
     @app_commands.rename(user='pengguna')
     @has_pfp()
@@ -213,6 +217,7 @@ class General(commands.Cog):
                 await session.close()
                 await ctx.reply(file=discord.File(image, 'Grayscale.png'))
 
+    @commands.hybrid_group(name='avatar')
     @commands.hybrid_command(description="Ubah foto profil menjadi inverted (warna terbalik).")
     @app_commands.rename(user='pengguna')
     @has_pfp()
@@ -304,7 +309,8 @@ class Utilities(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.hybrid_command(
-            aliases = ['chat', 'chatbot'],
+            name = 'chat',
+            aliases = ['chat', 'chatbot', 'tanya'],
             description = 'Tanyakan atau perhintahkan aku untuk melakukan sesuatu!'
         )
     @app_commands.rename(message='pesan')
