@@ -51,6 +51,8 @@ def when_mentioned_or_function(func):
     """
     def inner(bot, message):
         r = func(bot, message)
+        if isinstance(r, str):
+           r = [r]
         r = commands.when_mentioned(bot, message) + r
         return r
     return inner
@@ -229,6 +231,7 @@ async def on_message(msg:discord.Message):
     if not msg.guild:
         return
     
+    await msg.channel.typing()
     await rvdia.process_commands(msg)
 
     if msg.author.bot == True:

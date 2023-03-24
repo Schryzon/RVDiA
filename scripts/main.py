@@ -46,7 +46,7 @@ def connectdb(collection:str):
     coll = db[collection]
     return coll
 
-def check_blacklist():
+def check_blacklist(): #This makes her too damn slow!
     async def predicate(ctx):
         blacklisted = connectdb('Blacklist')
         check_blacklist = blacklisted.find_one({'_id':ctx.author.id})
