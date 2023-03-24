@@ -22,6 +22,9 @@ class NoProfilePicture(commands.CommandError):
   """Raised when the user doesn't have a profile picture (automatically aborts command)"""
   pass
 
+class Blacklisted(commands.CommandError):
+    """Raised if user is blacklisted."""
+
 class Error(commands.Cog):
   """
   An error handler class, what else do I have to say?
@@ -52,6 +55,9 @@ class Error(commands.Cog):
     elif 'Not a G-Tech admin!' in str(error):
       await ctx.reply('Command ini hanya bisa dijalankan oleh admin database G-Tech!')
 
+    elif isinstance(error, Blacklisted):
+      await ctx.reply('Maaf, kamu telah diblacklist dari menggunakan RVDIA!')
+
     elif isinstance(error, commands.CommandNotFound):
       await ctx.reply(f"Tidak dapat menemukan command! Cari command yang ada dengan `r-help`")
 
@@ -77,7 +83,7 @@ class Error(commands.Cog):
       await ctx.reply("Tidak dapat menemukan channel itu!")
 
     elif isinstance(error, commands.CommandOnCooldown):
-      await ctx.reply(f"Command sedang dalam cooldown!\nKamu bisa menjalankannya lagi setelah {round(error.retry_after)} detik.**")
+      await ctx.reply(f"Command sedang dalam cooldown!\nKamu bisa menjalankannya lagi setelah **`{round(error.retry_after)}`** detik.")
 
     elif isinstance(error, commands.RoleNotFound):
       await ctx.reply("Tidak dapat menemukan role tersebut di dalam server ini!")

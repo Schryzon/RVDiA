@@ -7,7 +7,7 @@ from os import getenv
 from scripts.main import heading, Url_Buttons, has_pfp
 from discord import app_commands
 from discord.ext import commands
-from scripts.main import client
+from scripts.main import client, connectdb, check_blacklist
 import aiohttp
 from io import BytesIO
 
@@ -40,17 +40,27 @@ class General(commands.Cog):
 
     @commands.hybrid_group(name='rvdia')
     async def rvdia_command(self, ctx:commands.Context) -> None:
+        """
+        Kumpulan command khusus untuk RVDIA.
+        """
         pass
 
     @commands.hybrid_group(name='user')
     async def user_command(self, ctx:commands.Context) -> None:
+        """
+        Kumpulan command khusus untuk mengetahui info pengguna.
+        """
         pass
 
     @commands.hybrid_group(name='avatar')
     async def avatar_command(self, ctx:commands.Context) -> None:
+        """
+        Kumpulan command khusus yang berkaitan dengan avatar pengguna.
+        """
         pass
 
     @rvdia_command.command(name="about", aliases=['intro', 'bot', 'botinfo'])
+    @check_blacklist()
     async def rvdia(self, ctx:commands.Context) -> None:
         """
         Memperlihatkan segalanya tentang aku!
@@ -75,6 +85,7 @@ class General(commands.Cog):
     @rvdia_command.command(name="ping",
         description = "Menampilkan latency ke Discord API dan MongoDB Atlas."
         )
+    @check_blacklist()
     async def ping(self, ctx:commands.Context) -> None:
         """
         Menampilkan latency ke Discord API dan MongoDB Atlas.
@@ -88,10 +99,28 @@ class General(commands.Cog):
         embed.description = f"**Discord API:** `{round(self.bot.latency*1000)} ms`\n**MongoDB:** `{mongoping}`"
         await ctx.reply(embed=embed)
 
+    @rvdia_command.command(name='prefix', description='Ganti prefix dari RVDIA.', aliases=['changeprefix'])
+    @commands.has_permissions(manage_guild=True)
+    @check_blacklist()
+    async def prefix(self, ctx:commands.Context, *, prefix:str):
+        """
+        Ganti message prefix RVDIA.
+        """
+        current_prefix = connectdb('Prefixes')
+        check_prefix = current_prefix.find_one({'_id': ctx.guild.id})
+        if check_prefix is None:
+            current_prefix.insert_one({'_id':ctx.guild.id, 'prefix':prefix})
+
+        else:
+            current_prefix.find_one_and_update({'_id':ctx.guild.id}, {'$set':{'prefix':prefix}})
+
+        await ctx.reply(f'Message prefix telah diganti ke **`{prefix}`**')
+
     @user_command.command(description="Memperlihatkan avatar pengguna Discord.")
     @app_commands.rename(global_user='pengguna')
     @app_commands.describe(global_user='Pengguna yang ingin diambil foto profilnya')
     @has_pfp()
+    @check_blacklist()
     async def avatar(self, ctx, *, global_user: discord.User = None):
         """
         Memperlihatkan avatar pengguna Discord.
@@ -117,6 +146,7 @@ class General(commands.Cog):
     @user_command.command(name='info', aliases = ['whois'], description="Lihat info tentang seseorang di server ini.")
     @app_commands.rename(member='pengguna')
     @commands.guild_only()
+    @check_blacklist()
     async def userinfo(self, ctx, *, member:discord.Member = None):
         """
         Lihat info tentang seseorang di server ini.
@@ -367,7 +397,8 @@ class Utilities(commands.Cog):
             image.write(decoded_data)
             image.close()
 
-            embed = discord.Embed(title=prompt.title(), color=ctx.author.colour, timestamp=ctx.message.created_at)
+            embed = discord.Embed(title='Karya Terciptakan', color=ctx.author.colour, timestamp=ctx.message.created_at)
+            embed.description = f'Prompt: `{prompt}`'
             file = discord.File("generated.png")
             embed.set_image(url= "attachment://generated.png")
         

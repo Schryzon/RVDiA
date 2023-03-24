@@ -11,8 +11,11 @@ class Moderation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.hybrid_group(name='moderation')
+    @commands.hybrid_group(name='mod')
     async def mod_command(self, ctx:commands.Context) -> None:
+        """
+        Kumpulan command khusus untuk moderasi server.
+        """
         pass
     
     @mod_command.command(

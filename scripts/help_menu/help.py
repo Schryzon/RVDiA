@@ -137,7 +137,7 @@ class Paginator:
                 self.suffix,
             ):
                 self._add_page(embed)
-                embed = self._new_page(page_title, embed.description)
+                embed = self._new_page(page_title.title(), embed.description)
 
             embed.add_field(
                 name=f"🔗 {command.name.title()}" if group else f"{command.name.title()}", # MARKED
@@ -561,7 +561,7 @@ class Help(HelpCommand, commands.Cog):
         """Check if the conext is from an app command or text command and send an error message"""
         if self.context.interaction:
             return await self.context.interaction.response.send_message(
-                "Aku tidak bisa menemukan command itu!\nCheck lagi command yang ada dengan `r-help`!", ephemeral=True
+                "Aku tidak bisa menemukan command itu!\nCheck lagi command yang ada dengan `/help`!", ephemeral=True
             )
 
         return await super().send_error_message("Aku tidak bisa menemukan command itu!\nCheck lagi command yang ada dengan `r-help`!")

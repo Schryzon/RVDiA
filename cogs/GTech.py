@@ -16,6 +16,9 @@ class GTech(commands.Cog):
     
     @commands.hybrid_group(name='gtech')
     async def gtech_command(self, ctx:commands.Context) -> None:
+        """
+        Kumpulan command khusus untuk anggota G-Tech Re'sman.
+        """
         pass
 
     async def send_news(self, channel_id:int):

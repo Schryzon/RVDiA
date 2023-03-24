@@ -1,7 +1,7 @@
 import pymongo
 import discord
 from discord.ui import View, Button
-from cogs.Handler import NotInGTechServer, NotGTechMember, NotGTechAdmin, NoProfilePicture
+from cogs.Handler import NotInGTechServer, NotGTechMember, NotGTechAdmin, NoProfilePicture, Blacklisted
 from discord.ext import commands
 import os
 from dotenv import load_dotenv
@@ -38,9 +38,22 @@ class Url_Buttons(View):
     self.add_item(support_server)
 
 def connectdb(collection:str):
+    """
+    Returns data gained from database collection.
+    Format: RVDIA.Main.<collection>
+    """
     db = client.Main
     coll = db[collection]
     return coll
+
+def check_blacklist():
+    async def predicate(ctx):
+        blacklisted = connectdb('Blacklist')
+        check_blacklist = blacklisted.find_one({'_id':ctx.author.id})
+        if check_blacklist:
+            raise Blacklisted('User is blacklisted!')
+        return True
+    return commands.check(predicate)
 
 def in_gtech_server():
     async def predicate(ctx):

@@ -15,82 +15,87 @@ class Fun(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     
-    @commands.command(aliases = ['bandoriwaifu'])
+    @commands.command(aliases = ['bandoriwaifu'], description='Temukan karakter BanG Dream yang cocok denganmu!')
     async def bdwaifu(self, ctx):
+        """
+        Temukan karakter BanG Dream yang cocok denganmu!
+        """
         async with aiohttp.ClientSession() as session:
             bdinit = await session.get(f"https://bandori.party/api/members/{random.randint(6, 40)}/")
             bdwifu = await bdinit.json()
             we = discord.Embed(title = f"{bdwifu['name']} [{bdwifu['japanese_name']}]", description = f"From {bdwifu['i_band']}", color = ctx.author.colour)
             we.set_thumbnail(url = bdwifu['square_image'])
             we.set_author(name = "Your BanG Dream! Waifu:", icon_url=bdwifu['square_image'])
-            we.add_field(name = "School", value = f"{bdwifu['school']}, {bdwifu['i_school_year']} Year", inline = False)
-            we.add_field(name = "Instrument", value = bdwifu['instrument'], inline = False)
-            we.add_field(name = "Birthday", value = bdwifu['birthday'])
-            we.add_field(name = "Astrological Sign", value = bdwifu['i_astrological_sign'])
-            we.add_field(name = "Voice Actor", value = f"{bdwifu['romaji_CV']} [{bdwifu['CV']}]", inline = False)
-            we.add_field(name = "Liked Foods", value = bdwifu['food_like'])
-            we.add_field(name = "Disliked Foods", value = bdwifu['food_dislike'])
-            we.add_field(name = f"About {bdwifu['name']}:", value=bdwifu['description'], inline = False)
-            we.set_footer(text = f"Requested by: {ctx.author}", icon_url=ctx.author.avatar.url)
-            await ctx.send(embed = we)
+            we.add_field(name = "Sekolah", value = f"{bdwifu['school']}, {bdwifu['i_school_year']} Year", inline = False)
+            we.add_field(name = "Instrumen", value = bdwifu['instrument'], inline = False)
+            we.add_field(name = "Ulang Tahun", value = bdwifu['birthday'])
+            we.add_field(name = "Zodiak", value = bdwifu['i_astrological_sign'])
+            we.add_field(name = "VA", value = f"{bdwifu['romaji_CV']} [{bdwifu['CV']}]", inline = False)
+            we.add_field(name = "Menyukai", value = bdwifu['food_like'])
+            we.add_field(name = "Tidak Menyukai", value = bdwifu['food_dislike'])
+            we.add_field(name = f"Tentang {bdwifu['name']}:", value=bdwifu['description'], inline = False)
+            await ctx.reply(embed = we)
 
-    @commands.command()
-    async def guess(self, ctx):
+    @commands.command(aliases=['tebak'], description='Ayo main tebak angka bersamaku!')
+    async def guess(self, ctx:commands.Context):
+        """
+        Ayo main tebak angka bersamaku!
+        """
         count = 5
         hints = 3
         number = random.randint(1, 20)
         num_store = None
-        await ctx.send(":grey_exclamation: **You will need to guess a number between 1 and 20, try to guess the number I chose!**")
+        msg = await ctx.send(":grey_exclamation: **Kamu harus menebak angka yang aku pikirkan dari `1-20`!**")
         await asyncio.sleep(2.5)
         while count != 0:
             if count < 5 and count != 1:
-                await ctx.send(f"**You have `{count}` attempts left. Type `hint` to get a hint.\nHints left: `{hints}` | End the game by typing `end`.**")
+                await msg.edit(f"**Kamu punya `{count}` attempt. Ketik `hint` jika butuh bantuan.\nHint tersisa: `{hints}` | Akhiri game dengan mengetik `end`.**")
             elif count == 1:
-                await ctx.send(f"**You have `{count}` attempt left!\nHints left: `{hints}` | End the game by typing `end`.**")
+                await ctx.send(f"**Kamu punya `{count}` attempt tersisa!\nHint tersisa: `{hints}` | Akhiri game dengan mengetik `end`.**")
             else:
-                await ctx.send(f"**You have `{count}` attempts, try to guess my number.\nTo end the game, type `end`.**")
+                await ctx.send(f"**Kamu punya `{count}` attempt, ayo coba tebak angka yang kupilih!\nAkhiri game dengan mengetik `end`.**")
             try:
                 r1 = await self.bot.wait_for('message', check = lambda r: r.author == ctx.author and r.channel == ctx.channel, timeout = 20.0)
             except asyncio.TimeoutError:
-                await ctx.channel.send(f"**You ignored me.. well, let me know if you wanna play again.**")
+                await ctx.channel.send(f"**Yah, dikacangin dong :(**")
                 return
             if r1.content == str(number):
-                await ctx.channel.send(f"**Yay, you're right! The number was {number}!**")
+                await ctx.channel.send(f"**Tepat sekali, angkanya yaitu `{number}`!**")
                 return
             elif r1.content.isdigit() == False and r1.content.lower() != "hint" and r1.content.lower() != "end" and r1.content.lower() != "end.":
-                await ctx.channel.send(f":negative_squared_cross_mark: **You can only guess by using integer numbers!**")
+                await ctx.channel.send(f":negative_squared_cross_mark: **Hey, kamu hanya bisa menjawab dengan angka bilangan bulat saja!**", delete_after=2.0)
                 await asyncio.sleep(1.0)
             elif r1.content.lower() == "end" or r1.content.lower() == "end.":
-                await ctx.channel.send(":no_entry: **Ended the game.**")
+                await ctx.channel.send(":no_entry: **Game diakhiri.**")
                 return
             elif r1.content.lower() == "hint":
                 if num_store == None:
-                    await ctx.channel.send(":negative_squared_cross_mark: **You haven't guessed a number!**")
+                    await ctx.channel.send(":negative_squared_cross_mark: **Kamu belum ada menebak, tebak dulu baru bisa dikasi hint!**")
                     await asyncio.sleep(1.0)
                 elif hints == 0:
-                    await ctx.channel.send(":negative_squared_cross_mark: **You are out of hints!**")
+                    await ctx.channel.send(":negative_squared_cross_mark: **Kamu kehabisan hint!**")
                     await asyncio.sleep(1.0)
                 elif number > num_store:
-                    await ctx.channel.send(f":grey_question: Hint: **Your last number, `{num_store}` was lower than mine.**")
+                    await ctx.channel.send(f":grey_question: Hint: **Angka terakhirmu, `{num_store}` lebih kecil dari yang kupilih.**")
                     hints -= 1
                     await asyncio.sleep(1.0)
                 elif number < num_store:
-                    await ctx.channel.send(f":grey_question: Hint: **Your last number, `{num_store}` was higher than mine.**")
+                    await ctx.channel.send(f":grey_question: Hint: **Angka terakhirmu, `{num_store}` lebih besar dari yang kupilih.**")
                     hints -= 1
                     await asyncio.sleep(1.0)
             else:
                 if int(r1.content) > 20:
-                    await ctx.channel.send(f":negative_squared_cross_mark: **Your number is higher than 20!**")
+                    await ctx.channel.send(f":negative_squared_cross_mark: **Angkamu lebih tinggi dari 20!**")
                     await asyncio.sleep(1.0)
                 else:
                     count -= 1
-                    await ctx.channel.send(f":x: **Whoops, the number you guessed was wrong.**")
+                    await ctx.channel.send(f":x: **Salah!**")
                     num_store = int(r1.content)
-                    await asyncio.sleep(1.0)
+                    await asyncio.sleep(1.5)
         if count == 0:
-            await ctx.send(f":exclamation: **You have ran out of attempts!\nThe number was {number}.**")
+            await ctx.send(f":exclamation: **Kamu kehabisan attempt!\nAngka yang kupilih yaitu `{number}`!**")
 
-    @commands.command(aliases = ['battle'])
+    @commands.command(aliases = ['battle'], hidden=True)
     @commands.guild_only()
     async def fight(self, ctx, *, member: discord.Member = None):
         if member == None:

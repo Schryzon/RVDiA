@@ -16,6 +16,7 @@ from discord.ext import commands, tasks
 from random import choice as rand
 from contextlib import suppress
 from scripts.suburl import SurblChecker, DomainInexistentException
+from scripts.main import connectdb
 load_dotenv('./secrets.env') # Loads the .env file from python-dotenv pack
 
 helper = Help(
@@ -28,14 +29,40 @@ helper = Help(
   case_insensitive = True
   )
 
-intents = discord.Intents.all()
+def get_prefix(client, message):
+  """
+  Gain prefix from database
+  """
+  try:
+    s = connectdb('Prefixes')
+    f = s.find_one({'_id': message.guild.id})
+    if f is None:
+      s.insert_one(({'_id':message.guild.id, 'prefix':['R-', 'r-', 'rvd ', 'Rvd ', 'RVD ']}))
+      new = s.find_one({'_id': message.guild.id})
+      return new['prefix']
+    else:
+      return f['prefix']
+  except:
+    return ['R-', 'r-', 'rvd ', 'Rvd ', 'RVD ']
+
+def when_mentioned_or_function(func):
+    """
+    Add @RVDIA as a prefix, along with the obtained prefixes from DB.
+    """
+    def inner(bot, message):
+        r = func(bot, message)
+        r = commands.when_mentioned(bot, message) + r
+        return r
+    return inner
+
+intents = discord.Intents.all() # Might change my mind in the near future.
 rvdia = commands.AutoShardedBot(
-  command_prefix = ["r-","R-","rvd ", "RVD ", "Rvd "], case_insensitive = True, strip_after_prefix = False, 
+  command_prefix = when_mentioned_or_function(get_prefix), case_insensitive = True, strip_after_prefix = False, 
   intents=intents, help_command=helper
 )
 rvdia.synced = False
-rvdia.__version__ = "アルファ [Alpha] v3"
-rvdia.runtime = time()
+rvdia.__version__ = "プリーベタ [Pre-beta]"
+rvdia.runtime = time() # UNIX float
 
 @rvdia.event
 async def on_connect():
@@ -43,14 +70,14 @@ async def on_connect():
 
 @rvdia.event
 async def on_ready():
-    await rvdia.wait_until_ready()
+    await rvdia.wait_until_ready() # So I "don't" get rate limited
     for cog in os.listdir("./cogs"):
       if cog.endswith(".py") and not cog == "__init__.py":
           await rvdia.load_extension(f"cogs.{cog[:-3]}")
     print('Internal cogs loaded!')
     
     if not rvdia.synced:
-      await rvdia.tree.sync()
+      await rvdia.tree.sync() # Global sync
       rvdia.synced = True
       print('Slash Commands up for syncing!')
 
@@ -62,6 +89,9 @@ async def on_ready():
 
 @tasks.loop(minutes=1)
 async def change_status():
+  """
+  Looping status, rate = 1 minute
+  """
   users = 0
   for guilds in rvdia.guilds:
     users += guilds.member_count -1
@@ -124,6 +154,9 @@ async def cogs(ctx):
 @rvdia.command(hidden=True)
 @commands.is_owner()
 async def refresh(ctx):
+  """
+  In case something went horribly wrong
+  """
   with suppress(commands.ExtensionNotLoaded):
     for cog in os.listdir("./cogs"):
       if cog.endswith(".py") and not cog == "__init__.py":
@@ -156,17 +189,51 @@ async def restart(ctx:commands.Context): # In case for timeout
 @rvdia.command(hidden=True)
 @commands.is_owner()
 async def status(ctx:commands.Context, *, status):
+   if status.lower() == 'restart':
+      if not change_status.is_running:
+         return change_status.start()
    change_status.cancel()
    await rvdia.change_presence(status = discord.Status.idle, activity=discord.Game(status))
    await ctx.reply('Changed my status!')
+
+@rvdia.hybrid_command(hidden=True)
+@commands.is_owner()
+async def blacklist(ctx:commands.Context, user:discord.User, *, reason:str):
+   match user.id:
+      case rvdia.owner_id:
+         return await ctx.reply('Tidak bisa blacklist owner!')
+      case _:
+         pass
+      
+   blacklisted = connectdb('Blacklist')
+   check_blacklist = blacklisted.find_one({'_id':user.id})
+   if not check_blacklist:
+      blacklisted.insert_one({'_id':user.id, 'reason':reason})
+      return await ctx.reply(f'**`{user}`** telah diblacklist dari menggunakan RVDIA!')
+   
+   await ctx.reply(f'`{user}` telah diblacklist!')
+
+@rvdia.hybrid_command(hidden=True)
+@commands.is_owner()
+async def whitelist(ctx:commands.Context, user:discord.User):
+   blacklisted = connectdb('Blacklist')
+   check_blacklist = blacklisted.find_one({'_id':user.id})
+   if not check_blacklist:
+      return await ctx.reply(f'**`{user}`** tidak diblacklist dari menggunakan RVDIA!')
+   
+   blacklisted.find_one_and_delete({'_id':user.id})
+   await ctx.reply(f'`{user}` telah diwhitelist!')
 
 @rvdia.event
 async def on_message(msg:discord.Message):
     if not msg.guild:
         return
+    
     await rvdia.process_commands(msg)
+
     if msg.author.bot == True:
         return
+    
     if msg.content == "RVDIA":
         await msg.reply(f"Haii, {msg.author.name}! Silahkan tambahkan prefix `r-` atau `/` untuk menggunakan command!")
 
