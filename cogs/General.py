@@ -112,7 +112,11 @@ class General(commands.Cog):
             current_prefix.insert_one({'_id':ctx.guild.id, 'prefix':prefix})
 
         else:
-            current_prefix.find_one_and_update({'_id':ctx.guild.id}, {'$set':{'prefix':prefix}})
+            if prefix.lower() == 'reset' or prefix.lower() == 'restart' or prefix.lower() == 'return':
+                current_prefix.find_one_and_update({'_id':ctx.guild.id}, {'$set':{'prefix':['r-', 'R-', 'rvd ', 'Rvd ', 'RVD ']}})
+                return await ctx.reply('Prefix telah kembali seperti semula!')
+            else:
+                current_prefix.find_one_and_update({'_id':ctx.guild.id}, {'$set':{'prefix':prefix}})
 
         await ctx.reply(f'Message prefix telah diganti ke **`{prefix}`**')
 

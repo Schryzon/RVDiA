@@ -24,6 +24,7 @@ class NoProfilePicture(commands.CommandError):
 
 class Blacklisted(commands.CommandError):
     """Raised if user is blacklisted."""
+    pass
 
 class Error(commands.Cog):
   """
@@ -55,7 +56,7 @@ class Error(commands.Cog):
     elif 'Not a G-Tech admin!' in str(error):
       await ctx.reply('Command ini hanya bisa dijalankan oleh admin database G-Tech!')
 
-    elif isinstance(error, Blacklisted):
+    elif 'User is blacklisted!' in str(error):
       await ctx.reply('Maaf, kamu telah diblacklist dari menggunakan RVDIA!')
 
     elif isinstance(error, commands.CommandNotFound):

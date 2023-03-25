@@ -211,7 +211,11 @@ async def blacklist(ctx:commands.Context, user:discord.User, *, reason:str):
    check_blacklist = blacklisted.find_one({'_id':user.id})
    if not check_blacklist:
       blacklisted.insert_one({'_id':user.id, 'reason':reason})
-      return await ctx.reply(f'**`{user}`** telah diblacklist dari menggunakan RVDIA!')
+      embed = discord.Embed(title='‼️ BLACKLISTED ‼️', timestamp=ctx.message.created_at, color=0xff0000)
+      embed.description = f'**`{user}`** telah diblacklist dari menggunakan RVDIA!'
+      embed.set_thumbnail(url=user.avatar.url)
+      embed.add_field(name='Alasan:', value=reason, inline=False)
+      return await ctx.reply(embed=embed)
    
    await ctx.reply(f'`{user}` telah diblacklist!')
 
@@ -231,7 +235,6 @@ async def on_message(msg:discord.Message):
     if not msg.guild:
         return
     
-    await msg.channel.typing()
     await rvdia.process_commands(msg)
 
     if msg.author.bot == True:
