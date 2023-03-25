@@ -7,6 +7,7 @@ from discord import app_commands
 from discord.ext import commands
 from PIL import Image
 from io import BytesIO
+from scripts.main import check_blacklist
 
 class Fun(commands.Cog):
     """
@@ -16,6 +17,7 @@ class Fun(commands.Cog):
         self.bot = bot
     
     @commands.command(aliases = ['bandoriwaifu'], description='Temukan karakter BanG Dream yang cocok denganmu!')
+    @check_blacklist()
     async def bdwaifu(self, ctx):
         """
         Temukan karakter BanG Dream yang cocok denganmu!
@@ -37,6 +39,7 @@ class Fun(commands.Cog):
             await ctx.reply(embed = we)
 
     @commands.command(aliases=['tebak'], description='Ayo main tebak angka bersamaku!')
+    @check_blacklist()
     async def guess(self, ctx:commands.Context):
         """
         Ayo main tebak angka bersamaku!
@@ -97,6 +100,7 @@ class Fun(commands.Cog):
 
     @commands.command(aliases = ['battle'], hidden=True)
     @commands.guild_only()
+    @check_blacklist()
     async def fight(self, ctx, *, member: discord.Member = None):
         if member == None:
             await ctx.send(":negative_squared_cross_mark: **Please specify the user that you want to fight!**")
@@ -238,6 +242,7 @@ class Fun(commands.Cog):
     @commands.hybrid_command(aliases=['jodohkan', 'jodoh'], description="Jodohkan seseorang denganmu atau orang lain!")
     @app_commands.rename(member1='pengguna_1', member2='pengguna_2')
     @commands.cooldown(1, 5, commands.BucketType.user)
+    @check_blacklist()
     async def ship(self, ctx, member1: discord.Member = None, member2:discord.Member=None):
         """
         Jodohkan seorang teman atau orang lain dengan pengguna lainnya!

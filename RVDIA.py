@@ -191,7 +191,7 @@ async def restart(ctx:commands.Context): # In case for timeout
 @rvdia.command(hidden=True)
 @commands.is_owner()
 async def status(ctx:commands.Context, *, status):
-   if status.lower() == 'restart':
+   if status.lower() == 'restart' or status.lower() == 'reset':
       if not change_status.is_running:
          return change_status.start()
    change_status.cancel()
@@ -200,10 +200,12 @@ async def status(ctx:commands.Context, *, status):
 
 @rvdia.hybrid_command(hidden=True)
 @commands.is_owner()
-async def blacklist(ctx:commands.Context, user:discord.User, *, reason:str):
+async def blacklist(ctx:commands.Context, user:discord.User, *, reason:str=None):
    match user.id:
       case rvdia.owner_id:
          return await ctx.reply('Tidak bisa blacklist owner!')
+      case rvdia.user.id:
+         return await ctx.reply('Tidak bisa blacklist diriku sendiri!')
       case _:
          pass
       
@@ -213,7 +215,7 @@ async def blacklist(ctx:commands.Context, user:discord.User, *, reason:str):
       blacklisted.insert_one({'_id':user.id, 'reason':reason})
       embed = discord.Embed(title='‼️ BLACKLISTED ‼️', timestamp=ctx.message.created_at, color=0xff0000)
       embed.description = f'**`{user}`** telah diblacklist dari menggunakan RVDIA!'
-      embed.set_thumbnail(url=user.avatar.url)
+      embed.set_thumbnail(url=user.avatar.url if not user.avatar is None else os.getenv('normalpfp'))
       embed.add_field(name='Alasan:', value=reason, inline=False)
       return await ctx.reply(embed=embed)
    

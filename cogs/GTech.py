@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from scripts.main import connectdb, in_gtech_server, is_member_check, is_perangkat
+from scripts.main import connectdb, in_gtech_server, is_member_check, is_perangkat, check_blacklist
 
 class GTech(commands.Cog):
     """
@@ -37,6 +37,7 @@ class GTech(commands.Cog):
     @gtech_command.command(aliases=['reg'], description="Tambahkan pengguna ke database.")
     @is_perangkat()
     @in_gtech_server()
+    @check_blacklist()
     async def register(self, ctx, user:commands.MemberConverter, kelas, divisi, *, nama):
         """
         Tambahkan pengguna ke database.
@@ -51,6 +52,7 @@ class GTech(commands.Cog):
     @gtech_command.command(aliases=['gtechmember'], description="Lihat status anggota G-Tech dari database.")
     @in_gtech_server()
     @is_member_check()
+    @check_blacklist()
     async def member(self, ctx, *, user:commands.MemberConverter = None):
         """
         Lihat status anggota G-Tech dari database.
@@ -70,6 +72,7 @@ class GTech(commands.Cog):
     @gtech_command.command(aliases=['erreg', 'unreg', 'unregister'], description="Removes a registered user data.\nOnly G-Tech admins are allowed to use this command.")
     @is_perangkat()
     @in_gtech_server()
+    @check_blacklist()
     async def erasemember(self, ctx, *, user:commands.MemberConverter = None):
         """
         Hapus data anggota dari database.
@@ -89,6 +92,7 @@ class GTech(commands.Cog):
     @is_perangkat()
     @in_gtech_server()
     @is_member_check()
+    @check_blacklist()
     async def post(self, ctx, *, content:str):
         """
         Post sesuatu yang menarik ke channel pengumuman!
@@ -112,6 +116,7 @@ class GTech(commands.Cog):
     @gtech_command.command(description="Lihat berita terbaru tentang G-Tech!")
     @in_gtech_server()
     @is_member_check()
+    @check_blacklist()
     async def news(self, ctx):
         """
         Lihat berita terbaru tentang G-Tech!
@@ -132,6 +137,7 @@ class GTech(commands.Cog):
     @gtech_command.command(aliases = ['rmnews'], description="Hapus berita terbaru dari database.")
     @is_perangkat()
     @in_gtech_server()
+    @check_blacklist()
     async def deletenews(self, ctx):
         """
         Hapus berita terbaru dari database.

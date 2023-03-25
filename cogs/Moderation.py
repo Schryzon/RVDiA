@@ -1,6 +1,6 @@
 import discord
 from discord import app_commands
-from scripts.main import connectdb
+from scripts.main import check_blacklist, connectdb
 from os import getenv
 from discord.ext import commands
 
@@ -15,6 +15,7 @@ class Moderation(commands.Cog):
     async def mod_command(self, ctx:commands.Context) -> None:
         """
         Kumpulan command khusus untuk moderasi server.
+        [COMMAND GROUP]
         """
         pass
     
@@ -30,6 +31,7 @@ class Moderation(commands.Cog):
         reason='alasan'
     )
     @commands.has_permissions(kick_members = True)
+    @check_blacklist()
     async def warn(self, ctx:commands.Context, member:discord.Member, *, reason = None):
         """
         Memberikan pelanggaran kepada pengguna.
@@ -61,6 +63,7 @@ class Moderation(commands.Cog):
         description="Lihat riwayat pelanggaran pengguna di server ini.",
     )
     @commands.has_permissions(kick_members = True)
+    @check_blacklist()
     async def warnhistory(self, ctx, member:discord.Member = None):
             """Lihat riwayat pelanggaran pengguna."""
             member = member or ctx.author
@@ -80,6 +83,7 @@ class Moderation(commands.Cog):
 
     @mod_command.command(aliases=["rmwarn"], description="Menghilangkan segala data pelanggaran pengguna.")
     @commands.has_permissions(kick_members=True)
+    @check_blacklist()
     async def removewarn(self, ctx, member:discord.Member):
         """
         Menghilangkan segala data pelanggaran pengguna.
@@ -101,6 +105,7 @@ class Moderation(commands.Cog):
     @mod_command.command(name='ultban', description="Ban pengguna dari server, walaupun dia di luar server ini.")
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
+    @check_blacklist()
     async def ultban(self, ctx:commands.Context, user:discord.User, *, reason = None):
         """
         Ban pengguna dari server
@@ -118,6 +123,7 @@ class Moderation(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(manage_guild=True)
+    @check_blacklist()
     async def unban(self, ctx, user: discord.User):
         """
         Unban pengguna yang telah diban.
@@ -135,6 +141,7 @@ class Moderation(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
+    @check_blacklist()
     async def clear(self, ctx:commands.Context, amount:int, channel:commands.TextChannelConverter = None):
         """
         Menghilangkan pesan berdasarkan jumlah yang diinginkan.

@@ -42,6 +42,7 @@ class General(commands.Cog):
     async def rvdia_command(self, ctx:commands.Context) -> None:
         """
         Kumpulan command khusus untuk RVDIA.
+        [COMMAND GROUP]
         """
         pass
 
@@ -49,6 +50,7 @@ class General(commands.Cog):
     async def user_command(self, ctx:commands.Context) -> None:
         """
         Kumpulan command khusus untuk mengetahui info pengguna.
+        [COMMAND GROUP]
         """
         pass
 
@@ -56,6 +58,7 @@ class General(commands.Cog):
     async def avatar_command(self, ctx:commands.Context) -> None:
         """
         Kumpulan command khusus yang berkaitan dengan avatar pengguna.
+        [COMMAND GROUP]
         """
         pass
 
@@ -215,8 +218,9 @@ class General(commands.Cog):
         embed.set_footer(text=f"ID: {member.id}", icon_url=avatar_url)
         await ctx.reply(embed=embed)
 
-    @commands.command(description = "View the server's info, not that it matters anyway.")
+    @commands.command(description = "View the server's info, not that it matters anyway.", hidden=True)
     @commands.guild_only()
+    @check_blacklist()
     async def serverinfo(self, ctx):
         """
         View the server's info.
@@ -248,6 +252,7 @@ class General(commands.Cog):
     @avatar_command.command(aliases=['grayscale'], description="Ubah foto profil menjadi grayscale (hitam putih).")
     @app_commands.rename(user='pengguna')
     @has_pfp()
+    @check_blacklist()
     async def greyscale(self, ctx, *, user:discord.User = None):
         """Ubah foto profil menjadi grayscale."""
         user = user or ctx.author
@@ -261,6 +266,7 @@ class General(commands.Cog):
     @avatar_command.command(description="Ubah foto profil menjadi inverted (warna terbalik).")
     @app_commands.rename(user='pengguna')
     @has_pfp()
+    @check_blacklist()
     async def invert(self, ctx, *, user:discord.User = None):
         """Ubah foto profil menjadi inverted."""
         user = user or ctx.author
@@ -281,6 +287,7 @@ class Utilities(commands.Cog):
 
     @commands.hybrid_command(aliases = ['cuaca'], description="Lihat info tentang cuaca di suatu kota atau daerah!")
     @app_commands.rename(location='lokasi')
+    @check_blacklist()
     async def weather(self, ctx, *, location:str):
         """
         Lihat info tentang keadaan cuaca di suatu kota atau daerah! (Realtime)
@@ -324,6 +331,7 @@ class Utilities(commands.Cog):
 
     @commands.hybrid_command(description="Lihat info tentang waktu di suatu kota atau daerah!")
     @app_commands.rename(location='lokasi')
+    @check_blacklist()
     async def time(self, ctx, *, location:str):
         """
         Lihat info tentang waktu di suatu kota atau daerah! (Realtime)
@@ -355,6 +363,7 @@ class Utilities(commands.Cog):
     @app_commands.rename(message='pesan')
     @app_commands.describe(message='Apa yang ingin kamu tanyakan?')
     @commands.cooldown(type=commands.BucketType.user, per=2, rate=1)
+    @check_blacklist()
     async def chat(self, ctx:commands.Context, *, message:str):
         """
         Tanyakan atau perhintahkan aku untuk melakukan sesuatu!
@@ -383,6 +392,7 @@ class Utilities(commands.Cog):
         )
     @app_commands.describe(prompt='Apa yang ingin diciptakan?')
     @commands.cooldown(type=commands.BucketType.user, per=2, rate=1)
+    @check_blacklist()
     async def generate(self, ctx:commands.Context, *, prompt:str):
         """
         Ciptakan sebuah karya seni dua dimensi dengan perintah!
