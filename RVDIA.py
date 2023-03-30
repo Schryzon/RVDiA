@@ -232,6 +232,9 @@ async def whitelist(ctx:commands.Context, user:discord.User):
    blacklisted.find_one_and_delete({'_id':user.id})
    await ctx.reply(f'`{user}` telah diwhitelist!')
 
+
+sentence_enders = ('!', '?', '.')
+
 @rvdia.event
 async def on_message(msg:discord.Message):
     if not msg.guild:
@@ -246,7 +249,7 @@ async def on_message(msg:discord.Message):
         await msg.reply(f"Haii, {msg.author.name}! Silahkan tambahkan prefix `r-` atau `/` untuk menggunakan command!")
 
     # Chat command, I wanna make something cool here
-    if msg.content.lower().startswith('rvdia, ') and msg.content.endswith('?') or msg.content.endswith('!'):
+    if msg.content.lower().startswith('rvdia, ') and any(msg.content.endswith(sentence_enders)): #Marked
         try:
           async with msg.channel.typing():
             openai.api_key = os.getenv('openaikey')

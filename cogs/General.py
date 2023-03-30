@@ -417,6 +417,46 @@ class Utilities(commands.Cog):
             embed.set_image(url= "attachment://generated.png")
         
         await ctx.reply(file=file, embed=embed)
+        os.remove('./generated.png')
+
+    @commands.hybrid_command(
+        aliases=['edit', 'imageedit'],
+        description='Ciptakan variasi dari gambar yang diberikan!'
+        )
+    @app_commands.describe(attachment='Lampirkan gambar!')
+    @commands.cooldown(type=commands.BucketType.user, per=2, rate=1)
+    @check_blacklist()
+    async def variation(self, ctx:commands.Context, attachment:discord.Attachment):
+        """
+        Ciptakan variasi dari gambar yang diberikan!
+        """
+        attachment = attachment or ctx.message.attachments[0]
+        if attachment.size >= 4e+6: # 4 x 10^6 B
+            return await ctx.reply('Gambar yang diberikan lebih dari 4 MB!')
+        await attachment.save(attachment.filename)
+
+        async with ctx.typing():
+            openai.api_key = os.getenv('openaikey')
+            result = await openai.Image.acreate_variation(
+                image = open(attachment.filename, 'rb'),
+                size='1024x1024',
+                response_format = 'b64_json',
+                n=1
+            )
+            os.remove(f'./{attachment.filename}') # No longer need file
+            b64_data = result['data'][0]['b64_json']
+            decoded_data = base64.b64decode(b64_data)
+            image=open('variation.png', 'wb')
+            image.write(decoded_data)
+            image.close()
+
+            embed = discord.Embed(title='Karya Terciptakan', color=ctx.author.colour, timestamp=ctx.message.created_at)
+            file = discord.File("variation.png")
+            embed.set_image(url= "attachment://variation.png")
+
+        await ctx.reply(file=file, embed=embed)
+        os.remove('./variation.png')
+
 
 async def setup(bot:commands.Bot):
     await bot.add_cog(General(bot))
