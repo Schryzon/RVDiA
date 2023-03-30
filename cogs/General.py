@@ -74,6 +74,8 @@ class General(commands.Cog):
         prefix = database.find_one({'_id': ctx.guild.id})
         if prefix is None:
             prefix = ['@RVDIA', 'r-', 'rvd ']
+        else:
+            prefix = prefix['prefix']
         m = 0
         for k in self.bot.guilds:
             m += k.member_count -1
