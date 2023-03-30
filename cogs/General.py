@@ -426,8 +426,8 @@ class Utilities(commands.Cog):
             image.close()
             required_time=end-start
 
-            embed = discord.Embed(title='Karya Terciptakan', color=ctx.author.colour, timestamp=ctx.message.created_at)
-            embed.description = f'Prompt: `{prompt}`\nWaktu dibutuhkan:{round(required_time, 2)} detik'
+            embed = discord.Embed(title='Karya Diciptakan', color=ctx.author.colour, timestamp=ctx.message.created_at)
+            embed.description = f'Prompt: `{prompt}`\nWaktu dibutuhkan: **`{round(required_time, 2)} detik`**'
             file = discord.File("generated.png")
             embed.set_image(url= "attachment://generated.png")
         
@@ -468,7 +468,7 @@ class Utilities(commands.Cog):
         self.crop_to_square(f'./{attachment.filename}')
         selected_image=attachment.filename
 
-        special_supported = ['.jpg', '.JPEG']
+        special_supported = ['.jpg', '.JPEG', '.jpeg']
         if any(attachment.filename.endswith(suffix) for suffix in special_supported):
             image = Image.open(attachment.filename)
             image.save(f'{attachment.filename[:-3]}.png' if attachment.filename.endswith('.jpg') else f'{attachment.filename[:-4]}.png')
@@ -491,10 +491,11 @@ class Utilities(commands.Cog):
             image.close()
             required_time=end-start
 
-            embed = discord.Embed(title='Karya Terciptakan', color=ctx.author.colour, timestamp=ctx.message.created_at)
-            embed.description = f'Waktu dibutuhkan:{round(required_time, 2)} detik'
+            embed = discord.Embed(title='Variasi Diciptakan', color=ctx.author.colour, timestamp=ctx.message.created_at)
+            embed.description = f'Waktu dibutuhkan: **`{round(required_time, 2)} detik`**'
             file = discord.File("variation.png")
             embed.set_image(url= "attachment://variation.png")
+            embed.set_footer(text='Kesalahan pada gambar? Kemungkinan karena gambar aslinya tidak 1:1!')
 
         await ctx.reply(file=file, embed=embed)
         os.remove('./variation.png')
