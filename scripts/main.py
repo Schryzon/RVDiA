@@ -41,6 +41,7 @@ def connectdb(collection:str):
     """
     Returns data gained from database collection.
     Format: RVDIA.Main.<collection>
+    !!WARNING!! RVDIA runs on Heroku, so an East US server is recommended for fast connection.
     """
     db = client.Main
     coll = db[collection]

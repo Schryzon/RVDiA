@@ -1,3 +1,4 @@
+from os import getenv
 import discord
 from discord.ext import commands
 from scripts.main import connectdb, in_gtech_server, is_member_check, is_perangkat, check_blacklist
@@ -28,8 +29,8 @@ class GTech(commands.Cog):
         embed = discord.Embed(title=news['title'], color = 0xff0000)
         embed.set_thumbnail(url = 'https://cdn.discordapp.com/attachments/872815705475666007/974638299081756702/Gtech.png')
         embed.add_field(name = "Author:", value=f'{news["author"]} ({news["kelas"]})', inline=False)
-        embed.add_field(name = "Description:", value=news['desc'], inline=False)
-        embed.set_author(name = "Latest News of G-Tech Resman")
+        embed.add_field(name = "Deskripsi:", value=news['desc'], inline=False)
+        embed.set_author(name = "Berita Terbaru G-Tech Re'sman")
         if news['attachments'] is not None:
             embed.set_image(url = news['attachments'])
         await channel.send("*Knock, knock!* Ada yang baru nih di G-Tech!", embed = embed)
@@ -45,7 +46,7 @@ class GTech(commands.Cog):
         db = connectdb('Gtech')
         data = db.find_one({'_id':user.id})
         if not data is None:
-            return await ctx.reply('User already registered in database!')
+            return await ctx.reply('Pengguna sudah ada di database!')
         db.insert_one({'_id':user.id, 'kelas':kelas, 'divisi':divisi, 'nama':nama})
         await ctx.reply(f'User {user} has been registered to the G-Tech database.')
 
@@ -60,7 +61,7 @@ class GTech(commands.Cog):
         user = user or ctx.author
         data = self.is_member(user.id)
         if data is None:
-            return await ctx.reply('User is not in database yet!')
+            return await ctx.reply('Pengguna belum ada di database!')
         nama = data['nama']
         kelas = data['kelas']
         divisi = data['divisi']
@@ -81,9 +82,9 @@ class GTech(commands.Cog):
         db = connectdb('Gtech')
         data = db.find_one({'_id':user.id})
         if data is None:
-            return await ctx.reply('User is not in database yet!')
+            return await ctx.reply('Pengguna belum ada di database!')
         db.find_one_and_delete({'_id':user.id})
-        await ctx.reply(f'{user} has been deleted from the G-Tech database.')
+        await ctx.reply(f'{user} telah dihapus dari database G-Tech.')
 
 
     @gtech_command.command(description="Post sesuatu yang menarik ke channel pengumuman!\n"+
@@ -110,7 +111,7 @@ class GTech(commands.Cog):
             db.insert_one({'_id':1, 'author':data["nama"], 'kelas':data["kelas"], 'title':title, 'desc':desc, 'attachments':attachment})
         else:
             db.find_one_and_replace({'_id':1}, {'author':data["nama"], 'kelas':data["kelas"], 'title':title, 'desc':desc, 'attachments':attachment})
-        await ctx.reply('Successfully posted a *new* news!')
+        await ctx.reply('Berita baru telah diposting!')
         await self.send_news(997749511432712263)
 
     @gtech_command.command(description="Lihat berita terbaru tentang G-Tech!")
@@ -124,12 +125,12 @@ class GTech(commands.Cog):
         db = connectdb('Technews')
         news = db.find_one({'_id':1})
         if news is None:
-            return await ctx.reply('There are currently no news for G-Tech Resman, please stay tuned.')
+            return await ctx.reply('Saat ini belum ada berita baru untuk G-Tech Re\'sman, stay tuned!')
         embed = discord.Embed(title=news['title'], color = 0xff0000)
-        embed.set_thumbnail(url = 'https://cdn.discordapp.com/attachments/872815705475666007/974638299081756702/Gtech.png')
+        embed.set_thumbnail(url = getenv('gtechlogo'))
         embed.add_field(name = "Author:", value=f'{news["author"]} ({news["kelas"]})', inline=False)
-        embed.add_field(name = "Description:", value=news['desc'], inline=False)
-        embed.set_author(name = "Latest News of G-Tech Resman")
+        embed.add_field(name = "Deskripsi:", value=news['desc'], inline=False)
+        embed.set_author(name = "Berita Terbaru G-Tech Re'sman")
         if news['attachments'] is not None:
             embed.set_image(url = news['attachments'])
         await ctx.reply(embed = embed)
@@ -145,9 +146,9 @@ class GTech(commands.Cog):
         db = connectdb('Technews')
         data = self.is_member(ctx.author.id)
         if data is None:
-            return await ctx.reply('Please register a G-Tech member account to remove news from the G-Tech API!')
+            return await ctx.reply('Tolong daftarkan akun Discordmu ke database terlebih dahulu!')
         db.find_one_and_delete({'_id':1})
-        await ctx.reply('The latest news has been deleted.')
+        await ctx.reply('Berita terakhir telah dihapus.')
 
 async def setup(bot):
     await bot.add_cog(GTech(bot))

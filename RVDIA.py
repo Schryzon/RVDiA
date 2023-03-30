@@ -11,6 +11,7 @@ from time import time
 import os
 from dotenv import load_dotenv
 import openai
+from pkgutil import iter_modules
 from scripts.help_menu.help import Help
 from discord.ext import commands, tasks
 from random import choice as rand
@@ -63,8 +64,10 @@ rvdia = commands.AutoShardedBot(
   intents=intents, help_command=helper
 )
 rvdia.synced = False
-rvdia.__version__ = "プリーベタ [Pre-beta]"
+rvdia.__version__ = "ベタ [Beta] v1"
 rvdia.runtime = time() # UNIX float
+
+cogs_list = [cogs.name for cogs in iter_modules(['cogs'], prefix='cogs.')] # iter_modules() for easier task
 
 @rvdia.event
 async def on_connect():
@@ -73,9 +76,9 @@ async def on_connect():
 @rvdia.event
 async def on_ready():
     await rvdia.wait_until_ready() # So I "don't" get rate limited
-    for cog in os.listdir("./cogs"):
-      if cog.endswith(".py") and not cog == "__init__.py":
-          await rvdia.load_extension(f"cogs.{cog[:-3]}")
+    for cog in cogs_list:
+      if not cog == 'cogs.__init__':
+          await rvdia.load_extension(cog)
     print('Internal cogs loaded!')
     
     if not rvdia.synced:
@@ -144,13 +147,9 @@ async def unload(ctx, ext):
 @rvdia.command(hidden = True)
 @commands.is_owner()
 async def cogs(ctx):
-    ls = []
-    for cog in os.listdir("./cogs"):
-        if cog.endswith(".py") and not cog == "__init__.py":
-            ls.append(cog)
-    embed = discord.Embed(title = "RVDIA Cog List", description = "\n".join(ls), color = ctx.author.colour)
+    embed = discord.Embed(title = "RVDIA Cog List", description = "\n".join(cogs_list), color = ctx.author.colour)
     embed.set_thumbnail(url = rvdia.user.avatar)
-    embed.set_footer(text = "Cogs were taken from \"Project RVDIA/cogs\"")
+    embed.set_footer(text = "Cogs were taken from \".RVDIA/cogs\"")
     await ctx.send(embed=embed)
 
 @rvdia.command(hidden=True)
@@ -160,10 +159,10 @@ async def refresh(ctx):
   In case something went horribly wrong
   """
   with suppress(commands.ExtensionNotLoaded):
-    for cog in os.listdir("./cogs"):
-      if cog.endswith(".py") and not cog == "__init__.py":
-        rvdia.unload_extension(f"cogs.{cog[:-3]}")
-        rvdia.load_extension(f"cogs.{cog[:-3]}")
+    for cog in cogs_list:
+      if not cog == 'cogs.__init__':
+          await rvdia.unload_extension(cog)
+          await rvdia.load_extension(cog)
   await ctx.reply('Cogs refreshed.')
 
 # Temporary Spy Command
@@ -182,11 +181,12 @@ async def serverlist(ctx):
 @rvdia.command(hidden=True)
 @commands.is_owner()
 async def restart(ctx:commands.Context): # In case for timeout
-   message = await ctx.send('Restarting...')
+   await ctx.send('Restarting...')
+   print('!!RESTART DETECTED!!')
    await rvdia.close()
    await asyncio.sleep(2)
-   await rvdia.start(token=os.getenv('token'))
-   await message.edit(content='✅ Restart complete!')
+   rvdia.run(token=os.getenv('token'))
+   await ctx.channel.send('RVDIA has restarted!')
 
 @rvdia.command(hidden=True)
 @commands.is_owner()
@@ -198,7 +198,7 @@ async def status(ctx:commands.Context, *, status):
    await rvdia.change_presence(status = discord.Status.idle, activity=discord.Game(status))
    await ctx.reply('Changed my status!')
 
-@rvdia.hybrid_command(hidden=True)
+@rvdia.command(hidden=True)
 @commands.is_owner()
 async def blacklist(ctx:commands.Context, user:discord.User, *, reason:str=None):
    match user.id:
@@ -221,7 +221,7 @@ async def blacklist(ctx:commands.Context, user:discord.User, *, reason:str=None)
    
    await ctx.reply(f'`{user}` telah diblacklist!')
 
-@rvdia.hybrid_command(hidden=True)
+@rvdia.command(hidden=True)
 @commands.is_owner()
 async def whitelist(ctx:commands.Context, user:discord.User):
    blacklisted = connectdb('Blacklist')
@@ -233,7 +233,7 @@ async def whitelist(ctx:commands.Context, user:discord.User):
    await ctx.reply(f'`{user}` telah diwhitelist!')
 
 
-sentence_enders = ('!', '?', '.')
+sentence_enders = ['!', '?', '.']
 
 @rvdia.event
 async def on_message(msg:discord.Message):
@@ -249,7 +249,7 @@ async def on_message(msg:discord.Message):
         await msg.reply(f"Haii, {msg.author.name}! Silahkan tambahkan prefix `r-` atau `/` untuk menggunakan command!")
 
     # Chat command, I wanna make something cool here
-    if msg.content.lower().startswith('rvdia, ') and any(msg.content.endswith(sentence_enders)): #Marked
+    if msg.content.lower().startswith('rvdia, ') and any(msg.content.endswith(suffix) for suffix in sentence_enders): #Marked
         try:
           async with msg.channel.typing():
             openai.api_key = os.getenv('openaikey')

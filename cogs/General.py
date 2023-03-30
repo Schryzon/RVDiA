@@ -3,12 +3,14 @@ import os
 import discord
 import openai
 import requests
+import aiohttp
 from os import getenv
 from scripts.main import heading, Url_Buttons, has_pfp
 from discord import app_commands
 from discord.ext import commands
 from scripts.main import client, connectdb, check_blacklist
-import aiohttp
+from time import time
+from PIL import Image
 from io import BytesIO
 
 def status_converter(status):
@@ -68,6 +70,10 @@ class General(commands.Cog):
         """
         Memperlihatkan segalanya tentang aku!
         """
+        database = connectdb('Prefixes')
+        prefix = database.find_one({'_id': ctx.guild.id})
+        if prefix is None:
+            prefix = ['@RVDIA', 'r-', 'rvd ']
         m = 0
         for k in self.bot.guilds:
             m += k.member_count -1
@@ -76,7 +82,7 @@ class General(commands.Cog):
         embed.set_image(url=getenv('banner'))
         embed.add_field(name = "Versi", value = f"{self.bot.__version__}", inline=False)
         embed.add_field(name = "Pencipta", value = f"<@877008612021661726> (Jayananda)", inline=False)
-        embed.add_field(name = "Prefix", value = f"`r-` | `rvd` | `/`")
+        embed.add_field(name = "Prefix", value = f" | ".join(prefix)+f' | / (slash)')
         embed.add_field(name = "Library", value = f"discord.py ({discord.__version__})", inline = False)
         embed.add_field(name = "Tipe Bot", value="General, Utilitas, Humor, Anime, Moderasi, Khusus, Slash", inline=False)
         embed.add_field(name = "Nyala Sejak", value = f"<t:{round(self.bot.runtime)}>\n(<t:{round(self.bot.runtime)}:R>)", inline = False)
@@ -96,8 +102,10 @@ class General(commands.Cog):
         mongoping = client.admin.command('ping')
         if mongoping['ok'] == 1:
             mongoping = 'GOOD - STATUS CODE 1'
+
         else:
             mongoping = 'ERROR - STATUS CODE 0'
+            
         embed= discord.Embed(title= "Ping--Pong!", color=0x964b00, timestamp=ctx.message.created_at)
         embed.description = f"**Discord API:** `{round(self.bot.latency*1000)} ms`\n**MongoDB:** `{mongoping}`"
         await ctx.reply(embed=embed)
@@ -111,6 +119,7 @@ class General(commands.Cog):
         """
         current_prefix = connectdb('Prefixes')
         check_prefix = current_prefix.find_one({'_id': ctx.guild.id})
+
         if check_prefix is None:
             current_prefix.insert_one({'_id':ctx.guild.id, 'prefix':prefix})
 
@@ -134,16 +143,20 @@ class General(commands.Cog):
         Support: (ID, @Mention, username, name#tag)
         """
         global_user = global_user or ctx.author
+
         if global_user.avatar is None:
             return await ctx.reply(f'{global_user} tidak memiliki foto profil!')
         png = global_user.avatar.with_format("png").url
         jpg = global_user.avatar.with_format("jpg").url
         webp = global_user.avatar.with_format("webp").url
-        embed=discord.Embed(title=f"{global_user}'s Avatar", url = global_user.avatar.with_format("png").url, color= 0xff4df0)
+
+        embed=discord.Embed(title=f"Avatar {global_user}", url = global_user.avatar.with_format("png").url, color= 0xff4df0)
+
         if global_user.avatar.is_animated():
             gif = global_user.avatar.with_format("gif").url
             embed.set_image(url = global_user.avatar.with_format("gif").url)
             embed.description = f"[png]({png}) | [jpg]({jpg}) | [webp]({webp}) | [gif]({gif})"
+
         else:
             embed.description = f"[png]({png}) | [jpg]({jpg}) | [webp]({webp})"
             embed.set_image(url = global_user.avatar.with_format("png").url)
@@ -398,6 +411,7 @@ class Utilities(commands.Cog):
         Ciptakan sebuah karya seni dua dimensi dengan perintah!
         """
         async with ctx.typing():
+            start=time()
             openai.api_key = os.getenv('openaikey')
             result = await openai.Image.acreate(
                 prompt=prompt,
@@ -405,19 +419,35 @@ class Utilities(commands.Cog):
                 response_format='b64_json',
                 n=1
             )
-            b64_data = result['data'][0]['b64_json']
+            b64_data = result['data'][0]['b64_json']; end=time() # Finished generating and gained data
             decoded_data = base64.b64decode(b64_data)
             image=open('generated.png', 'wb')
             image.write(decoded_data)
             image.close()
+            required_time=end-start
 
             embed = discord.Embed(title='Karya Terciptakan', color=ctx.author.colour, timestamp=ctx.message.created_at)
-            embed.description = f'Prompt: `{prompt}`'
+            embed.description = f'Prompt: `{prompt}`\nWaktu dibutuhkan:{round(required_time, 2)} detik'
             file = discord.File("generated.png")
             embed.set_image(url= "attachment://generated.png")
         
         await ctx.reply(file=file, embed=embed)
         os.remove('./generated.png')
+
+    def crop_to_square(self, img_path):
+        """
+        Converts ANY aspect ratio to 1:1
+        Thanks, RVDIA!
+        """
+        with Image.open(img_path) as img:
+            width, height = img.size
+            size = min(width, height)
+            left = (width - size) // 2
+            top = (height - size) // 2
+            right = (width + size) // 2
+            bottom = (height + size) // 2
+            cropped = img.crop((left, top, right, bottom))
+            cropped.save(img_path[2:])
 
     @commands.hybrid_command(
         aliases=['edit', 'imageedit'],
@@ -431,26 +461,38 @@ class Utilities(commands.Cog):
         Ciptakan variasi dari gambar yang diberikan!
         """
         attachment = attachment or ctx.message.attachments[0]
-        if attachment.size >= 4e+6: # 4 x 10^6 B
+        if attachment.size >= 4e+6: # 4 x 10^6 Bytes
             return await ctx.reply('Gambar yang diberikan lebih dari 4 MB!')
+        
         await attachment.save(attachment.filename)
+        self.crop_to_square(f'./{attachment.filename}')
+        selected_image=attachment.filename
+
+        special_supported = ['.jpg', '.JPEG']
+        if any(attachment.filename.endswith(suffix) for suffix in special_supported):
+            image = Image.open(attachment.filename)
+            image.save(f'{attachment.filename[:-3]}.png' if attachment.filename.endswith('.jpg') else f'{attachment.filename[:-4]}.png')
+            selected_image = f'{attachment.filename[:-3]}.png' if attachment.filename.endswith('.jpg') else f'{attachment.filename[:-4]}.png'
 
         async with ctx.typing():
+            start=time()
             openai.api_key = os.getenv('openaikey')
             result = await openai.Image.acreate_variation(
-                image = open(attachment.filename, 'rb'),
+                image = open(selected_image, 'rb'),
                 size='1024x1024',
                 response_format = 'b64_json',
                 n=1
             )
-            os.remove(f'./{attachment.filename}') # No longer need file
-            b64_data = result['data'][0]['b64_json']
+            os.remove(f'./{selected_image}') # No longer need file
+            b64_data = result['data'][0]['b64_json']; end=time()
             decoded_data = base64.b64decode(b64_data)
             image=open('variation.png', 'wb')
             image.write(decoded_data)
             image.close()
+            required_time=end-start
 
             embed = discord.Embed(title='Karya Terciptakan', color=ctx.author.colour, timestamp=ctx.message.created_at)
+            embed.description = f'Waktu dibutuhkan:{round(required_time, 2)} detik'
             file = discord.File("variation.png")
             embed.set_image(url= "attachment://variation.png")
 

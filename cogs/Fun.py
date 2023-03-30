@@ -1,5 +1,5 @@
 import asyncio
-from os import getenv
+from os import getenv, remove
 import random
 import aiohttp
 import discord
@@ -59,29 +59,37 @@ class Fun(commands.Cog):
                 await ctx.send(f"**Kamu punya `{count}` attempt, ayo coba tebak angka yang kupilih!\nAkhiri game dengan mengetik `end`.**")
             try:
                 r1 = await self.bot.wait_for('message', check = lambda r: r.author == ctx.author and r.channel == ctx.channel, timeout = 20.0)
+
             except asyncio.TimeoutError:
                 await ctx.channel.send(f"**Yah, dikacangin dong :(**")
                 return
+            
             if r1.content == str(number):
                 await ctx.channel.send(f"**Tepat sekali, angkanya yaitu `{number}`!**")
                 return
+            
             elif r1.content.isdigit() == False and r1.content.lower() != "hint" and r1.content.lower() != "end" and r1.content.lower() != "end.":
                 await ctx.channel.send(f":negative_squared_cross_mark: **Hey, kamu hanya bisa menjawab dengan angka bilangan bulat saja!**", delete_after=2.0)
-                await asyncio.sleep(1.0)
+                await asyncio.sleep(1.5)
+
             elif r1.content.lower() == "end" or r1.content.lower() == "end.":
                 await ctx.channel.send(":no_entry: **Game diakhiri.**")
                 return
+            
             elif r1.content.lower() == "hint":
                 if num_store == None:
-                    await ctx.channel.send(":negative_squared_cross_mark: **Kamu belum ada menebak, tebak dulu baru bisa dikasi hint!**")
-                    await asyncio.sleep(1.0)
+                    await ctx.channel.send(":negative_squared_cross_mark: **Kamu belum ada menebak, tebak dulu baru bisa dikasi hint!**", delete_after=2.0)
+                    await asyncio.sleep(1.5)
+
                 elif hints == 0:
-                    await ctx.channel.send(":negative_squared_cross_mark: **Kamu kehabisan hint!**")
-                    await asyncio.sleep(1.0)
+                    await ctx.channel.send(":negative_squared_cross_mark: **Kamu kehabisan hint!**", delete_after=2.0)
+                    await asyncio.sleep(1.5)
+
                 elif number > num_store:
-                    await ctx.channel.send(f":grey_question: Hint: **Angka terakhirmu, `{num_store}` lebih kecil dari yang kupilih.**")
+                    await ctx.channel.send(f":grey_question: Hint: **Angka terakhirmu, `{num_store}` lebih kecil dari yang kupilih.**", delete_after=2.0)
                     hints -= 1
-                    await asyncio.sleep(1.0)
+                    await asyncio.sleep(1.5)
+
                 elif number < num_store:
                     await ctx.channel.send(f":grey_question: Hint: **Angka terakhirmu, `{num_store}` lebih besar dari yang kupilih.**")
                     hints -= 1
@@ -300,6 +308,7 @@ class Fun(commands.Cog):
         file = discord.File("shipres.jpg")
         embed.set_image(url= "attachment://shipres.jpg")
         await ctx.send(file = file, embed = embed)
+        remove('./shipres.jpg')
 
 async def setup (bot):
     await bot.add_cog(Fun(bot))

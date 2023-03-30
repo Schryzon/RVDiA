@@ -118,6 +118,9 @@ class Error(commands.Cog):
     elif "Your prompt may contain text that is not allowed by our safety system." in str(error):
       await ctx.reply('Prompt yang diberikan kurang pantas untuk ditampilkan!')
 
+    elif "Uploaded image must be a PNG and less than 4 MB." in str(error):
+      await ctx.reply('Format gambar tidak disupport RVDIA! (hanya `.jpg` & `.png`)')
+
     # If all else fails (get it?)
     else:
       channel = self.historia.get_channel(906123251997089792)
