@@ -10,7 +10,7 @@
   <a href="https://discord.gg/QqWCnk6zxw"><img alt="Discord" src="https://img.shields.io/discord/877009215271604275?style=for-the-badge"></a>
 </p>
 
-Sebuah **Multipurpose Discord Bot** (Robot Discord Multifungsi) yang terinspirasi dari karakter "Haruna Sakurai" Ongeki!.
+Sebuah **Multipurpose Discord Bot** (Robot Discord Multifungsi) yang terinspirasi dari karakter "Haruna Sakurai" Ongeki!
 
 ## Apa yang Spesial dari Bot ini?
 Bot ini menggunakan Bahasa Indonesia dan memiliki command khusus untuk anggota-anggota club G-Tech Re'sman, serta memiliki fitur utilitas yang unik dan melimpah.
