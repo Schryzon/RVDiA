@@ -46,6 +46,7 @@ class General(commands.Cog):
         Kumpulan command khusus untuk RVDIA.
         [COMMAND GROUP]
         """
+        await self.rvdia(ctx)
         pass
 
     @commands.hybrid_group(name='user')
@@ -54,6 +55,7 @@ class General(commands.Cog):
         Kumpulan command khusus untuk mengetahui info pengguna.
         [COMMAND GROUP]
         """
+        await self.userinfo(ctx, member=ctx.author)
         pass
 
     @commands.hybrid_group(name='avatar')
@@ -62,6 +64,7 @@ class General(commands.Cog):
         Kumpulan command khusus yang berkaitan dengan avatar pengguna.
         [COMMAND GROUP]
         """
+        await self.avatar(ctx, global_user=ctx.author)
         pass
 
     @rvdia_command.command(name="about", aliases=['intro', 'bot', 'botinfo'])
@@ -84,7 +87,7 @@ class General(commands.Cog):
         embed.set_image(url=getenv('banner'))
         embed.add_field(name = "Versi", value = f"{self.bot.__version__}", inline=False)
         embed.add_field(name = "Pencipta", value = f"<@877008612021661726> (Jayananda)", inline=False)
-        embed.add_field(name = "Prefix", value = f" | ".join(prefix)+f' | / (slash)')
+        embed.add_field(name = "Prefix", value = '@RVDIA | '+f" | ".join(prefix)+f' | / (slash)')
         embed.add_field(name = "Library", value = f"discord.py ({discord.__version__})", inline = False)
         embed.add_field(name = "Tipe Bot", value="General, Utilitas, Humor, Anime, Moderasi, Khusus, Slash", inline=False)
         embed.add_field(name = "Nyala Sejak", value = f"<t:{round(self.bot.runtime)}>\n(<t:{round(self.bot.runtime)}:R>)", inline = False)

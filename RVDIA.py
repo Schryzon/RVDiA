@@ -65,6 +65,7 @@ rvdia = commands.AutoShardedBot(
 )
 rvdia.synced = False
 rvdia.__version__ = "ベタ [Beta] v1"
+rvdia.event_mode = True
 rvdia.runtime = time() # UNIX float
 
 cogs_list = [cogs.name for cogs in iter_modules(['cogs'], prefix='cogs.')] # iter_modules() for easier task
@@ -97,13 +98,14 @@ async def change_status():
   """
   Looping status, rate = 1 minute
   """
+  is_event = 'Event mode ON!' if rvdia.event_mode == True else 'Standard mode'
   users = 0
   for guilds in rvdia.guilds:
     users += guilds.member_count -1
   user_count_status = f'{users} users'
   all_status=['in my room', 'in G-Tech Server', 'my code', 'trance music', 'r-help', 'G-Tech members',
                   'Ephotech Competition', user_count_status, 'with Schryzon', f'{rvdia.__version__}',
-                  '/help', 'What should I do today?', 'Add me!'
+                  '/help', 'What should I do today?', 'Add me!', is_event
                 ]
   status = rand(all_status)
   # Just count, I'm trying to save space!
@@ -279,7 +281,8 @@ async def on_message(msg:discord.Message):
            print(e)
     
     # Took me 2 hours to figure this out.
-    if msg.content.startswith("http://") or msg.content.startswith("https://") or msg.content.startswith('www.'):
+    website_prefixes = ['http://', 'https://', 'www.']
+    if any(msg.content.startswith(prefix) for prefix in website_prefixes):
       checker = SurblChecker()
       with suppress(DomainInexistentException):
         check = checker.is_spam(msg.content)

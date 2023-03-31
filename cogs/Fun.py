@@ -38,7 +38,7 @@ class Fun(commands.Cog):
             we.add_field(name = f"Tentang {bdwifu['name']}:", value=bdwifu['description'], inline = False)
             await ctx.reply(embed = we)
 
-    @commands.command(aliases=['tebak'], description='Ayo main tebak angka bersamaku!')
+    @commands.hybrid_command(aliases=['tebak'], description='Ayo main tebak angka bersamaku!')
     @check_blacklist()
     async def guess(self, ctx:commands.Context):
         """
@@ -48,11 +48,11 @@ class Fun(commands.Cog):
         hints = 3
         number = random.randint(1, 20)
         num_store = None
-        msg = await ctx.send(":grey_exclamation: **Kamu harus menebak angka yang aku pikirkan dari `1-20`!**")
+        await ctx.send(":grey_exclamation: **Kamu harus menebak angka yang aku pikirkan dari `1-20`!**")
         await asyncio.sleep(2.5)
         while count != 0:
             if count < 5 and count != 1:
-                await msg.edit(f"**Kamu punya `{count}` attempt. Ketik `hint` jika butuh bantuan.\nHint tersisa: `{hints}` | Akhiri game dengan mengetik `end`.**")
+                await ctx.send(f"**Kamu punya `{count}` attempt. Ketik `hint` jika butuh bantuan.\nHint tersisa: `{hints}` | Akhiri game dengan mengetik `end`.**")
             elif count == 1:
                 await ctx.send(f"**Kamu punya `{count}` attempt tersisa!\nHint tersisa: `{hints}` | Akhiri game dengan mengetik `end`.**")
             else:
@@ -91,18 +91,20 @@ class Fun(commands.Cog):
                     await asyncio.sleep(1.5)
 
                 elif number < num_store:
-                    await ctx.channel.send(f":grey_question: Hint: **Angka terakhirmu, `{num_store}` lebih besar dari yang kupilih.**")
+                    await ctx.channel.send(f":grey_question: Hint: **Angka terakhirmu, `{num_store}` lebih besar dari yang kupilih.**", delete_after=2.0)
                     hints -= 1
-                    await asyncio.sleep(1.0)
+                    await asyncio.sleep(1.5)
             else:
                 if int(r1.content) > 20:
-                    await ctx.channel.send(f":negative_squared_cross_mark: **Angkamu lebih tinggi dari 20!**")
-                    await asyncio.sleep(1.0)
+                    await ctx.channel.send(f":negative_squared_cross_mark: **Angkamu lebih tinggi dari 20!**", delete_after=2.0)
+                    await asyncio.sleep(1.5)
+
                 else:
                     count -= 1
                     await ctx.channel.send(f":x: **Salah!**")
                     num_store = int(r1.content)
                     await asyncio.sleep(1.5)
+                    
         if count == 0:
             await ctx.send(f":exclamation: **Kamu kehabisan attempt!\nAngka yang kupilih yaitu `{number}`!**")
 
