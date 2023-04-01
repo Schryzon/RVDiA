@@ -271,6 +271,7 @@ async def on_message(msg:discord.Message):
               timestamp=msg.created_at
               )
             embed.description = result['choices'][0]['message']['content']
+            embed.set_footer(text='Jika ada yang ingin ditanyakan, bisa langsung direply!')
           await msg.channel.send(embed=embed)
           return
         
@@ -279,7 +280,56 @@ async def on_message(msg:discord.Message):
            channel = rvdia.get_channel(906123251997089792)
            await channel.send(f'`{e}` Untuk Chat-GPT feature!')
            print(e)
-    
+
+    if message.reference: #Marked
+        try:
+          async with message.channel.typing():
+            fetched_message = await message.channel.fetch_message(message.reference.message_id)
+            match fetched_message.author.id:
+                case rvdia.user.id:
+                    pass
+                case _:
+                    return
+            
+            if fetched_message.embeds[0]:
+                message_embed = fetched_message.embeds[0]
+            else:
+                return
+            
+            if message_embed.footer.text == 'Jika ada yang ingin ditanyakan, bisa langsung direply!':
+                pass
+            else:
+                return
+            
+            embed_desc = message_embed.description
+            embed_title = message_embed.title
+            openai.api_key = os.getenv('openaikey')
+            message = message.content
+            result = await openai.ChatCompletion.acreate(
+                model="gpt-3.5-turbo",
+                temperature=1.2,
+                messages=[
+                {"role":'system', 'content':os.getenv('rolesys')},
+                {"role":"assistant", 'content':f'The user said: {embed_title} | Your response was: {embed_desc}'},
+                {"role": "user", "content": message}
+                ]
+            )
+            embed = discord.Embed(
+              title=' '.join((word.title() if not word.isupper() else word for word in message.split(' '))), 
+              color=message.author.color, 
+              timestamp=message.created_at
+              )
+            embed.description = result['choices'][0]['message']['content']
+            embed.set_footer(text='Jika ada yang ingin ditanyakan, bisa langsung direply!')
+          await message.channel.send(embed=embed)
+          return
+        
+        except Exception as e:
+           await msg.channel.send('Ada yang bermasalah dengan fitur ini, aku sudah mengirimkan laporan ke developer!')
+           channel = rvdia.get_channel(906123251997089792)
+           await channel.send(f'`{e}` Untuk balasan Chat-GPT feature!')
+           print(e)
+
     # Took me 2 hours to figure this out.
     website_prefixes = ['http://', 'https://', 'www.']
     if any(msg.content.startswith(prefix) for prefix in website_prefixes):

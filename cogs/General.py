@@ -396,6 +396,7 @@ class Utilities(commands.Cog):
                 timestamp=ctx.message.created_at
                 )
             embed.description = result['choices'][0]['message']['content'] # Might improve for >4096 chrs
+            embed.set_footer(text='Jika ada yang ingin ditanyakan, bisa langsung direply!')
         await ctx.reply(embed=embed)
 
     @commands.hybrid_command(
