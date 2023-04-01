@@ -14,14 +14,15 @@ from PIL import Image
 from io import BytesIO
 
 def status_converter(status):
-    if status == "dnd":
-        return "🔴 Jangan Ganggu"
-    elif status == "idle":
-        return "🟡 AFK"
-    elif status == "online":
-        return "🟢 Online"
-    else:
-        return "⚪ Offline"
+    match status:
+        case 'dnd':
+            return "🔴 Jangan Ganggu"
+        case "idle":
+            return "🟡 AFK"
+        case "online":
+            return "🟢 Online"
+        case _:
+            return "⚪ Offline"
     
 day_of_week = {
     '1':"Senin",
@@ -84,7 +85,7 @@ class General(commands.Cog):
             m += k.member_count -1
         embed = discord.Embed(title="Tentang RVDIA", color=0xff4df0)
         embed.set_thumbnail(url=self.bot.user.avatar.url)
-        embed.set_image(url=getenv('banner'))
+        embed.set_image(url=getenv('banner') if not self.bot.event_mode else getenv('bannerevent'))
         embed.add_field(name = "Versi", value = f"{self.bot.__version__}", inline=False)
         embed.add_field(name = "Pencipta", value = f"<@877008612021661726> (Jayananda)", inline=False)
         embed.add_field(name = "Prefix", value = '@RVDIA | '+f" | ".join(prefix)+f' | / (slash)')
@@ -129,7 +130,8 @@ class General(commands.Cog):
             current_prefix.insert_one({'_id':ctx.guild.id, 'prefix':prefix})
 
         else:
-            if prefix.lower() == 'reset' or prefix.lower() == 'restart' or prefix.lower() == 'return':
+            reset_prefix = ['restart', 'reset', 'return']
+            if any(prefix.lower() == reset for reset in reset_prefix):
                 current_prefix.find_one_and_update({'_id':ctx.guild.id}, {'$set':{'prefix':['r-', 'R-', 'rvd ', 'Rvd ', 'RVD ']}})
                 return await ctx.reply('Prefix telah kembali seperti semula!')
             else:
@@ -214,24 +216,21 @@ class General(commands.Cog):
         owner = await self.bot.fetch_user(ctx.guild.owner_id)
         ack = None
         match member.id: # First use of match case wowwwww
-            case 877008612021661726:
+            case self.bot.owner_id:
                 ack = "Pencipta Bot"
-            case 957471338577166417:
+            case self.bot.user.id:
                 ack = "The One True Love"
-            case 865429287691878430:
-                ack = "Yassalam Bro"
 
         if ack is None:
             if member.bot == True:
                 ack = "Server Bot"
-            elif member.id == 498414156723126283 or member.id == 840569855337300018 or member.id == 744109318554648616:
-                ack = "That Funny Dude"
             elif owner.id == member.id:
                 ack = "Pemilik Server"
             elif member.guild_permissions.administrator == True:
                 ack = "Server Admin"
             else:
                 ack = "Anggota Server"
+
         embed.add_field(name = "Dikenal Sebagai", value = ack)
         embed.set_footer(text=f"ID: {member.id}", icon_url=avatar_url)
         await ctx.reply(embed=embed)
@@ -261,11 +260,6 @@ class General(commands.Cog):
         embed.set_footer(text=f"ID: {ctx.guild.id}", icon_url=ctx.guild.icon_url)
         embed.set_image(url = ctx.guild.banner_url)
         await ctx.reply(embed=embed)
-
-    """@commands.command(aliases=['math'], description="Calculate mathematical expressions, refer to Python operators.")
-    async def calc(self, ctx, *, calcs):
-        "Low-level calculating system"
-        await ctx.reply(f'Result: {eval(calcs)}') #Lazy coding"""
 
     @avatar_command.command(aliases=['grayscale'], description="Ubah foto profil menjadi grayscale (hitam putih).")
     @app_commands.rename(user='pengguna')
