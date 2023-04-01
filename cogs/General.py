@@ -91,6 +91,7 @@ class General(commands.Cog):
         embed.set_thumbnail(url=self.bot.user.avatar.url)
         embed.set_image(url=getenv('banner') if not self.bot.event_mode else getenv('bannerevent'))
         embed.add_field(name = "Versi", value = f"{self.bot.__version__}", inline=False)
+        embed.add_field(name = "Mode", value = f"Event Mode" if self.bot.event_mode else "Standard Mode", inline=False)
         embed.add_field(name = "Pencipta", value = f"<@877008612021661726> (Jayananda)", inline=False)
         embed.add_field(name = "Prefix", value = '@RVDIA | '+f" | ".join(prefix)+f' | / (slash)')
         embed.add_field(name = "Library", value = f"discord.py ({discord.__version__})", inline = False)
@@ -146,7 +147,7 @@ class General(commands.Cog):
     @rvdia_command.command(description = 'Memperlihatkan informasi event yang berlangsung')
     @check_blacklist()
     async def event(self, ctx:commands.Context) -> None:
-        await Event.info(ctx)
+        await Event.event(context=ctx)
 
     @user_command.command(description="Memperlihatkan avatar pengguna Discord.")
     @app_commands.rename(global_user='pengguna')
