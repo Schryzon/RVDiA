@@ -281,10 +281,10 @@ async def on_message(msg:discord.Message):
            await channel.send(f'`{e}` Untuk Chat-GPT feature!')
            print(e)
 
-    if message.reference: #Marked
+    if msg.reference: #Marked
         try:
-          async with message.channel.typing():
-            fetched_message = await message.channel.fetch_message(message.reference.message_id)
+          async with msg.channel.typing():
+            fetched_message = await msg.channel.fetch_message(msg.reference.message_id)
             match fetched_message.author.id:
                 case rvdia.user.id:
                     pass
@@ -304,7 +304,7 @@ async def on_message(msg:discord.Message):
             embed_desc = message_embed.description
             embed_title = message_embed.title
             openai.api_key = os.getenv('openaikey')
-            message = message.content
+            message = msg.content
             result = await openai.ChatCompletion.acreate(
                 model="gpt-3.5-turbo",
                 temperature=1.2,
@@ -316,12 +316,12 @@ async def on_message(msg:discord.Message):
             )
             embed = discord.Embed(
               title=' '.join((word.title() if not word.isupper() else word for word in message.split(' '))), 
-              color=message.author.color, 
-              timestamp=message.created_at
+              color=msg.author.color, 
+              timestamp=msg.created_at
               )
             embed.description = result['choices'][0]['message']['content']
             embed.set_footer(text='Jika ada yang ingin ditanyakan, bisa langsung direply!')
-          await message.channel.send(embed=embed)
+          await msg.channel.send(embed=embed)
           return
         
         except Exception as e:
