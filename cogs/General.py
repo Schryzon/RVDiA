@@ -148,7 +148,7 @@ class General(commands.Cog):
     @check_blacklist()
     async def event(self, ctx:commands.Context) -> None:
         event = Event(ctx.bot)
-        await event.info(ctx, ctx)
+        await event.info(ctx, ctx) # What the fuck???
 
     @user_command.command(description="Memperlihatkan avatar pengguna Discord.")
     @app_commands.rename(global_user='pengguna')
@@ -398,6 +398,7 @@ class Utilities(commands.Cog):
                 temperature=1.2,
                 messages=[
                 {"role":'system', 'content':getenv('rolesys')},
+                {"role":'assistant', 'content':f"The user's username is {ctx.author.name}. You can mention their name when needed."},
                 {"role": "user", "content": message}
                 ]
             )

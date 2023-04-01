@@ -65,7 +65,7 @@ rvdia = commands.AutoShardedBot(
 )
 rvdia.synced = False
 rvdia.__version__ = "ベタ [Beta] v1"
-rvdia.event_mode = True
+rvdia.event_mode = False
 rvdia.runtime = time() # UNIX float
 
 cogs_list = [cogs.name for cogs in iter_modules(['cogs'], prefix='cogs.')] # iter_modules() for easier task
@@ -262,6 +262,7 @@ async def on_message(msg:discord.Message):
                 temperature=1.2,
                 messages=[
                 {"role":'system', 'content':os.getenv('rolesys')},
+                {"role":'assistant', 'content':f"The user's username is {msg.author.name}. You can mention their name when needed."},
                 {"role": "user", "content": message}
                 ]
             )
