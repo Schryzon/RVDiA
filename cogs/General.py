@@ -147,7 +147,8 @@ class General(commands.Cog):
     @rvdia_command.command(description = 'Memperlihatkan informasi event yang berlangsung')
     @check_blacklist()
     async def event(self, ctx:commands.Context) -> None:
-        await Event.event(context=ctx)
+        event = Event(ctx.bot)
+        await event.info(ctx)
 
     @user_command.command(description="Memperlihatkan avatar pengguna Discord.")
     @app_commands.rename(global_user='pengguna')
