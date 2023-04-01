@@ -148,7 +148,7 @@ class General(commands.Cog):
     @check_blacklist()
     async def event(self, ctx:commands.Context) -> None:
         event = Event(ctx.bot)
-        await event.info(ctx)
+        await event.info(ctx, ctx)
 
     @user_command.command(description="Memperlihatkan avatar pengguna Discord.")
     @app_commands.rename(global_user='pengguna')

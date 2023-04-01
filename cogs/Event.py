@@ -34,8 +34,6 @@ class Event(commands.Cog):
         """
         Lihat info event yang sedang berlangsung!
         """
-        self.check_event(self.bot)
-
         embed = discord.Embed(title="April Fools!", color=0xff4df0)
         embed.set_author(name='Event Berlangsung:')
         embed.set_thumbnail(url='https://st.depositphotos.com/3246347/4454/i/950/depositphotos_44540065-stock-photo-calendar-1-april.jpg')
