@@ -283,24 +283,24 @@ async def on_message(msg:discord.Message):
 
     if msg.reference: #Marked
         try:
+          fetched_message = await msg.channel.fetch_message(msg.reference.message_id)
+          match fetched_message.author.id:
+              case rvdia.user.id:
+                  pass
+              case _:
+                  return
+          
+          if fetched_message.embeds[0]:
+              message_embed = fetched_message.embeds[0]
+          else:
+              return
+          
+          if message_embed.footer.text == 'Jika ada yang ingin ditanyakan, bisa langsung direply!':
+              pass
+          else:
+              return
+          
           async with msg.channel.typing():
-            fetched_message = await msg.channel.fetch_message(msg.reference.message_id)
-            match fetched_message.author.id:
-                case rvdia.user.id:
-                    pass
-                case _:
-                    return
-            
-            if fetched_message.embeds[0]:
-                message_embed = fetched_message.embeds[0]
-            else:
-                return
-            
-            if message_embed.footer.text == 'Jika ada yang ingin ditanyakan, bisa langsung direply!':
-                pass
-            else:
-                return
-            
             embed_desc = message_embed.description
             embed_title = message_embed.title
             openai.api_key = os.getenv('openaikey')

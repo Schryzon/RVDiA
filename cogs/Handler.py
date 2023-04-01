@@ -26,6 +26,10 @@ class Blacklisted(commands.CommandError):
     """Raised if user is blacklisted."""
     pass
 
+class NoEventAvailable(commands.CommandError):
+  """Raised when no events are currently ongoing"""
+  pass
+
 class Error(commands.Cog):
   """
   An error handler class, what else do I have to say?
@@ -119,7 +123,10 @@ class Error(commands.Cog):
       await ctx.reply('Prompt yang diberikan kurang pantas untuk ditampilkan!')
 
     elif "Uploaded image must be a PNG and less than 4 MB." in str(error):
-      await ctx.reply('Format gambar tidak disupport RVDIA! (hanya `.jpg` & `.png`)')
+      await ctx.reply('Format gambar tidak disupport RVDIA atau lebih dari 4MB! (hanya `.jpg` & `.png`)')
+
+    elif "No event available!" in str(error):
+      await ctx.reply('Maaf, saat ini tidak ada event yang berlangsung!')
 
     # If all else fails (get it?)
     else:

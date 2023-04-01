@@ -16,7 +16,7 @@ class Fun(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     
-    @commands.command(aliases = ['bandoriwaifu'], description='Temukan karakter BanG Dream yang cocok denganmu!')
+    @commands.hybrid_command(aliases = ['bandoriwaifu'], description='Temukan karakter BanG Dream yang cocok denganmu!')
     @check_blacklist()
     async def bdwaifu(self, ctx):
         """

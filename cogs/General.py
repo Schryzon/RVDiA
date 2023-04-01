@@ -5,6 +5,7 @@ import openai
 import requests
 import aiohttp
 from os import getenv
+from cogs.Event import Event
 from scripts.main import heading, Url_Buttons, has_pfp
 from discord import app_commands
 from discord.ext import commands
@@ -42,6 +43,7 @@ class General(commands.Cog):
         self.bot = bot
 
     @commands.hybrid_group(name='rvdia')
+    @check_blacklist()
     async def rvdia_command(self, ctx:commands.Context) -> None:
         """
         Kumpulan command khusus untuk RVDIA.
@@ -51,6 +53,7 @@ class General(commands.Cog):
         pass
 
     @commands.hybrid_group(name='user')
+    @check_blacklist()
     async def user_command(self, ctx:commands.Context) -> None:
         """
         Kumpulan command khusus untuk mengetahui info pengguna.
@@ -60,6 +63,7 @@ class General(commands.Cog):
         pass
 
     @commands.hybrid_group(name='avatar')
+    @check_blacklist()
     async def avatar_command(self, ctx:commands.Context) -> None:
         """
         Kumpulan command khusus yang berkaitan dengan avatar pengguna.
@@ -138,6 +142,11 @@ class General(commands.Cog):
                 current_prefix.find_one_and_update({'_id':ctx.guild.id}, {'$set':{'prefix':prefix}})
 
         await ctx.reply(f'Message prefix telah diganti ke **`{prefix}`**')
+
+    @rvdia_command.command(description = 'Memperlihatkan informasi event yang berlangsung')
+    @check_blacklist()
+    async def event(self, ctx:commands.Context) -> None:
+        await Event.info(ctx)
 
     @user_command.command(description="Memperlihatkan avatar pengguna Discord.")
     @app_commands.rename(global_user='pengguna')

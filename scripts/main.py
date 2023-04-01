@@ -1,7 +1,7 @@
 import pymongo
 import discord
 from discord.ui import View, Button
-from cogs.Handler import NotInGTechServer, NotGTechMember, NotGTechAdmin, NoProfilePicture, Blacklisted
+from cogs.Handler import NotInGTechServer, NotGTechMember, NotGTechAdmin, NoProfilePicture, Blacklisted, NoEventAvailable
 from discord.ext import commands
 import os
 from dotenv import load_dotenv
@@ -60,6 +60,13 @@ def in_gtech_server():
     async def predicate(ctx):
         if not ctx.guild.id == 997500206511833128:
             raise NotInGTechServer('Not in the G-Tech server!')
+        return True
+    return commands.check(predicate)
+
+def event_available():
+    async def predicate(ctx):
+        if not ctx.bot.event_mode:
+            raise NoEventAvailable("No event available!")
         return True
     return commands.check(predicate)
 
