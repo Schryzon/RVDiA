@@ -8,9 +8,60 @@ class Moderation(commands.Cog):
     """
     Command untuk moderasi server.
     """
+
     def __init__(self, bot):
         self.bot = bot
     
+    @commands.hybrid_group(name='server')
+    @check_blacklist()
+    async def server(self, ctx:commands.Context) -> None:
+        await self.info(ctx)
+        pass
+
+    @server.command(description='Lihat info server ini!')
+    @check_blacklist()
+    async def info(self, ctx:commands.Context):
+        """
+        Lihat info server ini!
+        """
+        owner = await self.bot.fetch_user(ctx.guild.owner_id)
+        """roles = [role.mention for role in ctx.guild.roles][::-1][:-1] or ['None']
+        if roles[0] == "None":
+            role_length = 0
+        else:
+            role_length = len(roles)
+        desc = ctx.guild.description
+        if desc == None:
+            desc = "No description was made for this server."""
+        embed = discord.Embed(title=f'{ctx.guild.name}', color=ctx.author.colour, timestamp = ctx.message.created_at)
+        embed.set_thumbnail(url=ctx.guild.icon.url)
+        embed.set_author(name = "Server Info:")
+        embed.add_field(name="Pemilik", value=f"{owner.mention} ({owner})", inline = False)
+        embed.add_field(name="Tanggal Dibuat", value=f'{ctx.guild.created_at.strftime("%a, %d %B %Y")}', inline = False)
+        embed.add_field(name="Jumlah Pengguna", value=f"{ctx.guild.member_count} members", inline = False)
+        embed.set_footer(text=f"ID: {ctx.guild.id}", icon_url=ctx.guild.icon_url)
+        embed.set_image(url = ctx.guild.banner_url)
+        await ctx.reply(embed=embed)
+
+    @server.command()
+    @commands.bot_has_permissions(manage_guild=True)
+    @check_blacklist()
+    async def invite(self, ctx:commands.Context):
+        invites = await ctx.guild.invites()
+        invite_urls = [v.url for v in invites]
+        invite_authors = [v.inviter for v in invites]
+        invite_expire = [v.expires_at for v in invites]
+        invite_list = []
+
+        for i, j, k in invite_urls, invite_authors, invite_expire:
+            text = f'{i} | Created by: {j} | Expires: {k}'
+            invite_list.append(text)
+
+        embed = discord.Embed(title=f'Daftar Invite {ctx.guild.name}', color=ctx.author.color, timestamp=ctx.message.created_at)
+        embed.set_thumbnail(url=ctx.guild.icon.url)
+        embed.description = '\n'.join(invite_list)
+        await ctx.reply(embed=embed)
+
     @commands.hybrid_command(
         description="Memberikan pelanggaran kepada pengguna. (Harus berada di server ini)"
         )

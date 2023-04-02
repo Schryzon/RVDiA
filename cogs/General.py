@@ -9,7 +9,7 @@ from cogs.Event import Event
 from scripts.main import heading, Url_Buttons, has_pfp
 from discord import app_commands
 from discord.ext import commands
-from scripts.main import client, connectdb, check_blacklist
+from scripts.main import client, connectdb, check_blacklist, event_available
 from time import time
 from PIL import Image
 from io import BytesIO
@@ -146,6 +146,7 @@ class General(commands.Cog):
 
     @rvdia_command.command(description = 'Memperlihatkan informasi event yang berlangsung')
     @check_blacklist()
+    @event_available()
     async def event(self, ctx:commands.Context) -> None:
         event = Event(ctx.bot)
         await event.info(ctx, ctx) # What the fuck???
