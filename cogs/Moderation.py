@@ -39,7 +39,7 @@ class Moderation(commands.Cog):
         embed.add_field(name="Pemilik", value=f"{owner.mention} ({owner})", inline = False)
         embed.add_field(name="Tanggal Dibuat", value=f'{ctx.guild.created_at.strftime("%a, %d %B %Y")}', inline = False)
         embed.add_field(name="Jumlah Pengguna", value=f"{ctx.guild.member_count} members", inline = False)
-        embed.set_footer(text=f"ID: {ctx.guild.id}", icon_url=ctx.guild.icon_url)
+        embed.set_footer(text=f"ID: {ctx.guild.id}", icon_url=ctx.guild.icon.url)
         embed.set_image(url = ctx.guild.banner_url)
         await ctx.reply(embed=embed)
 
@@ -53,7 +53,7 @@ class Moderation(commands.Cog):
         invite_expire = [v.expires_at for v in invites]
         invite_list = []
 
-        for i, j, k in invite_urls, invite_authors, invite_expire:
+        for i, j, k in zip(invite_urls, invite_authors, invite_expire):
             text = f'{i} | Created by: {j} | Expires: {k}'
             invite_list.append(text)
 
