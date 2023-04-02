@@ -53,11 +53,11 @@ class Moderation(commands.Cog):
         invites = await ctx.guild.invites()
         invite_urls = [v.url for v in invites]
         invite_authors = [v.inviter for v in invites]
-        invite_expire = [v.expires_at.timestamp() for v in invites]
+        invite_expire = [v.expires_at for v in invites]
         invite_list = []
 
         for i, j, k in zip(invite_urls, invite_authors, invite_expire):
-            text = f'{i} | Dibuat oleh: {j} | Expire: {round(k)}'
+            text = f'{i} | Dibuat oleh: {j} | Expire: {k}'
             invite_list.append(text)
 
         embed = discord.Embed(title=f'Daftar Invite {ctx.guild.name}', color=ctx.author.color, timestamp=ctx.message.created_at)
