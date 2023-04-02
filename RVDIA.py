@@ -64,7 +64,7 @@ rvdia = commands.AutoShardedBot(
   intents=intents, help_command=helper
 )
 rvdia.synced = False
-rvdia.__version__ = "ベタ [Beta] v1"
+rvdia.__version__ = "ベタ [Beta] v2"
 rvdia.event_mode = False
 rvdia.runtime = time() # UNIX float
 

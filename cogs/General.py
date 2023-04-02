@@ -247,32 +247,6 @@ class General(commands.Cog):
         embed.set_footer(text=f"ID: {member.id}", icon_url=avatar_url)
         await ctx.reply(embed=embed)
 
-    @commands.command(description = "View the server's info, not that it matters anyway.", hidden=True)
-    @commands.guild_only()
-    @check_blacklist()
-    async def serverinfo(self, ctx):
-        """
-        View the server's info.
-        """
-        owner = await self.bot.fetch_user(ctx.guild.owner_id)
-        """roles = [role.mention for role in ctx.guild.roles][::-1][:-1] or ['None']
-        if roles[0] == "None":
-            role_length = 0
-        else:
-            role_length = len(roles)
-        desc = ctx.guild.description
-        if desc == None:
-            desc = "No description was made for this server."""
-        embed = discord.Embed(title=f'{ctx.guild.name}', color=ctx.author.colour, timestamp = ctx.message.created_at)
-        embed.set_thumbnail(url=ctx.guild.icon_url)
-        embed.set_author(name = "Server Info:", icon_url = ctx.guild.icon_url)
-        embed.add_field(name="Owner", value=f"{owner.mention} ({owner})", inline = False)
-        embed.add_field(name="Creation Date", value=ctx.guild.created_at.strftime("%a, %d %B %Y"), inline = False)
-        embed.add_field(name="Members", value=f"{ctx.guild.member_count} members", inline = False)
-        embed.set_footer(text=f"ID: {ctx.guild.id}", icon_url=ctx.guild.icon_url)
-        embed.set_image(url = ctx.guild.banner_url)
-        await ctx.reply(embed=embed)
-
     @avatar_command.command(aliases=['grayscale'], description="Ubah foto profil menjadi grayscale (hitam putih).")
     @app_commands.rename(user='pengguna')
     @has_pfp()
