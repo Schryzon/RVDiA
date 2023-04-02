@@ -65,7 +65,7 @@ def in_gtech_server():
 
 def event_available():
     async def predicate(ctx):
-        if not ctx.bot.event_mode:
+        if ctx.bot.event_mode == False:
             raise NoEventAvailable("No event available!")
         return True
     return commands.check(predicate)

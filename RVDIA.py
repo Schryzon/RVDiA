@@ -103,9 +103,9 @@ async def change_status():
   for guilds in rvdia.guilds:
     users += guilds.member_count -1
   user_count_status = f'{users} users'
-  all_status=['in my room', 'in G-Tech Server', 'my code', 'trance music', 'r-help', 'G-Tech members',
+  all_status=['in my room', 'in G-Tech Server', 'someone doing ABFB!', 'my music ❤️', 'r-help', 'G-Tech members',
                   'Ephotech Competition', user_count_status, 'with Schryzon', f'{rvdia.__version__}',
-                  '/help', 'What should I do today?', 'Add me!', is_event
+                  '/help', 'What should I do today?', 'Add me!', is_event, 'Ongeki!bright Memory', '~♪'
                 ]
   status = rand(all_status)
   # Just count, I'm trying to save space!
