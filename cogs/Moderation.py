@@ -79,7 +79,7 @@ class Moderation(commands.Cog):
         member='pengguna',
         reason='alasan'
     )
-    @commands.has_permissions(manage_guild = True)
+    @commands.has_permissions(manage_messages= True)
     @check_blacklist()
     async def warn(self, ctx:commands.Context, member:discord.Member, *, reason = None):
         """
@@ -111,7 +111,7 @@ class Moderation(commands.Cog):
         aliases=['wnhistory'], 
         description="Lihat riwayat pelanggaran pengguna di server ini.",
     )
-    @commands.has_permissions(manage_guild = True)
+    @commands.has_permissions(manage_messages = True)
     @check_blacklist()
     async def warnhistory(self, ctx, member:discord.Member = None):
             """Lihat riwayat pelanggaran pengguna."""
@@ -131,7 +131,7 @@ class Moderation(commands.Cog):
             await ctx.reply(embed = emb)
 
     @commands.hybrid_command(aliases=["rmwarn"], description="Menghilangkan segala data pelanggaran pengguna.")
-    @commands.has_permissions(manage_guild=True)
+    @commands.has_permissions(manage_messages=True)
     @check_blacklist()
     async def removewarn(self, ctx, member:discord.Member):
         """
