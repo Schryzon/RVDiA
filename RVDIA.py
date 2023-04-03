@@ -291,7 +291,7 @@ async def on_message(msg:discord.Message):
               case _:
                   return
           
-          if fetched_message.embeds[0]:
+          if fetched_message.embeds and fetched_message.embeds[0] and fetched_message.embeds[0].footer:
               message_embed = fetched_message.embeds[0]
           else:
               return

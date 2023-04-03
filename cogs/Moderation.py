@@ -46,7 +46,7 @@ class Moderation(commands.Cog):
         #embed.set_image(url = ctx.guild.banner.url)
         await ctx.reply(embed=embed)
 
-    @server.command(description = 'Lihat daftar invite server ini!')
+    @server.command(name='invites', description = 'Lihat daftar invite server ini!')
     @commands.bot_has_permissions(manage_guild=True)
     @check_blacklist()
     async def invite(self, ctx:commands.Context):
@@ -102,7 +102,7 @@ class Moderation(commands.Cog):
         em = discord.Embed(title=f"Pelanggaran ❗", description = f"{member.mention} telah diberikan pelanggaran.\nDia sekarang telah diberikan **`{warnqty}`** pelanggaran.",
         color = member.colour
         )
-        em.add_field(name="Reason", value=reason, inline=False)
+        em.add_field(name="Alasan", value=reason, inline=False)
         em.set_thumbnail(url = member.avatar.url if not member.avatar is None else getenv('normalpfp'))
         em.set_footer(text=f"Pelanggaran diberikan oleh {ctx.author} | ID:{ctx.author.id}", icon_url=ctx.author.avatar.url)
         await ctx.reply(embed = em)

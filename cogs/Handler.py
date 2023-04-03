@@ -125,6 +125,9 @@ class Error(commands.Cog):
     elif "Uploaded image must be a PNG and less than 4 MB." in str(error):
       await ctx.reply('Format gambar tidak disupport RVDIA atau lebih dari 4MB! (hanya `.jpg` & `.png`)')
 
+    elif "cannot identify image file" in str(error):
+      await ctx.reply('Aku tidak bisa mendeteksi file tersebut! Apakah kamu yakin itu file gambar?')
+
     elif "No event available!" in str(error):
       await ctx.reply('Maaf, saat ini tidak ada event yang berlangsung!')
 

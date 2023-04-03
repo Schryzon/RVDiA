@@ -122,6 +122,7 @@ class General(commands.Cog):
         await ctx.reply(embed=embed)
 
     @rvdia_command.command(name='prefix', description='Ganti prefix dari RVDIA.', aliases=['changeprefix'])
+    @app_commands.describe(prefix='Mau diganti awalan command jadi apa?')
     @commands.has_permissions(manage_guild=True)
     @check_blacklist()
     async def prefix(self, ctx:commands.Context, *, prefix:str):
@@ -142,7 +143,7 @@ class General(commands.Cog):
             else:
                 current_prefix.find_one_and_update({'_id':ctx.guild.id}, {'$set':{'prefix':prefix}})
 
-        await ctx.reply(f'Message prefix telah diganti ke **`{prefix}`**')
+        await ctx.reply(f'Message prefix telah diganti ke **`{prefix}`**\nUntuk mengembalikan prefix seperti semula, `{prefix}rvdia prefix reset`')
 
     @rvdia_command.command(description = 'Memperlihatkan informasi event yang berlangsung')
     @check_blacklist()
@@ -328,6 +329,7 @@ class Utilities(commands.Cog):
             await ctx.send('Aku tidak bisa menemukan lokasi itu!')
 
     @commands.hybrid_command(description="Lihat info tentang waktu di suatu kota atau daerah!")
+    @app_commands.describe(location='Daerah mana yang ingin kamu ketahui?')
     @app_commands.rename(location='lokasi')
     @check_blacklist()
     async def time(self, ctx, *, location:str):
@@ -342,7 +344,7 @@ class Utilities(commands.Cog):
                 area = match
 
         if area == []:
-            await ctx.send('Aku tidak bisa menemukan daerah itu!')
+            await ctx.send('Aku tidak bisa menemukan daerah itu!\nLihat list daerah yang ada [click disini!](http://www.worldtimeapi.org/api/timezone)')
             return
         
         req_data = "/".join(area)
