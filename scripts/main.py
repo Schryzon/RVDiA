@@ -102,7 +102,7 @@ def titlecase(word):
     if word.isupper():
         return word
     else:
-        return word[0].upper() + word[1:].lower()
+        return word[0].upper() + word[1:].lower() if len(word) > 1 else word.upper()
 
 
 def heading(direction:int):
