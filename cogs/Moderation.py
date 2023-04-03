@@ -164,7 +164,7 @@ class Moderation(commands.Cog):
         embed = discord.Embed(title="Ultimate Ban ❗", color = ctx.author.colour)
         embed.description = f"**`{user}`** telah diban!"
         embed.add_field(name = "Alasan", value = reason, inline = False)
-        embed.set_thumbnail(url = user.avatar.url if not user.avatar.url is None else getenv('normalpfp'))
+        embed.set_thumbnail(url = user.avatar.url if not user.avatar is None else getenv('normalpfp'))
         embed.set_footer(text=f"Dieksekusi oleh {ctx.author} | ID:{ctx.author.id}", icon_url=ctx.author.avatar.url)
         await ctx.reply(embed = embed)
 
