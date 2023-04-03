@@ -98,6 +98,12 @@ def has_pfp():
         return True
     return commands.check(predicate)
 
+def titlecase(word):
+    if word.isupper():
+        return word
+    else:
+        return word[0].upper() + word[1:].lower()
+
 
 def heading(direction:int):
         result =[]

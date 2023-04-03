@@ -9,7 +9,7 @@ from cogs.Event import Event
 from scripts.main import heading, Url_Buttons, has_pfp
 from discord import app_commands
 from discord.ext import commands
-from scripts.main import client, connectdb, check_blacklist, event_available
+from scripts.main import client, connectdb, check_blacklist, event_available, titlecase
 from time import time
 from PIL import Image
 from io import BytesIO
@@ -380,7 +380,7 @@ class Utilities(commands.Cog):
                 ]
             )
             embed = discord.Embed(
-                title=' '.join((word.title() if not word.isupper() else word for word in message.split(' '))), 
+                title=' '.join((titlecase(word) for word in message.split(' '))), 
                 color=ctx.author.color, 
                 timestamp=ctx.message.created_at
                 )

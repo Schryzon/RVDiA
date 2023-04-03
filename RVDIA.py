@@ -17,7 +17,7 @@ from discord.ext import commands, tasks
 from random import choice as rand
 from contextlib import suppress
 from scripts.suburl import SurblChecker, DomainInexistentException
-from scripts.main import connectdb
+from scripts.main import connectdb, titlecase
 load_dotenv('./secrets.env') # Loads the .env file from python-dotenv pack
 
 helper = Help(
@@ -257,6 +257,8 @@ async def on_message(msg:discord.Message):
           async with msg.channel.typing():
             openai.api_key = os.getenv('openaikey')
             message = msg.content.lower().lstrip('rvdia,')
+            if len(message) > 256:
+               return await msg.channel.send('Pesanmu terlalu panjang untuk aku cerna, aku hanya bisa membaca maksimal 256 huruf dari pesanmu!')
             result = await openai.ChatCompletion.acreate(
                 model="gpt-3.5-turbo",
                 temperature=1.2,
@@ -267,7 +269,7 @@ async def on_message(msg:discord.Message):
                 ]
             )
             embed = discord.Embed(
-              title=' '.join((word.title() if not word.isupper() else word for word in message.split(' '))), 
+              title=' '.join((titlecase(word) for word in message.split(' '))), 
               color=msg.author.color, 
               timestamp=msg.created_at
               )
@@ -306,6 +308,8 @@ async def on_message(msg:discord.Message):
             embed_title = message_embed.title
             openai.api_key = os.getenv('openaikey')
             message = msg.content
+            if len(message) > 256:
+               return await msg.channel.send('Pesanmu terlalu panjang untuk aku cerna, aku hanya bisa membaca maksimal 256 huruf dari pesanmu!')
             result = await openai.ChatCompletion.acreate(
                 model="gpt-3.5-turbo",
                 temperature=1.2,
@@ -316,7 +320,7 @@ async def on_message(msg:discord.Message):
                 ]
             )
             embed = discord.Embed(
-              title=' '.join((word.title() if not word.isupper() else word for word in message.split(' '))), 
+              title=' '.join((titlecase(word) for word in message.split(' '))), 
               color=msg.author.color, 
               timestamp=msg.created_at
               )
