@@ -15,6 +15,9 @@ class Moderation(commands.Cog):
     @commands.hybrid_group(name='server')
     @check_blacklist()
     async def server(self, ctx:commands.Context) -> None:
+        """
+        Kumpulan command mengenai server ini.
+        """
         await self.info(ctx)
         pass
 
@@ -100,7 +103,7 @@ class Moderation(commands.Cog):
         color = member.colour
         )
         em.add_field(name="Reason", value=reason, inline=False)
-        em.set_thumbnail(url = member.avatar.url if not member.avatar.url is None else getenv('normalpfp'))
+        em.set_thumbnail(url = member.avatar.url if not member.avatar is None else getenv('normalpfp'))
         em.set_footer(text=f"Pelanggaran diberikan oleh {ctx.author} | ID:{ctx.author.id}", icon_url=ctx.author.avatar.url)
         await ctx.reply(embed = em)
 
@@ -124,7 +127,7 @@ class Moderation(commands.Cog):
                 emb.add_field(name=f"Alasan (dari pelanggaran #1 to #{doc['warns']})", value="*"+"\n".join(reasons)+"*")
             else:
                 emb.add_field(name=f"Reason", value="*"+"\n".join(reasons)+"*")
-            emb.set_thumbnail(url = member.avatar.url if not member.avatar.url is None else getenv('normalpfp'))
+            emb.set_thumbnail(url = member.avatar.url if not member.avatar is None else getenv('normalpfp'))
             await ctx.reply(embed = emb)
 
     @commands.hybrid_command(aliases=["rmwarn"], description="Menghilangkan segala data pelanggaran pengguna.")
