@@ -135,8 +135,6 @@ class AppMenu(PrettyMenu):
     ):
 
         if ctx.interaction:
-            await ctx.interaction.response.defer(thinking=True)
-            await sleep(7) # WHY DOES IT TAKE SO LONG????
             await ctx.interaction.followup.send(
                 embed=pages[0],
                 view=AppNav(

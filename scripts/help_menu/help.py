@@ -364,8 +364,10 @@ class Help(HelpCommand, commands.Cog):
         bot = interaction.client
         ctx = await commands.Context.from_interaction(interaction)
         ctx.bot = bot
+        if ctx.interaction:
+            await ctx.defer()
+            
         await ctx.invoke(bot.get_command("help"), command=command)
-        await interaction.response.defer()
 
     async def filter_app_commands(
         self, app_commands: List[app_commands.AppCommand], sort: bool = True
