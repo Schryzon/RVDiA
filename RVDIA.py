@@ -249,10 +249,10 @@ async def on_message(msg:discord.Message):
         return
     
     if msg.content == "RVDIA":
-        await msg.reply(f"Haii, {msg.author.name}! Silahkan tambahkan prefix `r-` atau `/` untuk menggunakan command!")
+        await msg.reply(f"Haii, {msg.author.name}! Silahkan tambahkan prefix-ku untuk menggunakan command!")
 
     # Chat command, I wanna make something cool here
-    if msg.content.lower().startswith('rvdia, ') and any(msg.content.endswith(suffix) for suffix in sentence_enders): #Marked
+    if msg.content.lower().startswith('rvdia, ') and any(msg.content.endswith(suffix) for suffix in sentence_enders):
         try:
           async with msg.channel.typing():
             openai.api_key = os.getenv('openaikey')

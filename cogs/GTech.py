@@ -16,10 +16,14 @@ class GTech(commands.Cog):
         return data
     
     @commands.hybrid_group(name='gtech')
+    @in_gtech_server()
+    @is_member_check()
+    @check_blacklist()
     async def gtech_command(self, ctx:commands.Context) -> None:
         """
-        Kumpulan command khusus untuk anggota G-Tech Re'sman.
+        Kumpulan command khusus untuk anggota G-Tech Re'sman. [GROUP]
         """
+        await self.news(ctx)
         pass
 
     async def send_news(self, channel_id:int):

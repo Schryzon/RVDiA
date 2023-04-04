@@ -27,7 +27,7 @@ class Fun(commands.Cog):
             bdwifu = await bdinit.json()
             we = discord.Embed(title = f"{bdwifu['name']} [{bdwifu['japanese_name']}]", description = f"From {bdwifu['i_band']}", color = ctx.author.colour)
             we.set_thumbnail(url = bdwifu['square_image'])
-            we.set_author(name = "Your BanG Dream! Waifu:", icon_url=bdwifu['square_image'])
+            we.set_author(name = "Waifu BanG Dream! kamu:", icon_url=bdwifu['square_image'])
             we.add_field(name = "Sekolah", value = f"{bdwifu['school']}, {bdwifu['i_school_year']} Year", inline = False)
             we.add_field(name = "Instrumen", value = bdwifu['instrument'], inline = False)
             we.add_field(name = "Ulang Tahun", value = bdwifu['birthday'])
@@ -86,14 +86,14 @@ class Fun(commands.Cog):
                     await asyncio.sleep(1.5)
 
                 elif number > num_store:
-                    await ctx.channel.send(f":grey_question: Hint: **Angka terakhirmu, `{num_store}` lebih kecil dari yang kupilih.**", delete_after=2.0)
+                    await ctx.channel.send(f":grey_question: Hint: **Angka terakhirmu, `{num_store}` lebih kecil dari yang kupilih.**", delete_after=2.5)
                     hints -= 1
-                    await asyncio.sleep(1.5)
+                    await asyncio.sleep(2.0)
 
                 elif number < num_store:
-                    await ctx.channel.send(f":grey_question: Hint: **Angka terakhirmu, `{num_store}` lebih besar dari yang kupilih.**", delete_after=2.0)
+                    await ctx.channel.send(f":grey_question: Hint: **Angka terakhirmu, `{num_store}` lebih besar dari yang kupilih.**", delete_after=2.5)
                     hints -= 1
-                    await asyncio.sleep(1.5)
+                    await asyncio.sleep(2.0)
             else:
                 if int(r1.content) > 20:
                     await ctx.channel.send(f":negative_squared_cross_mark: **Angkamu lebih tinggi dari 20!**", delete_after=2.0)
@@ -253,64 +253,68 @@ class Fun(commands.Cog):
     @app_commands.rename(member1='pengguna_1', member2='pengguna_2')
     @commands.cooldown(1, 5, commands.BucketType.user)
     @check_blacklist()
-    async def ship(self, ctx, member1: discord.Member = None, member2:discord.Member=None):
+    async def ship(self, ctx:commands.Context, member1: discord.Member = None, member2:discord.Member=None):
         """
         Jodohkan seorang teman atau orang lain dengan pengguna lainnya!
         """
-        if member1 == None:
-            await ctx.send("Kamu harus mention orang yang ingin dijodohkan!")
-            return
-        if member1 == ctx.author and member2 == None:
-            await ctx.send("Aku tidak bisa menjodohkanmu dengan dirimu sendiri! TwT")
-            return
+        try:
+            if member1 == None:
+                await ctx.send("Kamu harus mention orang yang ingin dijodohkan!")
+                return
+            if member1 == ctx.author and member2 == None:
+                await ctx.send("Aku tidak bisa menjodohkanmu dengan dirimu sendiri! TwT")
+                return
 
-        elif member2 == None:
-            member2 = member1
-            member1 = ctx.author
-        
-        success = random.randint(1, 100)
-        if success == 100:
-            ss = f"__Match made in Heaven!__\n{member1.name} dan {member2.name} akan menjadi pasangan terbaik! ❤️"
-            sus = Image.open("./src/ship.jpg")
-        elif success >= 90:
-            ss = f"It's __true love!__\n{member1.name} sangat cocok berpasangan dengan {member2.name}! ❤️"
-            sus = Image.open("./src/ship.jpg")
-        elif success >= 80:
-            ss = f"__Lovey, dovey!__\n{member1.name} dan {member2.name} akan menjalin hubungan yang dekat! ❤️"
-            sus = Image.open("./src/ship.jpg")
-        elif success >= 70:
-            ss = f" __Besties for life!__\n{member1.name} akan menjadi sahabat setia untuk {member2.name}! <:hug:1084251318073438289>"
-            sus = Image.open("./src/fship.jpg")
-        elif success >= 50:
-            ss = f"__They somehow fit together.__\n{member1.name} cocok menjadi temannya {member2.name}. 👍"
-            sus = Image.open("./src/gship.jpg")
-        elif success >= 25:
-            ss = f"__Not good!__\n{member1.name} dan {member2.name} tidak akan berbahagia saat berpasangan. 👎"
-            sus = Image.open("./src/bship.jpg")
-        else:
-            ss = f"__This is bad!__\n{member1.name} dan {member2.name} merupakan pasangan yang tidak cocok! 💔"
-            sus = Image.open("./src/shship.jpg")
+            elif member2 == None:
+                member2 = member1
+                member1 = ctx.author
+            
+            success = random.randint(1, 100)
+            if success == 100:
+                ss = f"__Match made in Heaven!__\n{member1.name} dan {member2.name} akan menjadi pasangan terbaik! ❤️"
+                sus = Image.open("./src/ship.jpg")
+            elif success >= 90:
+                ss = f"It's __true love!__\n{member1.name} sangat cocok berpasangan dengan {member2.name}! ❤️"
+                sus = Image.open("./src/ship.jpg")
+            elif success >= 80:
+                ss = f"__Lovey, dovey!__\n{member1.name} dan {member2.name} akan menjalin hubungan yang dekat! ❤️"
+                sus = Image.open("./src/ship.jpg")
+            elif success >= 70:
+                ss = f" __Besties for life!__\n{member1.name} akan menjadi sahabat setia untuk {member2.name}! <:hug:1084251318073438289>"
+                sus = Image.open("./src/fship.jpg")
+            elif success >= 50:
+                ss = f"__They somehow fit together.__\n{member1.name} cocok menjadi temannya {member2.name}. 👍"
+                sus = Image.open("./src/gship.jpg")
+            elif success >= 25:
+                ss = f"__Not good!__\n{member1.name} dan {member2.name} tidak akan berbahagia saat berpasangan. 👎"
+                sus = Image.open("./src/bship.jpg")
+            else:
+                ss = f"__This is bad!__\n{member1.name} dan {member2.name} merupakan pasangan yang tidak cocok! 💔"
+                sus = Image.open("./src/shship.jpg")
 
-        asset1 = member1.avatar.with_format('png').with_size(128) if not member1.avatar is None else getenv('normalpfp')
-        asset2 = member2.avatar.with_format('png').with_size(128) if not member2.avatar is None else getenv('normalpfp') # HOW TO FIX???
-        data1 = BytesIO(await asset1.read())
-        data2 = BytesIO(await asset2.read())
-        pfp1 = Image.open(data1)
-        pfp1 = pfp1.resize((420, 420))
-        sus.paste(pfp1, (90, 28))
-        pfp2 = Image.open(data2)
-        pfp2 = pfp2.resize((420, 420))
-        sus.paste(pfp2, (1024, 28))
-        sus.save('shipres.jpg')
+            asset1 = member1.avatar.with_format('png').with_size(128)
+            asset2 = member2.avatar.with_format('png').with_size(128)
+            data1 = BytesIO(await asset1.read())
+            data2 = BytesIO(await asset2.read())
+            pfp1 = Image.open(data1)
+            pfp1 = pfp1.resize((420, 420))
+            sus.paste(pfp1, (90, 28))
+            pfp2 = Image.open(data2)
+            pfp2 = pfp2.resize((420, 420))
+            sus.paste(pfp2, (1024, 28))
+            sus.save('shipres.jpg')
 
-        L = len(member1.name)//2
-        LL = len(member2.name)//2
-        embed = discord.Embed(title="Hasil Penjodohan", description = f"❤️ **{success}%** ❤️\n{ss}\n**Nama ship:** {member1.name[:L] + member2.name[LL:]}", color=ctx.author.colour)
-        embed.set_footer(text=f"{member1.name} dan {member2.name}")
-        file = discord.File("shipres.jpg")
-        embed.set_image(url= "attachment://shipres.jpg")
-        await ctx.send(file = file, embed = embed)
-        remove('./shipres.jpg')
+            L = len(member1.name)//2
+            LL = len(member2.name)//2
+            embed = discord.Embed(title="Hasil Penjodohan", description = f"❤️ **{success}%** ❤️\n{ss}\n**Nama ship:** {member1.name[:L] + member2.name[LL:]}", color=ctx.author.colour)
+            embed.set_footer(text=f"{member1.name} dan {member2.name}")
+            file = discord.File("shipres.jpg")
+            embed.set_image(url= "attachment://shipres.jpg")
+            await ctx.send(file = file, embed = embed)
+            remove('./shipres.jpg')
+
+        except:
+            await ctx.reply('Sepertinya ada salah satu pengguna yang belum memakai foto profil, ayo pakai dong, kan mau dijodohin...')
 
 async def setup (bot):
     await bot.add_cog(Fun(bot))

@@ -46,8 +46,7 @@ class General(commands.Cog):
     @check_blacklist()
     async def rvdia_command(self, ctx:commands.Context) -> None:
         """
-        Kumpulan command khusus untuk RVDIA.
-        [COMMAND GROUP]
+        Kumpulan command khusus untuk RVDIA. [GROUP]
         """
         await self.rvdia(ctx)
         pass
@@ -56,8 +55,7 @@ class General(commands.Cog):
     @check_blacklist()
     async def user_command(self, ctx:commands.Context) -> None:
         """
-        Kumpulan command khusus untuk mengetahui info pengguna.
-        [COMMAND GROUP]
+        Kumpulan command khusus untuk mengetahui info pengguna. [GROUP]
         """
         await self.userinfo(ctx, member=ctx.author)
         pass
@@ -66,8 +64,7 @@ class General(commands.Cog):
     @check_blacklist()
     async def avatar_command(self, ctx:commands.Context) -> None:
         """
-        Kumpulan command khusus yang berkaitan dengan avatar pengguna.
-        [COMMAND GROUP]
+        Kumpulan command khusus yang berkaitan dengan avatar pengguna. [GROUP]
         """
         await self.avatar(ctx, global_user=ctx.author)
         pass
@@ -145,10 +142,13 @@ class General(commands.Cog):
 
         await ctx.reply(f'Message prefix telah diganti ke **`{prefix}`**\nUntuk mengembalikan prefix seperti semula, `{prefix}rvdia prefix reset`')
 
-    @rvdia_command.command(description = 'Memperlihatkan informasi event yang berlangsung')
+    @rvdia_command.command(description = 'Memperlihatkan informasi event yang berlangsung.')
     @check_blacklist()
     @event_available()
     async def event(self, ctx:commands.Context) -> None:
+        """
+        Memperlihatkan informasi event yang berlangsung.
+        """
         event = Event(ctx.bot)
         await event.info(ctx, ctx) # What the fuck???
 
@@ -185,7 +185,9 @@ class General(commands.Cog):
 
     @user_command.command(name='info', aliases = ['whois'], description="Lihat info tentang seseorang di server ini.")
     @app_commands.rename(member='pengguna')
-    @commands.guild_only()
+    @app_commands.describe(
+        member = 'Siapa yang ingin diketahui infonya?'
+    )
     @check_blacklist()
     async def userinfo(self, ctx, *, member:discord.Member = None):
         """
@@ -286,6 +288,9 @@ class Utilities(commands.Cog):
 
     @commands.hybrid_command(aliases = ['cuaca'], description="Lihat info tentang cuaca di suatu kota atau daerah!")
     @app_commands.rename(location='lokasi')
+    @app_commands.describe(
+        location = 'Lokasi mana yang ingin diketahui cuacanya?'
+    )
     @check_blacklist()
     async def weather(self, ctx, *, location:str):
         """

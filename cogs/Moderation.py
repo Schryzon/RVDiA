@@ -16,7 +16,7 @@ class Moderation(commands.Cog):
     @check_blacklist()
     async def server(self, ctx:commands.Context) -> None:
         """
-        Kumpulan command mengenai server ini.
+        Kumpulan command mengenai server ini. [GROUP]
         """
         await self.info(ctx)
         pass
@@ -111,9 +111,13 @@ class Moderation(commands.Cog):
         aliases=['wnhistory'], 
         description="Lihat riwayat pelanggaran pengguna di server ini.",
     )
+    @app_commands.describe(
+        member = 'Pengguna di server ini.'
+    )
+    @app_commands.rename(member = 'pengguna')
     @commands.has_permissions(manage_messages = True)
     @check_blacklist()
-    async def warnhistory(self, ctx, member:discord.Member = None):
+    async def warnhistory(self, ctx:commands.Context, member:discord.Member = None):
             """Lihat riwayat pelanggaran pengguna."""
             member = member or ctx.author
             db = connectdb("Warns")
@@ -132,8 +136,14 @@ class Moderation(commands.Cog):
 
     @commands.hybrid_command(aliases=["rmwarn"], description="Menghilangkan segala data pelanggaran pengguna.")
     @commands.has_permissions(manage_messages=True)
+    @app_commands.describe(
+        member = 'Pengguna yang ingin dihilangkan riwayat pelanggarannya.'
+    )
+    @app_commands.rename(
+        member = 'pengguna'
+    )
     @check_blacklist()
-    async def removewarn(self, ctx, member:discord.Member):
+    async def removewarn(self, ctx:commands.Context, member:discord.Member):
         """
         Menghilangkan segala data pelanggaran pengguna.
         """
@@ -154,6 +164,14 @@ class Moderation(commands.Cog):
     @commands.hybrid_command(name='ultban', description="Ban pengguna dari server, walaupun dia di luar server ini.")
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
+    @app_commands.describe(
+        user = 'Pengguna yang ingin diban (Support ID & name#tag)',
+        reason = 'Alasan mengapa diban?'
+    )
+    @app_commands.rename(
+        user = 'pengguna',
+        reason = 'alasan'
+    )
     @check_blacklist()
     async def ultban(self, ctx:commands.Context, user:discord.User, *, reason = None):
         """
@@ -161,7 +179,7 @@ class Moderation(commands.Cog):
         """
         reason = reason or "Tidak ada alasan dispesifikasi."
         await ctx.guild.ban(user)
-        embed = discord.Embed(title="Ultimate Ban ❗", color = ctx.author.colour)
+        embed = discord.Embed(title="❗Ultimate Ban❗", color = ctx.author.colour)
         embed.description = f"**`{user}`** telah diban!"
         embed.add_field(name = "Alasan", value = reason, inline = False)
         embed.set_thumbnail(url = user.avatar.url if not user.avatar is None else getenv('normalpfp'))
@@ -169,11 +187,16 @@ class Moderation(commands.Cog):
         await ctx.reply(embed = embed)
 
     @commands.hybrid_command(description="Unban seseorang yang telah diban sebelumnya.")
-    @commands.guild_only()
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
+    @app_commands.describe(
+        user = 'Pengguna yang ingin di unban (Support ID & name#tag)'
+    )
+    @app_commands.rename(
+        user = 'pengguna'
+    )
     @check_blacklist()
-    async def unban(self, ctx, user: discord.User):
+    async def unban(self, ctx:commands.Context, user: discord.User):
         """
         Unban pengguna yang telah diban.
         """
@@ -190,6 +213,13 @@ class Moderation(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
+    @app_commands.describe(
+        amount = 'Jumlah pesan yang ingin dihapus (Default: 5)',
+        channel = 'Channel manakah yang ingin dihapus pesannya?'
+    )
+    @app_commands.rename(
+        amount = 'jumlah'
+    )
     @check_blacklist()
     async def clear(self, ctx:commands.Context, amount:int, channel:commands.TextChannelConverter = None):
         """
