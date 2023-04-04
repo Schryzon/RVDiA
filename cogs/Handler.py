@@ -131,6 +131,9 @@ class Error(commands.Cog):
     elif "No event available!" in str(error):
       await ctx.reply('Maaf, saat ini tidak ada event yang berlangsung!')
 
+    elif "attachment is a required argument that is missing an attachment." in str(error):
+      await ctx.reply('Kamu belum melampirkan gambar! Command ini memerlukan lampiran!')
+
     # If all else fails (get it?)
     else:
       channel = self.historia.get_channel(906123251997089792)
