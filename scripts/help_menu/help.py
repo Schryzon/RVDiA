@@ -544,6 +544,10 @@ class Help(HelpCommand, commands.Cog):
 
     async def send_group_help(self, group: commands.Group):
         async with self.get_destination().typing():
+            try:
+                self.context.interaction.response.defer(thinking=True)
+            except:
+                pass
             filtered = await self.filter_commands(
                 group.commands, sort=self.sort_commands
             )
@@ -552,6 +556,10 @@ class Help(HelpCommand, commands.Cog):
 
     async def send_cog_help(self, cog: commands.Cog):
         async with self.get_destination().typing():
+            try:
+                self.context.interaction.response.defer(thinking=True)
+            except:
+                pass
             filtered = await self.filter_commands(
                 cog.get_commands(), sort=self.sort_commands
             )
