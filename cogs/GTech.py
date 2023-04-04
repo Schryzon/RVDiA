@@ -43,7 +43,7 @@ class GTech(commands.Cog):
     @is_perangkat()
     @in_gtech_server()
     @check_blacklist()
-    async def register(self, ctx, user:commands.MemberConverter, kelas, divisi, *, nama):
+    async def register(self, ctx, user:discord.Member, kelas, divisi, *, nama):
         """
         Tambahkan pengguna ke database.
         """
@@ -58,7 +58,7 @@ class GTech(commands.Cog):
     @in_gtech_server()
     @is_member_check()
     @check_blacklist()
-    async def member(self, ctx, *, user:commands.MemberConverter = None):
+    async def member(self, ctx, *, user:discord.Member = None):
         """
         Lihat status anggota G-Tech dari database.
         """
@@ -78,7 +78,7 @@ class GTech(commands.Cog):
     @is_perangkat()
     @in_gtech_server()
     @check_blacklist()
-    async def erasemember(self, ctx, *, user:commands.MemberConverter = None):
+    async def erasemember(self, ctx, *, user:discord.Member = None):
         """
         Hapus data anggota dari database.
         """

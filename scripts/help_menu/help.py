@@ -356,7 +356,7 @@ class Help(HelpCommand, commands.Cog):
     # Hackey, but it works I guess.
     # Might figure out a better solution later 🤷‍♂️
     @app_commands.describe(
-        command="Nama dari command."
+        command="Nama dari command, group, atau kategori."
     )
     @app_commands.command(name="help")
     async def _app_command_callback(
@@ -461,6 +461,10 @@ class Help(HelpCommand, commands.Cog):
             )
         )
         async with channel.typing():
+            try:
+                self.context.interaction.response.defer(thinking=True)
+            except:
+                pass
             mapping = {name: [] for name in mapping}
             help_filtered = (
                 filter(lambda c: c.name != "help", bot.commands)
@@ -561,7 +565,7 @@ class Help(HelpCommand, commands.Cog):
         """Check if the conext is from an app command or text command and send an error message"""
         if self.context.interaction:
             return await self.context.interaction.response.send_message(
-                "Aku tidak bisa menemukan command itu!\nCheck lagi command yang ada dengan `/help`!", ephemeral=True
+                "Aku tidak bisa menemukan command itu!\nCheck lagi command yang ada dengan `/help`!"
             )
 
         return await super().send_error_message("Aku tidak bisa menemukan command itu!\nCheck lagi command yang ada dengan `r-help`!")
