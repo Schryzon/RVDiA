@@ -5,6 +5,7 @@ from typing import List, Optional
 import discord
 from discord.ext import commands
 from discord.ui import Button, Select, View
+from asyncio import sleep
 
 from .abc_menu import PrettyMenu
 
@@ -134,13 +135,22 @@ class AppMenu(PrettyMenu):
     ):
 
         if ctx.interaction:
-            await ctx.interaction.response.send_message(
+            await ctx.interaction.response.defer(
                 embed=pages[0],
                 view=AppNav(
                     pages=pages, timeout=self.timeout, ephemeral=self.ephemeral
                 ),
                 ephemeral=self.ephemeral,
             )
+            await sleep(7) # WHY DOES IT TAKE SO LONG????
+            await ctx.interaction.followup.send(
+                embed=pages[0],
+                view=AppNav(
+                    pages=pages, timeout=self.timeout, ephemeral=self.ephemeral
+                ),
+                ephemeral=self.ephemeral,
+            )
+
         else:
             await destination.send(
                 embed=pages[0], view=AppNav(pages=pages, timeout=self.timeout)

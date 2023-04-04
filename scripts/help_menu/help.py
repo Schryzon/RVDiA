@@ -461,10 +461,6 @@ class Help(HelpCommand, commands.Cog):
             )
         )
         async with channel.typing():
-            try:
-                self.context.interaction.response.defer(thinking=True)
-            except:
-                pass
             mapping = {name: [] for name in mapping}
             help_filtered = (
                 filter(lambda c: c.name != "help", bot.commands)
@@ -544,10 +540,6 @@ class Help(HelpCommand, commands.Cog):
 
     async def send_group_help(self, group: commands.Group):
         async with self.get_destination().typing():
-            try:
-                self.context.interaction.response.defer(thinking=True)
-            except:
-                pass
             filtered = await self.filter_commands(
                 group.commands, sort=self.sort_commands
             )
@@ -556,10 +548,6 @@ class Help(HelpCommand, commands.Cog):
 
     async def send_cog_help(self, cog: commands.Cog):
         async with self.get_destination().typing():
-            try:
-                self.context.interaction.response.defer(thinking=True)
-            except:
-                pass
             filtered = await self.filter_commands(
                 cog.get_commands(), sort=self.sort_commands
             )
@@ -573,7 +561,7 @@ class Help(HelpCommand, commands.Cog):
         """Check if the conext is from an app command or text command and send an error message"""
         if self.context.interaction:
             return await self.context.interaction.response.send_message(
-                "Aku tidak bisa menemukan command itu!\nCheck lagi command yang ada dengan `/help`!"
+                "Aku tidak bisa menemukan command itu!\nCheck lagi command yang ada dengan `/help`!", ephemeral=True
             )
 
         return await super().send_error_message("Aku tidak bisa menemukan command itu!\nCheck lagi command yang ada dengan `r-help`!")
