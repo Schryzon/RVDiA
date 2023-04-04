@@ -100,14 +100,14 @@ class Error(commands.Cog):
       await ctx.reply('Kamu harus memasang foto profil untuk menjalankan command ini!') # Maybe add a note in github somewhere
 
     elif isinstance(error, commands.BotMissingPermissions):
-      permlist = [req_perms.replace('_', ' ') for req_perms in error.missing_perms]
+      permlist = [req_perms.replace('_', ' ') for req_perms in error.missing_permissions]
       perms = [missing_perms.title() for missing_perms in permlist]
       await ctx.reply("Saya kekurangan `permissions` untuk menjalankan command! (**"
       + "`" + ",".join(perms) + "`**)"
       )
 
     elif isinstance(error, commands.MissingPermissions):
-      permlist = [req_perms.replace('_', ' ') for req_perms in error.missing_perms]
+      permlist = [req_perms.replace('_', ' ') for req_perms in error.missing_permissions]
       perms = [missing_perms.title() for missing_perms in permlist]
       await ctx.reply("Kamu kekurangan `permissions` untuk menjalankan command! (**"
       + "`" + ",".join(perms) + "`**)"

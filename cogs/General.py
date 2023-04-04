@@ -18,6 +18,8 @@ def status_converter(status):
     match status:
         case 'dnd':
             return "🔴 Jangan Ganggu"
+        case 'do_not_disturb':
+            return "🔴 Jangan Ganggu"
         case "idle":
             return "🟡 AFK"
         case "online":
@@ -62,11 +64,12 @@ class General(commands.Cog):
 
     @commands.hybrid_group(name='avatar')
     @check_blacklist()
-    async def avatar_command(self, ctx:commands.Context) -> None:
+    async def avatar_command(self, ctx:commands.Context, *, member:discord.Member=None) -> None:
         """
         Kumpulan command khusus yang berkaitan dengan avatar pengguna. [GROUP]
         """
-        await self.avatar(ctx, global_user=ctx.author)
+        member = member or ctx.author
+        await self.avatar(ctx, global_user=member)
         pass
 
     @rvdia_command.command(name="about", aliases=['intro', 'bot', 'botinfo'])
