@@ -353,8 +353,6 @@ class Help(HelpCommand, commands.Cog):
         super()._remove_from_bot(bot)
         bot.tree.remove_command(self._app_command_callback.name)
 
-    # Hackey, but it works I guess.
-    # Might figure out a better solution later 🤷‍♂️
     @app_commands.describe(
         command="Nama dari command, group, atau kategori."
     )
