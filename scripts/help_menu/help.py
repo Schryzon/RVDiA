@@ -365,6 +365,7 @@ class Help(HelpCommand, commands.Cog):
         ctx = await commands.Context.from_interaction(interaction)
         ctx.bot = bot
         await ctx.invoke(bot.get_command("help"), command=command)
+        await interaction.response.defer()
 
     async def filter_app_commands(
         self, app_commands: List[app_commands.AppCommand], sort: bool = True
