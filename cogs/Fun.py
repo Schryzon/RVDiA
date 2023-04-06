@@ -18,7 +18,7 @@ class Fun(commands.Cog):
     
     @commands.hybrid_command(aliases = ['bandoriwaifu'], description='Temukan karakter BanG Dream yang cocok denganmu!')
     @check_blacklist()
-    async def bdwaifu(self, ctx):
+    async def bdwaifu(self, ctx:commands.Context):
         """
         Temukan karakter BanG Dream yang cocok denganmu!
         """
@@ -313,7 +313,7 @@ class Fun(commands.Cog):
             await ctx.send(file = file, embed = embed)
             remove('./shipres.jpg')
 
-        except:
+        except AttributeError:
             await ctx.reply('Sepertinya ada salah satu pengguna yang belum memakai foto profil, ayo pakai dong, kan mau dijodohin...')
 
 async def setup (bot):

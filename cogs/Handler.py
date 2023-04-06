@@ -134,6 +134,9 @@ class Error(commands.Cog):
     elif "attachment is a required argument that is missing an attachment." in str(error):
       await ctx.reply('Kamu belum melampirkan gambar! Command ini memerlukan lampiran!')
 
+    elif "Your input image may contain content that is not allowed by our safety system." in str(error):
+      await ctx.reply('Gambar yang dilampirkan berisi konten yang tidak pantas!')
+
     # If all else fails (get it?)
     else:
       channel = self.historia.get_channel(906123251997089792)

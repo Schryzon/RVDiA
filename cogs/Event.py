@@ -22,7 +22,7 @@ class Event(commands.Cog):
     @check_blacklist()
     async def event(self, ctx) -> None:
         """
-        Kumpulan command untuk event (ajang) yang sedang berlangsung.
+        Kumpulan command untuk event (ajang) yang sedang berlangsung. [GROUP]
         """
         await self.info(ctx)
         pass

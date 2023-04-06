@@ -4,6 +4,7 @@ import discord
 import openai
 import requests
 import aiohttp
+from sys import version as pyver
 from os import getenv
 from cogs.Event import Event
 from scripts.main import heading, Url_Buttons, has_pfp
@@ -15,7 +16,7 @@ from PIL import Image
 from io import BytesIO
 
 def status_converter(status):
-    match status:
+    match status: # Sometimes it works, sometimes it doesn't.
         case 'dnd':
             return "🔴 Jangan Ganggu"
         case 'do_not_disturb':
@@ -55,16 +56,17 @@ class General(commands.Cog):
 
     @commands.hybrid_group(name='user')
     @check_blacklist()
-    async def user_command(self, ctx:commands.Context) -> None:
+    async def user_command(self, ctx:commands.Context, member:discord.Member=None) -> None:
         """
         Kumpulan command khusus untuk mengetahui info pengguna. [GROUP]
         """
-        await self.userinfo(ctx, member=ctx.author)
+        member = member or ctx.author
+        await self.userinfo(ctx, member=member)
         pass
 
     @commands.hybrid_group(name='avatar')
     @check_blacklist()
-    async def avatar_command(self, ctx:commands.Context, *, member:discord.Member=None) -> None:
+    async def avatar_command(self, ctx:commands.Context, *, member:discord.User=None) -> None:
         """
         Kumpulan command khusus yang berkaitan dengan avatar pengguna. [GROUP]
         """
@@ -95,7 +97,7 @@ class General(commands.Cog):
         embed.add_field(name = "Pencipta", value = f"<@877008612021661726> (Jayananda)", inline=False)
         embed.add_field(name = "Prefix", value = '@RVDIA | '+f" | ".join(prefix)+f' | / (slash)')
         embed.add_field(name = "Library", value = f"discord.py ({discord.__version__})", inline = False)
-        embed.add_field(name = "Tipe Bot", value="General, Utilitas, Humor, Anime, Moderasi, Khusus, Slash", inline=False)
+        embed.add_field(name = "Bahasa Pemrograman", value=f"Python ({pyver})", inline=False)
         embed.add_field(name = "Nyala Sejak", value = f"<t:{round(self.bot.runtime)}>\n(<t:{round(self.bot.runtime)}:R>)", inline = False)
         embed.add_field(name = "Jumlah Server", value = f"{len(self.bot.guilds)} Server")
         embed.add_field(name = "Jumlah Pengguna", value = f"{m} Pengguna")
@@ -239,7 +241,7 @@ class General(commands.Cog):
             case self.bot.user.id:
                 ack = "The One True Love"
 
-        if ack is None:
+        if ack == None:
             if member.bot == True:
                 ack = "Server Bot"
             elif owner.id == member.id:
@@ -352,8 +354,7 @@ class Utilities(commands.Cog):
                 area = match
 
         if area == []:
-            await ctx.send('Aku tidak bisa menemukan daerah itu!\nLihat list daerah yang ada [click disini!](http://www.worldtimeapi.org/api/timezone)')
-            return
+            return await ctx.send('Aku tidak bisa menemukan daerah itu!\nLihat list daerah yang ada [click disini!](http://www.worldtimeapi.org/api/timezone)\nContoh: `r-time Makassar`')
         
         req_data = "/".join(area)
         data = requests.get(f'http://worldtimeapi.org/api/timezone/{req_data}').json()
@@ -383,7 +384,7 @@ class Utilities(commands.Cog):
                 temperature=1.2,
                 messages=[
                 {"role":'system', 'content':getenv('rolesys')},
-                {"role":'assistant', 'content':f"The user's username is {ctx.author.name}. You can mention their name when needed."},
+                {"role":'assistant', 'content':f"You are currently talking to {ctx.author}"},
                 {"role": "user", "content": message}
                 ]
             )
@@ -393,6 +394,7 @@ class Utilities(commands.Cog):
                 timestamp=ctx.message.created_at
                 )
             embed.description = result['choices'][0]['message']['content'] # Might improve for >4096 chrs
+            embed.set_author(name=ctx.author)
             embed.set_footer(text='Jika ada yang ingin ditanyakan, bisa langsung direply!')
         await ctx.reply(embed=embed)
 

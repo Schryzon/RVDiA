@@ -1,5 +1,5 @@
 import discord
-from discord import app_commands
+from discord import NotFound, app_commands
 from scripts.main import check_blacklist, connectdb
 from os import getenv
 from discord.ext import commands
@@ -28,6 +28,7 @@ class Moderation(commands.Cog):
         Lihat info server ini!
         """
         owner = await self.bot.fetch_user(ctx.guild.owner_id)
+        guild_icon = ctx.guild.icon.url if not ctx.guild.icon is None else getenv('normalpfp')
         """roles = [role.mention for role in ctx.guild.roles][::-1][:-1] or ['None']
         if roles[0] == "None":
             role_length = 0
@@ -37,12 +38,12 @@ class Moderation(commands.Cog):
         if desc == None:
             desc = "No description was made for this server."""
         embed = discord.Embed(title=f'{ctx.guild.name}', color=ctx.author.colour, timestamp = ctx.message.created_at)
-        embed.set_thumbnail(url=ctx.guild.icon.url)
+        embed.set_thumbnail(url=guild_icon)
         embed.set_author(name = "Server Info:")
         embed.add_field(name="Pemilik", value=f"{owner.mention} ({owner})", inline = False)
         embed.add_field(name="Tanggal Dibuat", value=f'{ctx.guild.created_at.strftime("%a, %d %B %Y")}', inline = False)
         embed.add_field(name="Jumlah Pengguna", value=f"{ctx.guild.member_count} members", inline = False)
-        embed.set_footer(text=f"ID: {ctx.guild.id}", icon_url=ctx.guild.icon.url)
+        embed.set_footer(text=f"ID: {ctx.guild.id}", icon_url=guild_icon)
         #embed.set_image(url = ctx.guild.banner.url)
         await ctx.reply(embed=embed)
 
@@ -134,7 +135,7 @@ class Moderation(commands.Cog):
             if doc['warns'] > 1:
                 emb.add_field(name=f"Alasan (dari pelanggaran #1 to #{doc['warns']})", value="*"+"\n".join(reasons)+"*")
             else:
-                emb.add_field(name=f"Reason", value="*"+"\n".join(reasons)+"*")
+                emb.add_field(name=f"Alasan", value="*"+"\n".join(reasons)+"*")
             emb.set_thumbnail(url = member.avatar.url if not member.avatar is None else getenv('normalpfp'))
             await ctx.reply(embed = emb)
 
@@ -229,12 +230,16 @@ class Moderation(commands.Cog):
         """
         Menghilangkan pesan berdasarkan jumlah yang diinginkan.
         """
-        channel = channel or ctx.channel
-        if amount <= 0:
-            return await ctx.reply("Aku tidak bisa menghapus `0` pesan!")
-        amount = amount or 5
-        await channel.purge(limit = amount+1 if channel == ctx.channel else amount)
-        await ctx.send(f"Aku telah menghapus {amount} pesan dari {channel.mention}.", delete_after = 5.0)
+        try:
+            channel = channel or ctx.channel
+            if amount <= 0:
+                return await ctx.reply("Aku tidak bisa menghapus `0` pesan!")
+            amount = amount or 5
+            await channel.purge(limit = amount+1 if channel == ctx.channel else amount)
+            await ctx.send(f"Aku telah menghapus {amount} pesan dari {channel.mention}.", delete_after = 5.0)
+
+        except NotFound:
+            return
 
 async def setup(bot):
     await bot.add_cog(Moderation(bot))

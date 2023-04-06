@@ -264,7 +264,7 @@ async def on_message(msg:discord.Message):
                 temperature=1.2,
                 messages=[
                 {"role":'system', 'content':os.getenv('rolesys')},
-                {"role":'assistant', 'content':f"The user's username is {msg.author.name}. You can mention their name when needed."},
+                {"role":'assistant', 'content':f"You are currently talking to {msg.author}"},
                 {"role": "user", "content": message}
                 ]
             )
@@ -274,6 +274,7 @@ async def on_message(msg:discord.Message):
               timestamp=msg.created_at
               )
             embed.description = result['choices'][0]['message']['content']
+            embed.set_author(name=msg.author)
             embed.set_footer(text='Jika ada yang ingin ditanyakan, bisa langsung direply!')
           await msg.channel.send(embed=embed)
           return
@@ -306,6 +307,7 @@ async def on_message(msg:discord.Message):
           async with msg.channel.typing():
             embed_desc = message_embed.description
             embed_title = message_embed.title
+            author = message_embed.author.name
             openai.api_key = os.getenv('openaikey')
             message = msg.content
             if len(message) > 256:
@@ -315,7 +317,7 @@ async def on_message(msg:discord.Message):
                 temperature=1.2,
                 messages=[
                 {"role":'system', 'content':os.getenv('rolesys')},
-                {"role":"assistant", 'content':f'The user said: {embed_title} | Your response was: {embed_desc}'},
+                {"role":"assistant", 'content':f'{author} said: {embed_title} | Your response was: {embed_desc} | The user replying is {msg.author}'},
                 {"role": "user", "content": message}
                 ]
             )
@@ -325,6 +327,7 @@ async def on_message(msg:discord.Message):
               timestamp=msg.created_at
               )
             embed.description = result['choices'][0]['message']['content']
+            embed.set_author(name=msg.author)
             embed.set_footer(text='Jika ada yang ingin ditanyakan, bisa langsung direply!')
           await msg.channel.send(embed=embed)
           return
@@ -342,7 +345,11 @@ async def on_message(msg:discord.Message):
       with suppress(DomainInexistentException):
         check = checker.is_spam(msg.content)
         if check is True:
-          await msg.delete()
-          await msg.channel.send(f'{msg.author.mention} Spam website terdeteksi. Apabila ini sebuah kesalahan, mohon beri tahu pembuat bot.')
+          try:
+            await msg.delete()
+            await msg.channel.send(f'{msg.author.mention} Spam website terdeteksi. Apabila ini sebuah kesalahan, mohon beri tahu pembuat bot.')
+
+          except:
+             return
 
 rvdia.run(token=os.getenv('token'))
