@@ -97,7 +97,7 @@ class General(commands.Cog):
         embed.add_field(name = "Pencipta", value = f"<@877008612021661726> (Jayananda)", inline=False)
         embed.add_field(name = "Prefix", value = '@RVDIA | '+f" | ".join(prefix)+f' | / (slash)')
         embed.add_field(name = "Library", value = f"discord.py ({discord.__version__})", inline = False)
-        embed.add_field(name = "Bahasa Pemrograman", value=f"Python ({pyver[:5]})", inline=False)
+        embed.add_field(name = "Bahasa Pemrograman", value=f"Python ({pyver[:6]})", inline=False)
         embed.add_field(name = "Nyala Sejak", value = f"<t:{round(self.bot.runtime)}>\n(<t:{round(self.bot.runtime)}:R>)", inline = False)
         embed.add_field(name = "Jumlah Server", value = f"{len(self.bot.guilds)} Server")
         embed.add_field(name = "Jumlah Pengguna", value = f"{m} Pengguna")
