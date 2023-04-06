@@ -137,6 +137,9 @@ class Error(commands.Cog):
     elif "Your input image may contain content that is not allowed by our safety system." in str(error):
       await ctx.reply('Gambar yang dilampirkan berisi konten yang tidak pantas!')
 
+    elif "That model is currently overloaded with other requests." in str(error):
+      await ctx.reply('Maaf, saat ini fitur tersebut sedang dalam gangguan. Mohon dicoba nanti!')
+
     # If all else fails (get it?)
     else:
       channel = self.historia.get_channel(906123251997089792)

@@ -104,7 +104,7 @@ class Moderation(commands.Cog):
         else:
             db.update_one({"_id":member.id}, {'$inc':{"warns":1}, '$push':{"reason":reason}})
             warnqty = warns['warns']+1
-        em = discord.Embed(title=f"Pelanggaran ❗", description = f"{member.mention} telah diberikan pelanggaran.\nDia sekarang telah diberikan **`{warnqty}`** pelanggaran.",
+        em = discord.Embed(title=f"Pelanggaran Diberikan❗", description = f"{member.mention} telah diberikan pelanggaran.\nDia sekarang telah diberikan **`{warnqty}`** pelanggaran.",
         color = member.colour
         )
         em.add_field(name="Alasan", value=reason, inline=False)
@@ -215,7 +215,6 @@ class Moderation(commands.Cog):
 
     @commands.hybrid_command(aliases = ['clean', 'purge', 'delete', 'hapus'], 
                       description="Menghilangkan pesan berdasarkan jumlah yang diinginkan (amount -> integer), (channel : opsional)")
-    @commands.guild_only()
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
     @app_commands.describe(
@@ -231,6 +230,9 @@ class Moderation(commands.Cog):
         Menghilangkan pesan berdasarkan jumlah yang diinginkan.
         """
         try:
+            if ctx.interaction:
+                await ctx.defer()
+
             channel = channel or ctx.channel
             if amount <= 0:
                 return await ctx.reply("Aku tidak bisa menghapus `0` pesan!")
@@ -239,7 +241,7 @@ class Moderation(commands.Cog):
             await ctx.send(f"Aku telah menghapus {amount} pesan dari {channel.mention}.", delete_after = 5.0)
 
         except NotFound:
-            return
+            return await ctx.send('Aku tidak bisa menemukan channel itu!')
 
 async def setup(bot):
     await bot.add_cog(Moderation(bot))

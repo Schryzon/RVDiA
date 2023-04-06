@@ -264,7 +264,7 @@ async def on_message(msg:discord.Message):
                 temperature=1.2,
                 messages=[
                 {"role":'system', 'content':os.getenv('rolesys')},
-                {"role":'assistant', 'content':f"You are currently talking to {msg.author}"},
+                {"role":'assistant', 'content':f"You are currently talking to {msg.author}"}, # Doesn't really work
                 {"role": "user", "content": message}
                 ]
             )
@@ -280,12 +280,14 @@ async def on_message(msg:discord.Message):
           return
         
         except Exception as e:
+           if "That model is currently overloaded with other requests." in str(e):
+              return await msg.channel.send('Maaf, fitur ini sedang dalam gangguan. Mohon dicoba nanti!')
            await msg.channel.send('Ada yang bermasalah dengan fitur ini, aku sudah mengirimkan laporan ke developer!')
            channel = rvdia.get_channel(906123251997089792)
-           await channel.send(f'`{e}` Untuk Chat-GPT feature!')
+           await channel.send(f'`{e}` Untuk fitur GPT-3.5 Turbo!')
            print(e)
 
-    if msg.reference: #Marked
+    if msg.reference:
         try:
           fetched_message = await msg.channel.fetch_message(msg.reference.message_id)
           match fetched_message.author.id:
@@ -333,9 +335,11 @@ async def on_message(msg:discord.Message):
           return
         
         except Exception as e:
+           if "That model is currently overloaded with other requests." in str(e):
+              return await msg.channel.send('Maaf, fitur ini sedang dalam gangguan. Mohon dicoba nanti!')
            await msg.channel.send('Ada yang bermasalah dengan fitur ini, aku sudah mengirimkan laporan ke developer!')
            channel = rvdia.get_channel(906123251997089792)
-           await channel.send(f'`{e}` Untuk balasan Chat-GPT feature!')
+           await channel.send(f'`{e}` Untuk fitur balasan GPT-3.5 Turbo!')
            print(e)
 
     # Took me 2 hours to figure this out.
@@ -349,7 +353,7 @@ async def on_message(msg:discord.Message):
             await msg.delete()
             await msg.channel.send(f'{msg.author.mention} Spam website terdeteksi. Apabila ini sebuah kesalahan, mohon beri tahu pembuat bot.')
 
-          except:
+          except discord.Forbidden:
              return
 
 rvdia.run(token=os.getenv('token'))
