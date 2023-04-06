@@ -299,7 +299,7 @@ class Utilities(commands.Cog):
     @check_blacklist()
     async def weather(self, ctx, *, location:str):
         """
-        Lihat info tentang keadaan cuaca di suatu kota atau daerah! (Realtime)
+        Lihat info tentang keadaan cuaca di suatu kota atau daerah!
         """
         try:
             # Need to decode geocode consisting of latitude and longitude
@@ -344,7 +344,7 @@ class Utilities(commands.Cog):
     @check_blacklist()
     async def time(self, ctx, *, location:str):
         """
-        Lihat info tentang waktu di suatu kota atau daerah! (Realtime)
+        Lihat info tentang waktu di suatu kota atau daerah!
         """
         check_timezone = requests.get(f'http://worldtimeapi.org/api/timezone').json()
         area = []
