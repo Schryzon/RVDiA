@@ -7,10 +7,11 @@ Inspired by Haruna Sakurai from Ongeki!
 
 import asyncio
 import discord
-from time import time
 import os
-from dotenv import load_dotenv
 import openai
+import topgg
+from time import time
+from dotenv import load_dotenv
 from pkgutil import iter_modules
 from scripts.help_menu.help import Help
 from discord.ext import commands, tasks
@@ -63,6 +64,7 @@ rvdia = commands.AutoShardedBot(
   command_prefix = when_mentioned_or_function(get_prefix), case_insensitive = True, strip_after_prefix = False, 
   intents=intents, help_command=helper
 )
+rvdia.topgg = topgg.DBLClient(rvdia, os.getenv('topggtoken'))
 rvdia.synced = False
 rvdia.__version__ = "ベタ [Beta] v2"
 rvdia.event_mode = False
@@ -91,6 +93,8 @@ async def on_ready():
       change_status.start()
       print('Change status starting!')
 
+    update_guild_stats.start()
+
     print("RVDIA is ready.")
 
 @tasks.loop(minutes=1)
@@ -118,6 +122,15 @@ async def change_status():
   else:
     type = discord.Game(status)
   await rvdia.change_presence(status = discord.Status.idle, activity=type)
+
+@tasks.loop(minutes=20)
+async def update_guild_stats():
+    """Update Top.gg server count every 20 minutes."""
+    try:
+        await rvdia.topgg.post_guild_count()
+        print(f"Posted server count ({rvdia.topgg.guild_count})")
+    except Exception as e:
+        print(f"Failed to post server count\n{e.__class__.__name__}: {e}")
 
 @rvdia.command(aliases = ['on', 'enable'], hidden=True)
 @commands.is_owner()
@@ -185,7 +198,7 @@ async def serverlist(ctx):
 @commands.is_owner()
 async def leave(ctx:commands.Context, guild_id:discord.Guild):
    await guild_id.leave()
-   await ctx.send(f'Left {guild_id.name} that has `{guild_id.member_count}` members!')
+   await ctx.send(f'Left `{guild_id.name}` that has `{guild_id.member_count}` members!')
 
 @rvdia.command(hidden=True)
 @commands.is_owner()

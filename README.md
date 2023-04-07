@@ -10,6 +10,12 @@
   <a href="https://discord.gg/QqWCnk6zxw"><img alt="Discord" src="https://img.shields.io/discord/877009215271604275?style=for-the-badge"></a>
 </p>
 
+<p align ="center">
+  <a href="https://top.gg/bot/957471338577166417">
+    <img src="https://top.gg/api/widget/957471338577166417.svg">
+  </a>
+</p>
+
 Revolutionary Virtual Independent Discord Application (RVDIA) adalah sebuah **Multipurpose Discord Bot** (Robot Discord Multifungsi) yang terinspirasi dari karakter "Haruna Sakurai" di game Ongeki!
 
 ## Apa yang Spesial dari Bot ini?
