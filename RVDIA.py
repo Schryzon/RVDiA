@@ -64,7 +64,7 @@ rvdia = commands.AutoShardedBot(
   command_prefix = when_mentioned_or_function(get_prefix), case_insensitive = True, strip_after_prefix = False, 
   intents=intents, help_command=helper
 )
-rvdia.topgg = topgg.DBLClient(rvdia, os.getenv('topggtoken'), True, True, 1200) # Built-in autopost
+# rvdia.topgg = topgg.DBLClient(rvdia, os.getenv('topggtoken'), True, True, 1200) # Built-in autopost (OUTDATED)
 rvdia.synced = False
 rvdia.__version__ = "ベタ [Beta] v2"
 rvdia.event_mode = False
