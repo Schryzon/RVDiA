@@ -168,18 +168,24 @@ async def refresh(ctx):
           await rvdia.load_extension(cog)
   await ctx.reply('Cogs refreshed.')
 
-# Temporary Spy Command
+# This allows me to decide when to bail out of a server when it reaches 100 servers
 @rvdia.command(hidden = True)
 @commands.is_owner()
 async def serverlist(ctx):
-    await ctx.send('\n'.join(guild.name for guild in rvdia.guilds))
     with suppress(discord.Forbidden):
+       guild_name = [guild.name for guild in rvdia.guilds]
+       guild_members = [guild.member_count for guild in rvdia.guilds]
+       guild_id = [guild.id for guild in rvdia.guilds]
        list = []
-       for guild in rvdia.guilds:
-          invites = await guild.invites()
-          url = [invite.url for invite in invites]
-          list.append(url)
-       await ctx.send('\n'.join(url))
+       for name, member, gid in zip(guild_name, guild_members, guild_id):
+          list.append(f"`{name}` | `{member}` members | ID: `{gid}`")
+       await ctx.send("\n".join(list))
+
+@rvdia.command(hidden = True)
+@commands.is_owner()
+async def leave(ctx:commands.Context, guild_id:discord.Guild):
+   await guild_id.leave()
+   await ctx.send(f'Left {guild_id.name} that has `{guild_id.member_count}` members!')
 
 @rvdia.command(hidden=True)
 @commands.is_owner()
