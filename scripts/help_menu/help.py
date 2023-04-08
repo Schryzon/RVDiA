@@ -140,7 +140,7 @@ class Paginator:
                 embed = self._new_page(page_title.title(), embed.description)
 
             embed.add_field(
-                name=f"🔗 {command.name.title()}" if group else f"{command.name.title()}", # MARKED
+                name=f"🔗 {command.name}" if group else f"{command.name}",
                 value=f'{self.prefix}{short_doc or "Tidak ada deskripsi."}{self.suffix}',
                 inline=False,
             )

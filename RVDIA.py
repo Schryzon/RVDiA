@@ -9,7 +9,7 @@ import asyncio
 import discord
 import os
 import openai
-import topgg
+import aiohttp
 from time import time
 from dotenv import load_dotenv
 from pkgutil import iter_modules
@@ -61,12 +61,14 @@ def when_mentioned_or_function(func):
 
 intents = discord.Intents.all() # Might change my mind in the near future.
 rvdia = commands.AutoShardedBot(
-  command_prefix = when_mentioned_or_function(get_prefix), case_insensitive = True, strip_after_prefix = False, 
+  command_prefix = when_mentioned_or_function(get_prefix), 
+  case_insensitive = True, 
+  strip_after_prefix = False, 
   intents=intents, help_command=helper
 )
-# rvdia.topgg = topgg.DBLClient(rvdia, os.getenv('topggtoken'), True, True, 1200) # Built-in autopost (OUTDATED)
+
 rvdia.synced = False
-rvdia.__version__ = "ベタ [Beta] v2"
+rvdia.__version__ = "公式 [Official] v1.0.0"
 rvdia.event_mode = False
 rvdia.runtime = time() # UNIX float
 
@@ -92,6 +94,8 @@ async def on_ready():
     if not change_status.is_running():
       change_status.start()
       print('Change status starting!')
+
+    update_guild_status.start()
 
     print("RVDIA is ready.")
 
@@ -120,6 +124,20 @@ async def change_status():
   else:
     type = discord.Game(status)
   await rvdia.change_presence(status = discord.Status.idle, activity=type)
+
+@tasks.loop(minutes=20)
+async def update_guild_status():
+    try:
+      headers = {'Authorization': os.getenv('topggtoken')}
+      async with aiohttp.ClientSession(headers=headers) as session:
+          await session.post(f'https://top.gg/api/bots/{rvdia.user.id}/stats', data={
+              'server_count':rvdia.guilds.count,
+              'shard_count':rvdia.shard_count
+          })
+          print(f'Posted server updates to Top.gg!')
+
+    except Exception as error:
+       print(f'Error sending server count update!\n{error.__class__.__name__}: {error}')
 
 @rvdia.command(aliases = ['on', 'enable'], hidden=True)
 @commands.is_owner()
@@ -181,7 +199,7 @@ async def serverlist(ctx):
        list = []
        for name, member, gid in zip(guild_name, guild_members, guild_id):
           list.append(f"`{name}` | `{member}` members | ID: `{gid}`")
-       await ctx.send("\n".join(list))
+       await ctx.send("\n\n".join(list))
 
 @rvdia.command(hidden = True)
 @commands.is_owner()
@@ -288,7 +306,7 @@ async def on_message(msg:discord.Message):
           return
         
         except Exception as e:
-           if "That model is currently overloaded with other requests." in str(e):
+           if "currently overloaded with other requests." in str(e):
               return await msg.channel.send('Maaf, fitur ini sedang dalam gangguan. Mohon dicoba nanti!')
            await msg.channel.send('Ada yang bermasalah dengan fitur ini, aku sudah mengirimkan laporan ke developer!')
            channel = rvdia.get_channel(906123251997089792)
@@ -343,11 +361,11 @@ async def on_message(msg:discord.Message):
           return
         
         except Exception as e:
-           if "That model is currently overloaded with other requests." in str(e):
+           if "currently overloaded with other requests." in str(e):
               return await msg.channel.send('Maaf, fitur ini sedang dalam gangguan. Mohon dicoba nanti!')
            await msg.channel.send('Ada yang bermasalah dengan fitur ini, aku sudah mengirimkan laporan ke developer!')
            channel = rvdia.get_channel(906123251997089792)
-           await channel.send(f'`{e}` Untuk fitur balasan GPT-3.5 Turbo!')
+           await channel.send(f'`{e.__class__.__name__}: {e}` Untuk fitur balasan GPT-3.5 Turbo!')
            print(e)
 
     # Took me 2 hours to figure this out.

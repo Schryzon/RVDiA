@@ -96,8 +96,7 @@ class General(commands.Cog):
         embed.add_field(name = "Mode", value = f"Event Mode" if self.bot.event_mode else "Standard Mode", inline=False)
         embed.add_field(name = "Pencipta", value = f"<@877008612021661726> (Jayananda)", inline=False)
         embed.add_field(name = "Prefix", value = '@RVDIA | '+f" | ".join(prefix)+f' | / (slash)')
-        embed.add_field(name = "Library", value = f"discord.py ({discord.__version__})", inline = False)
-        embed.add_field(name = "Bahasa Pemrograman", value=f"Python ({pyver[:6]})", inline=False)
+        embed.add_field(name = "Bahasa Pemrograman", value=f"Python ({pyver[:6]})\ndiscord.py ({discord.__version__})", inline=False)
         embed.add_field(name = "Nyala Sejak", value = f"<t:{round(self.bot.runtime)}>\n(<t:{round(self.bot.runtime)}:R>)", inline = False)
         embed.add_field(name = "Jumlah Server", value = f"{len(self.bot.guilds)} Server")
         embed.add_field(name = "Jumlah Pengguna", value = f"{m} Pengguna")
@@ -229,7 +228,7 @@ class General(commands.Cog):
         embed.add_field(name="Bergabung Pada", value=member.joined_at.strftime("%a, %d %B %Y"))
         embed.add_field(name="Role tertinggi", value=member.top_role.mention, inline=False)
         if role_length > 10:
-            embed.add_field(name=f"Roles [{str(role_length)}]", value=" ".join(roles[:10]) + "\n(__First 10 roles__)", inline=False)
+            embed.add_field(name=f"Roles [{str(role_length)}]", value=" ".join(roles[:10]) + "\n(__10 role pertama__)", inline=False)
         else:
             embed.add_field(name=f"Roles [{str(role_length)}]", value=" ".join(roles), inline=False)
         embed.add_field(name=f"Permissions [{str(perm_len)}]", value="`"+", ".join(lol)+"`", inline=False)
@@ -460,8 +459,6 @@ class Utilities(commands.Cog):
         Ciptakan variasi dari gambar yang diberikan!
         """
         attachment = attachment or ctx.message.attachments[0]
-        if attachment.size >= 4e+6: # 4 x 10^6 Bytes
-            return await ctx.reply('Gambar yang diberikan lebih dari 4 MB!')
         
         await attachment.save(attachment.filename)
         self.crop_to_square(f'./{attachment.filename}')
