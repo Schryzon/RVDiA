@@ -40,14 +40,14 @@ class Url_Buttons(View):
 def connectdb(collection:str):
     """
     Returns data gained from database collection.
-    Format: RVDIA.Main.<collection>
+    Format: Main.<collection>
     !!WARNING!! RVDIA runs on Heroku, so an East US server is recommended for fast connection.
     """
     db = client.Main
     coll = db[collection]
     return coll
 
-def check_blacklist(): #This makes her too damn slow!
+def check_blacklist():
     async def predicate(ctx):
         blacklisted = connectdb('Blacklist')
         check_blacklist = blacklisted.find_one({'_id':ctx.author.id})

@@ -127,6 +127,9 @@ async def change_status():
 
 @tasks.loop(minutes=20)
 async def update_guild_status():
+    """
+    Sends data regarding shard and server count to Top.gg
+    """
     try:
       headers = {'Authorization': os.getenv('topggtoken')}
       async with aiohttp.ClientSession(headers=headers) as session:
