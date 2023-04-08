@@ -131,7 +131,7 @@ async def update_guild_status():
       headers = {'Authorization': os.getenv('topggtoken')}
       async with aiohttp.ClientSession(headers=headers) as session:
           await session.post(f'https://top.gg/api/bots/{rvdia.user.id}/stats', data={
-              'server_count':rvdia.guilds.count,
+              'server_count':len(rvdia.guilds),
               'shard_count':rvdia.shard_count
           })
           print(f'Posted server updates to Top.gg!')
