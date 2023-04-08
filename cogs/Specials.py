@@ -11,6 +11,9 @@ class Specials(commands.Cog):
     @commands.command(hidden=True)
     @commands.is_owner()
     async def hbd_yoga(self, ctx):
+        """
+        Come on man, why are you looking at this?!
+        """
         embed = discord.Embed(title="❤️ Happy Birthday, Kak Yoga!", color=0xff4df0)
         embed.set_author(name='Pesan dari RVDIA', url=self.bot.user.avatar.url)
         embed.set_thumbnail(url=getenv('yoga'))

@@ -1,5 +1,5 @@
 import asyncio
-from os import getenv, remove
+from os import remove
 import random
 import aiohttp
 import discord
