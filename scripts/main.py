@@ -103,7 +103,7 @@ def has_voted():
     async def predicate(ctx):
         headers = {'Authorization': os.getenv('topggtoken')}
         async with aiohttp.ClientSession(headers=headers) as session:
-            response = await session.get(f'https://top.gg/api/bots/{ctx.bot.user.id}/check?userId={ctx.author.id}')
+            response = await session.get(url=f'https://top.gg/api/bots/{ctx.bot.user.id}/check?userId={ctx.author.id}')
             data = await response.json()
             if data['voted'] == 1:
                 return True
