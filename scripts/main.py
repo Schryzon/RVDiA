@@ -1,13 +1,27 @@
+import os
 import pymongo
 import discord
+import aiohttp
 from discord.ui import View, Button
-from cogs.Handler import NotInGTechServer, NotGTechMember, NotGTechAdmin, NoProfilePicture, Blacklisted, NoEventAvailable
 from discord.ext import commands
-import os
 from dotenv import load_dotenv
+from cogs.Handler import NotInGTechServer, NotGTechMember, NotGTechAdmin, NoProfilePicture, Blacklisted, NoEventAvailable, NotVoted
 load_dotenv('./.gitignore/secrets.env')
 
 client = pymongo.MongoClient(os.getenv('mongodburl'))
+
+class Vote_Button(View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+        vote_me = Button(
+                label='Vote Aku!', 
+                emoji='<:rvdia:1082789733001875518>',
+                style=discord.ButtonStyle.green, 
+                url='https://top.gg/bot/957471338577166417/vote'
+                )
+    
+        self.add_item(vote_me)
 
 class Url_Buttons(View):
   def __init__(self):
@@ -96,6 +110,19 @@ def has_pfp():
         if not ctx.author.avatar:
             raise NoProfilePicture('No profile picture!')
         return True
+    return commands.check(predicate)
+
+def has_voted():
+    async def predicate(ctx):
+        headers = {'Authorization': os.getenv('topggtoken')}
+        async with aiohttp.ClientSession(headers=headers) as session:
+            response = await session.get(f'https://top.gg/api/bots/{ctx.bot.user.id}/check?userId={ctx.author.id}')
+            data = await response.json()
+            if data['voted'] == 1:
+                return True
+            else:
+                raise NotVoted('User has not voted yet!')
+        
     return commands.check(predicate)
 
 def titlecase(word):

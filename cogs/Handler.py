@@ -1,6 +1,7 @@
 
 import discord
 from discord.ext import commands
+from scripts.main import Vote_Button
 
 """
 Error handlers, it's where the ifs and elifs go crazy!
@@ -30,6 +31,10 @@ class NoEventAvailable(commands.CommandError):
   """Raised when no events are currently ongoing"""
   pass
 
+class NotVoted(commands.CommandError):
+  """Raised when user hasn't voted on Top.gg"""
+  pass
+
 class Error(commands.Cog):
   """
   An error handler class, what else do I have to say?
@@ -38,7 +43,7 @@ class Error(commands.Cog):
     self.historia = historia
 
   @commands.Cog.listener()
-  async def on_command_error(self, ctx, error):
+  async def on_command_error(self, ctx:commands.Context, error):
     try:
       if ctx.command.has_error_handler():
         return
@@ -139,6 +144,9 @@ class Error(commands.Cog):
 
     elif "currently overloaded with other requests." in str(error):
       await ctx.reply('Maaf, saat ini fitur tersebut sedang dalam gangguan. Mohon dicoba lagi nanti!')
+
+    elif 'User has not voted yet!' in str(error):
+      await ctx.reply('Kamu belum vote aku!\n[Vote aku di Top.gg](https://top.gg/bot/957471338577166417/vote) untuk bisa menggunakan command ini!', view=Vote_Button())
 
     # If all else fails (get it?)
     else:

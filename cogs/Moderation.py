@@ -47,10 +47,68 @@ class Moderation(commands.Cog):
         #embed.set_image(url = ctx.guild.banner.url)
         await ctx.reply(embed=embed)
 
-    @server.command(name='invites', description = 'Lihat daftar invite server ini!')
+    # Basically, avatar command
+    @server.command(description="Memperlihatkan gambar icon server ini.")
+    @check_blacklist()
+    async def icon(self, ctx:commands.Context):
+        """
+        Memperlihatkan gambar icon server ini.
+        """
+        guild = ctx.guild
+
+        if guild.icon is None:
+            return await ctx.reply(f'Server ini tidak memiliki icon!')
+        png = guild.icon.with_format("png").url
+        jpg = guild.icon.with_format("jpg").url
+        webp = guild.icon.with_format("webp").url
+
+        embed=discord.Embed(title=f"Icon {guild.name}", url = guild.icon.with_format("png").url, color=self.bot.color)
+
+        if guild.icon.is_animated():
+            gif = guild.icon.with_format("gif").url
+            embed.set_image(url = guild.icon.with_format("gif").url)
+            embed.description = f"[png]({png}) | [jpg]({jpg}) | [webp]({webp}) | [gif]({gif})"
+
+        else:
+            embed.description = f"[png]({png}) | [jpg]({jpg}) | [webp]({webp})"
+            embed.set_image(url = guild.icon.with_format("png").url)
+        embed.set_footer(text=f"{ctx.author}", icon_url=ctx.author.avatar.url)
+        await ctx.reply(embed=embed)
+
+    @commands.hybrid_group(name='invite')
     @commands.bot_has_permissions(manage_guild=True)
     @check_blacklist()
-    async def invite(self, ctx:commands.Context):
+    async def invite(self, ctx:commands.Context) -> None:
+        """
+        Kumpulan command menyangkut invite server. [GROUP]
+        """
+        await self.invites(ctx)
+        pass
+
+    @invite.command(name='create', description='Buat invite instan!')
+    @commands.bot_has_permissions(manage_guild=True)
+    @app_commands.describe(
+        expire = 'Berapa lama invite ini akan kadaluwarsa? (dalam detik, default: tak hingga)',
+        max_use = 'Berapa banyak orang yang bisa join lewat invite ini? (default: tak hingga)'
+        )
+    @app_commands.rename(max_use = 'maksimal_pengguna')
+    @check_blacklist()
+    async def create(self, ctx:commands.Context, expire:int=0, max_use:int=0):
+        """
+        Buat invite instan!
+        """
+        created_invite = await ctx.channel.create_invite(
+            reason=f'Created using r-invite create command by {ctx.author}.', 
+            max_age=expire,
+            max_uses=max_use
+            )
+        
+        await ctx.reply(f'**Invite siap!**\n{created_invite}')
+
+    @invite.command(name='view', description = 'Lihat daftar invite server ini!')
+    @commands.bot_has_permissions(manage_guild=True)
+    @check_blacklist()
+    async def invites(self, ctx:commands.Context):
         """
         Lihat daftar invite server ini!
         """
@@ -73,9 +131,10 @@ class Moderation(commands.Cog):
         except AttributeError:
             await ctx.reply('Sepertinya server ini belum membuat invite sama sekali!')
 
-    @commands.hybrid_command(
-        description="Memberikan pelanggaran kepada pengguna. (Harus berada di server ini)"
-        )
+    @commands.hybrid_group(
+            name='warn',
+            description="Memberikan pelanggaran kepada pengguna. (Harus berada di server ini)"
+            )
     @app_commands.describe(
         member = 'Pengguna yang melanggar',
         reason = 'Mengapa memberikan pelanggaran?'
@@ -96,13 +155,13 @@ class Moderation(commands.Cog):
             return await ctx.reply("Uh... sepertinya memberikan pelanggaran kepada bot itu kurang berguna.")
         db = connectdb("Warns")
         reason = reason or "Tidak ada alasan dispesifikasi."
-        warns = db.find_one({"_id":member.id})
+        warns = db.find_one({"_id":member.id, "guild_id":ctx.guild.id})
         warnqty = 0 #Gee
         if warns is None:
-            db.insert_one({"_id":member.id, "warns":1, "reason":[reason]})
+            db.insert_one({"_id":member.id, "guild_id":ctx.guild.id, "warns":1, "reason":[reason]})
             warnqty = 1
         else:
-            db.update_one({"_id":member.id}, {'$inc':{"warns":1}, '$push':{"reason":reason}})
+            db.update_one({"_id":member.id, 'guild_id':ctx.guild.id}, {'$inc':{"warns":1}, '$push':{"reason":reason}})
             warnqty = warns['warns']+1
         em = discord.Embed(title=f"Pelanggaran Diberikan❗", description = f"{member.mention} telah diberikan pelanggaran.\nDia sekarang telah diberikan **`{warnqty}`** pelanggaran.",
         color = member.colour
@@ -111,9 +170,48 @@ class Moderation(commands.Cog):
         em.set_thumbnail(url = member.avatar.url if not member.avatar is None else getenv('normalpfp'))
         em.set_footer(text=f"Pelanggaran diberikan oleh {ctx.author} | ID:{ctx.author.id}", icon_url=ctx.author.avatar.url)
         await ctx.reply(embed = em)
+        
+    """@commands.hybrid_command(
+        description="Memberikan pelanggaran kepada pengguna. (Harus berada di server ini)"
+        )
+    @app_commands.describe(
+        member = 'Pengguna yang melanggar',
+        reason = 'Mengapa memberikan pelanggaran?'
+    )
+    @app_commands.rename(
+        member='pengguna',
+        reason='alasan'
+    )
+    @commands.has_permissions(manage_messages= True)
+    @check_blacklist()
+    async def warn(self, ctx:commands.Context, member:discord.Member, *, reason = None):
+        #
+        Memberikan pelanggaran kepada pengguna.
+        #
+        if ctx.author == member:
+            return await ctx.reply("Kamu tidak bisa memberikan pelanggaran kepada dirimu!")
+        if member.bot:
+            return await ctx.reply("Uh... sepertinya memberikan pelanggaran kepada bot itu kurang berguna.")
+        db = connectdb("Warns")
+        reason = reason or "Tidak ada alasan dispesifikasi."
+        warns = db.find_one({"_id":member.id, "guild_id":ctx.guild.id})
+        warnqty = 0 #Gee
+        if warns is None:
+            db.insert_one({"_id":member.id, "guild_id":ctx.guild.id, "warns":1, "reason":[reason]})
+            warnqty = 1
+        else:
+            db.update_one({"_id":member.id, 'guild_id':ctx.guild.id}, {'$inc':{"warns":1}, '$push':{"reason":reason}})
+            warnqty = warns['warns']+1
+        em = discord.Embed(title=f"Pelanggaran Diberikan❗", description = f"{member.mention} telah diberikan pelanggaran.\nDia sekarang telah diberikan **`{warnqty}`** pelanggaran.",
+        color = member.colour
+        )
+        em.add_field(name="Alasan", value=reason, inline=False)
+        em.set_thumbnail(url = member.avatar.url if not member.avatar is None else getenv('normalpfp'))
+        em.set_footer(text=f"Pelanggaran diberikan oleh {ctx.author} | ID:{ctx.author.id}", icon_url=ctx.author.avatar.url)
+        await ctx.reply(embed = em)"""
 
-    @commands.hybrid_command(
-        aliases=['wnhistory'], 
+    @warn.command(
+        name='history',
         description="Lihat riwayat pelanggaran pengguna di server ini.",
     )
     @app_commands.describe(
@@ -122,11 +220,11 @@ class Moderation(commands.Cog):
     @app_commands.rename(member = 'pengguna')
     @commands.has_permissions(manage_messages = True)
     @check_blacklist()
-    async def warnhistory(self, ctx:commands.Context, member:discord.Member = None):
+    async def warnhistory(self, ctx:commands.Context, member:discord.Member):
             """Lihat riwayat pelanggaran pengguna."""
             member = member or ctx.author
             db = connectdb("Warns")
-            doc = db.find_one({'_id':member.id})
+            doc = db.find_one({'_id':member.id, "guild_id":ctx.guild.id})
             if doc is None:
                 return await ctx.reply(f"**`{member}`** saat ini belum memiliki pelanggaran.")
             reasons = doc['reason']
@@ -139,7 +237,7 @@ class Moderation(commands.Cog):
             emb.set_thumbnail(url = member.avatar.url if not member.avatar is None else getenv('normalpfp'))
             await ctx.reply(embed = emb)
 
-    @commands.hybrid_command(aliases=["rmwarn"], description="Menghilangkan segala data pelanggaran pengguna.")
+    @warn.command(name='remove', description="Menghilangkan segala data pelanggaran pengguna.")
     @commands.has_permissions(manage_messages=True)
     @app_commands.describe(
         member = 'Pengguna yang ingin dihilangkan riwayat pelanggarannya.'
@@ -153,18 +251,29 @@ class Moderation(commands.Cog):
         Menghilangkan segala data pelanggaran pengguna.
         """
         db = connectdb("Warns")
-        doc = db.find_one({"_id":member.id})
+        doc = db.find_one({"_id":member.id, "guild_id":ctx.guild.id})
         if doc is None:
             return await ctx.reply(f"`{member}` belum pernah diberikan pelanggaran!")
-        db.find_one_and_delete({"_id":member.id})
-        await ctx.reply(f"Semua pelanggaran untuk {member.mention} telah dihapus.")
+        db.find_one_and_delete({"_id":member.id, 'guild_id':ctx.guild.id})
+        await ctx.reply(f"Semua pelanggaran untuk {member.mention} di server ini telah dihapus.")
 
-    """@commands.command(aliases=['wnlist'])
-    @commands.has_permissions(ban_members=True)
-    async def warnlist(self, ctx):
+    @warn.command(name='list')
+    @commands.has_permissions(manage_messages=True)
+    async def warnlist(self, ctx:commands.Context):
         db = connectdb('Warns')
-        docs = db.find({})
-        print(docs)""" #Unused for the moment.
+        docs = db.find({'guild_id':ctx.guild.id})
+        if docs is None:
+            return await ctx.reply(f'Belum ada orang yang terkena pelanggaran di server ini!')
+        
+        text = []
+        for data in docs:
+            user = await self.bot.fetch_user(data['_id'])
+            text.append(f'**`{user}`** | Jumlah: `{data["warns"]}` pelanggaran')
+        
+        embed = discord.Embed(title=f'Daftar Pelanggaran di {ctx.guild.name}', color=ctx.author.color, timestamp=ctx.message.created_at)
+        embed.description = '\n'.join(text)
+        embed.set_thumbnail(url=ctx.guild.icon.url if not ctx.guild.icon is None else getenv('normalpfp'))
+        await ctx.reply(embed=embed)
 
     @commands.hybrid_command(name='ultban', description="Ban pengguna dari server, walaupun dia di luar server ini.")
     @commands.has_permissions(ban_members=True)

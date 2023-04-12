@@ -59,6 +59,8 @@ def when_mentioned_or_function(func):
         return r
     return inner
 
+# I have plans to convert rvdia to a class so I can change its attributes from there.
+
 intents = discord.Intents.all() # Might change my mind in the near future.
 rvdia = commands.AutoShardedBot(
   command_prefix = when_mentioned_or_function(get_prefix), 
@@ -68,8 +70,9 @@ rvdia = commands.AutoShardedBot(
 )
 
 rvdia.synced = False
-rvdia.__version__ = "公式 [Official] v1.0.0"
+rvdia.__version__ = "公式 [Official] v1.0.1"
 rvdia.event_mode = False
+rvdia.color = 0xff4df0
 rvdia.runtime = time() # UNIX float
 
 cogs_list = [cogs.name for cogs in iter_modules(['cogs'], prefix='cogs.')] # iter_modules() for easier task
@@ -368,7 +371,7 @@ async def on_message(msg:discord.Message):
               return await msg.channel.send('Maaf, fitur ini sedang dalam gangguan. Mohon dicoba nanti!')
            await msg.channel.send('Ada yang bermasalah dengan fitur ini, aku sudah mengirimkan laporan ke developer!')
            channel = rvdia.get_channel(906123251997089792)
-           await channel.send(f'`{e.__class__.__name__}: {e}` Untuk fitur balasan GPT-3.5 Turbo!')
+           await channel.send(f'`{e}` Untuk fitur balasan GPT-3.5 Turbo!')
            print(e)
 
     # Took me 2 hours to figure this out.

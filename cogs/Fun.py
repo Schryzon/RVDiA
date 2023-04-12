@@ -7,7 +7,7 @@ from discord import app_commands
 from discord.ext import commands
 from PIL import Image
 from io import BytesIO
-from scripts.main import check_blacklist
+from scripts.main import check_blacklist, has_voted
 
 class Fun(commands.Cog):
     """
@@ -17,12 +17,14 @@ class Fun(commands.Cog):
         self.bot = bot
     
     @commands.hybrid_command(aliases = ['bandoriwaifu'], description='Temukan karakter BanG Dream yang cocok denganmu!')
+    @has_voted()
     @check_blacklist()
     async def bdwaifu(self, ctx:commands.Context):
         """
         Temukan karakter BanG Dream yang cocok denganmu!
         """
         async with aiohttp.ClientSession() as session:
+            response = await session.get()
             bdinit = await session.get(f"https://bandori.party/api/members/{random.randint(6, 40)}/")
             bdwifu = await bdinit.json()
             we = discord.Embed(title = f"{bdwifu['name']} [{bdwifu['japanese_name']}]", description = f"From {bdwifu['i_band']}", color = ctx.author.colour)
@@ -39,6 +41,7 @@ class Fun(commands.Cog):
             await ctx.reply(embed = we)
 
     @commands.hybrid_command(aliases=['tebak'], description='Ayo main tebak angka bersamaku!')
+    @has_voted()
     @check_blacklist()
     async def guess(self, ctx:commands.Context):
         """
@@ -252,6 +255,7 @@ class Fun(commands.Cog):
     @commands.hybrid_command(aliases=['jodohkan', 'jodoh'], description="Jodohkan seseorang denganmu atau orang lain!")
     @app_commands.rename(member1='pengguna_1', member2='pengguna_2')
     @commands.cooldown(1, 5, commands.BucketType.user)
+    @has_voted()
     @check_blacklist()
     async def ship(self, ctx:commands.Context, member1: discord.Member = None, member2:discord.Member=None):
         """
