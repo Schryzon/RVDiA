@@ -133,7 +133,7 @@ class Moderation(commands.Cog):
 
     @commands.hybrid_group(
             name='warn',
-            description="Memberikan pelanggaran kepada pengguna. (Harus berada di server ini)"
+            description="Memberikan pelanggaran kepada pengguna. (Harus berada di server ini)", callback='add'
             )
     @app_commands.describe(
         member = 'Pengguna yang melanggar',
@@ -257,12 +257,15 @@ class Moderation(commands.Cog):
         db.find_one_and_delete({"_id":member.id, 'guild_id':ctx.guild.id})
         await ctx.reply(f"Semua pelanggaran untuk {member.mention} di server ini telah dihapus.")
 
-    @warn.command(name='list')
+    @warn.command(name='list', description = 'Memperlihatkan semua pengguna yang memiliki pelanggaran di server ini.')
     @commands.has_permissions(manage_messages=True)
     async def warnlist(self, ctx:commands.Context):
+        """
+        Memperlihatkan semua pengguna yang memiliki pelanggaran di server ini.
+        """
         db = connectdb('Warns')
         docs = db.find({'guild_id':ctx.guild.id})
-        if docs is None:
+        if docs == [] or docs is None:
             return await ctx.reply(f'Belum ada orang yang terkena pelanggaran di server ini!')
         
         text = []
