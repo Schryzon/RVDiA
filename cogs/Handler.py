@@ -159,7 +159,7 @@ class Error(commands.Cog):
                     )
         
             self.add_item(vote_me)
-      await ctx.reply('Kamu belum vote aku!\n[Vote aku di Top.gg](https://top.gg/bot/957471338577166417/vote) untuk bisa menggunakan command ini!', view=Vote_Button())
+      await ctx.reply('Kamu belum vote aku!\nVote aku di Top.gg(<https://top.gg/bot/957471338577166417/vote>) untuk bisa menggunakan command ini!', view=Vote_Button())
 
     # If all else fails (get it?)
     else:
