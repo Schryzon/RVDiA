@@ -131,10 +131,20 @@ class Moderation(commands.Cog):
         except AttributeError:
             await ctx.reply('Sepertinya server ini belum membuat invite sama sekali!')
 
-    @commands.hybrid_group(
-            name='warn',
-            description="Memberikan pelanggaran kepada pengguna. (Harus berada di server ini)", callback='add'
-            )
+    @commands.hybrid_group(name='warn')
+    @commands.has_permissions(manage_messages= True)
+    @check_blacklist()
+    async def warn(self, ctx:commands.Context, member:discord.Member, *, reason = None):
+        """
+        Kumpulan command berkaitan dengan pemberian pelanggaran. [GROUP]
+        """
+        await self.warn_add(ctx, member, reason=reason)
+        pass
+        
+    @warn.command(
+        name = 'add',
+        description="Memberikan pelanggaran kepada pengguna. (Harus berada di server ini)"
+        )
     @app_commands.describe(
         member = 'Pengguna yang melanggar',
         reason = 'Mengapa memberikan pelanggaran?'
@@ -145,7 +155,7 @@ class Moderation(commands.Cog):
     )
     @commands.has_permissions(manage_messages= True)
     @check_blacklist()
-    async def warn(self, ctx:commands.Context, member:discord.Member, *, reason = None):
+    async def warn_add(self, ctx:commands.Context, member:discord.Member, *, reason = None):
         """
         Memberikan pelanggaran kepada pengguna.
         """
@@ -170,45 +180,6 @@ class Moderation(commands.Cog):
         em.set_thumbnail(url = member.avatar.url if not member.avatar is None else getenv('normalpfp'))
         em.set_footer(text=f"Pelanggaran diberikan oleh {ctx.author} | ID:{ctx.author.id}", icon_url=ctx.author.avatar.url)
         await ctx.reply(embed = em)
-        
-    """@commands.hybrid_command(
-        description="Memberikan pelanggaran kepada pengguna. (Harus berada di server ini)"
-        )
-    @app_commands.describe(
-        member = 'Pengguna yang melanggar',
-        reason = 'Mengapa memberikan pelanggaran?'
-    )
-    @app_commands.rename(
-        member='pengguna',
-        reason='alasan'
-    )
-    @commands.has_permissions(manage_messages= True)
-    @check_blacklist()
-    async def warn(self, ctx:commands.Context, member:discord.Member, *, reason = None):
-        #
-        Memberikan pelanggaran kepada pengguna.
-        #
-        if ctx.author == member:
-            return await ctx.reply("Kamu tidak bisa memberikan pelanggaran kepada dirimu!")
-        if member.bot:
-            return await ctx.reply("Uh... sepertinya memberikan pelanggaran kepada bot itu kurang berguna.")
-        db = connectdb("Warns")
-        reason = reason or "Tidak ada alasan dispesifikasi."
-        warns = db.find_one({"_id":member.id, "guild_id":ctx.guild.id})
-        warnqty = 0 #Gee
-        if warns is None:
-            db.insert_one({"_id":member.id, "guild_id":ctx.guild.id, "warns":1, "reason":[reason]})
-            warnqty = 1
-        else:
-            db.update_one({"_id":member.id, 'guild_id':ctx.guild.id}, {'$inc':{"warns":1}, '$push':{"reason":reason}})
-            warnqty = warns['warns']+1
-        em = discord.Embed(title=f"Pelanggaran Diberikan❗", description = f"{member.mention} telah diberikan pelanggaran.\nDia sekarang telah diberikan **`{warnqty}`** pelanggaran.",
-        color = member.colour
-        )
-        em.add_field(name="Alasan", value=reason, inline=False)
-        em.set_thumbnail(url = member.avatar.url if not member.avatar is None else getenv('normalpfp'))
-        em.set_footer(text=f"Pelanggaran diberikan oleh {ctx.author} | ID:{ctx.author.id}", icon_url=ctx.author.avatar.url)
-        await ctx.reply(embed = em)"""
 
     @warn.command(
         name='history',
@@ -266,7 +237,7 @@ class Moderation(commands.Cog):
         db = connectdb('Warns')
         docs = db.find({'guild_id':ctx.guild.id})
         if docs == [] or docs is None:
-            return await ctx.reply(f'Belum ada orang yang terkena pelanggaran di server ini!')
+            return await ctx.reply(f'Belum ada orang yang diberikan pelanggaran di server ini!')
         
         text = []
         for data in docs:
