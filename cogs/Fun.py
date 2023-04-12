@@ -24,7 +24,6 @@ class Fun(commands.Cog):
         Temukan karakter BanG Dream yang cocok denganmu!
         """
         async with aiohttp.ClientSession() as session:
-            response = await session.get()
             bdinit = await session.get(f"https://bandori.party/api/members/{random.randint(6, 40)}/")
             bdwifu = await bdinit.json()
             we = discord.Embed(title = f"{bdwifu['name']} [{bdwifu['japanese_name']}]", description = f"From {bdwifu['i_band']}", color = ctx.author.colour)
