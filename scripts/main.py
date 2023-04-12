@@ -10,19 +10,6 @@ load_dotenv('./.gitignore/secrets.env')
 
 client = pymongo.MongoClient(os.getenv('mongodburl'))
 
-class Vote_Button(View):
-    def __init__(self):
-        super().__init__(timeout=None)
-
-        vote_me = Button(
-                label='Vote Aku!', 
-                emoji='<:rvdia:1082789733001875518>',
-                style=discord.ButtonStyle.green, 
-                url='https://top.gg/bot/957471338577166417/vote'
-                )
-    
-        self.add_item(vote_me)
-
 class Url_Buttons(View):
   def __init__(self):
     super().__init__(timeout=None)

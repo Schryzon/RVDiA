@@ -1,7 +1,7 @@
 
 import discord
+from discord.ui import View, Button
 from discord.ext import commands
-from scripts.main import Vote_Button
 
 """
 Error handlers, it's where the ifs and elifs go crazy!
@@ -146,6 +146,19 @@ class Error(commands.Cog):
       await ctx.reply('Maaf, saat ini fitur tersebut sedang dalam gangguan. Mohon dicoba lagi nanti!')
 
     elif 'User has not voted yet!' in str(error):
+      # Man why doesnt it work tho
+      class Vote_Button(View):
+        def __init__(self):
+            super().__init__(timeout=None)
+
+            vote_me = Button(
+                    label='Vote Aku!', 
+                    emoji='<:rvdia:1082789733001875518>',
+                    style=discord.ButtonStyle.green, 
+                    url='https://top.gg/bot/957471338577166417/vote'
+                    )
+        
+            self.add_item(vote_me)
       await ctx.reply('Kamu belum vote aku!\n[Vote aku di Top.gg](https://top.gg/bot/957471338577166417/vote) untuk bisa menggunakan command ini!', view=Vote_Button())
 
     # If all else fails (get it?)
