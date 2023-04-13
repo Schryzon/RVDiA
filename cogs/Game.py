@@ -69,7 +69,7 @@ class Game(commands.Cog):
         current_time = datetime.datetime.now()
         delta_time = current_time - last_login
 
-        if delta_time.total_seconds() >= 24*60*60:
+        if delta_time.total_seconds() <= 24*60*60:
             next_login = last_login + datetime.timedelta(hours=24)
             next_login_unix = int(time.mktime(next_login.timetuple()))
             return await ctx.reply(f'Kamu sudah login hari ini!\nKamu bisa login lagi pada <t:{next_login_unix}:f>')
