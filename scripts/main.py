@@ -6,6 +6,7 @@ from discord.ui import View, Button
 from discord.ext import commands
 from dotenv import load_dotenv
 from cogs.Handler import NotInGTechServer, NotGTechMember, NotGTechAdmin, NoProfilePicture, Blacklisted, NoEventAvailable, NotVoted
+from cogs.Handler import NoGameAccount
 load_dotenv('./.gitignore/secrets.env')
 
 client = pymongo.MongoClient(os.getenv('mongodburl'))
@@ -112,6 +113,16 @@ def has_voted():
         
     return commands.check(predicate)
 
+def has_registered():
+    database=connectdb('Game')
+    async def predicate(ctx):
+        data=database.find_one({'_id':ctx.author.id})
+        if not data:
+            raise NoGameAccount('User has no game account!')
+        return True
+    
+    return commands.check(predicate)
+
 def titlecase(word):
     if word.isupper():
         return word
@@ -122,33 +133,14 @@ def titlecase(word):
 def heading(direction:int):
         result =[]
         ranges = [
-                [0, 46], [46, 91],
-                [90, 136], [136, 181],
-                [180, 226], [225, 271],
-                [270, 316], [315, 361]
-                ]
-        
+        [0, 45, "Utara"], [46, 90, "Timur Laut"],
+        [91, 135, "Timur"], [136, 180, "Tenggara"],
+        [181, 225, "Selatan"], [226, 270, "Barat Daya"],
+        [271, 315, "Barat"], [316, 360, "Barat Laut"]
+        ]
+
         for i in ranges:
-            if direction in range(i[0], i[1]):
-              result.append(i)
-        
-        if len(result) == 2: # Cannot use match cases here!
-            if result == [ranges[1], ranges[2]]:
-                return "Timur"
-            elif result == [ranges[3], ranges[4]]:
-                return "Selatan"
-            elif result == [ranges[5], ranges[6]]:
-                return "Barat"
-            else:
-                return "Utara"
-            
-        else:
-            if result == [ranges[0]] or result == [ranges[1]]:
-                return "Timur Laut"
-            elif result == [ranges[2]] or result == [ranges[3]]:
-                return "Tenggara"
-            elif result == [ranges[4]] or result == [ranges[5]]:
-                return "Barat Daya"
-            else:
-                return "Barat Laut"
-            
+            if direction in range(i[0], i[1] + 1):
+                result.append(i[2])
+
+        return result         

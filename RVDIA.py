@@ -70,7 +70,7 @@ rvdia = commands.AutoShardedBot(
 )
 
 rvdia.synced = False
-rvdia.__version__ = "公式 [Official] v1.0.2"
+rvdia.__version__ = "公式 [Official] v1.0.3"
 rvdia.event_mode = False
 rvdia.color = 0xff4df0
 rvdia.runtime = time() # UNIX float

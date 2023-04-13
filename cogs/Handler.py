@@ -35,6 +35,10 @@ class NotVoted(commands.CommandError):
   """Raised when user hasn't voted on Top.gg"""
   pass
 
+class NoGameAccount(commands.CommandError):
+  """Raised when user hasn't created a game account yet"""
+  pass
+
 class Error(commands.Cog):
   """
   An error handler class, what else do I have to say?
@@ -160,6 +164,9 @@ class Error(commands.Cog):
         
             self.add_item(vote_me)
       await ctx.reply('Kamu belum vote aku!\nVote aku di Top.gg(<https://top.gg/bot/957471338577166417/vote>) untuk bisa menggunakan command ini!', view=Vote_Button())
+
+    elif 'User has no game account!' in str(error):
+      await ctx.reply(f'Kamu belum mendaftarkan akunmu ke Land of Revolution!\nDaftarkan akunmu dengan `{ctx.clean_prefix}game register`')
 
     # If all else fails (get it?)
     else:
