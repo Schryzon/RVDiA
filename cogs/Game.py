@@ -9,7 +9,7 @@ from discord.ext import commands
 from scripts.main import connectdb, check_blacklist, has_registered, level_up, send_level_up_msg
 
 class ResignButton(View):
-    def __init__(self):
+    def __init__(self, ctx):
         super().__init__(timeout=20)
 
         delete_account = Button(
@@ -24,6 +24,7 @@ class ResignButton(View):
         )
         self.add_item(delete_account)
         self.add_item(cancel)
+        self.ctx = ctx
 
     async def check_interaction(self, interaction: discord.Interaction) -> bool:
         if interaction.user != self.ctx.author:
@@ -103,7 +104,7 @@ class Game(commands.Cog):
         """
         Menghapuskan akunmu dari Land of Revolution.
         """
-        view = ResignButton()
+        view = ResignButton(ctx)
         await ctx.send('Apakah kamu yakin akan menghapus akunmu?\nKamu punya 20 detik untuk menentukan keputusanmu.', view=view)
         interaction = await self.bot.wait_for("button_click", check=view.check_interaction)
         await view.on_button_click(interaction)
