@@ -21,8 +21,9 @@ class ResignButton(View):
             await interaction.response.send_message("Kamu tidak diperbolehkan berinteraksi dengan tombol ini!", ephemeral=True)
             return
         database = connectdb('Game')
+        data = database.find_one({'_id':interaction.user.id})
         database.find_one_and_delete({'_id':interaction.user.id})
-        await interaction.response.send_message(f'Aku telah menghapus akunmu.\nSampai jumpa, `{interaction.user.name}`, di Land of Revolution!')
+        await interaction.response.send_message(f'Aku telah menghapus akunmu.\nSampai jumpa, `{data["name"]}`, di Land of Revolution!')
         self.value = True
         self.stop()
 
@@ -128,16 +129,65 @@ class Game(commands.Cog):
             if level_up(ctx):
                 return await send_level_up_msg(ctx)
             
-    @game.command(description='Lihat profil pengguna di Land of Revolution! (UNFINISHED)')
+    @game.command(description='Lihat profil pengguna di Land of Revolution!')
     @app_commands.describe(user='Pengguna mana yang ingin dilihat akunnya?')
     @app_commands.rename(user='pengguna')
     @has_registered()
     @check_blacklist()
     async def account(self, ctx:commands.Context, *, user:discord.User=None):
         """
-        Lihat profil pengguna di Land of Revolution! (UNFINISHED)
+        Lihat profil pengguna di Land of Revolution!
         """
-        await ctx.send('Command ini masih dalam proses pembuatan! Mohon ditunggu ya!')
+        # Plans: PIL profile pic, equipment & items should be seperate commands
+        user = user or ctx.author
+        database = connectdb('Game')
+        data = database.find_one({'_id':user.id})
+
+        # General data
+        player_name = data['name']
+        level = data['level']
+        exp, next_exp = data['exp'], data['next_exp']
+        last_login = data['last_login']
+
+        # Stats & economy
+        coins = data['coins']
+        karma = data['karma']
+
+        # Battle stats
+        attack, defense, agility = data['attack'], data['defense'], data['agility']
+        special_skills = data['special_skills']
+
+        embed = discord.Embed(title=player_name, timestamp=last_login)
+        embed.set_author(name='Info Akun Land of Revolution:')
+        embed.description = f'Alias: {user}'
+        embed.set_thumbnail(url=user.avatar.url if user.avatar else getenv('normalpfp'))
+
+        embed.add_field(
+            name=f'Level {level}', 
+            value=f'EXP: `{exp}`/`{next_exp}`', 
+            inline=False
+            )
+
+        embed.add_field(
+            name=f'Status Keuangan',
+            value=f'Koin: `{coins}`\nKarma: `{karma}`', 
+            inline=False
+            )
+
+        embed.add_field(
+            name=f'Statistik Tempur', 
+            value=f'Attack: `{attack}`\nDefense: `{defense}`\nAgility: `{agility}`', 
+            inline=False
+            )
+        
+        embed.add_field(
+            name='Skill Spesial',
+            value=', '.join(special_skills) if not special_skills == [] else "Belum ada dikuasai.",
+            inline=False
+        )
+        
+        embed.set_footer(text='Login harian terakhir: ')
+        await ctx.reply(embed = embed)
 
 
 async def setup(bot):
