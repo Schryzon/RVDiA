@@ -27,21 +27,21 @@ class ResignButton(View):
         self.ctx = ctx
 
     async def check_interaction(self, interaction: discord.Interaction) -> bool:
+        print(f"interaction.user: {interaction.user}, self.ctx.author: {self.ctx.author}")
         if interaction.user != self.ctx.author:
             await interaction.response.send_message("Kamu tidak diperbolehkan berinteraksi dengan tombol ini!", ephemeral=True)
             return False
         
         return True
     
-    async def on_button_click(self, interaction: discord.Interaction, view):
+    async def on_button_click(self, interaction: discord.Interaction):
         try:
             custom_id = interaction.data['custom_id']
             match custom_id:
                 case 'delacc':
                     database = connectdb('Game')
-                    data = database.find_one({'_id':interaction.user.id})
                     database.find_one_and_delete({'_id':interaction.user.id})
-                    await interaction.response.send_message(f'Aku telah menghapus akunmu.\nSampai jumpa, `{data["name"]}`, di Land of Revolution!')
+                    await interaction.response.send_message(f'Aku telah menghapus akunmu.\nSampai jumpa, `{interaction.user.name}`, di Land of Revolution!')
 
                 case 'canceldel':
                     await interaction.response.send_message('Penghapusan akun dibatalkan.')
@@ -53,7 +53,7 @@ class ResignButton(View):
                 for button in item.children:
                     button.disabled=True
 
-            await interaction.message.edit(view=view)\
+            await interaction.message.edit(view=self)
             
         except Exception as e:
             print(e)
@@ -112,7 +112,7 @@ class Game(commands.Cog):
             view = ResignButton(ctx)
             await ctx.send('Apakah kamu yakin akan menghapus akunmu?\nKamu punya 20 detik untuk menentukan keputusanmu.', view=view)
             interaction = await self.bot.wait_for("button_click", check=view.check_interaction)
-            await view.on_button_click(interaction, view)
+            await view.on_button_click(interaction)
 
         except Exception as e:
             print(e)
