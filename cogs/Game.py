@@ -104,10 +104,14 @@ class Game(commands.Cog):
         """
         Menghapuskan akunmu dari Land of Revolution.
         """
-        view = ResignButton(ctx)
-        await ctx.send('Apakah kamu yakin akan menghapus akunmu?\nKamu punya 20 detik untuk menentukan keputusanmu.', view=view)
-        interaction = await self.bot.wait_for("button_click", check=view.check_interaction)
-        await view.on_button_click(interaction)
+        try:
+            view = ResignButton(ctx)
+            await ctx.send('Apakah kamu yakin akan menghapus akunmu?\nKamu punya 20 detik untuk menentukan keputusanmu.', view=view)
+            interaction = await self.bot.wait_for("button_click", check=view.check_interaction)
+            await view.on_button_click(interaction)
+            
+        except Exception as e:
+            print(e)
 
     @game.command(aliases=['login'], description='Dapatkan bonus login harian!')
     @has_registered()
