@@ -33,26 +33,30 @@ class ResignButton(View):
         
         return True
     
-    async def on_button_click(self, interaction: discord.Interaction):
-        custom_id = interaction.data['custom_id']
-        match custom_id:
-            case 'delacc':
-                database = connectdb('Game')
-                data = database.find_one({'_id':interaction.user.id})
-                database.find_one_and_delete({'_id':interaction.user.id})
-                await interaction.response.send_message(f'Aku telah menghapus akunmu.\nSampai jumpa, `{data["name"]}`, di Land of Revolution!')
+    async def on_button_click(self, interaction: discord.Interaction, view):
+        try:
+            custom_id = interaction.data['custom_id']
+            match custom_id:
+                case 'delacc':
+                    database = connectdb('Game')
+                    data = database.find_one({'_id':interaction.user.id})
+                    database.find_one_and_delete({'_id':interaction.user.id})
+                    await interaction.response.send_message(f'Aku telah menghapus akunmu.\nSampai jumpa, `{data["name"]}`, di Land of Revolution!')
 
-            case 'canceldel':
-                await interaction.response.send_message('Penghapusan akun dibatalkan.')
+                case 'canceldel':
+                    await interaction.response.send_message('Penghapusan akun dibatalkan.')
 
-            case _:
-                pass
+                case _:
+                    pass
 
-        for item in interaction.message.components:
-            for button in item.children:
-                button.disabled=True
+            for item in interaction.message.components:
+                for button in item.children:
+                    button.disabled=True
 
-        await interaction.message.edit(view=self)
+            await interaction.message.edit(view=view)\
+            
+        except Exception as e:
+            print(e)
 
 class Game(commands.Cog):
     def __init__(self, bot):
@@ -108,8 +112,8 @@ class Game(commands.Cog):
             view = ResignButton(ctx)
             await ctx.send('Apakah kamu yakin akan menghapus akunmu?\nKamu punya 20 detik untuk menentukan keputusanmu.', view=view)
             interaction = await self.bot.wait_for("button_click", check=view.check_interaction)
-            await view.on_button_click(interaction)
-            
+            await view.on_button_click(interaction, view)
+
         except Exception as e:
             print(e)
 
