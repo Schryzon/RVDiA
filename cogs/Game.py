@@ -112,7 +112,7 @@ class Game(commands.Cog):
         """
         try:
             view = ResignButton(ctx)
-            await ctx.send('Apakah kamu yakin akan menghapus akunmu?\nKamu punya 20 detik untuk menentukan keputusanmu.', view=view)
+            await ctx.send('Apakah kamu yakin akan menghapus akunmu?\nKamu punya 20 detik untuk menentukan keputusanmu.', components=[view])
             interaction = await self.bot.wait_for("button_click")
             await view.on_button_click(interaction)
 
