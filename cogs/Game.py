@@ -13,6 +13,7 @@ class ResignButton(View):
         print('__init__ called')
         super().__init__(timeout=20)
         self.ctx = ctx
+        self.value = None
 
     @button(label='Hapus Akun', style=discord.ButtonStyle.danger, custom_id='delacc')
     async def delete_account(self, interaction: discord.Interaction, button: Button):
@@ -22,7 +23,7 @@ class ResignButton(View):
         database = connectdb('Game')
         database.find_one_and_delete({'_id':interaction.user.id})
         await interaction.response.send_message(f'Aku telah menghapus akunmu.\nSampai jumpa, `{interaction.user.name}`, di Land of Revolution!')
-        button.disabled=True
+        self.value = True
         self.stop()
 
     @button(label='Batalkan', style=discord.ButtonStyle.green, custom_id='canceldel')
@@ -31,54 +32,9 @@ class ResignButton(View):
             await interaction.response.send_message("Kamu tidak diperbolehkan berinteraksi dengan tombol ini!", ephemeral=True)
             return
         await interaction.response.send_message('Penghapusan akun dibatalkan.')
+        self.value = False
         self.stop()
 
-
-        """delete_account = Button(
-            style=discord.ButtonStyle.danger,
-            label='Hapus Akun',
-            custom_id='delacc'
-        )
-        cancel = Button(
-            style=discord.ButtonStyle.green,
-            label='Batalkan',
-            custom_id='canceldel'
-        )
-        self.add_item(delete_account)
-        self.add_item(cancel)
-
-    async def check_interaction(self, interaction: discord.Interaction) -> bool:
-        print(f"interaction.user: {interaction.user}, self.ctx.author: {self.ctx.author}")
-        if interaction.user != self.ctx.author:
-            await interaction.response.send_message("Kamu tidak diperbolehkan berinteraksi dengan tombol ini!", ephemeral=True)
-            return False
-        
-        return True
-    
-    async def on_button_click(self, interaction: discord.Interaction):
-        print('on_click executed')
-        try:
-            custom_id = interaction.data['custom_id']
-            match custom_id:
-                case 'delacc':
-                    database = connectdb('Game')
-                    database.find_one_and_delete({'_id':interaction.user.id})
-                    await interaction.response.send_message(f'Aku telah menghapus akunmu.\nSampai jumpa, `{interaction.user.name}`, di Land of Revolution!')
-
-                case 'canceldel':
-                    await interaction.response.send_message('Penghapusan akun dibatalkan.')
-
-                case _:
-                    pass
-
-            for item in interaction.message.components:
-                for button in item.children:
-                    button.disabled=True
-
-            await interaction.message.edit(view=self)
-            
-        except Exception as e:
-            print(e)"""
 
 class Game(commands.Cog):
     def __init__(self, bot):
@@ -130,13 +86,11 @@ class Game(commands.Cog):
         """
         Menghapuskan akunmu dari Land of Revolution.
         """
-        try:
-            view = ResignButton(ctx)
-            await ctx.reply('Apakah kamu yakin akan menghapus akunmu?\nKamu punya 20 detik untuk menentukan keputusanmu.', view=view)
-            await view.wait()
-
-        except Exception as e:
-            print(e)
+        view = ResignButton(ctx)
+        await ctx.reply('Apakah kamu yakin akan menghapus akunmu?\nKamu punya 20 detik untuk menentukan keputusanmu.', view=view)
+        await view.wait()
+        if view.value is None:
+            await ctx.channel.send('Waktu habis, penghapusan akun dibatalkan.')
 
     @game.command(aliases=['login'], description='Dapatkan bonus login harian!')
     @has_registered()
@@ -168,7 +122,7 @@ class Game(commands.Cog):
             embed = discord.Embed(title='Bonus Harianmu', color=0x00FF00, timestamp=next_login)
             embed.set_thumbnail(url=ctx.author.avatar.url if ctx.author.avatar else getenv('normalpfp'))
             embed.description = f'Kamu mendapatkan:\n`{new_coins}` koin;\n`{new_karma}` karma;\n`{new_exp}` EXP!'
-            embed.set_footer('Bonus selanjutnya pada: ')
+            embed.set_footer(text='Bonus selanjutnya pada: ')
             await ctx.reply(embed=embed)
 
             if level_up(ctx):
