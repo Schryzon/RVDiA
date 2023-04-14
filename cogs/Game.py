@@ -113,7 +113,7 @@ class Game(commands.Cog):
         try:
             view = ResignButton(ctx)
             await ctx.send('Apakah kamu yakin akan menghapus akunmu?\nKamu punya 20 detik untuk menentukan keputusanmu.', view=view)
-            interaction = await self.bot.wait_for("button_click", check=view.check_interaction)
+            interaction = await self.bot.wait_for("button_click")
             await view.on_button_click(interaction)
 
         except Exception as e:
