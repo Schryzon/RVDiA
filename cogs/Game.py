@@ -9,8 +9,10 @@ from discord.ext import commands
 from scripts.main import connectdb, check_blacklist, has_registered, level_up, send_level_up_msg
 
 class ResignButton(View):
-    def __init__(self, ctx):
+    def __init__(self, ctx:commands.Context):
+        print('__init__ called')
         super().__init__(timeout=20)
+        self.ctx = ctx
 
         delete_account = Button(
             style=discord.ButtonStyle.danger,
@@ -24,7 +26,6 @@ class ResignButton(View):
         )
         self.add_item(delete_account)
         self.add_item(cancel)
-        self.ctx = ctx
 
     async def check_interaction(self, interaction: discord.Interaction) -> bool:
         print(f"interaction.user: {interaction.user}, self.ctx.author: {self.ctx.author}")
@@ -35,6 +36,7 @@ class ResignButton(View):
         return True
     
     async def on_button_click(self, interaction: discord.Interaction):
+        print('on_click executed')
         try:
             custom_id = interaction.data['custom_id']
             match custom_id:
