@@ -165,4 +165,4 @@ def heading(direction:int):
             if direction in range(i[0], i[1] + 1):
                 result.append(i[2])
 
-        return result         
+        return result[0]         
