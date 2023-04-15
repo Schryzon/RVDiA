@@ -34,6 +34,8 @@ Proyek ini __hanya untuk sekedar hobi__ dan tidak untuk kepentingan komersial da
 
 Saat ini RVDIA, dihost dengan menggunakan Heroku. Jadi, jika kalian ingin menjalankan botnya saya sarankan untuk menggunakan service Heroku. Tetapi, jika kalian hanya ingin sekedar menggunakan botnya secara lokal melalui komputer pribadi juga tidak masalah.
 
+`python RVDIA.py` untuk menjalankan botnya.
+
 Join [CyroN Central server](https://discord.gg/QqWCnk6zxw) di Discord dan hubungi saya (Schryzon) jika ada masalah, pertanyaan, atau ingin berkolaborasi dalam pengembangan RVDIA.
 
 ### Credits
