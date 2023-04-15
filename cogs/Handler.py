@@ -73,7 +73,7 @@ class Error(commands.Cog):
       await ctx.reply('Maaf, kamu telah diblacklist dari menggunakan RVDIA!')
 
     elif isinstance(error, commands.CommandNotFound):
-      await ctx.reply(f"Tidak dapat menemukan command! Cari command yang ada dengan `r-help`")
+      await ctx.reply(f"Tidak dapat menemukan command! Cari command yang ada dengan `{ctx.clean_prefix}help`")
 
     elif isinstance(error, commands.NoPrivateMessage):
       await ctx.reply("Command ini tidak bisa dijalankan melalui DM.")

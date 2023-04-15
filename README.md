@@ -1,5 +1,5 @@
 # RVDIA
-## "Virtual, Revolusioner, Independen."
+## "Revolusioner, Virtual, Independen."
 <p align="center">
   <img src="https://cdn.discordapp.com/avatars/957471338577166417/97d70a5769552db26474cad16f7431fa.png?size=512" alt="RVDIA's Profile Picture">
 </p>
@@ -19,7 +19,7 @@
 Revolutionary Virtual Independent Discord Application (RVDIA) adalah sebuah **Indonesian-oriented Multipurpose Discord Bot** (Robot Discord Multifungsi berbahasa Indonesia) yang terinspirasi dari karakter "Haruna Sakurai" dari game Ongeki!
 
 ## Apa yang Spesial dari Bot ini?
-Bot ini menggunakan Bahasa Indonesia dan memiliki command khusus untuk anggota-anggota club G-Tech Re'sman, serta memiliki fitur utilitas yang unik dan melimpah.
+Bot ini menggunakan Bahasa Indonesia dan memiliki command khusus untuk anggota-anggota club G-Tech Re'sman, serta memiliki fitur utilitas yang melimpah dan sistem game RPG (roleplay game) tersendiri dengan event-event menarik.
 
 ## Mau Coba Utak-atik Sendiri?
 1. Clone repo ini atau download release terbaru dari tags;
@@ -32,9 +32,13 @@ Bot ini menggunakan Bahasa Indonesia dan memiliki command khusus untuk anggota-a
 ## Informasi Tambahan
 Proyek ini __hanya untuk sekedar hobi__ dan tidak untuk kepentingan komersial dan lain-lain. Oleh sebab itu, RVDIA menggunakan semua priviliged intents `discord.Intents.all()` dan memiliki batasan `100 server` yang bisa di-join (karena saya tidak berani untuk apply whitelisting saat ini, mungkin suatu hari nanti, hehe...)
 
+Saat ini RVDIA, dihost dengan menggunakan Heroku. Jadi, jika kalian ingin menjalankan botnya saya sarankan untuk menggunakan service Heroku. Tetapi, jika kalian hanya ingin sekedar menggunakan botnya secara lokal melalui komputer pribadi juga tidak masalah.
+
 Join [CyroN Central server](https://discord.gg/QqWCnk6zxw) di Discord dan hubungi saya (Schryzon) jika ada masalah, pertanyaan, atau ingin berkolaborasi dalam pengembangan RVDIA.
 
 ### Credits
-Terima kasih terutama untuk Riverdia (atas inspirasi nama bot), iMaze, Mouchi, Dez, Zenchew, Ismita, Pockii, Kyuu, Kazama, Bcntt, Nateflakes, nathawiguna, Shiruto, Satya Yoga dan masih banyak lagi karena telah membantu saya pada proyek-proyek sebelumnya!
+Terima kasih terutama untuk Riverdia (atas inspirasi nama bot), iMaze, Mouchi, Dez, Zenchew, Ismita, Pockii, Kyuu, Kazama, Bcntt, Nateflakes, nathawiguna, opensourze, Shiruto, Satya Yoga dan masih banyak lagi karena telah membantu saya pada proyek-proyek sebelumnya!
 
 **Made with ❤️ and dedication, Jayananda**
+
+Farewell, Yuyuko, Pandora, and Historia. You will be missed.

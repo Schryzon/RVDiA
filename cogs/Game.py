@@ -38,6 +38,9 @@ class ResignButton(View):
 
 
 class Game(commands.Cog):
+    """
+    Kumpulan command game RPG RVDIA (Land of Revolution).
+    """
     def __init__(self, bot):
         self.bot = bot
 
@@ -123,7 +126,7 @@ class Game(commands.Cog):
             embed = discord.Embed(title='Bonus Harianmu', color=0x00FF00, timestamp=next_login)
             embed.set_thumbnail(url=ctx.author.avatar.url if ctx.author.avatar else getenv('normalpfp'))
             embed.description = f'Kamu mendapatkan:\n`{new_coins}` koin;\n`{new_karma}` karma;\n`{new_exp}` EXP!'
-            embed.set_footer(text='Bonus selanjutnya pada: ')
+            embed.set_footer(text='Bonus selanjutnya pada ')
             await ctx.reply(embed=embed)
 
             if level_up(ctx):
@@ -186,8 +189,18 @@ class Game(commands.Cog):
             inline=False
         )
         
-        embed.set_footer(text='Login harian terakhir: ')
+        embed.set_footer(text='Login harian terakhir ')
         await ctx.reply(embed = embed)
+
+    @game.command(description="Beli item atau perlengkapan perang! (ON PROGRESS)")
+    @has_registered()
+    @check_blacklist()
+    async def shop(self, ctx:commands.Context):
+        """
+        Beli item atau perlengkapan perang! (ON PROGRESS)
+        """
+        # Plans: show details and make a paginator or something
+        await ctx.reply('Command ini masih dalam tahap pembuatan, mohon ditunggu ya!')
 
 
 async def setup(bot):
