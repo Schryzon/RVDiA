@@ -279,7 +279,7 @@ class Game(commands.Cog):
         embed.description='"Hey, hey! Selamat datang. Silahkan, mau beli apa?"'
         embed.set_footer(text='Untuk membeli sebuah item, klik di bawah ini! v')
         embed.set_thumbnail(url=getenv('xaneria'))
-        iix = []
+        iix = [] # Track down how many indexes there are.
         owned = []
         for index, item in enumerate(items):
             index = index+1
@@ -289,11 +289,15 @@ class Game(commands.Cog):
                         if key['_id'] == item['_id']:
                             owned.append(key['owned'])
                 except:
-                    owned = 0
+                    pass
+
+                # Append 0 to owned until its length is equal to index
+                while len(owned) < index:
+                    owned.append(0)
 
                 embed.add_field(
                     name=f"{index}. {item['name']}", 
-                    value=f"**`{item['desc']}`**\n({item['func']})\n**Tipe:** {item['type']}\n**Harga:** {item['cost']} {item['paywith']}\n**Dimiliki:** {owned[index] if owned != 0 else 0}",
+                    value=f"**`{item['desc']}`**\n({item['func']})\n**Tipe:** {item['type']}\n**Harga:** {item['cost']} {item['paywith']}\n**Dimiliki:** {owned[index-1]}",
                     inline=False
                 )
                 iix.append(index)
