@@ -293,7 +293,7 @@ class Game(commands.Cog):
 
                 embed.add_field(
                     name=f"{index}. {item['name']}", 
-                    value=f"**`{item['desc']}`**\n({item['func']})\n**Tipe:** {item['type']}\n**Harga:** {item['cost']} {item['paywith']}\n**Dimiliki:** {owned[index]}",
+                    value=f"**`{item['desc']}`**\n({item['func']})\n**Tipe:** {item['type']}\n**Harga:** {item['cost']} {item['paywith']}\n**Dimiliki:** {owned[index] if owned != 0 else 0}",
                     inline=False
                 )
                 iix.append(index)
