@@ -2,6 +2,7 @@ import discord
 import datetime
 import time
 import random
+import json
 from os import getenv
 from discord.ui import View, Button, button
 from discord import app_commands
@@ -10,7 +11,6 @@ from scripts.main import connectdb, check_blacklist, has_registered, level_up, s
 
 class ResignButton(View):
     def __init__(self, ctx:commands.Context):
-        print('__init__ called')
         super().__init__(timeout=20)
         self.ctx = ctx
         self.value = None
@@ -36,6 +36,53 @@ class ResignButton(View):
         self.value = False
         self.stop()
 
+class ShopDropdown(discord.ui.Select):
+    def __init__(self, ctx:commands.Context, page:int):
+        self.ctx = ctx
+        self.page = page
+
+        with open('./src/game/shop.json') as file:
+            items = json.loads(file)
+
+        options = []
+        for index, item in enumerate(items):
+            if not index > 5:
+                options.append(discord.SelectOption(
+                                label = f"{index}. {item['name']}", 
+                                description=f"Harga: {item['cost']} {item['paywith']}", 
+                                value=item['_id']
+                                )
+                            )
+
+        super().__init__(custom_id="shopdrop", placeholder="Mau beli apa?", min_values=1, max_values=1, options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+        with open('./src/game/shop.json') as file:
+            items = json.loads(file)
+
+        item_id = self.values[0]
+        database = connectdb('Game')
+        data = database.find_one({'_id':interaction.user.id})
+        db_dict = {item['_id']: item for item in items}
+        mongo_dict = {item['_id']: item for item in data['items']}
+        if item_id in db_dict and item_id in mongo_dict: # User already bought this item in the past
+            filter_ = {'_id': interaction.user.id, 'items': {'$elemMatch': {'_id': item_id}}}
+            update_ = {'$inc': {'items.$.owned': 1}}
+            database.find_one_and_update(filter=filter_, update=update_)
+
+        else:
+            matched_dict = db_dict[item_id]
+            del matched_dict['cost']
+            del matched_dict['paywith']
+            matched_dict['owned'] = 1
+            database.find_one_and_update({'_id': interaction.user.id}, {'$push':{'items':matched_dict}})
+
+class ShopView(View):
+    def __init__(self, ctx, page):
+        self.ctx = ctx
+        self.page = page
+        super().__init__(timeout=20)
+        self.add_item(ShopDropdown(self.ctx, self.page))
 
 class Game(commands.Cog):
     """
@@ -45,6 +92,7 @@ class Game(commands.Cog):
         self.bot = bot
 
     @commands.hybrid_group(name='game')
+    @has_registered()
     @check_blacklist()
     async def game(self, ctx:commands.Context, *, user:discord.User=None):
         """
@@ -200,7 +248,41 @@ class Game(commands.Cog):
         Beli item atau perlengkapan perang! (ON PROGRESS)
         """
         # Plans: show details and make a paginator or something
-        await ctx.reply('Command ini masih dalam tahap pembuatan, mohon ditunggu ya!')
+        database = connectdb('Game')
+        data = database.find_one({'_id':ctx.author.id})
+        with open('./src/game/shop.json') as file:
+            items = json.loads(file)
+
+        embed = discord.Embed(title = 'Selamat datang di toko Xaneria', color=0xFFFF00)
+        embed.description='"Belilah apa saja, tapi jangan sampai kau jadi miskin."'
+        embed.set_footer(text='Untuk membeli sebuah item, klik di bawah ini! v')
+        iix = []
+        for index, item in enumerate(items):
+            index = index+1
+            if not index > 5:
+                try:
+                    for key in data:
+                        if key['id'] == item['id']:
+                            owned = key['owned']
+                except:
+                    owned = 0
+
+                embed.add_field(
+                    name=f"{index}. {item['name']}", 
+                    value=f"**`{item['desc']}`**\nTipe: {item['type']}\nHarga: {item['cost']} {item['paywith']}\nDimiliki: {owned}",
+                    inline=False
+                )
+                iix.append(index)
+        
+        match max(iix):
+            case 5:
+                page = 1
+
+            case _:
+                page = 1
+
+        view = ShopView(ctx, page)
+        await ctx.reply(embed = embed, view=view)
 
 
 async def setup(bot):

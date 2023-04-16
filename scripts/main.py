@@ -145,6 +145,8 @@ def has_registered():
     
     return commands.check(predicate)
 
+# def buy_item(ctx:commands.Context):
+
 def titlecase(word):
     if word.isupper():
         return word

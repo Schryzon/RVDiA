@@ -1,10 +1,20 @@
 [
     {
         "name":"Beginner's Experience",
-        "id":"0-bgexp",
-        "desc":"Gives you 50 EXP",
+        "_id":"0-bgexp",
+        "desc":"Memberikanmu 50 EXP.",
         "type":"Consumable",
         "func":"exp+50",
-        "cost":50
+        "cost":50,
+        "paywith":"Koin"
+    },
+    {
+        "name":"Ultrasonic Slasher",
+        "_id":"1-ulshs",
+        "desc":"Pedang legendaris yang mampu mendatangkan sonic boom.",
+        "type":"Equipment",
+        "func":"atk+150",
+        "cost":10,
+        "paywith":"Karma"
     }
 ]
