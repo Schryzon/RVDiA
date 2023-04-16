@@ -88,6 +88,8 @@ class General(commands.Cog):
                 await ctx.send(teks, file=file)
             else:
                 await ctx.send(file=file)
+            
+            os.remove(attachment.filename) # Haiyaa
         
         else:
             await ctx.send(teks) if teks else await ctx.send("Aku gak tau harus berkata apa ¯\_(ツ)_/¯")
