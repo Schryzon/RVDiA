@@ -69,11 +69,21 @@ class ShopDropdown(discord.ui.Select):
         mongo_dict = {item['_id']: item for item in data['items']}
         if item_id in db_dict and item_id in mongo_dict: # User already bought this item in the past
             matched_dict = db_dict[item_id]
-            currency = 'items.$.coins' if matched_dict['paywith'] == "Koin" else 'items.$.karma'
+
+            filter_ = {'_id': interaction.user.id, 'items._id': item_id}
+            update_ = {'$inc': {'items.$.owned': 1}}
+            database.update_one(filter=filter_, update=update_)
+
+            currency = 'coins' if matched_dict['paywith'] == "Koin" else 'karma'
+            cost = matched_dict['cost']
+            update_ = {'$inc': {f'items.$.{currency}': cost*-1}}
+            database.update_one(filter=filter_, update=update_)
+
+            """currency = 'items.$.coins' if matched_dict['paywith'] == "Koin" else 'items.$.karma'
             cost = matched_dict['cost']
             filter_ = {'_id': interaction.user.id, 'items': {'$elemMatch': {'_id': item_id}}}
             update_ = {'$inc': {'items.$.owned': 1, currency: cost*-1}}
-            database.find_one_and_update(filter=filter_, update=update_)
+            database.find_one_and_update(filter=filter_, update=update_)"""
             await interaction.response.send_message(f"Pembelian berhasil!\nKamu telah membeli `{matched_dict['name']}`")
 
         else:
