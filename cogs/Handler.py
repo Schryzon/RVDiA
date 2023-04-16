@@ -2,6 +2,7 @@
 import discord
 from discord.ui import View, Button
 from discord.ext import commands
+from pymongo.errors import ConnectionFailure
 
 """
 Error handlers, it's where the ifs and elifs go crazy!
@@ -163,10 +164,13 @@ class Error(commands.Cog):
                     )
         
             self.add_item(vote_me)
-      await ctx.reply('Kamu belum vote aku!\nVote aku di Top.gg(<https://top.gg/bot/957471338577166417/vote>) untuk bisa menggunakan command ini!', view=Vote_Button())
+      await ctx.reply('Kamu belum vote aku!\nVote aku di Top.gg untuk bisa menggunakan command ini!', view=Vote_Button())
 
     elif 'User has no game account!' in str(error):
       await ctx.reply(f'Kamu belum mendaftarkan akunmu ke Land of Revolution!\nDaftarkan akunmu dengan `{ctx.clean_prefix}game register`')
+
+    elif isinstance(error, ConnectionResetError) or isinstance(error, ConnectionFailure) or "reset by peer" in str(error):
+      await ctx.reply("Wah, sepertinya aku ada gangguan nyambung ke database, mohon dicoba lagi sebentar.\nJika error terus muncul, silahkan laporkan ke Support Server!")
 
     # If all else fails (get it?)
     else:

@@ -47,7 +47,7 @@ class ShopDropdown(discord.ui.Select):
         options = []
         for index, item in enumerate(items):
             index = index+1
-            if not index > 5:
+            if self.page == 1 and not index > 5:
                 options.append(discord.SelectOption(
                                 label = f"{index}. {item['name']}", 
                                 description=f"Harga: {item['cost']} {item['paywith']}", 
