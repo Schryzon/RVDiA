@@ -269,7 +269,6 @@ class Game(commands.Cog):
         Beli item atau perlengkapan perang!
         """
         # Plans: show details and make a paginator or something
-        # FIX COINS/KARMA NOT DECREMENTING
         database = connectdb('Game')
         data = database.find_one({'_id':ctx.author.id})
         with open('./src/game/shop.json') as file:
@@ -281,19 +280,20 @@ class Game(commands.Cog):
         embed.set_footer(text='Untuk membeli sebuah item, klik di bawah ini! v')
         embed.set_thumbnail(url=getenv('xaneria'))
         iix = []
+        owned = []
         for index, item in enumerate(items):
             index = index+1
             if not index > 5:
                 try:
                     for key in data['items']:
                         if key['_id'] == item['_id']:
-                            owned = key['owned']
+                            owned.append(key['owned'])
                 except:
                     owned = 0
 
                 embed.add_field(
                     name=f"{index}. {item['name']}", 
-                    value=f"**`{item['desc']}`**\n({item['func']})\n**Tipe:** {item['type']}\n**Harga:** {item['cost']} {item['paywith']}\n**Dimiliki:** {owned}",
+                    value=f"**`{item['desc']}`**\n({item['func']})\n**Tipe:** {item['type']}\n**Harga:** {item['cost']} {item['paywith']}\n**Dimiliki:** {owned[index-1]}",
                     inline=False
                 )
                 iix.append(index)
