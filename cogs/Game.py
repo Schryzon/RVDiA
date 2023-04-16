@@ -42,7 +42,8 @@ class ShopDropdown(discord.ui.Select):
         self.page = page
 
         with open('./src/game/shop.json') as file:
-            items = json.loads(file)
+            content = file.read()
+            items = json.loads(content)
 
         options = []
         for index, item in enumerate(items):
@@ -58,7 +59,8 @@ class ShopDropdown(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         with open('./src/game/shop.json') as file:
-            items = json.loads(file)
+            content = file.read()
+            items = json.loads(content)
 
         item_id = self.values[0]
         database = connectdb('Game')
@@ -66,16 +68,23 @@ class ShopDropdown(discord.ui.Select):
         db_dict = {item['_id']: item for item in items}
         mongo_dict = {item['_id']: item for item in data['items']}
         if item_id in db_dict and item_id in mongo_dict: # User already bought this item in the past
+            matched_dict = db_dict[item_id]
+            currency = 'items.$.coins' if matched_dict['paywith'] == "Koin" else 'items.$.karma'
+            cost = matched_dict['cost']
             filter_ = {'_id': interaction.user.id, 'items': {'$elemMatch': {'_id': item_id}}}
-            update_ = {'$inc': {'items.$.owned': 1}}
+            update_ = {'$inc': {'items.$.owned': 1, currency: cost*-1}}
             database.find_one_and_update(filter=filter_, update=update_)
+            await interaction.response.send_message(f"Pembelian berhasil!\nKamu telah membeli `{matched_dict['name']}`")
 
         else:
             matched_dict = db_dict[item_id]
+            currency = 'items.$.coins' if matched_dict['paywith'] == "Koin" else 'items.$.karma'
+            cost = matched_dict['cost']
             del matched_dict['cost']
             del matched_dict['paywith']
             matched_dict['owned'] = 1
-            database.find_one_and_update({'_id': interaction.user.id}, {'$push':{'items':matched_dict}})
+            database.find_one_and_update({'_id': interaction.user.id}, {'$push':{'items':matched_dict}, '$inc':{currency: cost*-1}})
+            await interaction.response.send_message(f"Pembelian berhasil!\nKamu telah membeli `{matched_dict['name']}`")
 
 class ShopView(View):
     def __init__(self, ctx, page):
@@ -251,7 +260,8 @@ class Game(commands.Cog):
         database = connectdb('Game')
         data = database.find_one({'_id':ctx.author.id})
         with open('./src/game/shop.json') as file:
-            items = json.loads(file)
+            content = file.read()
+            items = json.loads(content)
 
         embed = discord.Embed(title = 'Selamat datang di toko Xaneria', color=0xFFFF00)
         embed.description='"Belilah apa saja, tapi jangan sampai kau jadi miskin."'
