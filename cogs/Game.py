@@ -94,8 +94,8 @@ class ShopDropdown(discord.ui.Select):
             del matched_dict['paywith']
             matched_dict['owned'] = 1
             database.find_one_and_update({'_id': interaction.user.id},
-                                        {'$push':{'items':matched_dict}, '$inc':{currency: cost*-1}},
-                                        array_filters=[{"elem._id":matched_dict['_id']}])
+                                        {'$push':{'items':matched_dict}})
+            database.find_one_and_update({'_id': interaction.user.id}, {'$inc':{currency: cost*-1}}, array_filters=[{"elem._id":matched_dict['_id']}])
             await interaction.response.send_message(f"Pembelian berhasil!\nKamu telah membeli `{matched_dict['name']}`")
 
 class ShopView(View):
