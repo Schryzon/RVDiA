@@ -37,8 +37,7 @@ class ResignButton(View):
         self.stop()
 
 class ShopDropdown(discord.ui.Select):
-    def __init__(self, ctx:commands.Context, page:int):
-        self.ctx = ctx
+    def __init__(self, page:int):
         self.page = page
 
         with open('./src/game/shop.json') as file:
@@ -47,6 +46,7 @@ class ShopDropdown(discord.ui.Select):
 
         options = []
         for index, item in enumerate(items):
+            index = index+1
             if not index > 5:
                 options.append(discord.SelectOption(
                                 label = f"{index}. {item['name']}", 
@@ -67,8 +67,13 @@ class ShopDropdown(discord.ui.Select):
         data = database.find_one({'_id':interaction.user.id})
         db_dict = {item['_id']: item for item in items}
         mongo_dict = {item['_id']: item for item in data['items']}
+
+        matched_dict = db_dict[item_id]
+        current_money = data['coins'] if matched_dict['paywith'] == "Koin" else data['karma']
+        if current_money < matched_dict['cost']:
+            return await interaction.response.send_message(f"Waduh!\n{matched_dict['paywith']}mu tidak cukup untuk membeli barang ini!")
+
         if item_id in db_dict and item_id in mongo_dict: # User already bought this item in the past
-            matched_dict = db_dict[item_id]
 
             filter_ = {'_id': interaction.user.id, 'items._id': item_id}
             update_ = {'$inc': {'items.$.owned': 1}}
@@ -76,34 +81,29 @@ class ShopDropdown(discord.ui.Select):
 
             currency = 'coins' if matched_dict['paywith'] == "Koin" else 'karma'
             cost = matched_dict['cost']
-            update_ = {'$inc': {f'items.$.{currency}': cost*-1}}
+            update_ = {'$inc': {f'currency': cost*-1}}
             database.update_one(filter=filter_, update=update_)
 
-            """currency = 'items.$.coins' if matched_dict['paywith'] == "Koin" else 'items.$.karma'
-            cost = matched_dict['cost']
-            filter_ = {'_id': interaction.user.id, 'items': {'$elemMatch': {'_id': item_id}}}
-            update_ = {'$inc': {'items.$.owned': 1, currency: cost*-1}}
-            database.find_one_and_update(filter=filter_, update=update_)"""
             await interaction.response.send_message(f"Pembelian berhasil!\nKamu telah membeli `{matched_dict['name']}`")
 
         else:
-            matched_dict = db_dict[item_id]
-            currency = 'items.$[elem].coins' if matched_dict['paywith'] == "Koin" else 'items.$[elem].karma'
+            currency = 'coins' if matched_dict['paywith'] == "Koin" else 'karma'
             cost = matched_dict['cost']
             del matched_dict['cost']
             del matched_dict['paywith']
             matched_dict['owned'] = 1
-            database.find_one_and_update({'_id': interaction.user.id},
-                                        {'$push':{'items':matched_dict}})
-            database.find_one_and_update({'_id': interaction.user.id}, {'$inc':{currency: cost*-1}}, array_filters=[{"elem._id":matched_dict['_id']}])
+            database.update_one({'_id': interaction.user.id},
+                                {'$push':{'items':matched_dict}})
+            
+            database.update_one({'_id': interaction.user.id}, {'$inc':{currency: cost*-1}}) # Second update, avoiding conflict
+
             await interaction.response.send_message(f"Pembelian berhasil!\nKamu telah membeli `{matched_dict['name']}`")
 
 class ShopView(View):
-    def __init__(self, ctx, page):
-        self.ctx = ctx
+    def __init__(self, page):
         self.page = page
         super().__init__(timeout=20)
-        self.add_item(ShopDropdown(self.ctx, self.page))
+        self.add_item(ShopDropdown(self.page))
 
 class Game(commands.Cog):
     """
@@ -261,12 +261,12 @@ class Game(commands.Cog):
         embed.set_footer(text='Login harian terakhir ')
         await ctx.reply(embed = embed)
 
-    @game.command(description="Beli item atau perlengkapan perang! (ON PROGRESS)")
+    @game.command(description="Beli item atau perlengkapan perang!")
     @has_registered()
     @check_blacklist()
     async def shop(self, ctx:commands.Context):
         """
-        Beli item atau perlengkapan perang! (ON PROGRESS)
+        Beli item atau perlengkapan perang!
         """
         # Plans: show details and make a paginator or something
         database = connectdb('Game')
@@ -275,9 +275,10 @@ class Game(commands.Cog):
             content = file.read()
             items = json.loads(content)
 
-        embed = discord.Embed(title = 'Selamat datang di toko Xaneria', color=0xFFFF00)
-        embed.description='"Belilah apa saja, tapi jangan sampai kau jadi miskin."'
+        embed = discord.Embed(title = 'Toko Xaneria', color=0xFFFF00)
+        embed.description='"Hey, hey! Selamat datang. Silahkan, mau beli apa?"'
         embed.set_footer(text='Untuk membeli sebuah item, klik di bawah ini! v')
+        embed.set_thumbnail(url=getenv('xaneria'))
         iix = []
         for index, item in enumerate(items):
             index = index+1
@@ -303,7 +304,7 @@ class Game(commands.Cog):
             case _:
                 page = 1
 
-        view = ShopView(ctx, page)
+        view = ShopView(page)
         await ctx.reply(embed = embed, view=view)
 
 
