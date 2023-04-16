@@ -81,7 +81,7 @@ class ShopDropdown(discord.ui.Select):
 
             currency = 'coins' if matched_dict['paywith'] == "Koin" else 'karma'
             cost = matched_dict['cost']
-            update_ = {'$inc': {f'currency': cost*-1}}
+            update_ = {'$inc': {currency: cost*-1}}
             database.update_one(filter=filter_, update=update_)
 
             await interaction.response.send_message(f"Pembelian berhasil!\nKamu telah membeli `{matched_dict['name']}`")
@@ -269,6 +269,7 @@ class Game(commands.Cog):
         Beli item atau perlengkapan perang!
         """
         # Plans: show details and make a paginator or something
+        # FIX COINS/KARMA NOT DECREMENTING
         database = connectdb('Game')
         data = database.find_one({'_id':ctx.author.id})
         with open('./src/game/shop.json') as file:
@@ -284,15 +285,15 @@ class Game(commands.Cog):
             index = index+1
             if not index > 5:
                 try:
-                    for key in data:
-                        if key['id'] == item['id']:
+                    for key in data['items']:
+                        if key['_id'] == item['_id']:
                             owned = key['owned']
                 except:
                     owned = 0
 
                 embed.add_field(
                     name=f"{index}. {item['name']}", 
-                    value=f"**`{item['desc']}`**\nTipe: {item['type']}\nHarga: {item['cost']} {item['paywith']}\nDimiliki: {owned}",
+                    value=f"**`{item['desc']}`**\n({item['func']})\n**Tipe:** {item['type']}\n**Harga:** {item['cost']} {item['paywith']}\n**Dimiliki:** {owned}",
                     inline=False
                 )
                 iix.append(index)

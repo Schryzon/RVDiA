@@ -74,6 +74,24 @@ class General(commands.Cog):
         await self.avatar(ctx, global_user=member)
         pass
 
+    @commands.hybrid_command(description='Mengulangi apapun yang kamu katakan!')
+    @app_commands.describe(
+        teks='Apa yang kamu ingin aku katakan?',
+        attachment='Lampirkan gambar, kalau mau.'
+        )
+    @check_blacklist()
+    async def say(self, ctx:commands.Context, attachment:discord.Attachment=None, *, teks:str=None):
+        if attachment:
+            await attachment.save(attachment.filename)
+            file = discord.File(attachment.filename)
+            if teks:
+                await ctx.send(teks, file=file)
+            else:
+                await ctx.send(file=file)
+        
+        else:
+            await ctx.send(teks) if teks else await ctx.send("Aku gak tau harus berkata apa ¯\_(ツ)_/¯")
+
     @rvdia_command.command(name="about", aliases=['intro', 'bot', 'botinfo'])
     @check_blacklist()
     async def rvdia(self, ctx:commands.Context) -> None:

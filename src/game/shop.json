@@ -9,12 +9,30 @@
         "paywith":"Koin"
     },
     {
-        "name":"Ultrasonic Slasher",
-        "_id":"1-ulshs",
-        "desc":"Pedang legendaris yang mampu mendatangkan sonic boom.",
+        "name":"Dawn Slasher",
+        "_id":"1-dwsls",
+        "desc":"Pedang yang cocok bagi pemula.",
         "type":"Equipment",
-        "func":"atk+150",
+        "func":"atk+20",
         "cost":10,
+        "paywith":"Karma"
+    },
+    {
+        "name":"Frontside Guard",
+        "_id":"1-fsgrd",
+        "desc":"Armor metal yang hanya melindungi bagian depan.",
+        "type":"Consumable",
+        "func":"def+10",
+        "cost":7,
+        "paywith":"Karma"
+    },
+    {
+        "name":"Swifters",
+        "_id":"1-swift",
+        "desc":"Sepatu pembantu menghindari serangan.",
+        "type":"Equipment",
+        "func":"agl+15",
+        "cost":8,
         "paywith":"Karma"
     }
 ]

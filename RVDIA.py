@@ -70,7 +70,7 @@ rvdia = commands.AutoShardedBot(
 )
 
 rvdia.synced = False
-rvdia.__version__ = "公式 [Official] v1.0.4"
+rvdia.__version__ = "公式 [Official] v1.0.5"
 rvdia.event_mode = False
 rvdia.color = 0xff4df0
 rvdia.runtime = time() # UNIX float
@@ -112,8 +112,8 @@ async def change_status():
   for guilds in rvdia.guilds:
     users += guilds.member_count -1
   user_count_status = f'{users} users'
-  all_status=['in my room', 'in G-Tech Server', 'someone doing ABFB!', 'my music ❤️', 'r-help', 'G-Tech members',
-                  'Ephotech Competition', user_count_status, 'with Schryzon', f'{rvdia.__version__}',
+  all_status=['in my room', 'in G-Tech Server', '"How to become a cutie"', 'my music ❤️', 'r-help', 'G-Tech members',
+                  'Ephotech 2024', user_count_status, 'with Schryzon', f'{rvdia.__version__}',
                   '/help', 'What should I do today?', 'Add me!', is_event, 'Ongeki!bright Memory', '~♪'
                 ]
   status = rand(all_status)
