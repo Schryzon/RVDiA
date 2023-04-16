@@ -88,12 +88,14 @@ class ShopDropdown(discord.ui.Select):
 
         else:
             matched_dict = db_dict[item_id]
-            currency = 'items.$.coins' if matched_dict['paywith'] == "Koin" else 'items.$.karma'
+            currency = 'items.$[elem].coins' if matched_dict['paywith'] == "Koin" else 'items.$[elem].karma'
             cost = matched_dict['cost']
             del matched_dict['cost']
             del matched_dict['paywith']
             matched_dict['owned'] = 1
-            database.find_one_and_update({'_id': interaction.user.id}, {'$push':{'items':matched_dict}, '$inc':{currency: cost*-1}})
+            database.find_one_and_update({'_id': interaction.user.id},
+                                        {'$push':{'items':matched_dict}, '$inc':{currency: cost*-1}},
+                                        array_filters=[{"elem._id":matched_dict['_id']}])
             await interaction.response.send_message(f"Pembelian berhasil!\nKamu telah membeli `{matched_dict['name']}`")
 
 class ShopView(View):
