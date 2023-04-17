@@ -3,6 +3,8 @@ Schryzon/Jayananda (11)
 G-Tech Re'sman Programming Division
 RVDIA (Revolutionary Virtual Independent Discord Application)
 Inspired by Haruna Sakurai from Ongeki!
+Feel free to edit, recreate, publish, and do other stuff
+Licensed under the MIT LICENSE
 """
 
 import asyncio
@@ -21,15 +23,6 @@ from scripts.suburl import SurblChecker, DomainInexistentException
 from scripts.main import connectdb, titlecase
 load_dotenv('./secrets.env') # Loads the .env file from python-dotenv pack
 
-helper = Help(
-  no_category = "Tak tergolongkan", 
-  color = 0xff4df0,
-  active_time = 60,
-  image_url = os.getenv('bannerhelp'),
-  index_title = "Kategori Command",
-  timeout=20,
-  case_insensitive = True
-  )
 
 def get_prefix(client, message):
   """
@@ -59,21 +52,40 @@ def when_mentioned_or_function(func):
         return r
     return inner
 
-# I have plans to convert rvdia to a class so I can change its attributes from there.
 
-intents = discord.Intents.all() # Might change my mind in the near future.
-rvdia = commands.AutoShardedBot(
-  command_prefix = when_mentioned_or_function(get_prefix), 
-  case_insensitive = True, 
-  strip_after_prefix = False, 
-  intents=intents, help_command=helper
-)
+class RVDIA(commands.AutoShardedBot):
+  """
+  A subclass of commands.AutoShardedBot; RVDIA herself.
+  This is in order to make her attributes easier to maintain.
+  (Nah, I'm just lazy.)
+  """
+  def __init__(self, **kwargs):
+    self.synced = False
+    self.__version__ = "公式 [Official] v1.0.6"
+    self.event_mode = False
+    self.color = 0xff4df0
+    self.runtime = time() # UNIX float
 
-rvdia.synced = False
-rvdia.__version__ = "公式 [Official] v1.0.5"
-rvdia.event_mode = False
-rvdia.color = 0xff4df0
-rvdia.runtime = time() # UNIX float
+    super().__init__(
+        command_prefix=when_mentioned_or_function(get_prefix), 
+        case_insensitive=True, 
+        strip_after_prefix=False, 
+        intents=discord.Intents.all(), 
+
+        help_command=Help(
+              no_category = "Tak tergolongkan", 
+              color = self.color,
+              active_time = 60,
+              image_url = os.getenv('bannerhelp'),
+              index_title = "Kategori Command",
+              timeout=20,
+              case_insensitive = True
+          ),
+        **kwargs
+    )
+
+
+rvdia = RVDIA() # Must create instance
 
 cogs_list = [cogs.name for cogs in iter_modules(['cogs'], prefix='cogs.')] # iter_modules() for easier task
 
@@ -90,7 +102,7 @@ async def on_ready():
     print('Internal cogs loaded!')
     
     if not rvdia.synced:
-      await rvdia.tree.sync() # Global sync
+      await rvdia.tree.sync() # Global slash commands sync
       rvdia.synced = True
       print('Slash Commands up for syncing!')
 

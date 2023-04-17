@@ -1,5 +1,6 @@
 from os import getenv
 import discord
+from discord import app_commands
 from discord.ext import commands
 from scripts.main import connectdb, in_gtech_server, is_member_check, is_perangkat, check_blacklist
 
@@ -40,7 +41,11 @@ class GTech(commands.Cog):
         await channel.send("*Knock, knock!* Ada yang baru nih di G-Tech!", embed = embed)
 
     @gtech_command.command(aliases=['reg'], description="Tambahkan pengguna ke database.")
-    @is_perangkat()
+    @app_commands.describe(user='Akun Discord anggota',
+                           kelas='Kelas (Contoh: XI IPA 5)',
+                           divisi = 'Divisi (Contoh: Word, Programming, Desain)',
+                           nama='Nama lengkap anggota'
+                        )
     @in_gtech_server()
     @check_blacklist()
     async def register(self, ctx, user:discord.Member, kelas, divisi, *, nama):
@@ -52,15 +57,17 @@ class GTech(commands.Cog):
         if not data is None:
             return await ctx.reply('Pengguna sudah ada di database!')
         db.insert_one({'_id':user.id, 'kelas':kelas, 'divisi':divisi, 'nama':nama})
-        await ctx.reply(f'User {user} has been registered to the G-Tech database.')
+        await ctx.reply(f'`{user}` telah didaftarkan ke database G-Tech.')
 
-    @gtech_command.command(aliases=['gtechmember'], description="Lihat status anggota G-Tech dari database.")
+    @gtech_command.command(aliases=['gtechmember'], description="Lihat info anggota G-Tech dari database.")
+    @app_commands.describe(user='Anggota yang mana?')
+    @app_commands.rename(user='anggota')
     @in_gtech_server()
     @is_member_check()
     @check_blacklist()
     async def member(self, ctx, *, user:discord.Member = None):
         """
-        Lihat status anggota G-Tech dari database.
+        Lihat info anggota G-Tech dari database.
         """
         user = user or ctx.author
         data = self.is_member(user.id)
@@ -71,14 +78,15 @@ class GTech(commands.Cog):
         divisi = data['divisi']
         e = discord.Embed(title="G-Tech Member Info", color=user.colour)
         e.set_thumbnail(url=user.avatar.url)
-        e.description = f"Nama: {nama}\nKelas: {kelas}\nDivisi: {divisi}"
+        e.description = f"**Nama:** {nama}\n**Kelas:** {kelas}\n**Divisi:** {divisi}"
         await ctx.reply(embed = e)
 
-    @gtech_command.command(aliases=['erreg', 'unreg', 'unregister'], description="Removes a registered user data.\nOnly G-Tech admins are allowed to use this command.")
+    @gtech_command.command(aliases=['erreg', 'unreg', 'unregister'], description="Hapus data anggota dari database.")
+    @app_commands.describe(user='Pengguna yang ingin dihapus datanya.')
     @is_perangkat()
     @in_gtech_server()
     @check_blacklist()
-    async def erasemember(self, ctx, *, user:discord.Member = None):
+    async def erasemember(self, ctx:commands.Context, *, user:discord.Member = None):
         """
         Hapus data anggota dari database.
         """
@@ -91,9 +99,10 @@ class GTech(commands.Cog):
         await ctx.reply(f'{user} telah dihapus dari database G-Tech.')
 
 
-    @gtech_command.command(description="Post sesuatu yang menarik ke channel pengumuman!\n"+
+    @gtech_command.command(description="Post sesuatu yang menarik ke channel pengumuman! "+
                                 "Format: Judul | Deskripsi"
     )
+    @app_commands.describe(content="Apa yang ingin disampaikan? Format: Judul | Deskripsi")
     @is_perangkat()
     @in_gtech_server()
     @is_member_check()
@@ -122,7 +131,7 @@ class GTech(commands.Cog):
     @in_gtech_server()
     @is_member_check()
     @check_blacklist()
-    async def news(self, ctx):
+    async def news(self, ctx:commands.Context):
         """
         Lihat berita terbaru tentang G-Tech!
         """
@@ -143,7 +152,7 @@ class GTech(commands.Cog):
     @is_perangkat()
     @in_gtech_server()
     @check_blacklist()
-    async def deletenews(self, ctx):
+    async def deletenews(self, ctx:commands.Context):
         """
         Hapus berita terbaru dari database.
         """

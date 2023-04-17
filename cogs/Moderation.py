@@ -297,7 +297,7 @@ class Moderation(commands.Cog):
             return
 
     @commands.hybrid_command(aliases = ['clean', 'purge', 'delete', 'hapus'], 
-                      description="Menghilangkan pesan berdasarkan jumlah yang diinginkan (amount -> integer), (channel : opsional)")
+                      description="Menghilangkan pesan berdasarkan jumlah yang diinginkan.")
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
     @app_commands.describe(
