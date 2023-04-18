@@ -402,7 +402,7 @@ class Utilities(commands.Cog):
                 model="gpt-3.5-turbo",
                 temperature=1.2,
                 messages=[
-                {"role":'system', 'content':getenv('rolesys')},
+                {"role":'system', 'content':getenv('rolesys')+f' You are currently talking to {ctx.author}'},
                 {"role":'assistant', 'content':f"You are currently talking to {ctx.author}"},
                 {"role": "user", "content": message}
                 ]
