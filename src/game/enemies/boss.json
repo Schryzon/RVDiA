@@ -1,0 +1,58 @@
+[
+    {
+        "name":"Schryzon",
+        "desc":"???",
+        "tier":"BOSS",
+        "hp":3500,
+        "atk":200,
+        "def":250,
+        "agl":240,
+        "reward":[
+            "exp+5000",
+            "cns+700",
+            "krm+150"
+        ]
+    },
+    {
+        "name":"RVDIA",
+        "desc":"Revolusioner, Virtual, Independen.",
+        "tier":"BOSS",
+        "hp":2700,
+        "atk":160,
+        "def":250,
+        "agl":200,
+        "reward":[
+            "exp+5000",
+            "cns+700",
+            "krm+150"
+        ]
+    },
+    {
+        "name":"Pandora",
+        "desc":"Mechanical goddess, strong-willed but slow.",
+        "tier":"BOSS",
+        "hp":2000,
+        "atk":350,
+        "def":200,
+        "agl":70,
+        "reward":[
+            "exp+5000",
+            "cns+700",
+            "krm+150"
+        ]
+    },
+    {
+        "name":"Historia",
+        "desc":"Humanoid robot that posesses powers of the deity.",
+        "tier":"BOSS",
+        "hp":1200,
+        "atk":270,
+        "def":140,
+        "agl":180,
+        "reward":[
+            "exp+5000",
+            "cns+700",
+            "krm+150"
+        ]
+    }
+]

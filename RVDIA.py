@@ -61,7 +61,7 @@ class RVDIA(commands.AutoShardedBot):
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "公式 [Official] v1.0.6"
+    self.__version__ = "公式 [Official] v1.0.7"
     self.event_mode = False
     self.color = 0xff4df0
     self.runtime = time() # UNIX float
@@ -233,6 +233,7 @@ async def restart(ctx:commands.Context): # In case for timeout
    await rvdia.close()
    await asyncio.sleep(2)
    rvdia.run(token=os.getenv('token'))
+   await rvdia.wait_until_ready()
    await ctx.channel.send('RVDIA has restarted!')
 
 @rvdia.command(hidden=True)
@@ -307,8 +308,8 @@ async def on_message(msg:discord.Message):
                 model="gpt-3.5-turbo",
                 temperature=1.2,
                 messages=[
-                {"role":'system', 'content':os.getenv('rolesys')},
-                {"role":'assistant', 'content':f"You are currently talking to {msg.author}"}, # Doesn't really work
+                {"role":'system', 'content':os.getenv('rolesys')+f' You are currently talking to {msg.author}'},
+                # {"role":'assistant', 'content':f"You are currently talking to {msg.author}"}, # Doesn't really work
                 {"role": "user", "content": message}
                 ]
             )
@@ -362,8 +363,8 @@ async def on_message(msg:discord.Message):
                 model="gpt-3.5-turbo",
                 temperature=1.2,
                 messages=[
-                {"role":'system', 'content':os.getenv('rolesys')},
-                {"role":"assistant", 'content':f'{author} said: {embed_title} | Your response was: {embed_desc} | The user replying is {msg.author}'},
+                {"role":'system', 'content':os.getenv('rolesys')+f' You are currently talking to {msg.author}'},
+                {"role":"assistant", 'content':f'{author} said: {embed_title} | Your response was: {embed_desc}'},
                 {"role": "user", "content": message}
                 ]
             )

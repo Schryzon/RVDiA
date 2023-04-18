@@ -511,7 +511,7 @@ class Utilities(commands.Cog):
             embed.description = f'Waktu dibutuhkan: **`{round(required_time, 2)} detik`**'
             file = discord.File("variation.png")
             embed.set_image(url= "attachment://variation.png")
-            embed.set_footer(text='Kesalahan pada gambar? Kemungkinan karena gambar aslinya tidak 1:1!')
+            embed.set_footer(text='Kesalahan pada gambar? Mungkin karena gambar aslinya tidak 1:1!')
 
         await ctx.reply(file=file, embed=embed)
         os.remove('./variation.png')

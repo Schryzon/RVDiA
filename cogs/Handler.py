@@ -170,7 +170,22 @@ class Error(commands.Cog):
       await ctx.reply(f'Kamu belum mendaftarkan akunmu ke Land of Revolution!\nDaftarkan akunmu dengan `{ctx.clean_prefix}game register`')
 
     elif isinstance(error, ConnectionResetError) or isinstance(error, ConnectionFailure) or "reset by peer" in str(error):
-      await ctx.reply("Wah, sepertinya aku ada gangguan nyambung ke database, mohon dicoba lagi sebentar.\nJika error terus muncul, silahkan laporkan ke Support Server!")
+      class Support_Button(View):
+        def __init__(self):
+            super().__init__(timeout=None)
+
+            support_server = Button(
+                label= "Support Server",
+                emoji = '<:cyron:1082789553263349851>',
+                style = discord.ButtonStyle.blurple,
+                url = 'https://discord.gg/QqWCnk6zxw'
+            )
+        
+            self.add_item(support_server)
+      await ctx.reply("Wah, sepertinya aku ada gangguan nyambung ke database, mohon dicoba lagi sebentar.\nJika error terus muncul, silahkan laporkan ke Support Server!", view=Support_Button())
+
+    elif "Invalid Form Body In message_reference: Unknown message" in str(error):
+      await ctx.reply("Hah?!\nSepertinya aku sedang mengalami masalah menemukan pesan yang kamu reply!")
 
     # If all else fails (get it?)
     else:

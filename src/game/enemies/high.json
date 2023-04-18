@@ -1,0 +1,30 @@
+[
+    {
+        "name":"Mechanical Knight",
+        "desc":"Prajurit futuristik, namun sulit menghindar.",
+        "tier":"HIGH",
+        "hp":1000,
+        "atk":150,
+        "def":100,
+        "agl":50,
+        "reward":[
+            "exp+1500",
+            "cns+150",
+            "krm+40"
+        ]
+    },
+    {
+        "name":"Nyrion",
+        "desc":"Pasukan tempur khusus pemberantas kejahatan.",
+        "tier":"HIGH",
+        "hp":1500,
+        "atk":180,
+        "def":140,
+        "agl":90,
+        "reward":[
+            "exp+1500",
+            "cns+150",
+            "krm+40"
+        ]
+    }
+]

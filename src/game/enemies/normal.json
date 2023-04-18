@@ -1,0 +1,16 @@
+[
+    {
+        "name":"XYI Ninja",
+        "desc":".",
+        "tier":"NORMAL",
+        "hp":1000,
+        "atk":150,
+        "def":100,
+        "agl":50,
+        "reward":[
+            "exp+1500",
+            "cns+150",
+            "krm+40"
+        ]
+    }
+]
