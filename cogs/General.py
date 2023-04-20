@@ -396,6 +396,15 @@ class Utilities(commands.Cog):
         """
         Tanyakan atau perhintahkan aku untuk melakukan sesuatu!
         """
+        if ctx.message.reference:
+            fetch_message = await ctx.channel.fetch_message(ctx.message.reference.message_id)
+            try:
+                if fetch_message.embeds[0].footer.text == 'Jika ada yang ingin ditanyakan, bisa langsung direply!':
+                    return  # If the reply feature is used whilst running this one, it'll cancel.
+                            # This is so that it doesn't execute 2 requests to OpenAI at once, lowering usage.
+            except:
+                pass
+        
         async with ctx.typing():
             openai.api_key = os.getenv('openaikey')
             result = await openai.ChatCompletion.acreate(

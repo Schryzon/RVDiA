@@ -61,7 +61,7 @@ class RVDIA(commands.AutoShardedBot):
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "公式 [Official] v1.0.7"
+    self.__version__ = "公式 [Official] v1.0.8"
     self.event_mode = False
     self.color = 0xff4df0
     self.runtime = time() # UNIX float
@@ -124,9 +124,10 @@ async def change_status():
   for guilds in rvdia.guilds:
     users += guilds.member_count -1
   user_count_status = f'{users} users'
-  all_status=['in my room', 'in G-Tech Server', '"How to become a cutie"', 'my music ❤️', 'r-help', 'G-Tech members',
-                  'Ephotech 2024', user_count_status, 'with Schryzon', f'{rvdia.__version__}',
-                  '/help', 'What should I do today?', 'Add me!', is_event, 'Ongeki!bright Memory', '~♪'
+  all_status=['in my room', 'in G-Tech Server', '"How to be a cutie"', 'you', 'r-help', 'G-Tech members',
+                  'Ephotech 2023', user_count_status, 'with Schryzon', f'{rvdia.__version__}',
+                  '/help', 'What should I do today?', 'Add me!', is_event, 'Ongeki!bright Memory', '~♪',
+                  'Land of Revolution'
                 ]
   status = rand(all_status)
   # Just count, I'm trying to save space!
@@ -309,7 +310,6 @@ async def on_message(msg:discord.Message):
                 temperature=1.2,
                 messages=[
                 {"role":'system', 'content':os.getenv('rolesys')+f' You are currently talking to {msg.author}'},
-                # {"role":'assistant', 'content':f"You are currently talking to {msg.author}"}, # Doesn't really work
                 {"role": "user", "content": message}
                 ]
             )
