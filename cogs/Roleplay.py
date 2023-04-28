@@ -42,7 +42,7 @@ class Roleplay(commands.Cog):
         """
         embed = discord.Embed(title=f'{ctx.author.display_name} {action} {user.display_name}!', color=ctx.author.color)
         embed.set_image(url=url)
-        embed.set_footer(f'Source: {source}')
+        embed.set_footer(text=f'Source: {source}')
         await ctx.send(embed=embed)
 
     @commands.hybrid_group(name='roleplay', aliases=['rp'])
