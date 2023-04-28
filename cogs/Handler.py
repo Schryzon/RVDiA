@@ -136,7 +136,7 @@ class Error(commands.Cog):
       )
 
     elif "Forbidden" in str(error):
-      await ctx.reply("Kode error: `Forbidden`, mungkin `Role` saya terlalu rendah, atau saya kekurangan `Permissions`!")
+      await ctx.reply("Kode error: `Forbidden`, mungkin `Role`ku atau kamu terlalu rendah/setara, atau kekurangan `Permissions`!")
 
     elif "Invalid base64-encoded string" in str(error) or "Incorrect padding" in str(error):
       await ctx.reply("Sepertinya itu bukan Base64, tolong berikan teks dalam format Base64!")
