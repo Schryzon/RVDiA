@@ -61,7 +61,7 @@ class RVDIA(commands.AutoShardedBot):
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "公式 [Official] v1.0.9"
+    self.__version__ = "公式 [Official] v1.0.10"
     self.event_mode = False
     self.color = 0xff4df0
     self.runtime = time() # UNIX float
@@ -281,9 +281,6 @@ async def whitelist(ctx:commands.Context, user:discord.User):
    blacklisted.find_one_and_delete({'_id':user.id})
    await ctx.reply(f'`{user}` telah diwhitelist!')
 
-
-sentence_enders = ['!', '?', '.']
-
 @rvdia.event
 async def on_message(msg:discord.Message):
     if not msg.guild:
@@ -298,7 +295,7 @@ async def on_message(msg:discord.Message):
         await msg.reply(f"Haii, {msg.author.name}! Silahkan tambahkan prefix-ku untuk menggunakan command!")
 
     # Chat command, I wanna make something cool here
-    if msg.content.lower().startswith('rvdia, ') and any(msg.content.endswith(suffix) for suffix in sentence_enders):
+    if msg.content.lower().startswith('rvdia, '):
         try:
           async with msg.channel.typing():
             openai.api_key = os.getenv('openaikey')
@@ -382,7 +379,7 @@ async def on_message(msg:discord.Message):
         except Exception as e:
            if "currently overloaded with other requests." in str(e):
               return await msg.channel.send('Maaf, fitur ini sedang dalam gangguan. Mohon dicoba nanti!')
-           elif "unknown message" in str(e).lower():
+           elif "unknown message" in str(e).lower() or 'message_id: Value "None" is not snowflake.' in str(e):
               return await msg.channel.send("Hah?!\nSepertinya aku sedang mengalami masalah menemukan pesan yang kamu reply!")
            await msg.channel.send('Ada yang bermasalah dengan fitur ini, aku sudah mengirimkan laporan ke developer!')
            channel = rvdia.get_channel(906123251997089792)
