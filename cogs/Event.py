@@ -1,4 +1,5 @@
 import discord
+import os
 from discord.ext import commands
 from scripts.main import check_blacklist, event_available
 
@@ -34,12 +35,12 @@ class Event(commands.Cog):
         """
         Lihat info event yang sedang berlangsung!
         """
-        embed = discord.Embed(title="April Fools!", color=0xff4df0)
+        embed = discord.Embed(title="RVDiA Rebrand", color=0xff4df0, url='https://drive.google.com/file/d/1EssMN38BXaA31O51mjr2vI4g20_cN3Kb/view?usp=drive_link')
         embed.set_author(name='Event Berlangsung:')
-        embed.set_thumbnail(url='https://st.depositphotos.com/3246347/4454/i/950/depositphotos_44540065-stock-photo-calendar-1-april.jpg')
-        embed.description = "April Mop, dikenal dengan April Fools' Day dalam bahasa Inggris, diperingati setiap tanggal 1 April setiap tahun. Pada hari itu, orang dianggap boleh berbohong atau memberi lelucon kepada orang lain tanpa dianggap bersalah. Hari ini ditandai dengan tipu-menipu dan lelucon lainnya terhadap keluarga, musuh, teman bahkan tetangga dengan tujuan mempermalukan orang-orang yang mudah ditipu. Di beberapa negara seperti Inggris dan Australia serta Afrika Selatan, lelucon hanya boleh dilakukan sampai siang atau sebelum siang hari.[1] Seseorang yang memainkan trik setelah tengah hari disebut sebagai \"April Mop\".[2] Namun di tempat lain seperti Kanada, Prancis, Irlandia, Italia, Rusia, Belanda, dan Amerika Serikat lelucon bebas dimainkan sepanjang hari. Hari itu juga banyak diperingati di Internet.\n April Fool's Day BBC"
-        embed.set_image(url='https://i.ppy.sh/3269e52fe018f5c90c7a9cdd4ef6c3a3872ef3af/68747470733a2f2f6769746875622e636f6d2f4d696c6b697469632f4d696c6b697469632f626c6f622f6d61737465722f31653361653766366632663961306131666261326537326361393433636133622e3634307834383078312e6a70673f7261773d74727565')
-        embed.set_footer(text='Give me 20 dolaz giv me 20 dolaz give mem 20 dolas no wifi in da club ay')
+        embed.set_thumbnail(url=self.bot.user.avatar.url)
+        embed.description = "Bot yang sebelumnya bernama RVDIA (Revolutionary Virtual Independent Discord Application), telah mengalami perubahan agar namanya lebih simpel dan mudah diingat oleh pengguna.\n\nMulai dari hari ini (<t:1685350330:D>), RVDiA (Revolutionary Virtual Discord Assistant) akan membantumu dalam menyelesaikan segala permasalahan, kecuali yang sangat pribadi yah.\n\nUntuk informasi mengenai fitur Game, akan saya coba implementasikan sebisa mungkin, berhubung jadwal saya yang cukup padat. Saya akan terus mencoba untuk memenuhi tujuan dari Project RVDiA, kebahagiaan, kemampuan, dan pengetahuan.\n\n-Schryzon"
+        embed.set_image(url=os.getenv('bannerevent'))
+        embed.set_footer(text='Revolusioner, Virtual, Independen; Aktif, Ceria, Menggemaskan.')
         await ctx.reply(embed=embed)
 
 async def setup(bot):

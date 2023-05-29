@@ -1,7 +1,7 @@
 """
 Schryzon/Jayananda (11)
 G-Tech Re'sman Programming Division
-RVDIA (Revolutionary Virtual Independent Discord Application)
+RVDIA (Revolutionary Virtual Discord Assistant)
 Inspired by Haruna Sakurai from Ongeki!
 Feel free to edit, recreate, publish, and do other stuff
 Licensed under the MIT LICENSE
@@ -55,14 +55,14 @@ def when_mentioned_or_function(func):
 
 class RVDIA(commands.AutoShardedBot):
   """
-  A subclass of commands.AutoShardedBot; RVDIA herself.
+  A subclass of commands.AutoShardedBot; RVDiA herself.
   This is in order to make her attributes easier to maintain.
   (Nah, I'm just lazy.)
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "公式 [Official] v1.0.10"
-    self.event_mode = False
+    self.__version__ = "公式 [Official] v1.1.0"
+    self.event_mode = True
     self.color = 0xff4df0
     self.runtime = time() # UNIX float
 
@@ -91,7 +91,7 @@ cogs_list = [cogs.name for cogs in iter_modules(['cogs'], prefix='cogs.')] # ite
 
 @rvdia.event
 async def on_connect():
-    print("RVDIA has connected.")
+    print("RVDiA has connected.")
 
 @rvdia.event
 async def on_ready():
@@ -300,8 +300,6 @@ async def on_message(msg:discord.Message):
           async with msg.channel.typing():
             openai.api_key = os.getenv('openaikey')
             message = msg.content.lower().lstrip('rvdia,')
-            if len(message) > 256:
-               return await msg.channel.send('Pesanmu terlalu panjang untuk aku cerna, aku hanya bisa membaca maksimal 256 huruf dari pesanmu!')
             result = await openai.ChatCompletion.acreate(
                 model="gpt-3.5-turbo",
                 temperature=1.2,
@@ -310,6 +308,10 @@ async def on_message(msg:discord.Message):
                 {"role": "user", "content": message}
                 ]
             )
+
+            if len(message) > 256:
+               message = message[:253] + '...' #Adding ... from 253rd character, ignoring other characters.
+
             embed = discord.Embed(
               title=' '.join((titlecase(word) for word in message.split(' '))), 
               color=msg.author.color, 
@@ -365,6 +367,10 @@ async def on_message(msg:discord.Message):
                 {"role": "user", "content": message}
                 ]
             )
+
+            if len(message) > 256:
+               message = message[:253] + '...' #Adding ... from 253rd character, ignoring other characters.
+
             embed = discord.Embed(
               title=' '.join((titlecase(word) for word in message.split(' '))), 
               color=msg.author.color, 

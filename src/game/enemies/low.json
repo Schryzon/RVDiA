@@ -1,0 +1,16 @@
+[
+    {
+        "name":"Slippy Slime",
+        "desc":"Makhluk dengan tingkat kecerdasan rendah.",
+        "tier":"LOW",
+        "hp":70,
+        "atk":10,
+        "def":5,
+        "agl":6,
+        "reward":[
+            "exp+1500",
+            "cns+150",
+            "krm+40"
+        ]
+    }
+]

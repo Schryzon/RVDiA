@@ -416,6 +416,10 @@ class Utilities(commands.Cog):
                 {"role": "user", "content": message}
                 ]
             )
+            
+            if len(message) > 256:
+               message = message[:253] + '...' #Adding ... from 253rd character, ignoring other characters.
+
             embed = discord.Embed(
                 title=' '.join((titlecase(word) for word in message.split(' '))), 
                 color=ctx.author.color, 

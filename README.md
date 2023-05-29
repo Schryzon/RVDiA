@@ -1,12 +1,12 @@
-# RVDIA
+# RVDiA
 ## "Revolusioner, Virtual, Independen."
 <p align="center">
-  <img src="https://cdn.discordapp.com/avatars/957471338577166417/97d70a5769552db26474cad16f7431fa.png?size=512" alt="RVDIA's Profile Picture">
+  <img src="https://cdn.discordapp.com/avatars/957471338577166417/97d70a5769552db26474cad16f7431fa.png?size=512" alt="RVDiA's Profile Picture">
 </p>
 
 <p align="center">
   <a href="https://discord.com/api/oauth2/authorize?client_id=957471338577166417&permissions=1514446056561&scope=bot%20applications.commands">
-  <img src="https://img.shields.io/badge/SCHRYZON-RVDIA-ff4df0?style=for-the-badge&logo=python&logoColor=yellow" alt="SCHRYZON - RVDIA"></a>
+  <img src="https://img.shields.io/badge/SCHRYZON-RVDIA-ff4df0?style=for-the-badge&logo=python&logoColor=yellow" alt="SCHRYZON - RVDiA"></a>
   <a href="https://discord.gg/QqWCnk6zxw"><img alt="Discord" src="https://img.shields.io/discord/877009215271604275?style=for-the-badge"></a>
 </p>
 
@@ -16,7 +16,7 @@
   </a>
 </p>
 
-Revolutionary Virtual Independent Discord Application (RVDIA) adalah sebuah **Indonesian-oriented Multipurpose Discord Bot** (Robot Discord Multifungsi berbahasa Indonesia) yang terinspirasi dari karakter "Haruna Sakurai" dari game Ongeki!
+Revolutionary Virtual Discord Assistant (RVDiA) adalah sebuah **Indonesian-oriented Multipurpose Discord Bot** (Robot Discord Multifungsi berbahasa Indonesia) yang terinspirasi dari karakter "Haruna Sakurai" dari game Ongeki!
 
 ## Apa yang Spesial dari Bot ini?
 Bot ini menggunakan Bahasa Indonesia dan memiliki command khusus untuk anggota-anggota club G-Tech Re'sman, serta memiliki fitur utilitas yang melimpah dan sistem game RPG (roleplay game) tersendiri dengan event-event menarik.
@@ -30,13 +30,13 @@ Bot ini menggunakan Bahasa Indonesia dan memiliki command khusus untuk anggota-a
 (Untuk format `.env`, bisa dilihat di `secrets.env.example` ya! Jangan lupa untuk selalu menjaga keamanan bot kalian!)
 
 ## Informasi Tambahan
-Proyek ini __hanya untuk sekedar hobi__ dan tidak untuk kepentingan komersial dan lain-lain. Oleh sebab itu, RVDIA menggunakan semua priviliged intents `discord.Intents.all()` dan memiliki batasan `100 server` yang bisa di-join (karena saya tidak berani untuk apply whitelisting saat ini, mungkin suatu hari nanti, hehe...)
+Proyek ini __hanya untuk sekedar hobi__ dan tidak untuk kepentingan komersial dan lain-lain. Oleh sebab itu, RVDiA menggunakan semua priviliged intents `discord.Intents.all()` dan memiliki batasan `100 server` yang bisa di-join (karena saya tidak berani untuk apply whitelisting saat ini, mungkin suatu hari nanti, hehe...)
 
-Saat ini RVDIA, dihost dengan menggunakan Heroku. Jadi, jika kalian ingin menjalankan botnya saya sarankan untuk menggunakan service Heroku. Tetapi, jika kalian hanya ingin sekedar menggunakan botnya secara lokal melalui komputer pribadi juga tidak masalah.
+Saat ini RVDiA, dihost dengan menggunakan Heroku. Jadi, jika kalian ingin menjalankan botnya saya sarankan untuk menggunakan service Heroku. Tetapi, jika kalian hanya ingin sekedar menggunakan botnya secara lokal melalui komputer pribadi juga tidak masalah.
 
 `python RVDIA.py` untuk menjalankan botnya.
 
-Join [CyroN Central server](https://discord.gg/QqWCnk6zxw) di Discord dan hubungi saya (Schryzon) jika ada masalah, pertanyaan, atau ingin berkolaborasi dalam pengembangan RVDIA.
+Join [CyroN Central server](https://discord.gg/QqWCnk6zxw) di Discord dan hubungi saya (Schryzon) jika ada masalah, pertanyaan, atau ingin berkolaborasi dalam pengembangan RVDiA.
 
 ### Credits
 Terima kasih terutama untuk Riverdia (atas inspirasi nama bot), iMaze, Mouchi, Dez, Zenchew, Ismita, Pockii, Kyuu, Kazama, Bcntt, Nateflakes, nathawiguna, opensourze, Shiruto, Satya Yoga dan masih banyak lagi karena telah membantu saya pada proyek-proyek sebelumnya!
