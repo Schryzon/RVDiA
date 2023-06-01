@@ -1,0 +1,11 @@
+{
+  "name": "rvdia",
+  "version": "1.0.0",
+  "dependencies": {
+    "dotenv": "^16.1.3",
+    "mongodb": "^5.5.0"
+  },
+  "scripts": {
+    "start": "node API.js"
+  }
+}
