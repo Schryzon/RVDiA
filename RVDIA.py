@@ -52,6 +52,10 @@ def when_mentioned_or_function(func):
         return r
     return inner
 
+# Setting up bot privileged intents (there might be a simpler way)
+bot_intents = discord.Intents.default()
+bot_intents.message_content = True
+bot_intents.members = True
 
 class RVDIA(commands.AutoShardedBot):
   """
@@ -61,7 +65,7 @@ class RVDIA(commands.AutoShardedBot):
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "公式 [Official] v1.1.0"
+    self.__version__ = "公式 [Official] v1.1.1"
     self.event_mode = True
     self.color = 0xff4df0
     self.runtime = time() # UNIX float
@@ -70,7 +74,7 @@ class RVDIA(commands.AutoShardedBot):
         command_prefix=when_mentioned_or_function(get_prefix), 
         case_insensitive=True, 
         strip_after_prefix=False, 
-        intents=discord.Intents.all(), 
+        intents=bot_intents,
 
         help_command=Help(
               no_category = "Tak tergolongkan", 

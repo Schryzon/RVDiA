@@ -14,19 +14,6 @@ from scripts.main import client, connectdb, check_blacklist, event_available, ti
 from time import time
 from PIL import Image
 from io import BytesIO
-
-def status_converter(status):
-    match status: # Sometimes it works, sometimes it doesn't.
-        case 'dnd':
-            return "🔴 Jangan Ganggu"
-        case 'do_not_disturb':
-            return "🔴 Jangan Ganggu"
-        case "idle":
-            return "🟡 AFK"
-        case "online":
-            return "🟢 Online"
-        case _:
-            return "⚪ Offline"
     
 day_of_week = {
     '1':"Senin",
@@ -238,12 +225,10 @@ class General(commands.Cog):
         lel = [kol.replace('_', ' ') for kol in perm_list]
         lol = [what.title() for what in lel]
 
-        status = status_converter(str(member.status)) #Status
         embed=discord.Embed(title=member, color=member.colour, timestamp=ctx.message.created_at)
         embed.set_author(name="User Info:")
         embed.set_thumbnail(url=avatar_url)
         embed.add_field(name="Nama Panggilan", value=nick, inline=False)
-        embed.add_field(name="Status", value=status, inline=False)
         embed.add_field(name="Akun Dibuat", value=member.created_at.strftime("%a, %d %B %Y"))
         embed.add_field(name="Bergabung Pada", value=member.joined_at.strftime("%a, %d %B %Y"))
         embed.add_field(name="Role tertinggi", value=member.top_role.mention, inline=False)
