@@ -4,6 +4,7 @@ import discord
 import openai
 import requests
 import aiohttp
+from datetime import datetime
 from sys import version as pyver
 from os import getenv
 from cogs.Event import Event
@@ -364,9 +365,21 @@ class Utilities(commands.Cog):
         data = requests.get(f'http://worldtimeapi.org/api/timezone/{req_data}').json()
         day = str(data['day_of_week'])
         day = day_of_week[day]
+
+        local_datetimestr = data['datetime']
+        utc_datetimestr = data['utc_datetime']
+        local_datetimeobj = datetime.fromisoformat(local_datetimestr)
+        utc_datetimeobj = datetime.fromisoformat(utc_datetimestr)
+
+        local_time = local_datetimeobj.strftime('%H:%M:%S')
+        utc_time = utc_datetimeobj.strftime('%H:%M:%S')
+
         embed = discord.Embed(title=f"Waktu di {area[1]}", description=f"UTC{data['utc_offset']}", color=0x00ffff)
         embed.add_field(name="Akronim Timezone", value=data['abbreviation'], inline=False)
-        embed.add_field(name="Hari di Lokasi", value=day, inline=False)
+        embed.add_field(name="Perbandingan Waktu:",
+                        value=f"Waktu Lokal: {local_time}\nWaktu UTC: {utc_time}"
+                        )
+        embed.add_field(name="Hari di Lokasi", value=f"{day} (Hari ke-{data['day_of_year']})", inline=False)
         await ctx.send(embed=embed)
 
     @commands.hybrid_command(
