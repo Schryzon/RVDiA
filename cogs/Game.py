@@ -81,7 +81,7 @@ class GameInstance():
         user2_defending = False
         while self.user1_hp > 0 and self.user2_hp > 0:
             await self.ctx.channel.send(f'<@{self.user1.id}> Giliranmu, ketik `attack`, `defend`, atau `end` di chat!')
-            res_1 = await self.bot.wait_for('message', check = lambda r: r.author == self.user1 and r.channel == self.ctx.channel, timeout = 30.0) # Capekkkkk
+            res_1 = await self.bot.wait_for('message', check = lambda r: r.author == self.user1 and r.channel == self.ctx.channel, timeout = 25.0) # Capekkkkk
 
             match res_1.content.lower():
                 case "attack":
@@ -105,8 +105,10 @@ class GameInstance():
                 case _:
                     await self.ctx.channel.send("Opsi tidak valid, giliran dilewatkan.")
 
+            await asyncio.sleep(2.5)
+
             await self.ctx.channel.send(f'<@{self.user2.id}> Giliranmu, ketik `attack`, `defend`, atau `end` di chat!')
-            res_2 = await self.bot.wait_for('message', check = lambda r: r.author == self.user2 and r.channel == self.ctx.channel, timeout = 30.0)
+            res_2 = await self.bot.wait_for('message', check = lambda r: r.author == self.user2 and r.channel == self.ctx.channel, timeout = 25.0)
 
             match res_2.content.lower():
                 case "attack":
@@ -129,6 +131,8 @@ class GameInstance():
 
                 case _:
                     await self.ctx.channel.send("Opsi tidak valid, giliran dilewatkan.")
+
+            await asyncio.sleep(2.5)
 
         if self.user1_hp > self.user2_hp:
             embed = discord.Embed(title=f"{self.user1.display_name} Menang!", color=0xffff00)
