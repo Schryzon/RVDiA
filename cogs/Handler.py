@@ -190,6 +190,9 @@ class Error(commands.Cog):
     elif "Invalid Form Body In message_reference: Unknown message" in str(error):
       await ctx.reply("Hah?!\nSepertinya aku sedang mengalami masalah menemukan pesan yang kamu reply!")
 
+    elif "Rival has no account!" in str(error):
+      return
+
     # If all else fails (get it?)
     else:
       channel = self.historia.get_channel(906123251997089792)
