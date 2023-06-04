@@ -32,7 +32,7 @@ class GameInstance():
 
         user2_data = database.find_one({'_id':self.user2.id})
         if user2_data is None:
-            await self.ctx.channel.send(f'Waduh! Sepertinya <@{self.user2.id}> belum membuat akun Land of Revolution!')
+            await self.ctx.reply(f'Waduh! Sepertinya <@{self.user2.id}> belum membuat akun Land of Revolution!')
             raise Exception('Rival has no account!')
         
         user2_stats = [user2_data['attack'], user2_data['defense'], user2_data['agility']]
@@ -74,7 +74,7 @@ class GameInstance():
         # How do I check if other game instances are runnin tho
         self.running = True
         datas = await self.gather_data()
-        await self.ctx.channel.send('⚔️ Perang dimulai!') # I'll just use this for now
+        await self.ctx.reply('⚔️ Perang dimulai!') # I'll just use this for now
         await asyncio.sleep(3.0)
 
         user1_defending = False
