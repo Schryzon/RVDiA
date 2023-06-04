@@ -9,11 +9,10 @@ from os import getenv
 from discord.ui import View, Button, button
 from discord import app_commands
 from discord.ext import commands
-from RVDIA import RVDIA
 from scripts.main import connectdb, check_blacklist, has_registered, level_up, send_level_up_msg
 
 class GameInstance():
-    def __init__(self, ctx:commands.Context, user1:discord.Member, user2:discord.Member, bot:RVDIA):
+    def __init__(self, ctx:commands.Context, user1:discord.Member, user2:discord.Member, bot):
         self.user1 = user1
         self.user2 = user2
         self.user1_hp = 100
@@ -246,7 +245,7 @@ class Game(commands.Cog):
     """
     Kumpulan command game RPG RVDIA (Land of Revolution).
     """
-    def __init__(self, bot:RVDIA):
+    def __init__(self, bot):
         self.bot = bot
 
     @commands.hybrid_group(name='game')
