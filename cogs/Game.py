@@ -51,7 +51,7 @@ class GameInstance():
         if is_defending:
             user_2_def += 15
 
-        damage = user_1_atk*(100 - user_2_def)/100
+        damage = user_1_atk*(random.randint(70, 100) - user_2_def)/100
         miss_chance = (user_2_agl - user_1_agl)*2 + 5
         hit_chance = 100 - miss_chance
         attack_chance = random.randint(0, 100)
@@ -72,9 +72,9 @@ class GameInstance():
     async def start(self):
         # Start -> Create Thread -> While loop (this is for later zzz)
         # How do I check if other game instances are runnin tho
-        await self.ctx.channel.send('⚔️ Perang dimulai!') # I'll just use this for now
         self.running = True
         datas = await self.gather_data()
+        await self.ctx.channel.send('⚔️ Perang dimulai!') # I'll just use this for now
         await asyncio.sleep(3.0)
 
         user1_defending = False
@@ -87,7 +87,7 @@ class GameInstance():
                 case "attack":
                     damage = self.attack(datas[0]['stats'], datas[1]['stats'], self.user1.id, user2_defending)
                     embed = discord.Embed(title=f'💥{self.user1.display_name} Menyerang!', color=self.user1.color)
-                    embed.description = f"**`{damage}` Damage!**\n\nHP <@{self.user2.id}> tersisa `{self.user2_hp}` HP!"
+                    embed.description = f"**`{damage}` Damage!**\nHP <@{self.user2.id}> tersisa `{self.user2_hp-damage}` HP!"
                     embed.set_thumbnail(url=self.user1.avatar.url)
                     await self.ctx.channel.send(embed=embed)
 
@@ -105,6 +105,9 @@ class GameInstance():
                 case _:
                     await self.ctx.channel.send("Opsi tidak valid, giliran dilewatkan.")
 
+            if self.user2_hp <= 0:
+                break
+
             await asyncio.sleep(2.5)
 
             await self.ctx.channel.send(f'<@{self.user2.id}> Giliranmu, ketik `attack`, `defend`, atau `end` di chat!')
@@ -114,7 +117,7 @@ class GameInstance():
                 case "attack":
                     damage = self.attack(datas[1]['stats'], datas[0]['stats'], self.user2.id, user1_defending)
                     embed = discord.Embed(title=f'💥{self.user2.display_name} Menyerang!', color=self.user2.color)
-                    embed.description = f"**`{damage}` Damage!**\n\nHP <@{self.user1.id}> tersisa `{self.user1_hp}` HP!"
+                    embed.description = f"**`{damage}` Damage!**\nHP <@{self.user1.id}> tersisa `{self.user1_hp-damage}` HP!"
                     embed.set_thumbnail(url=self.user2.avatar.url)
                     await self.ctx.channel.send(embed=embed)
 
