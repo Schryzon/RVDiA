@@ -464,6 +464,8 @@ class Game(commands.Cog):
         """
         Tantang seseorang ke sebuah duel!
         """
+        if member.bot:
+            return await ctx.reply('Bot tidak bisa melakukan perlawanan!')
         game = GameInstance(ctx, ctx.author, member, self.bot)
         await game.start()
 
