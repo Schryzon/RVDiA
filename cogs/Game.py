@@ -322,7 +322,7 @@ class EnemyDropdown(discord.ui.Select):
                 )
         embed.set_thumbnail(url = interaction.user.avatar.url) # Lazy, might add a placeholder later
         embed.set_footer(text="Kamu bisa melawan salah satu dari mereka dengan command battle!")
-        await interaction.response.send_message(embed=embed, view=self)
+        await interaction.response.send_message(embed=embed, view=EnemyView())
 
 class EnemyView(View):
     def __init__(self):
