@@ -1,5 +1,4 @@
 import asyncio
-from typing import Optional
 import discord
 import datetime
 import time
@@ -12,14 +11,21 @@ from discord.ext import commands
 from scripts.main import connectdb, check_blacklist, has_registered, level_up, send_level_up_msg
 
 class GameInstance():
-    def __init__(self, ctx:commands.Context, user1:discord.Member, user2:discord.Member, bot):
+    def __init__(self, ctx:commands.Context, user1:discord.Member, user2, bot):
+        # user2 is discord.Member if PvP, dict if PvE.
         self.user1 = user1
         self.user2 = user2
         self.user1_hp = 100
-        self.user2_hp = 100
+        try:
+            self.user2_hp = self.user2['hp']
+
+        except:
+            self.user2_hp = 100
+
         self.running = False
         self.ctx = ctx
         self.bot = bot
+        self.command_name = ctx.command.name
 
     async def gather_data(self):
         database = connectdb('Game')
@@ -30,16 +36,25 @@ class GameInstance():
             'hp': self.user1_hp
         }
 
-        user2_data = database.find_one({'_id':self.user2.id})
-        if user2_data is None:
-            await self.ctx.reply(f'Waduh! Sepertinya <@{self.user2.id}> belum membuat akun Land of Revolution!')
-            raise Exception('Rival has no account!')
-        
-        user2_stats = [user2_data['attack'], user2_data['defense'], user2_data['agility']]
-        comp_data2 = {
-            'stats': user2_stats,
-            'hp': self.user2_hp
-        }
+        if self.command_name == "fight":
+            # Fight = PvP
+            user2_data = database.find_one({'_id':self.user2.id})
+            if user2_data is None:
+                await self.ctx.reply(f'Waduh! Sepertinya <@{self.user2.id}> belum membuat akun Land of Revolution!')
+                raise Exception('Rival has no account!')
+            
+            user2_stats = [user2_data['attack'], user2_data['defense'], user2_data['agility']]
+            comp_data2 = {
+                'stats': user2_stats,
+                'hp': self.user2_hp
+            }
+
+        else:
+            user2_stats = [self.user2['atk'], self.user2['def'], self.user2['agl']]
+            comp_data2 = {
+                'stats':user2_stats,
+                'hp':self.user2_hp
+            }
 
         return [comp_data1, comp_data2] # List containing dict, feeling stressful
 
@@ -51,16 +66,16 @@ class GameInstance():
         if is_defending:
             user_2_def += 15
 
-        damage = user_1_atk*(random.randint(70, 100) - user_2_def)/100
+        damage = max(0, user_1_atk*(random.randint(70, 100) - user_2_def)/100)
         miss_chance = (user_2_agl - user_1_agl)*2 + 5
         hit_chance = 100 - miss_chance
         attack_chance = random.randint(0, 100)
 
         if hit_chance >= attack_chance:
             if dealer_id == self.user1.id: # Might work
-                self.user1_hp = self.user1_hp - damage
-            else:
                 self.user2_hp = self.user2_hp - damage
+            else:
+                self.user1_hp = self.user1_hp - damage
 
             return damage
         
@@ -87,9 +102,11 @@ class GameInstance():
                 case "attack":
                     damage = self.attack(datas[0]['stats'], datas[1]['stats'], self.user1.id, user2_defending)
                     embed = discord.Embed(title=f'💥{self.user1.display_name} Menyerang!', color=self.user1.color)
-                    embed.description = f"**`{damage}` Damage!**\nHP <@{self.user2.id}> tersisa `{self.user2_hp-damage}` HP!"
+                    embed.description = f"**`{damage}` Damage!**\nHP <@{self.user2.id}> tersisa `{self.user2_hp}` HP!"
                     embed.set_thumbnail(url=self.user1.avatar.url)
                     await self.ctx.channel.send(embed=embed)
+                    if user2_defending:
+                        user2_defending = False
 
                 case "defend":
                     user1_defending = True
@@ -110,30 +127,53 @@ class GameInstance():
 
             await asyncio.sleep(2.5)
 
-            await self.ctx.channel.send(f'<@{self.user2.id}> Giliranmu, ketik `attack`, `defend`, atau `end` di chat!')
-            res_2 = await self.bot.wait_for('message', check = lambda r: r.author == self.user2 and r.channel == self.ctx.channel, timeout = 25.0)
+            if isinstance(self.user2, discord.Member):
+                await self.ctx.channel.send(f'<@{self.user2.id}> Giliranmu, ketik `attack`, `defend`, atau `end` di chat!')
+                res_2 = await self.bot.wait_for('message', check = lambda r: r.author == self.user2 and r.channel == self.ctx.channel, timeout = 25.0)
 
-            match res_2.content.lower():
-                case "attack":
-                    damage = self.attack(datas[1]['stats'], datas[0]['stats'], self.user2.id, user1_defending)
-                    embed = discord.Embed(title=f'💥{self.user2.display_name} Menyerang!', color=self.user2.color)
-                    embed.description = f"**`{damage}` Damage!**\nHP <@{self.user1.id}> tersisa `{self.user1_hp-damage}` HP!"
-                    embed.set_thumbnail(url=self.user2.avatar.url)
-                    await self.ctx.channel.send(embed=embed)
+                match res_2.content.lower():
+                    case "attack":
+                        damage = self.attack(datas[1]['stats'], datas[0]['stats'], self.user2.id, user1_defending)
+                        embed = discord.Embed(title=f'💥{self.user2.display_name} Menyerang!', color=self.user2.color)
+                        embed.description = f"**`{damage}` Damage!**\nHP <@{self.user1.id}> tersisa `{self.user1_hp}` HP!"
+                        embed.set_thumbnail(url=self.user2.avatar.url)
+                        await self.ctx.channel.send(embed=embed)
+                        if user1_defending:
+                            user1_defending = False
 
-                case "defend":
-                    user2_defending = True
-                    embed = discord.Embed(title=f'🛡️{self.user2.display_name} Melindungi Diri!', color=self.user2.color)
-                    embed.description = f"**Defense bertambah `+15` untuk serangan selanjutnya!**"
-                    embed.set_thumbnail(url=self.user2.avatar.url)
-                    await self.ctx.channel.send(embed=embed)
+                    case "defend":
+                        user2_defending = True
+                        embed = discord.Embed(title=f'🛡️{self.user2.display_name} Melindungi Diri!', color=self.user2.color)
+                        embed.description = f"**Defense bertambah `+15` untuk serangan selanjutnya!**"
+                        embed.set_thumbnail(url=self.user2.avatar.url)
+                        await self.ctx.channel.send(embed=embed)
 
-                case "end":
-                    await self.ctx.channel.send(f'⛔ <@{self.user2.id}>  Mengakhiri perang.')
-                    return
+                    case "end":
+                        await self.ctx.channel.send(f'⛔ <@{self.user2.id}>  Mengakhiri perang.')
+                        return
 
-                case _:
-                    await self.ctx.channel.send("Opsi tidak valid, giliran dilewatkan.")
+                    case _:
+                        await self.ctx.channel.send("Opsi tidak valid, giliran dilewatkan.")
+
+            else:
+                choice = random.choice(['attack', 'defend'])
+                match choice:
+                    case "attack":
+                        damage = self.attack(datas[1]['stats'], datas[0]['stats'], 1, user1_defending)
+                        embed = discord.Embed(title=f'💥{self.user2["name"]} Menyerang!', color=0xff0000)
+                        embed.description = f"**`{damage}` Damage!**\nHP <@{self.user1.id}> tersisa `{self.user1_hp-damage}` HP!"
+                        # ADD EMBED THUMBNAIL
+                        await self.ctx.channel.send(embed=embed)
+                        if user1_defending:
+                            user1_defending = False
+
+                    case "defend":
+                        user2_defending = True
+                        embed = discord.Embed(title=f'🛡️{self.user2["name"]} Melindungi Diri!', color=0xff0000)
+                        embed.description = f"**Defense bertambah `+15` untuk serangan selanjutnya!**"
+                        # ADD EMBED THUMBNAIL
+                        await self.ctx.channel.send(embed=embed)
+
 
             await asyncio.sleep(2.5)
 
@@ -145,11 +185,21 @@ class GameInstance():
             await self.ctx.channel.send(embed=embed)
 
         else:
-            embed = discord.Embed(title=f"{self.user2.display_name} Menang!", color=0xffff00)
-            embed.description = f"Dengan `{self.user2_hp}` tersisa!"
-            embed.set_thumbnail(url = self.user2.avatar.url)
-            embed.set_footer(text='Kamu memperoleh 15 koin dan 5 karma!')
-            await self.ctx.channel.send(embed=embed)
+            if isinstance(self.user2, discord.Member):
+                embed = discord.Embed(title=f"{self.user2.display_name} Menang!", color=0xffff00)
+                embed.description = f"Dengan `{self.user2_hp}` tersisa!"
+                embed.set_thumbnail(url = self.user2.avatar.url)
+                embed.set_footer(text='Kamu memperoleh 15 koin dan 5 karma!')
+                await self.ctx.channel.send(embed=embed)
+
+            else:
+                embed = discord.Embed(title=f"Kamu Kalah!", color=0xff0000)
+                embed.description = f"{self.user2['name']} menang dengan `{self.user2_hp}` tersisa!"
+                # ADD EMBED THUMBNAIL
+                embed.set_footer(text='Tip: Gunakan item dan skill spesial yang kamu miliki!')
+                await self.ctx.channel.send(embed=embed)
+
+        return
 
         
 class ResignButton(View):
@@ -286,9 +336,9 @@ class Game(commands.Cog):
             'last_login':datetime.datetime.now(),
             'coins':100,
             'karma':10,             # Luck points
-            'attack':50,
-            'defense':20,
-            'agility':20,
+            'attack':10,
+            'defense':10,
+            'agility':10,
             'special_skills':[],    # Push JSON to here
             'items':[],
             'equipments':[]         # Push it to here also
@@ -467,6 +517,31 @@ class Game(commands.Cog):
         if member.bot:
             return await ctx.reply('Bot tidak bisa melakukan perlawanan!')
         game = GameInstance(ctx, ctx.author, member, self.bot)
+        await game.start()
+
+
+    @game.command(description='Lawan musuh-musuh yang ada di Land of Revolution!')
+    @app_commands.describe(enemy_tier='Musuh level berapa yang ingin kamu lawan?')
+    @app_commands.rename(enemy_tier='level')
+    @app_commands.choices(enemy_tier=[
+        app_commands.Choice(name='BOSS', value='boss'),
+        app_commands.Choice(name='High (Tinggi)', value='high'),
+        app_commands.Choice(name="Normal (Sedang)", value='normal'),
+        app_commands.Choice(name='Low (Rendah)', value='low')
+    ])
+    @has_registered()
+    @check_blacklist()
+    async def battle(self, ctx:commands.Context, enemy_tier:app_commands.Choice[str]): # Choice[value_type]
+        """
+        Lawan musuh-musuh yang ada di Land of Revolution!
+        """
+        with open(f'./src/game/enemies/{enemy_tier.value}.json') as file:
+            content = file.read()
+            enemies = json.loads(content)
+        
+        enemy = random.choice(enemies)
+
+        game = GameInstance(ctx, ctx.author, enemy, self.bot)
         await game.start()
 
 

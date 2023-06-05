@@ -4,7 +4,7 @@
         "desc":"Makhluk dengan tingkat kecerdasan rendah.",
         "tier":"LOW",
         "hp":70,
-        "atk":10,
+        "atk":5,
         "def":5,
         "agl":6,
         "reward":[
