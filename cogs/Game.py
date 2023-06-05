@@ -102,7 +102,10 @@ class GameInstance():
                 case "attack":
                     damage = self.attack(datas[0]['stats'], datas[1]['stats'], self.user1.id, user2_defending)
                     embed = discord.Embed(title=f'💥{self.user1.display_name} Menyerang!', color=self.user1.color)
-                    embed.description = f"**`{damage}` Damage!**\nHP <@{self.user2.id}> tersisa `{self.user2_hp}` HP!"
+                    if isinstance(self.user2, discord.Member):
+                        embed.description = f"**`{damage}` Damage!**\nHP <@{self.user2.id}> tersisa `{self.user2_hp}` HP!"
+                    else:
+                        embed.description = f"**`{damage}` Damage!**\nHP {self.user2['name']} tersisa `{self.user2_hp}` HP!"
                     embed.set_thumbnail(url=self.user1.avatar.url)
                     await self.ctx.channel.send(embed=embed)
                     if user2_defending:
@@ -161,7 +164,7 @@ class GameInstance():
                     case "attack":
                         damage = self.attack(datas[1]['stats'], datas[0]['stats'], 1, user1_defending)
                         embed = discord.Embed(title=f'💥{self.user2["name"]} Menyerang!', color=0xff0000)
-                        embed.description = f"**`{damage}` Damage!**\nHP <@{self.user1.id}> tersisa `{self.user1_hp-damage}` HP!"
+                        embed.description = f"**`{damage}` Damage!**\nHP <@{self.user1.id}> tersisa `{self.user1_hp}` HP!"
                         # ADD EMBED THUMBNAIL
                         await self.ctx.channel.send(embed=embed)
                         if user1_defending:
