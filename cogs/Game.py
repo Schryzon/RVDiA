@@ -4,9 +4,7 @@ import datetime
 import time
 import random
 import json
-from glob import glob
-from os import getenv, path
-from pkgutil import iter_modules
+from os import getenv, listdir, path
 from discord.ui import View, Button, button
 from discord import app_commands
 from discord.ext import commands
@@ -301,12 +299,12 @@ class ShopDropdown(discord.ui.Select):
 class EnemyDropdown(discord.ui.Select):
     def __init__(self):
         options = []
-        file_names = [json_file.name for json_file in iter_modules(['./src/game/enemies'])]
-        for file in file_names:
-            name = file.split('.')
+        json_files = [file for file in listdir('./src/game/enemies') if file.endswith('.json')]
+        for file in json_files:
+            name = path.splitext(file)[0]
             options.append(discord.SelectOption(
-                label=name[0].title(),
-                value=name[0]
+                label=name.title(),
+                value=name
             ))
         super().__init__(custom_id="enemydrop", placeholder="Level Musuh", min_values=1, max_values=1, options=options)
 
