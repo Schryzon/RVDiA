@@ -306,7 +306,7 @@ class EnemyDropdown(discord.ui.Select):
             name = file.split('.')
             options.append(discord.SelectOption(
                 label=name[0].title(),
-                value=name
+                value=name[0]
             ))
         super().__init__(custom_id="enemydrop", placeholder="Level Musuh", min_values=1, max_values=1, options=options)
 
@@ -592,7 +592,8 @@ class Game(commands.Cog):
         Lihat daftar musuh yang muncul di Land of Revolution!
         """
         view = EnemyView()
-        await ctx.reply(f"Untuk melihat daftar musuh, silahkan tekan di bawah ini ↓", view=view)
+        async with ctx.typing:
+            await ctx.reply(f"Untuk melihat daftar musuh, silahkan tekan di bawah ini ↓", view=view)
 
 
 async def setup(bot):
