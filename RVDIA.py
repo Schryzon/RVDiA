@@ -3,8 +3,9 @@ Schryzon/Jayananda (11)
 G-Tech Re'sman Programming Division
 RVDIA (Revolutionary Virtual Discord Assistant)
 Inspired by Haruna Sakurai from Ongeki!
-Feel free to edit, recreate, publish, and do other stuff
-Licensed under the MIT LICENSE
+Feel free to edit, recreate, publish, and do other stuff.
+Contributions are welcome.
+Licensed under the MIT LICENSE.
 """
 
 import asyncio

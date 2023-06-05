@@ -594,5 +594,47 @@ class Game(commands.Cog):
             await ctx.reply(f"Untuk melihat daftar musuh, silahkan tekan di bawah ini ↓", view=view)
 
 
+    @game.command(description='Request untuk pemindahan data akun.')
+    @app_commands.describe(old_acc = "Akun Discord lamamu atau ID akun Discord lamamu.")
+    @app_commands.describe(reason = "Alasan request pemindahan data akun.")
+    @app_commands.rename(reason = "alasan")
+    @app_commands.rename(old_acc = "akun_lama")
+    @has_registered()
+    @check_blacklist()
+    async def transfer(self, ctx:commands.Context, old_acc:discord.User, *, reason:str):
+        """
+        Request untuk pemindahan data akun.
+        """
+        database = connectdb('Game')
+        current_acc_data = database.find_one({'_id':ctx.author.id})
+        old_acc_data = database.find_one({'_id':old_acc.id})
+        if not old_acc_data:
+            return await ctx.reply("Akun Land of Revolution tidak ditemukan!\nJika tidak yakin dengan ID akun Discord lamamu, silahkan hubungi langsung Schryzon#4302!")
+        
+        embed = discord.Embed(title="Request Transfer Data Akun", color=ctx.author.color, timestamp=ctx.message.created_at)
+        embed.add_field(
+            name="Akun Lama",
+            value=f"Nama: {old_acc_data['name']}\nID: {old_acc_data['_id']}",
+            inline=False
+        )
+
+        embed.add_field(
+            name="Akun Baru",
+            value=f"Nama: {current_acc_data['name']}\nID: {current_acc_data['_id']}",
+            inline=False
+        )
+
+        embed.add_field(
+            name="Alasan",
+            value=reason,
+            inline=False
+        )
+
+        embed.set_author(name=ctx.author)
+        embed.set_footer(text="Reply \"Approve\" jika disetujui\nReply \"Decline\" jika tidak disetujui")
+        channel = self.bot.get_channel(1115422709585817710)
+        await channel.send(embed=embed)
+        await ctx.send("Aku telah mengirimkan request transfer data akun ke developer!\nMohon ditunggu persetujuannya ya!")
+
 async def setup(bot):
     await bot.add_cog(Game(bot))
