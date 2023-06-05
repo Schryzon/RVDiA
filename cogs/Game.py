@@ -1,13 +1,18 @@
 import asyncio
+from typing import Any, List, Optional
 import discord
 import datetime
 import time
 import random
 import json
-from os import getenv
+from glob import glob
+from os import getenv, path
+from discord.components import SelectOption
+from discord.interactions import Interaction
 from discord.ui import View, Button, button
 from discord import app_commands
 from discord.ext import commands
+from discord.utils import MISSING
 from scripts.main import connectdb, check_blacklist, has_registered, level_up, send_level_up_msg
 
 class GameInstance():
@@ -296,6 +301,38 @@ class ShopDropdown(discord.ui.Select):
 
             await interaction.response.send_message(f"Pembelian berhasil!\nKamu telah membeli `{matched_dict['name']}`")
 
+class EnemyDropdown(discord.ui.Select):
+    def __init__(self):
+        options = []
+        file_names = glob('./src/game/enemies/*')
+        for file in file_names:
+            options.append(discord.SelectOption(
+                label=file,
+                value=file
+            ))
+        super().__init__(custom_id="enemydrop", placeholder="Level Musuh", min_values=1, max_values=1, options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+        with open(f'./src/game/enemies/{self.values[0]}.json') as file:
+            content = file.read()
+            enemies = json.loads(content)
+        
+        embed = discord.Embed(title=f"Daftar Musuh", color=interaction.user.color)
+        for enemy in enemies:
+            embed.add_field(
+                name=enemy['name'],
+                value=f"\"{enemy['desc']}\"\n**Tier**: {self.values[0].upper()}\n**HP**: `{enemy['hp']}`\n**ATK**: `{enemy['atk']}`\n**DEF**: `{enemy['def']}`\n**AGL**: `{enemy['agl']}`",
+                inline=False
+                )
+        embed.set_thumbnail(url = interaction.user.avatar.url) # Lazy, might add a placeholder later
+        embed.set_footer(text="Kamu bisa melawan salah satu dari mereka dengan command battle!")
+        await interaction.response.send_message(embed=embed, view=self)
+
+class EnemyView(View):
+    def __init__(self):
+        super().__init__(timeout=30)
+        self.add_item(EnemyDropdown())
+
 class ShopView(View):
     def __init__(self, page):
         self.page = page
@@ -547,6 +584,17 @@ class Game(commands.Cog):
 
         game = GameInstance(ctx, ctx.author, enemy, self.bot)
         await game.start()
+
+
+    @game.command(description='Lihat daftar musuh yang muncul di Land of Revolution!', aliases=['enemy'])
+    @has_registered()
+    @check_blacklist()
+    async def enemies(self, ctx:commands.Context):
+        """
+        Lihat daftar musuh yang muncul di Land of Revolution!
+        """
+        view = EnemyView()
+        await ctx.reply(f"Untuk melihat daftar musuh, silahkan tekan di bawah ini ↓", view=view)
 
 
 async def setup(bot):

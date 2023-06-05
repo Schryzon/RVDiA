@@ -1,7 +1,7 @@
 # RVDiA
 ## "Revolusioner, Virtual, Independen."
 <p align="center">
-  <img src="https://cdn.discordapp.com/avatars/957471338577166417/97d70a5769552db26474cad16f7431fa.png?size=512" alt="RVDiA's Profile Picture">
+  <img src="https://cdn.discordapp.com/avatars/957471338577166417/5da744aa5b337103e84f2788e0e90c06.png?size=512" alt="RVDiA's Profile Picture">
 </p>
 
 <p align="center">

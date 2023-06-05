@@ -29,7 +29,7 @@
     },
     {
         "name":"Pandora",
-        "desc":"Kematian menunggumu.",
+        "desc":"Dewi kematian.",
         "tier":"BOSS",
         "hp":1200,
         "atk":90,
@@ -43,7 +43,7 @@
     },
     {
         "name":"Historia",
-        "desc":"Living creation.",
+        "desc":"Pahlawan legendaris Grouza.",
         "tier":"BOSS",
         "hp":870,
         "atk":73,
