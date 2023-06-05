@@ -90,7 +90,7 @@ class GameInstance():
         self.running = True
         datas = await self.gather_data()
         await self.ctx.reply('⚔️ Perang dimulai!') # I'll just use this for now
-        await asyncio.sleep(3.0)
+        await asyncio.sleep(2.7)
 
         user1_defending = False
         user2_defending = False
@@ -126,6 +126,7 @@ class GameInstance():
                     await self.ctx.channel.send("Opsi tidak valid, giliran dilewatkan.")
 
             if self.user2_hp <= 0:
+                await asyncio.sleep(2.5)
                 break
 
             await asyncio.sleep(2.5)
@@ -182,7 +183,7 @@ class GameInstance():
 
         if self.user1_hp > self.user2_hp:
             embed = discord.Embed(title=f"{self.user1.display_name} Menang!", color=0xffff00)
-            embed.description = f"Dengan `{self.user1_hp}` tersisa!"
+            embed.description = f"Dengan `{self.user1_hp}` HP tersisa!"
             embed.set_thumbnail(url = self.user1.avatar.url)
             embed.set_footer(text='Kamu memperoleh 15 koin dan 5 karma!')
             await self.ctx.channel.send(embed=embed)
@@ -190,14 +191,14 @@ class GameInstance():
         else:
             if isinstance(self.user2, discord.Member):
                 embed = discord.Embed(title=f"{self.user2.display_name} Menang!", color=0xffff00)
-                embed.description = f"Dengan `{self.user2_hp}` tersisa!"
+                embed.description = f"Dengan `{self.user2_hp}` HP tersisa!"
                 embed.set_thumbnail(url = self.user2.avatar.url)
                 embed.set_footer(text='Kamu memperoleh 15 koin dan 5 karma!')
                 await self.ctx.channel.send(embed=embed)
 
             else:
                 embed = discord.Embed(title=f"Kamu Kalah!", color=0xff0000)
-                embed.description = f"{self.user2['name']} menang dengan `{self.user2_hp}` tersisa!"
+                embed.description = f"{self.user2['name']} menang dengan `{self.user2_hp}` HP tersisa!"
                 # ADD EMBED THUMBNAIL
                 embed.set_footer(text='Tip: Gunakan item dan skill spesial yang kamu miliki!')
                 await self.ctx.channel.send(embed=embed)
