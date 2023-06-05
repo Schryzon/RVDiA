@@ -592,7 +592,7 @@ class Game(commands.Cog):
         Lihat daftar musuh yang muncul di Land of Revolution!
         """
         view = EnemyView()
-        async with ctx.typing:
+        async with ctx.typing():
             await ctx.reply(f"Untuk melihat daftar musuh, silahkan tekan di bawah ini ↓", view=view)
 
 
