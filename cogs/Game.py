@@ -301,7 +301,7 @@ class ShopDropdown(discord.ui.Select):
 class EnemyDropdown(discord.ui.Select):
     def __init__(self):
         options = []
-        file_names = [json_file.name for json_file in iter_modules('./src/game/enemies')]
+        file_names = [json_file.name for json_file in iter_modules(['./src/game/enemies'])]
         for file in file_names:
             name = file.split('.')
             options.append(discord.SelectOption(
