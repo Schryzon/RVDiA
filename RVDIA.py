@@ -66,7 +66,7 @@ class RVDIA(commands.AutoShardedBot):
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "公式 [Official] v1.1.2"
+    self.__version__ = "公式 [Official] v1.1.3"
     self.event_mode = True
     self.color = 0xff4df0
     self.runtime = time() # UNIX float
@@ -350,42 +350,82 @@ async def on_message(msg:discord.Message):
           else:
               return
           
-          if message_embed.footer.text == 'Jika ada yang ingin ditanyakan, bisa langsung direply!':
-              pass
-          else:
-              return
-          
-          async with msg.channel.typing():
-            embed_desc = message_embed.description
-            embed_title = message_embed.title
-            author = message_embed.author.name
-            openai.api_key = os.getenv('openaikey')
-            message = msg.content
-            if len(message) > 256:
-               return await msg.channel.send('Pesanmu terlalu panjang untuk aku cerna, aku hanya bisa membaca maksimal 256 huruf dari pesanmu!')
-            result = await openai.ChatCompletion.acreate(
-                model="gpt-3.5-turbo",
-                temperature=1.2,
-                messages=[
-                {"role":'system', 'content':os.getenv('rolesys')+f' You are currently talking to {msg.author}'},
-                {"role":"assistant", 'content':f'{author} said: {embed_title} | Your response was: {embed_desc}'},
-                {"role": "user", "content": message}
-                ]
-            )
-
-            if len(message) > 256:
-               message = message[:253] + '...' #Adding ... from 253rd character, ignoring other characters.
-
-            embed = discord.Embed(
-              title=' '.join((titlecase(word) for word in message.split(' '))), 
-              color=msg.author.color, 
-              timestamp=msg.created_at
+          if message_embed.footer.text == 'Jika ada yang ingin ditanyakan, bisa langsung direply!':    
+            async with msg.channel.typing():
+              embed_desc = message_embed.description
+              embed_title = message_embed.title
+              author = message_embed.author.name
+              openai.api_key = os.getenv('openaikey')
+              message = msg.content
+              if len(message) > 256:
+                return await msg.channel.send('Pesanmu terlalu panjang untuk aku cerna, aku hanya bisa membaca maksimal 256 huruf dari pesanmu!')
+              result = await openai.ChatCompletion.acreate(
+                  model="gpt-3.5-turbo",
+                  temperature=1.2,
+                  messages=[
+                  {"role":'system', 'content':os.getenv('rolesys')+f' You are currently talking to {msg.author}'},
+                  {"role":"assistant", 'content':f'{author} said: {embed_title} | Your response was: {embed_desc}'},
+                  {"role": "user", "content": message}
+                  ]
               )
-            embed.description = result['choices'][0]['message']['content']
-            embed.set_author(name=msg.author)
-            embed.set_footer(text='Jika ada yang ingin ditanyakan, bisa langsung direply!')
-          await msg.channel.send(embed=embed)
-          return
+
+              if len(message) > 256:
+                message = message[:253] + '...' #Adding ... from 253rd character, ignoring other characters.
+
+              embed = discord.Embed(
+                title=' '.join((titlecase(word) for word in message.split(' '))), 
+                color=msg.author.color, 
+                timestamp=msg.created_at
+                )
+              embed.description = result['choices'][0]['message']['content']
+              embed.set_author(name=msg.author)
+              embed.set_footer(text='Jika ada yang ingin ditanyakan, bisa langsung direply!')
+            await msg.channel.send(embed=embed)
+            return
+          
+          elif message_embed.footer.text == 'Reply \"Approve\" jika disetujui\nReply \"Decline\" jika tidak disetujui':
+            old_acc_field = message_embed.fields[0].value
+            old_acc_string = old_acc_field.split(': ')
+            old_acc_id = old_acc_string[2].strip()
+
+            new_acc_field = message_embed.fields[1].value
+            new_acc_string = new_acc_field.split(': ')
+            new_acc_id = new_acc_string[2].strip()
+            user = await rvdia.fetch_user(int(new_acc_id))
+
+            database = connectdb('Game')
+            if msg.content.lower() == "approve" or msg.content.lower() == "accept":
+                old_data = database.find_one({'_id':old_acc_id})
+                keep = {
+                    'level':old_data['level'],
+                    'exp':old_data['exp'],
+                    'next_exp':old_data['new_exp'],
+                    'last_login':old_data['last_login'],
+                    'coins':old_data['coins'],
+                    'karma':old_data['karma'],             
+                    'attack':old_data['attack'],
+                    'defense':old_data['defense'],
+                    'agility':old_data['agility'],
+                    'special_skills':old_data['special_skills'],    
+                    'items':old_data['items'],
+                    'equipments':old_data['equipments']
+                }
+
+                database.find_one_and_update({'_id':new_acc_id}, {'$set':keep})
+                database.delete_one({'_id':old_acc_id})
+                await msg.channel.send(f'✅ Transfer akun untuk {user} selesai!')
+                try:
+                   await user.send(f"✅ Request transfer akun Land of Revolution-mu telah selesai!\nApproved by: `{msg.author}`")
+                except:
+                   return
+                
+            elif msg.content.lower() == "decline" or msg.content.lower() == "deny":
+              await fetched_message.delete()
+              await msg.channel.send(f"❌ Request transfer akun untuk {user} tidak diterima")
+              try:
+                  await user.send(f"❌ Mohon maaf, request akun Land of Revolutionmu tidak diterima.\nUntuk alasan lebih lanjut, silahkan hubungi {msg.author} di https://discord.gg/QqWCnk6zxw")
+              except:
+                  return
         
         except Exception as e:
            if "currently overloaded with other requests." in str(e):

@@ -611,6 +611,9 @@ class Game(commands.Cog):
         if not old_acc_data:
             return await ctx.reply("Akun Land of Revolution tidak ditemukan!\nJika tidak yakin dengan ID akun Discord lamamu, silahkan hubungi langsung Schryzon#4302!")
         
+        if ctx.author.id == old_acc_data['_id']:
+            return await ctx.reply("Hey! Akun yang kamu cantumkan sama dengan akun Discordmu saat ini!")
+        
         embed = discord.Embed(title="Request Transfer Data Akun", color=ctx.author.color, timestamp=ctx.message.created_at)
         embed.add_field(
             name="Akun Lama",
