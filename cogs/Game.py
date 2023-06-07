@@ -316,8 +316,8 @@ class EnemyDropdown(discord.ui.Select):
         embed = discord.Embed(title=f"Daftar Musuh", color=interaction.user.color)
         for index, enemy in enumerate(enemies):
             embed.add_field(
-                name=f"{index}. {enemy['name']} ({self.values[0].upper()})",
-                value=f"\"{enemy['desc']}\"\n**HP**: `{enemy['hp']}`\n**Attack**: `{enemy['atk']}`\n**Defense**: `{enemy['def']}`\n**Agility**: `{enemy['agl']}`",
+                name=f"{index+1}. {enemy['name']} ({enemy['tier']})",
+                value=f"\"{enemy['desc']}\"\n**HP**: `{enemy['hp']}`\n**Attack**: `{enemy['atk']}`\n**Defense**: `{enemy['def']}`\n**Agility**: `{enemy['agl']}`\n",
                 inline=False
                 )
         embed.set_thumbnail(url = interaction.user.avatar.url) # Lazy, might add a placeholder later
