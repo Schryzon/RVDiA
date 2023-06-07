@@ -399,7 +399,7 @@ async def on_message(msg:discord.Message):
                 keep = {
                     'level':old_data['level'],
                     'exp':old_data['exp'],
-                    'next_exp':old_data['new_exp'],
+                    'next_exp':old_data['next_exp'],
                     'last_login':old_data['last_login'],
                     'coins':old_data['coins'],
                     'karma':old_data['karma'],             
