@@ -2,7 +2,7 @@
     {
         "name":"Mechanical Knight",
         "desc":"Prajurit futuristik, namun sulit menghindar.",
-        "tier":"HIGH",
+        "tier":"SUPER HIGH",
         "hp":250,
         "atk":60,
         "def":80,
@@ -21,6 +21,34 @@
         "atk":45,
         "def":50,
         "agl":40,
+        "reward":[
+            "exp+1500",
+            "cns+150",
+            "krm+40"
+        ]
+    },
+    {
+        "name":"Carmendria",
+        "desc":"Seorang raja tua pemimpin pasukan Nyrion.",
+        "tier":"SUPER HIGH",
+        "hp":200,
+        "atk":48,
+        "def":40,
+        "agl":33,
+        "reward":[
+            "exp+1500",
+            "cns+150",
+            "krm+40"
+        ]
+    },
+    {
+        "name":"Reinvier",
+        "desc":"Permaisuri dari Carmendria.",
+        "tier":"HIGH",
+        "hp":160,
+        "atk":52,
+        "def":34,
+        "agl":47,
         "reward":[
             "exp+1500",
             "cns+150",

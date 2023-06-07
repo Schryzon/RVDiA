@@ -314,10 +314,10 @@ class EnemyDropdown(discord.ui.Select):
             enemies = json.loads(content)
         
         embed = discord.Embed(title=f"Daftar Musuh", color=interaction.user.color)
-        for enemy in enemies:
+        for index, enemy in enumerate(enemies):
             embed.add_field(
-                name=enemy['name'],
-                value=f"\"{enemy['desc']}\"\n**Tier**: {self.values[0].upper()}\n**HP**: `{enemy['hp']}`\n**ATK**: `{enemy['atk']}`\n**DEF**: `{enemy['def']}`\n**AGL**: `{enemy['agl']}`",
+                name=f"{index}. {enemy['name']} ({self.values[0].upper()})",
+                value=f"\"{enemy['desc']}\"\n**HP**: `{enemy['hp']}`\n**Attack**: `{enemy['atk']}`\n**Defense**: `{enemy['def']}`\n**Agility**: `{enemy['agl']}`",
                 inline=False
                 )
         embed.set_thumbnail(url = interaction.user.avatar.url) # Lazy, might add a placeholder later
@@ -374,8 +374,8 @@ class Game(commands.Cog):
             'coins':100,
             'karma':10,             # Luck points
             'attack':10,
-            'defense':10,
-            'agility':10,
+            'defense':7,
+            'agility':8,
             'special_skills':[],    # Push JSON to here
             'items':[],
             'equipments':[]         # Push it to here also

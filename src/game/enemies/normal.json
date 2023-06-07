@@ -3,10 +3,24 @@
         "name":"XYI Ninja",
         "desc":"Pengintai cerdas; sangat lincah!",
         "tier":"NORMAL",
-        "hp":100,
+        "hp":80,
         "atk":14,
         "def":8,
         "agl":25,
+        "reward":[
+            "exp+1500",
+            "cns+150",
+            "krm+40"
+        ]
+    },
+    {
+        "name":"KOU-RAI",
+        "desc":"Manusia hybrid dengan kecerdasan luar biasa.",
+        "tier":"NORMAL",
+        "hp":100,
+        "atk":19,
+        "def":14,
+        "agl":7,
         "reward":[
             "exp+1500",
             "cns+150",

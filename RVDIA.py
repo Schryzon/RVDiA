@@ -386,12 +386,12 @@ async def on_message(msg:discord.Message):
           elif message_embed.footer.text == 'Reply \"Approve\" jika disetujui\nReply \"Decline\" jika tidak disetujui':
             old_acc_field = message_embed.fields[0].value
             old_acc_string = old_acc_field.split(': ')
-            old_acc_id = old_acc_string[2].strip()
+            old_acc_id = int(old_acc_string[2].strip())
 
             new_acc_field = message_embed.fields[1].value
             new_acc_string = new_acc_field.split(': ')
-            new_acc_id = new_acc_string[2].strip()
-            user = await rvdia.fetch_user(int(new_acc_id))
+            new_acc_id = int(new_acc_string[2].strip())
+            user = await rvdia.fetch_user(new_acc_id)
 
             database = connectdb('Game')
             if msg.content.lower() == "approve" or msg.content.lower() == "accept":
@@ -421,9 +421,9 @@ async def on_message(msg:discord.Message):
                 
             elif msg.content.lower() == "decline" or msg.content.lower() == "deny":
               await fetched_message.delete()
-              await msg.channel.send(f"❌ Request transfer akun untuk {user} tidak diterima")
+              await msg.channel.send(f"❌ Request transfer akun untuk {user} tidak disetujui")
               try:
-                  await user.send(f"❌ Mohon maaf, request akun Land of Revolutionmu tidak diterima.\nUntuk alasan lebih lanjut, silahkan hubungi {msg.author} di https://discord.gg/QqWCnk6zxw")
+                  await user.send(f"❌ Mohon maaf, request transfer data akun Land of Revolutionmu tidak disetujui.\nUntuk informasi lebih lanjut, silahkan hubungi {msg.author} di https://discord.gg/QqWCnk6zxw")
               except:
                   return
         

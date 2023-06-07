@@ -1,8 +1,8 @@
 [
     {
         "name":"Schryzon",
-        "desc":"???",
-        "tier":"BOSS",
+        "desc":"Pencipta Land of Revolution.",
+        "tier":"SUPER BOSS",
         "hp":1000,
         "atk":80,
         "def":60,
@@ -14,12 +14,12 @@
         ]
     },
     {
-        "name":"RVDIA",
+        "name":"RVDiA",
         "desc":"Revolusioner, Virtual, Independen.",
-        "tier":"BOSS",
-        "hp":900,
+        "tier":"SUPER BOSS",
+        "hp":999,
         "atk":77,
-        "def":50,
+        "def":56,
         "agl":80,
         "reward":[
             "exp+5000",
@@ -53,6 +53,20 @@
             "exp+5000",
             "cns+700",
             "krm+150"
+        ]
+    },
+    {
+        "name":"Zalvia & Sairan",
+        "desc":"Dewa cahaya dan kegelapan.",
+        "tier":"BOSS",
+        "hp":912,
+        "atk":74,
+        "def":43,
+        "agl":67,
+        "reward":[
+            "exp+1500",
+            "cns+150",
+            "krm+40"
         ]
     }
 ]

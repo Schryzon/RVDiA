@@ -1,12 +1,40 @@
 [
     {
         "name":"Slippy Slime",
-        "desc":"Makhluk dengan tingkat kecerdasan rendah.",
+        "desc":"Makhluk berbahaya menyerupai substansi.",
         "tier":"LOW",
-        "hp":70,
+        "hp":40,
         "atk":5,
         "def":5,
         "agl":6,
+        "reward":[
+            "exp+1500",
+            "cns+150",
+            "krm+40"
+        ]
+    },
+    {
+        "name":"Novice Hunter",
+        "desc":"Pemburu tingkat pemula.",
+        "tier":"LOW",
+        "hp":50,
+        "atk":7,
+        "def":5,
+        "agl":8,
+        "reward":[
+            "exp+1500",
+            "cns+150",
+            "krm+40"
+        ]
+    },
+    {
+        "name":"Reivyun",
+        "desc":"Suku kuno terlemah di Land of Revolution.",
+        "tier":"LOW",
+        "hp":70,
+        "atk":8,
+        "def":2,
+        "agl":7,
         "reward":[
             "exp+1500",
             "cns+150",
