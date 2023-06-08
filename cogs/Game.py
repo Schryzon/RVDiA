@@ -371,10 +371,17 @@ class ShopView(View):
         start_index = (self.page - 1) * self.options_per_page
         end_index = start_index + self.options_per_page
 
+        def generate_embed_field(index, item, owned_count):
+            return embed.add_field(
+                name=f"{index}. {item['name']}",
+                value=f"**`{item['desc']}`**\n({item['func']})\n**Tipe:** {item['type']}\n**Harga:** {item['cost']} {item['paywith']}\n**Dimiliki:** {owned_count}",
+                inline=False
+            )
+        
         for index, item in enumerate(self.items[start_index:end_index], start=start_index + 1):
             owned_count = self.get_owned_count(item['_id'])
             self.owned.append(owned_count)
-            embed.add_field(self.generate_embed_field(index, item, owned_count))
+            generate_embed_field(index, item, owned_count)
 
         return embed
 
@@ -387,12 +394,6 @@ class ShopView(View):
             pass
         return 0
 
-    def generate_embed_field(self, index, item, owned_count):
-        return discord.EmbedField(
-            name=f"{index}. {item['name']}",
-            value=f"**`{item['desc']}`**\n({item['func']})\n**Tipe:** {item['type']}\n**Harga:** {item['cost']} {item['paywith']}\n**Dimiliki:** {owned_count}",
-            inline=False
-        )
 
     @discord.ui.button(label='◀', custom_id='back', style=discord.ButtonStyle.blurple, row=1)
     async def back(self, button: discord.ui.Button, interaction: discord.Interaction):
@@ -598,7 +599,7 @@ class Game(commands.Cog):
             return 0
 
         def generate_embed_field(index, item, owned_count):
-            return discord.EmbedField(
+            return embed.add_field(
                 name=f"{index}. {item['name']}",
                 value=f"**`{item['desc']}`**\n({item['func']})\n**Tipe:** {item['type']}\n**Harga:** {item['cost']} {item['paywith']}\n**Dimiliki:** {owned_count}",
                 inline=False
@@ -612,7 +613,7 @@ class Game(commands.Cog):
 
             owned_count = get_owned_count(item['_id'])
             owned.append(owned_count)
-            embed.add_field(generate_embed_field(index, item, owned_count))
+            generate_embed_field(index, item, owned_count)
 
         view = ShopView(ctx)
         await ctx.reply(embed = embed, view=view)
