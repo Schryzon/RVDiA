@@ -234,6 +234,9 @@ class ResignButton(View):
         self.stop()
 
 class ShopDropdown(discord.ui.Select):
+    """
+    Buy feature
+    """
     def __init__(self, page:int):
         self.page = page
 
@@ -242,15 +245,15 @@ class ShopDropdown(discord.ui.Select):
             items = json.loads(content)
 
         options = []
-        for index, item in enumerate(items):
-            index = index+1
-            if self.page == 1 and not index > 5:
-                options.append(discord.SelectOption(
-                                label = f"{index}. {item['name']}", 
-                                description=f"Harga: {item['cost']} {item['paywith']}", 
-                                value=item['_id']
-                                )
+        start_index = (self.page - 1) * 5
+        end_index = self.page * 5
+        for index, item in enumerate(items[start_index:end_index]):
+            options.append(discord.SelectOption(
+                            label = f"{index + start_index + 1}. {item['name']}", 
+                            description=f"Harga: {item['cost']} {item['paywith']}", 
+                            value=item['_id']
                             )
+                        )
 
         super().__init__(custom_id="shopdrop", placeholder="Mau beli apa?", min_values=1, max_values=1, options=options)
 
@@ -300,11 +303,17 @@ class EnemyDropdown(discord.ui.Select):
     def __init__(self):
         options = []
         json_files = [file for file in listdir('./src/game/enemies') if file.endswith('.json')]
+        json_files.remove('low.json')
         for file in json_files:
             name = path.splitext(file)[0]
             options.append(discord.SelectOption(
                 label=name.title(),
                 value=name
+            ))
+        # Too much kelazzz, the jsons are stored alphabetically
+        options.append(discord.SelectOption(
+                label='Low',
+                value='low'
             ))
         super().__init__(custom_id="enemydrop", placeholder="Level Musuh", min_values=1, max_values=1, options=options)
 
@@ -328,12 +337,81 @@ class EnemyView(View):
     def __init__(self):
         super().__init__(timeout=30)
         self.add_item(EnemyDropdown())
-
+        
 class ShopView(View):
-    def __init__(self, page):
-        self.page = page
+    """
+    Currently not up to write DRY code
+    """
+    def __init__(self, ctx):
+        self.ctx = ctx
         super().__init__(timeout=20)
+        self.page = 1
+        self.options_per_page = 5
+        self.items = None
+        self.data = None
+        self.owned = []
         self.add_item(ShopDropdown(self.page))
+
+    async def update_embed(self):
+        if self.items is None:
+            with open('./src/game/shop.json') as file:
+                content = file.read()
+                self.items = json.loads(content)
+
+        if self.data is None:
+            database = connectdb('Game')
+            self.data = database.find_one({'_id': self.ctx.author.id})
+
+        embed = discord.Embed(title='Toko Xaneria', color=0xFFFF00)
+        embed.description = '"Hey, hey! Selamat datang. Silahkan, mau beli apa?"'
+        embed.set_footer(text='Untuk membeli sebuah item, klik di bawah ini! v')
+        embed.set_thumbnail(url=getenv('xaneria'))
+
+        self.owned.clear()
+        start_index = (self.page - 1) * self.options_per_page
+        end_index = start_index + self.options_per_page
+
+        for index, item in enumerate(self.items[start_index:end_index], start=start_index + 1):
+            owned_count = self.get_owned_count(item['_id'])
+            self.owned.append(owned_count)
+            embed.add_field(self.generate_embed_field(index, item, owned_count))
+
+        return embed
+
+    def get_owned_count(self, item_id):
+        try:
+            for key in self.data.get('items', []):
+                if key['_id'] == item_id:
+                    return key.get('owned', 0)
+        except:
+            pass
+        return 0
+
+    def generate_embed_field(self, index, item, owned_count):
+        return discord.EmbedField(
+            name=f"{index}. {item['name']}",
+            value=f"**`{item['desc']}`**\n({item['func']})\n**Tipe:** {item['type']}\n**Harga:** {item['cost']} {item['paywith']}\n**Dimiliki:** {owned_count}",
+            inline=False
+        )
+
+    @discord.ui.button(label='◀', custom_id='back', style=discord.ButtonStyle.blurple, row=1)
+    async def back(self, button: discord.ui.Button, interaction: discord.Interaction):
+        if self.page > 1:
+            self.page -= 1
+            embed = await self.update_embed()
+            await interaction.response.edit_message(embed=embed)
+
+    @discord.ui.button(label='✖', style=discord.ButtonStyle.danger, row=1, custom_id='delete')
+    async def _delete(self, button: discord.ui.Button, interaction: discord.Interaction):
+        await interaction.message.delete()
+
+    @discord.ui.button(label='▶', custom_id='next', style=discord.ButtonStyle.blurple, row=1)
+    async def next(self, button: discord.ui.Button, interaction: discord.Interaction):
+        max_page = (len(self.owned) - 1) // self.options_per_page + 1
+        if self.page < max_page:
+            self.page += 1
+            embed = await self.update_embed()
+            await interaction.response.edit_message(embed=embed)
 
 class Game(commands.Cog):
     """
@@ -509,37 +587,34 @@ class Game(commands.Cog):
         embed.description='"Hey, hey! Selamat datang. Silahkan, mau beli apa?"'
         embed.set_footer(text='Untuk membeli sebuah item, klik di bawah ini! v')
         embed.set_thumbnail(url=getenv('xaneria'))
-        iix = [] # Track down how many indexes there are.
+
+        def get_owned_count(item_id):
+            try:
+                for key in data.get('items', []):
+                    if key['_id'] == item_id:
+                        return key.get('owned', 0)
+            except:
+                pass
+            return 0
+
+        def generate_embed_field(index, item, owned_count):
+            return discord.EmbedField(
+                name=f"{index}. {item['name']}",
+                value=f"**`{item['desc']}`**\n({item['func']})\n**Tipe:** {item['type']}\n**Harga:** {item['cost']} {item['paywith']}\n**Dimiliki:** {owned_count}",
+                inline=False
+            )
+
+        options_per_page = 5
         owned = []
-        for index, item in enumerate(items):
-            index = index+1
-            if not index > 5:
-                try:
-                    for key in data['items']:
-                        if key['_id'] == item['_id']:
-                            owned.append(key['owned'])
-                except:
-                    pass
+        for index, item in enumerate(items, start=1):
+            if index > options_per_page:
+                break
 
-                # Append 0 to owned until its length is equal to index
-                while len(owned) < index:
-                    owned.append(0)
+            owned_count = get_owned_count(item['_id'])
+            owned.append(owned_count)
+            embed.add_field(generate_embed_field(index, item, owned_count))
 
-                embed.add_field(
-                    name=f"{index}. {item['name']}", 
-                    value=f"**`{item['desc']}`**\n({item['func']})\n**Tipe:** {item['type']}\n**Harga:** {item['cost']} {item['paywith']}\n**Dimiliki:** {owned[index-1]}",
-                    inline=False
-                )
-                iix.append(index)
-        
-        match max(iix):
-            case 5:
-                page = 1
-
-            case _:
-                page = 1
-
-        view = ShopView(page)
+        view = ShopView(ctx)
         await ctx.reply(embed = embed, view=view)
 
     @game.command(description='Tantang seseorang ke sebuah duel!')
