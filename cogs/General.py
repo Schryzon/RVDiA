@@ -347,7 +347,7 @@ class Utilities(commands.Cog):
     @app_commands.describe(location='Daerah mana yang ingin kamu ketahui?')
     @app_commands.rename(location='lokasi')
     @check_blacklist()
-    async def time(self, ctx, *, location:str):
+    async def time(self, ctx:commands.Context, *, location:str):
         """
         Lihat info tentang waktu di suatu kota atau daerah!
         """
@@ -377,7 +377,8 @@ class Utilities(commands.Cog):
         embed = discord.Embed(title=f"Waktu di {area[1]}", description=f"UTC{data['utc_offset']}", color=0x00ffff)
         embed.add_field(name="Akronim Timezone", value=data['abbreviation'], inline=False)
         embed.add_field(name="Perbandingan Waktu:",
-                        value=f"Waktu Lokal: {local_time}\nWaktu UTC: {utc_time}"
+                        value=f"Waktu Lokal: {local_time}\nWaktu UTC: {utc_time}\nWaktu Anda: <t:{ctx.message.created_at}:T>",
+                        inline=False
                         )
         embed.add_field(name="Hari di Lokasi", value=f"{day} (Hari ke-{data['day_of_year']})", inline=False)
         await ctx.send(embed=embed)

@@ -133,27 +133,22 @@ class Fun(commands.Cog):
                 member1 = ctx.author
             
             success = random.randint(1, 100)
-            if success == 100:
-                ss = f"__Match made in Heaven!__\n{member1.name} dan {member2.name} akan menjadi pasangan terbaik! ❤️"
-                sus = Image.open("./src/ship.jpg")
-            elif success >= 90:
-                ss = f"It's __true love!__\n{member1.name} sangat cocok berpasangan dengan {member2.name}! ❤️"
-                sus = Image.open("./src/ship.jpg")
-            elif success >= 80:
-                ss = f"__Lovey, dovey!__\n{member1.name} dan {member2.name} akan menjalin hubungan yang dekat! ❤️"
-                sus = Image.open("./src/ship.jpg")
-            elif success >= 70:
-                ss = f" __Besties for life!__\n{member1.name} akan menjadi sahabat setia untuk {member2.name}! <:hug:1084251318073438289>"
-                sus = Image.open("./src/fship.jpg")
-            elif success >= 50:
-                ss = f"__They somehow fit together.__\n{member1.name} cocok menjadi temannya {member2.name}. 👍"
-                sus = Image.open("./src/gship.jpg")
-            elif success >= 25:
-                ss = f"__Not good!__\n{member1.name} dan {member2.name} tidak akan berbahagia saat berpasangan. 👎"
-                sus = Image.open("./src/bship.jpg")
-            else:
-                ss = f"__This is bad!__\n{member1.name} dan {member2.name} merupakan pasangan yang tidak cocok! 💔"
-                sus = Image.open("./src/shship.jpg")
+            success_ranges = [
+                (100, f"__Match made in Heaven!__\n{member1.name} dan {member2.name} akan menjadi pasangan terbaik! ❤️", "./src/ship.jpg"),
+                (90, f"It's __true love!__\n{member1.name} sangat cocok berpasangan dengan {member2.name}! ❤️", "./src/ship.jpg"),
+                (80, f"__Lovey, dovey!__\n{member1.name} dan {member2.name} akan menjalin hubungan yang dekat! ❤️", "./src/ship.jpg"),
+                (70, f"__Besties for life!__\n{member1.name} akan menjadi sahabat setia untuk {member2.name}! <:hug:1084251318073438289>", "./src/fship.jpg"),
+                (50, f"__They somehow fit together.__\n{member1.name} cocok menjadi temannya {member2.name}. 👍", "./src/gship.jpg"),
+                (25, f"__Not good!__\n{member1.name} dan {member2.name} tidak akan berbahagia saat berpasangan. 👎", "./src/bship.jpg"),
+                (0, f"__This is bad!__\n{member1.name} dan {member2.name} merupakan pasangan yang tidak cocok! 💔", "./src/shship.jpg")
+            ]
+
+            # Find the appropriate success message and image based on the success value
+            for success_range, message, image_path in success_ranges:
+                if success >= success_range:
+                    ss = message
+                    sus = Image.open(image_path)
+                    break
 
             asset1 = member1.avatar.with_format('png').with_size(128)
             asset2 = member2.avatar.with_format('png').with_size(128)
