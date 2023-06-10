@@ -66,7 +66,7 @@ class RVDIA(commands.AutoShardedBot):
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "公式 [Official] v1.1.4"
+    self.__version__ = "公式 [Official] v1.1.5"
     self.event_mode = True
     self.color = 0xff4df0
     self.runtime = time() # UNIX float
@@ -100,6 +100,9 @@ async def on_connect():
 
 @rvdia.event
 async def on_ready():
+    """
+    Detect when RVDiA is ready (not connected to Discord).
+    """
     await rvdia.wait_until_ready() # So I "don't" get rate limited
     for cog in cogs_list:
       if not cog == 'cogs.__init__':
@@ -132,7 +135,7 @@ async def change_status():
   all_status=['in my room', 'in G-Tech Server', '"How to be a cutie"', 'you', 'r-help', 'G-Tech members',
                   'Ephotech 2023', user_count_status, 'with Schryzon', f'{rvdia.__version__}',
                   '/help', 'What should I do today?', 'Add me!', is_event, 'Ongeki!bright Memory', '~♪',
-                  'Land of Revolution'
+                  'Re:Volution'
                 ]
   status = rand(all_status)
   # Just count, I'm trying to save space!
@@ -415,7 +418,7 @@ async def on_message(msg:discord.Message):
                 database.delete_one({'_id':old_acc_id})
                 await msg.channel.send(f'✅ Transfer akun untuk {user} selesai!')
                 try:
-                   await user.send(f"✅ Request transfer akun Land of Revolution-mu telah selesai!\nApproved by: `{msg.author}`")
+                   await user.send(f"✅ Request transfer akun Re:Volution-mu telah selesai!\nApproved by: `{msg.author}`")
                 except:
                    return
                 
@@ -423,7 +426,7 @@ async def on_message(msg:discord.Message):
               await fetched_message.delete()
               await msg.channel.send(f"❌ Request transfer akun untuk {user} tidak disetujui")
               try:
-                  await user.send(f"❌ Mohon maaf, request transfer data akun Land of Revolutionmu tidak disetujui.\nUntuk informasi lebih lanjut, silahkan hubungi {msg.author} di https://discord.gg/QqWCnk6zxw")
+                  await user.send(f"❌ Mohon maaf, request transfer data akun Re:Volutionmu tidak disetujui.\nUntuk informasi lebih lanjut, silahkan hubungi `{msg.author}` di https://discord.gg/QqWCnk6zxw")
               except:
                   return
         

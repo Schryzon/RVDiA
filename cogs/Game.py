@@ -40,7 +40,7 @@ class GameInstance():
             # Fight = PvP
             user2_data = database.find_one({'_id':self.user2.id})
             if user2_data is None:
-                await self.ctx.reply(f'Waduh! Sepertinya <@{self.user2.id}> belum membuat akun Land of Revolution!')
+                await self.ctx.reply(f'Waduh! Sepertinya <@{self.user2.id}> belum membuat akun Re:Volution!')
                 raise Exception('Rival has no account!')
             
             user2_stats = [user2_data['attack'], user2_data['defense'], user2_data['agility']]
@@ -220,7 +220,7 @@ class ResignButton(View):
         database = connectdb('Game')
         data = database.find_one({'_id':interaction.user.id})
         database.find_one_and_delete({'_id':interaction.user.id})
-        await interaction.response.send_message(f'Aku telah menghapus akunmu.\nSampai jumpa, `{data["name"]}`, di Land of Revolution!')
+        await interaction.response.send_message(f'Aku telah menghapus akunmu.\nSampai jumpa, `{data["name"]}`, di Re:Volution!')
         self.value = True
         self.stop()
 
@@ -341,6 +341,7 @@ class EnemyView(View):
 class ShopView(View):
     """
     Currently not up to write DRY code
+    TO DO: FIX PAGINATION FFS!
     """
     def __init__(self, ctx):
         self.ctx = ctx
@@ -416,7 +417,7 @@ class ShopView(View):
 
 class Game(commands.Cog):
     """
-    Kumpulan command game RPG RVDIA (Land of Revolution).
+    Kumpulan command game RPG RVDIA (Re:Volution).
     """
     def __init__(self, bot):
         self.bot = bot
@@ -432,12 +433,12 @@ class Game(commands.Cog):
         await self.account(ctx, user=user)
         pass
 
-    @game.command(aliases=['reg'], description='Daftarkan akunmu ke Land of Revolution!')
+    @game.command(aliases=['reg'], description='Daftarkan akunmu ke Re:Volution!')
     @app_commands.describe(name='Nama apa yang ingin kamu pakai di dalam gamenya?')
     @check_blacklist()
     async def register(self, ctx:commands.Context, *, name:str=None):
         """
-        Daftarkan akunmu ke Land of Revolution!
+        Daftarkan akunmu ke Re:Volution!
         """
         name=name or ctx.author.name
         database = connectdb('Game')
@@ -459,14 +460,14 @@ class Game(commands.Cog):
             'items':[],
             'equipments':[]         # Push it to here also
         })
-        await ctx.reply(f'Akunmu sudah didaftarkan!\nSelamat datang di Land of Revolution, **`{name}`**!')
+        await ctx.reply(f'Akunmu sudah didaftarkan!\nSelamat datang di Re:Volution, **`{name}`**!')
     
-    @game.command(description='Menghapuskan akunmu dari Land of Revolution.')
+    @game.command(description='Menghapuskan akunmu dari Re:Volution.')
     @has_registered()
     @check_blacklist()
     async def resign(self, ctx:commands.Context):
         """
-        Menghapuskan akunmu dari Land of Revolution.
+        Menghapuskan akunmu dari Re:Volution.
         """
         view = ResignButton(ctx)
         await ctx.reply('Apakah kamu yakin akan menghapus akunmu?\nKamu punya 20 detik untuk menentukan keputusanmu.', view=view)
@@ -510,14 +511,14 @@ class Game(commands.Cog):
             if level_up(ctx):
                 return await send_level_up_msg(ctx)
             
-    @game.command(description='Lihat profil pengguna di Land of Revolution!')
+    @game.command(description='Lihat profil pengguna di Re:Volution!')
     @app_commands.describe(user='Pengguna mana yang ingin dilihat akunnya?')
     @app_commands.rename(user='pengguna')
     @has_registered()
     @check_blacklist()
     async def account(self, ctx:commands.Context, *, user:discord.User=None):
         """
-        Lihat profil pengguna di Land of Revolution!
+        Lihat profil pengguna di Re:Volution!
         """
         # Plans: PIL profile pic, equipment & items should be seperate commands
         user = user or ctx.author
@@ -539,7 +540,7 @@ class Game(commands.Cog):
         special_skills = data['special_skills']
 
         embed = discord.Embed(title=player_name, timestamp=last_login)
-        embed.set_author(name='Info Akun Land of Revolution:')
+        embed.set_author(name='Info Akun Re:Volution:')
         embed.description = f'Alias: {user}'
         embed.set_thumbnail(url=user.avatar.url if user.avatar else getenv('normalpfp'))
 
@@ -633,7 +634,7 @@ class Game(commands.Cog):
         await game.start()
 
 
-    @game.command(description='Lawan musuh-musuh yang ada di Land of Revolution!')
+    @game.command(description='Lawan musuh-musuh yang ada di Re:Volution!')
     @app_commands.describe(enemy_tier='Musuh level berapa yang ingin kamu lawan?')
     @app_commands.rename(enemy_tier='level')
     @app_commands.choices(enemy_tier=[
@@ -646,7 +647,7 @@ class Game(commands.Cog):
     @check_blacklist()
     async def battle(self, ctx:commands.Context, enemy_tier:app_commands.Choice[str]): # Choice[value_type]
         """
-        Lawan musuh-musuh yang ada di Land of Revolution!
+        Lawan musuh-musuh yang ada di Re:Volution!
         """
         with open(f'./src/game/enemies/{enemy_tier.value}.json') as file:
             content = file.read()
@@ -658,12 +659,12 @@ class Game(commands.Cog):
         await game.start()
 
 
-    @game.command(description='Lihat daftar musuh yang muncul di Land of Revolution!', aliases=['enemy'])
+    @game.command(description='Lihat daftar musuh yang muncul di Re:Volution!', aliases=['enemy'])
     @has_registered()
     @check_blacklist()
     async def enemies(self, ctx:commands.Context):
         """
-        Lihat daftar musuh yang muncul di Land of Revolution!
+        Lihat daftar musuh yang muncul di Re:Volution!
         """
         view = EnemyView()
         async with ctx.typing():
@@ -685,7 +686,7 @@ class Game(commands.Cog):
         current_acc_data = database.find_one({'_id':ctx.author.id})
         old_acc_data = database.find_one({'_id':old_acc.id})
         if not old_acc_data:
-            return await ctx.reply("Akun Land of Revolution tidak ditemukan!\nJika tidak yakin dengan ID akun Discord lamamu, silahkan hubungi langsung Schryzon#4302!")
+            return await ctx.reply("Akun Re:Volution tidak ditemukan!\nJika tidak yakin dengan ID akun Discord lamamu, silahkan hubungi langsung Schryzon#4302!")
         
         if ctx.author.id == old_acc_data['_id']:
             return await ctx.reply("Hey! Akun yang kamu cantumkan sama dengan akun Discordmu saat ini!")
@@ -713,7 +714,7 @@ class Game(commands.Cog):
         embed.set_footer(text="Reply \"Approve\" jika disetujui\nReply \"Decline\" jika tidak disetujui")
         channel = self.bot.get_channel(1115422709585817710)
         await channel.send(embed=embed)
-        await ctx.send("Aku telah mengirimkan request transfer data akun ke developer!\nMohon ditunggu persetujuannya ya!")
+        await ctx.send("Aku telah mengirimkan request transfer data akun ke developer!\nMohon ditunggu persetujuannya ya!\nJangan lupa untuk mengaktifkan pesan DM dari aku karena nanti akan diberikan info apabila disetujui/ditolak.")
 
 async def setup(bot):
     await bot.add_cog(Game(bot))
