@@ -32,10 +32,10 @@ class Roleplay(commands.Cog):
     async def create_embed_and_sendGIF(
             self, 
             ctx:commands.Context, 
-            user:discord.Member, 
             url:str,
             source:str,
             action:str,
+            user:discord.Member = None, 
             ):
         """
         Lazy me lol
@@ -68,7 +68,7 @@ class Roleplay(commands.Cog):
         get_request = await self.nekos_get('hug')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(ctx, user, gif_url, anime_name, 'Memeluk')
+        return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Memeluk', user)
     
     @roleplay.command(description='Cium seseorang!')
     @app_commands.describe(user='Siapa yang ingin kamu cium?')
@@ -82,7 +82,7 @@ class Roleplay(commands.Cog):
         get_request = await self.nekos_get('kiss')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(ctx, user, gif_url, anime_name, 'Mencium')
+        return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Mencium', user)
     
     @roleplay.command(description='Tampar seseorang!')
     @app_commands.describe(user='Siapa yang ingin kamu tampar?')
@@ -96,7 +96,7 @@ class Roleplay(commands.Cog):
         get_request = await self.nekos_get('slap')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(ctx, user, gif_url, anime_name, 'Menampar')
+        return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Menampar', user)
     
     @roleplay.command(description='Ungkapkan ekspresi tertawamu!')
     @check_blacklist()
@@ -108,7 +108,7 @@ class Roleplay(commands.Cog):
         get_request = await self.nekos_get('laugh')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(ctx=ctx, url=gif_url, source=anime_name, action='Tertawa')
+        return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Tertawa')
     
     @roleplay.command(description='Ungkapkan ekspresi bahagiamu!')
     @check_blacklist()
@@ -120,7 +120,7 @@ class Roleplay(commands.Cog):
         get_request = await self.nekos_get('happy')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(ctx=ctx, url=gif_url, source=anime_name, action='Merasa Bahagia')
+        return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Merasa Bahagia')
     
     @roleplay.command(description='Ungkapkan ekspresi berpikirmu!')
     @check_blacklist()
@@ -132,7 +132,7 @@ class Roleplay(commands.Cog):
         get_request = await self.nekos_get('think')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(ctx=ctx, url=gif_url, source=anime_name, action='Sedang Berpikir')
+        return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Sedang Berpikir')
     
     @roleplay.command(description='Ungkapkan ekspresi malumu!')
     @check_blacklist()
@@ -144,7 +144,7 @@ class Roleplay(commands.Cog):
         get_request = await self.nekos_get('blush')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(ctx=ctx, url=gif_url, source=anime_name, action='Merasa Malu')
+        return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Merasa Malu')
     
     @roleplay.command(description='Ungkapkan ekspresi sedihmu!')
     @check_blacklist()
@@ -156,7 +156,7 @@ class Roleplay(commands.Cog):
         get_request = await self.nekos_get('cry')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(ctx=ctx, url=gif_url, source=anime_name, action='Menangis')
+        return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Menangis')
 
     @roleplay.command(description='Ungkapkan ekspresi setujumu!')
     @check_blacklist()
@@ -168,7 +168,7 @@ class Roleplay(commands.Cog):
         get_request = await self.nekos_get('thumbsup')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(ctx=ctx, url=gif_url, source=anime_name, action='Setuju')
+        return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Setuju')
     
     @roleplay.command(description='Elus kepala seseorang!')
     @app_commands.describe(user='Siapa yang ingin kamu elus kepalanya?')
@@ -182,7 +182,7 @@ class Roleplay(commands.Cog):
         get_request = await self.nekos_get('slap')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(ctx, user, gif_url, anime_name, 'Mengelus Kepala')
+        return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Mengelus Kepala', user)
     
     @roleplay.command(description='Ungkapkan ekspresi kebosananmu!')
     @check_blacklist()
@@ -194,7 +194,7 @@ class Roleplay(commands.Cog):
         get_request = await self.nekos_get('bored')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(ctx=ctx, url=gif_url, source=anime_name, action='Merasa Bosan')
+        return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Merasa Bosan')
 
 async def setup(bot):
     await bot.add_cog(Roleplay(bot))
