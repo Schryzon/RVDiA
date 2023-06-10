@@ -187,7 +187,7 @@ class Roleplay(commands.Cog):
     @roleplay.command(description='Ungkapkan ekspresi kebosananmu!')
     @check_blacklist()
     @has_voted()
-    async def agree(self, ctx:commands.Context):
+    async def bored(self, ctx:commands.Context):
         """
         Ungkapkan ekspresi kebosananmu!
         """

@@ -32,7 +32,7 @@ const server = async() => {
     if (displayText) {
         res.write(displayText);
       } else {
-        res.write('No data available');
+        res.write('Belum ada data berita, sayangku!');
       }
     res.end()
     })
