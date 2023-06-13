@@ -11,6 +11,7 @@ from cogs.Event import Event
 from scripts.main import heading, Url_Buttons, has_pfp
 from discord import app_commands
 from discord.ext import commands
+from discord.ui import View, Button
 from scripts.main import client, connectdb, check_blacklist, event_available, titlecase
 from time import time
 from PIL import Image
@@ -528,7 +529,63 @@ class Utilities(commands.Cog):
         await ctx.reply(file=file, embed=embed)
         os.remove('./variation.png')
 
+class Support(commands.Cog):
+    """
+    Kumpulan command khusus untuk memperoleh bantuan dan pemberian saran/kritik.
+    """
+    def __init__(self, bot):
+        self.bot = bot
+    
+    class Support_Button(View):
+        def __init__(self):
+            super().__init__(timeout=None)
+
+            support_server = Button(
+                label= "Support Server",
+                emoji = '<:cyron:1082789553263349851>',
+                style = discord.ButtonStyle.blurple,
+                url = 'https://discord.gg/QqWCnk6zxw'
+            )
+            self.add_item(support_server)
+
+    @commands.hybrid_group(name='support')
+    @check_blacklist()
+    async def support_command(self, ctx:commands.Context) -> None:
+        """
+        Kumpulan command khusus untuk memperoleh bantuan dan pemberian kesan dan pesan. [GROUP]
+        """
+        await self.server(ctx)
+        pass
+
+    @support_command.command(description = 'Mengirimkan link untuk server supportku!')
+    @check_blacklist()
+    async def server(self, ctx:commands.Context):
+        """
+        Mengirimkan link untuk server supportku!
+        """
+        await ctx.reply(f"Untuk join serverku agar dapat mengetahui lebih banyak tentang RVDiA, silahkan tekan link di bawah!\nhttps://discord.gg/QqWCnk6zxw\nAtau tekan tombol abu-abu di bawah ini.", view=self.Support_Button())
+
+    @support_command.command(description = 'Berikan aku saran untuk perbaikan atau penambahan fitur!')
+    @app_commands.rename(text='saran')
+    @app_commands.rename(attachment='lampiran')
+    @app_commands.describe(text='Apa yang ingin kamu sampaikan?')
+    @app_commands.describe(attachment='Apakah ada contoh gambarnya? (Opsional)')
+    @check_blacklist()
+    async def suggest(self, ctx:commands.Context, text:str, attachment:discord.Attachment = None):
+        """
+        Berikan aku saran untuk perbaikan atau penambahan fitur!
+        """
+        channel = self.bot.get_channel(1118145279464570921)
+        embed = discord.Embed(title="Saran Baru!", color=ctx.author.color, timestamp=ctx.message.created_at)
+        embed.set_author(name=f"Dari {ctx.author}")
+        if attachment:
+            embed.set_image(url = attachment.url)
+        embed.description = text
+        embed.set_thumbnail(url = ctx.author.display_avatar.url) # New knowledge get!
+        await channel.send(embed=embed)
+        await ctx.reply(f"Terima kasih atas sarannya!\nSemoga RVDiA akan selalu bisa memenuhi ekspektasimu!")
 
 async def setup(bot:commands.Bot):
     await bot.add_cog(General(bot))
     await bot.add_cog(Utilities(bot))
+    await bot.add_cog(Support(bot))
