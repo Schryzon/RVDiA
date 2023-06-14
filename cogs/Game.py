@@ -1,16 +1,13 @@
 import asyncio
-from typing import List, Optional
 import discord
 import datetime
 import time
 import random
 import json
 from os import getenv, listdir, path
-from discord.components import SelectOption
 from discord.ui import View, Button, button
 from discord import app_commands
 from discord.ext import commands
-from discord.utils import MISSING
 from scripts.main import connectdb, check_blacklist, has_registered, level_up, send_level_up_msg
 
 class GameInstance():
@@ -250,13 +247,13 @@ class GuessGameView(View):
     Buttons and stuff
     """
     def __init__(self, number:int, attempt:int, hint_left:int, level:str, last_number:int=None):
+        super().__init__(timeout=20) # Always be put up first
         self.hints = hint_left
         self.last = last_number
         self.number = number
         self.attempt = attempt
         self.level = level
         self.add_item(GuessDropdown(self.number, self.attempt, self.hints, self.level))
-        super().__init__(timeout=20)
 
     @button(label='Hint', custom_id='hint', style=discord.ButtonStyle.gray, emoji='❓')
     async def give_hint(self, interaction:discord.Interaction, button:Button):
@@ -310,7 +307,7 @@ class ResignButton(View):
         if interaction.user != self.ctx.author:
             await interaction.response.send_message("Kamu tidak diperbolehkan berinteraksi dengan tombol ini!", ephemeral=True)
             return
-        await interaction.response.send_message('Penghapusan akun dibatalkan.')
+        await interaction.response.send_message('Penghapusan akun dibatalkan.', ephemeral=True)
         self.value = False
         self.stop()
 
