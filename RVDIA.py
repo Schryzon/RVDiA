@@ -30,14 +30,14 @@ def get_prefix(client, message):
   Gain prefix from database
   """
   try:
-    s = connectdb('Prefixes')
-    f = s.find_one({'_id': message.guild.id})
-    if f is None:
-      s.insert_one(({'_id':message.guild.id, 'prefix':['R-', 'r-', 'rvd ', 'Rvd ', 'RVD ']}))
-      new = s.find_one({'_id': message.guild.id})
+    database = connectdb('Prefixes')
+    data = database.find_one({'_id': message.guild.id})
+    if data is None:
+      database.insert_one(({'_id':message.guild.id, 'prefix':['R-', 'r-', 'rvd ', 'Rvd ', 'RVD ']}))
+      new = database.find_one({'_id': message.guild.id})
       return new['prefix']
     else:
-      return f['prefix']
+      return data['prefix']
   except:
     return ['R-', 'r-', 'rvd ', 'Rvd ', 'RVD ']
 
@@ -46,11 +46,11 @@ def when_mentioned_or_function(func):
     Add @RVDIA as a prefix, along with the obtained prefixes from DB.
     """
     def inner(bot, message):
-        r = func(bot, message)
-        if isinstance(r, str):
-           r = [r]
-        r = commands.when_mentioned(bot, message) + r
-        return r
+        prefix = func(bot, message)
+        if isinstance(prefix, str):
+           prefix = [prefix]
+        prefix = commands.when_mentioned(bot, message) + prefix
+        return prefix
     return inner
 
 # Setting up bot privileged intents (there might be a simpler way)
