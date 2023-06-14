@@ -1,13 +1,16 @@
 import asyncio
+from typing import List, Optional
 import discord
 import datetime
 import time
 import random
 import json
 from os import getenv, listdir, path
+from discord.components import SelectOption
 from discord.ui import View, Button, button
 from discord import app_commands
 from discord.ext import commands
+from discord.utils import MISSING
 from scripts.main import connectdb, check_blacklist, has_registered, level_up, send_level_up_msg
 
 class GameInstance():
@@ -66,7 +69,7 @@ class GameInstance():
         if is_defending:
             user_2_def += 15
 
-        damage = max(0, user_1_atk*(random.randint(70, 100) - user_2_def)/100)
+        damage = round(max(0, user_1_atk*(random.randint(70, 100) - user_2_def)/100))
         miss_chance = (user_2_agl - user_1_agl)*2 + 5
         hit_chance = 100 - miss_chance
         attack_chance = random.randint(0, 100)
@@ -204,7 +207,85 @@ class GameInstance():
                 await self.ctx.channel.send(embed=embed)
 
         return
+    
+def guess_level_convert(level:str):
+    """
+    Converts to n amount of numbers need to be guessed
+    """
+    match level:
+        case 'EASY':
+            return 5
+        case 'NORMAL':
+            return 10
+        case 'HARD':
+            return 20
+        case 'SUPER':
+            return 25
 
+class GuessDropdown(discord.ui.Select):
+    def __init__(self, number:int, attempt:int, hint:int, level:str) -> None:
+        self.number = number
+        self.attempt = attempt
+        self.hints = hint
+        num_amount = guess_level_convert(level)
+        options = []
+        for i in range(1, num_amount+1):
+            options.append(discord.SelectOption(
+                label=str(i),
+                value=i
+            ))
+        super().__init__(custom_id='guessdrop', placeholder='Pilih angka yang tepat!', min_values=1, max_values=1, options=options)
+
+    async def callback(self, interaction:discord.Interaction):
+        if self.attempt > 0:
+            if self.values[0] == self.number:
+                await interaction.response.send_message(f"Benar! Angkanya `{self.number}`!")
+                return
+            else:
+                self.attempt -= 1
+                await interaction.response.send_message(f"Salah! Angkanya bukan `{self.values[0]}`!", view=GuessGameView(self.number, self.attempt, self.hints, self.level, self.values[0]))
+
+class GuessGameView(View):
+    """
+    Buttons and stuff
+    """
+    def __init__(self, number:int, attempt:int, hint_left:int, level:str, last_number:int=None):
+        self.hints = hint_left
+        self.last = last_number
+        self.number = number
+        self.attempt = attempt
+        self.level = level
+        self.add_item(GuessDropdown(self.number, self.attempt, self.hints, self.level))
+        super().__init__(timeout=20)
+
+    @button(label='Hint', custom_id='hint', style=discord.ButtonStyle.gray, emoji='❓')
+    async def give_hint(self, interaction:discord.Interaction, button:Button):
+        if self.last == None:
+            await interaction.response.send_message("Kamu belum menebak! Coba tebak dulu angka yang ku pilih!", ephemeral=True)
+            return
+        if self.hints != 0:
+            if self.last < self.number:
+                await interaction.response.send_message(f"Angka terakhirmu, `{self.last}` **lebih kecil** dari angka yang ku pilih.", ephemeral=True)
+            else:
+                await interaction.response.send_message(f"Angka terakhirmu, `{self.last}` **lebih besar** dari angka yang ku pilih.", ephemeral=True)
+        else:
+            await interaction.response.send_message('Hint-mu telah habis terpakai! Coba tebak semampumu sekarang!', ephemeral=True)
+
+        button.disabled = True
+
+class GuessGame():
+    """
+    The guessing number game
+    """
+    def __init__(self, ctx:commands.Context, level:str) -> None:
+        self.ctx = ctx
+        self.level = level
+
+    async def start(self):
+        num_limit = guess_level_convert(self.level)
+        number = random.randint(1, num_limit)
+        game_view = GuessGameView(number, 5, 3, self.level)
+        await self.ctx.reply(f"Coba tebak angka yang ku pilih!\nLevel: `{self.level}`", view=game_view)
         
 class ResignButton(View):
     def __init__(self, ctx:commands.Context):
@@ -715,6 +796,24 @@ class Game(commands.Cog):
         channel = self.bot.get_channel(1115422709585817710)
         await channel.send(embed=embed)
         await ctx.send("Aku telah mengirimkan request transfer data akun ke developer!\nMohon ditunggu persetujuannya ya!\nJangan lupa untuk mengaktifkan pesan DM dari aku karena nanti akan diberikan info apabila disetujui/ditolak.")
+
+
+    @game.command(description='Ayo main tebak angka bersamaku!')
+    @app_commands.describe(level='Tingkat kesulitan mana yang akan kamu pilih?')
+    @app_commands.choices(level=[
+        app_commands.Choice(name='SUPER', value='SUPER'),
+        app_commands.Choice(name='HARD', value='HARD'),
+        app_commands.Choice(name="NORMAL", value='NORMAL'),
+        app_commands.Choice(name='EASY', value='EASY')
+    ])
+    @has_registered()
+    @check_blacklist()
+    async def guess(self, ctx:commands.Context, level:app_commands.Choice[str]):
+        """
+        Ayo main tebak angka bersamaku!
+        """
+        game_instance = GuessGame(ctx, level.value)
+        await game_instance.start()
 
 async def setup(bot):
     await bot.add_cog(Game(bot))

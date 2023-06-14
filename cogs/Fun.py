@@ -15,29 +15,6 @@ class Fun(commands.Cog):
     """
     def __init__(self, bot):
         self.bot = bot
-    
-    @commands.hybrid_command(aliases = ['bandoriwaifu'], description='Temukan karakter BanG Dream yang cocok denganmu!')
-    @has_voted()
-    @check_blacklist()
-    async def bdwaifu(self, ctx:commands.Context):
-        """
-        Temukan karakter BanG Dream yang cocok denganmu!
-        """
-        async with aiohttp.ClientSession() as session:
-            bdinit = await session.get(f"https://bandori.party/api/members/{random.randint(6, 40)}/")
-            bdwifu = await bdinit.json()
-            we = discord.Embed(title = f"{bdwifu['name']} [{bdwifu['japanese_name']}]", description = f"From {bdwifu['i_band']}", color = ctx.author.colour)
-            we.set_thumbnail(url = bdwifu['square_image'])
-            we.set_author(name = "Waifu BanG Dream! kamu:", icon_url=bdwifu['square_image'])
-            we.add_field(name = "Sekolah", value = f"{bdwifu['school']}, {bdwifu['i_school_year']} Year", inline = False)
-            we.add_field(name = "Instrumen", value = bdwifu['instrument'], inline = False)
-            we.add_field(name = "Ulang Tahun", value = bdwifu['birthday'])
-            we.add_field(name = "Zodiak", value = bdwifu['i_astrological_sign'])
-            we.add_field(name = "VA", value = f"{bdwifu['romaji_CV']} [{bdwifu['CV']}]", inline = False)
-            we.add_field(name = "Menyukai", value = bdwifu['food_like'])
-            we.add_field(name = "Tidak Menyukai", value = bdwifu['food_dislike'])
-            we.add_field(name = f"Tentang {bdwifu['name']}:", value=bdwifu['description'], inline = False)
-            await ctx.reply(embed = we)
 
     @commands.hybrid_command(aliases=['tebak'], description='Ayo main tebak angka bersamaku!')
     @has_voted()

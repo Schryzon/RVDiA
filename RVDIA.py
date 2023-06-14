@@ -65,27 +65,28 @@ class RVDIA(commands.AutoShardedBot):
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "公式 [Official] v1.1.7"
+    self.__version__ = "公式 [Official] v1.1.8"
     self.event_mode = True
     self.color = 0xff4df0
     self.runtime = time() # UNIX float
 
     super().__init__(
-        command_prefix=when_mentioned_or_function(get_prefix), 
-        case_insensitive=True, 
-        strip_after_prefix=False, 
-        intents=bot_intents,
+      # command_prefix=commands.when_mentioned(), Maybe start on the 20th
+      command_prefix=when_mentioned_or_function(get_prefix), 
+      case_insensitive=True, 
+      strip_after_prefix=False, 
+      intents=bot_intents,
 
-        help_command=Help(
-              no_category = "Tak tergolongkan", 
-              color = self.color,
-              active_time = 60,
-              image_url = os.getenv('bannerhelp'),
-              index_title = "Kategori Command",
-              timeout=20,
-              case_insensitive = True
-          ),
-        **kwargs
+      help_command=Help(
+            no_category = "Tak tergolongkan", 
+            color = self.color,
+            active_time = 60,
+            image_url = os.getenv('bannerhelp'),
+            index_title = "Kategori Command",
+            timeout=20,
+            case_insensitive = True
+        ),
+      **kwargs
     )
 
 
@@ -453,4 +454,5 @@ async def on_message(msg:discord.Message):
           except discord.Forbidden:
              return
 
-rvdia.run(token=os.getenv('token'))
+if __name__ == "__main__":
+  rvdia.run(token=os.getenv('token'))

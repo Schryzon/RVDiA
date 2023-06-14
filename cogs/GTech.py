@@ -154,5 +154,8 @@ class GTech(commands.GroupCog, name='gtech'):
         db.find_one_and_delete({'_id':1})
         await interaction.response.send_message('Berita terakhir telah dihapus.', ephemeral=True)
 
-async def setup(bot):
-    await bot.add_cog(GTech(bot))
+async def setup(bot:commands.Bot):
+    await bot.add_cog(GTech(bot), guilds=[
+        discord.Object(id=997500206511833128),
+        discord.Object(id=872815705450483732)
+        ])
