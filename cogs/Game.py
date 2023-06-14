@@ -236,12 +236,14 @@ class GuessDropdown(discord.ui.Select):
 
     async def callback(self, interaction:discord.Interaction):
         if self.attempt > 0:
-            if self.values[0] == self.number:
+            if int(self.values[0]) == self.number:
                 await interaction.response.send_message(f"Benar! Angkanya `{self.number}`!")
                 return
             else:
                 self.attempt -= 1
-                await interaction.response.send_message(f"Salah! Angkanya bukan `{self.values[0]}`!", view=GuessGameView(self.number, self.attempt, self.hints, self.level, self.values[0]))
+                await interaction.response.send_message(f"Salah! Angkanya bukan `{self.values[0]}`!\nSisa attempt: {self.attempt}", view=GuessGameView(self.number, self.attempt, self.hints, self.level, self.values[0]))
+        else:
+            return await interaction.response.send_message('Attempt-mu sudah habis! Terima kasih karena telah bermain bersama RVDiA!', ephemeral=True)
 
 class GuessGameView(View):
     """
@@ -256,13 +258,13 @@ class GuessGameView(View):
         self.level = level
         self.add_item(GuessDropdown(self.number, self.attempt, self.hints, self.level))
 
-    @button(label='Hint', custom_id='hint', style=discord.ButtonStyle.gray, emoji='❓')
+    @button(label='Hint', custom_id='hint', style=discord.ButtonStyle.blurple, emoji='❓')
     async def give_hint(self, interaction:discord.Interaction, button:Button):
         if self.last == None:
             await interaction.response.send_message("Kamu belum menebak! Coba tebak dulu angka yang ku pilih!", ephemeral=True)
             return
         if self.hints != 0:
-            if self.last < self.number:
+            if int(self.last) < self.number:
                 await interaction.response.send_message(f"Angka terakhirmu, `{self.last}` **lebih kecil** dari angka yang ku pilih.", ephemeral=True)
             else:
                 await interaction.response.send_message(f"Angka terakhirmu, `{self.last}` **lebih besar** dari angka yang ku pilih.", ephemeral=True)
@@ -274,6 +276,7 @@ class GuessGameView(View):
 class GuessGame():
     """
     The guessing number game
+    Using the power of class chain reaction
     """
     def __init__(self, ctx:commands.Context, level:str) -> None:
         self.ctx = ctx
