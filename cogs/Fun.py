@@ -150,8 +150,8 @@ class Fun(commands.Cog):
                     sus = Image.open(image_path)
                     break
 
-            asset1 = member1.avatar.with_format('png').with_size(128)
-            asset2 = member2.avatar.with_format('png').with_size(128)
+            asset1 = member1.display_avatar.with_format('png').with_size(128)
+            asset2 = member2.display_avatar.with_format('png').with_size(128)
             data1 = BytesIO(await asset1.read())
             data2 = BytesIO(await asset2.read())
             pfp1 = Image.open(data1)
