@@ -106,7 +106,7 @@ class GameInstance():
                         embed.description = f"**`{damage}` Damage!**\nHP <@{self.user2.id}> tersisa `{self.user2_hp}` HP!"
                     else:
                         embed.description = f"**`{damage}` Damage!**\nHP {self.user2['name']} tersisa `{self.user2_hp}` HP!"
-                    embed.set_thumbnail(url=self.user1.avatar.url)
+                    embed.set_thumbnail(url=self.user1.display_avatar.url)
                     await self.ctx.channel.send(embed=embed)
                     if user2_defending:
                         user2_defending = False
@@ -115,7 +115,7 @@ class GameInstance():
                     user1_defending = True
                     embed = discord.Embed(title=f'🛡️{self.user1.display_name} Melindungi Diri!', color=self.user1.color)
                     embed.description = f"**Defense bertambah `+15` untuk serangan selanjutnya!**"
-                    embed.set_thumbnail(url=self.user1.avatar.url)
+                    embed.set_thumbnail(url=self.user1.display_avatar.url)
                     await self.ctx.channel.send(embed=embed)
 
                 case "end":
@@ -140,7 +140,7 @@ class GameInstance():
                         damage = self.attack(datas[1]['stats'], datas[0]['stats'], self.user2.id, user1_defending)
                         embed = discord.Embed(title=f'💥{self.user2.display_name} Menyerang!', color=self.user2.color)
                         embed.description = f"**`{damage}` Damage!**\nHP <@{self.user1.id}> tersisa `{self.user1_hp}` HP!"
-                        embed.set_thumbnail(url=self.user2.avatar.url)
+                        embed.set_thumbnail(url=self.user2.display_avatar.url)
                         await self.ctx.channel.send(embed=embed)
                         if user1_defending:
                             user1_defending = False
@@ -149,7 +149,7 @@ class GameInstance():
                         user2_defending = True
                         embed = discord.Embed(title=f'🛡️{self.user2.display_name} Melindungi Diri!', color=self.user2.color)
                         embed.description = f"**Defense bertambah `+15` untuk serangan selanjutnya!**"
-                        embed.set_thumbnail(url=self.user2.avatar.url)
+                        embed.set_thumbnail(url=self.user2.display_avatar.url)
                         await self.ctx.channel.send(embed=embed)
 
                     case "end":
@@ -184,7 +184,7 @@ class GameInstance():
         if self.user1_hp > self.user2_hp:
             embed = discord.Embed(title=f"{self.user1.display_name} Menang!", color=0xffff00)
             embed.description = f"Dengan `{self.user1_hp}` HP tersisa!"
-            embed.set_thumbnail(url = self.user1.avatar.url)
+            embed.set_thumbnail(url = self.user1.display_avatar.url)
             embed.set_footer(text='Kamu memperoleh 15 koin dan 5 karma!')
             await self.ctx.channel.send(embed=embed)
 
@@ -192,7 +192,7 @@ class GameInstance():
             if isinstance(self.user2, discord.Member):
                 embed = discord.Embed(title=f"{self.user2.display_name} Menang!", color=0xffff00)
                 embed.description = f"Dengan `{self.user2_hp}` HP tersisa!"
-                embed.set_thumbnail(url = self.user2.avatar.url)
+                embed.set_thumbnail(url = self.user2.display_avatar.url)
                 embed.set_footer(text='Kamu memperoleh 15 koin dan 5 karma!')
                 await self.ctx.channel.send(embed=embed)
 
@@ -329,7 +329,7 @@ class EnemyDropdown(discord.ui.Select):
                 value=f"\"{enemy['desc']}\"\n**HP**: `{enemy['hp']}`\n**Attack**: `{enemy['atk']}`\n**Defense**: `{enemy['def']}`\n**Agility**: `{enemy['agl']}`\n",
                 inline=False
                 )
-        embed.set_thumbnail(url = interaction.user.avatar.url) # Lazy, might add a placeholder later
+        embed.set_thumbnail(url = interaction.user.display_avatar.url) # Lazy, might add a placeholder later
         embed.set_footer(text="Kamu bisa melawan salah satu dari mereka dengan command battle!")
         await interaction.response.send_message(embed=embed, view=EnemyView())
 
@@ -503,7 +503,7 @@ class Game(commands.Cog):
                 {'$inc':{'coins':new_coins, 'karma':new_karma, 'exp':new_exp}, '$set':{'last_login':datetime.datetime.now()}}
             )
             embed = discord.Embed(title='Bonus Harianmu', color=0x00FF00, timestamp=next_login)
-            embed.set_thumbnail(url=ctx.author.avatar.url if ctx.author.avatar else getenv('normalpfp'))
+            embed.set_thumbnail(url=ctx.author.display_avatar.url)
             embed.description = f'Kamu mendapatkan:\n`{new_coins}` koin;\n`{new_karma}` karma;\n`{new_exp}` EXP!'
             embed.set_footer(text='Bonus selanjutnya pada ')
             await ctx.reply(embed=embed)
@@ -542,7 +542,7 @@ class Game(commands.Cog):
         embed = discord.Embed(title=player_name, timestamp=last_login)
         embed.set_author(name='Info Akun Re:Volution:')
         embed.description = f'Alias: {user}'
-        embed.set_thumbnail(url=user.avatar.url if user.avatar else getenv('normalpfp'))
+        embed.set_thumbnail(url=user.display_avatar.url)
 
         embed.add_field(
             name=f'Level {level}', 

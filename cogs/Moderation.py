@@ -72,7 +72,7 @@ class Moderation(commands.Cog):
         else:
             embed.description = f"[png]({png}) | [jpg]({jpg}) | [webp]({webp})"
             embed.set_image(url = guild.icon.with_format("png").url)
-        embed.set_footer(text=f"{ctx.author}", icon_url=ctx.author.avatar.url)
+        embed.set_footer(text=f"{ctx.author}", icon_url=ctx.author.display_avatar.url)
         await ctx.reply(embed=embed)
 
     @commands.hybrid_group(name='invite')
@@ -177,8 +177,8 @@ class Moderation(commands.Cog):
         color = member.colour
         )
         em.add_field(name="Alasan", value=reason, inline=False)
-        em.set_thumbnail(url = member.avatar.url if not member.avatar is None else getenv('normalpfp'))
-        em.set_footer(text=f"Pelanggaran diberikan oleh {ctx.author} | ID:{ctx.author.id}", icon_url=ctx.author.avatar.url)
+        em.set_thumbnail(url = member.display_avatar.url)
+        em.set_footer(text=f"Pelanggaran diberikan oleh {ctx.author} | ID:{ctx.author.id}", icon_url=ctx.author.display_avatar.url)
         await ctx.reply(embed = em)
 
     @warn.command(
@@ -205,7 +205,7 @@ class Moderation(commands.Cog):
                 emb.add_field(name=f"Alasan (dari pelanggaran #1 to #{doc['warns']})", value="*"+"\n".join(reasons)+"*")
             else:
                 emb.add_field(name=f"Alasan", value="*"+"\n".join(reasons)+"*")
-            emb.set_thumbnail(url = member.avatar.url if not member.avatar is None else getenv('normalpfp'))
+            emb.set_thumbnail(url = member.display_avatar.url)
             await ctx.reply(embed = emb)
 
     @warn.command(name='remove', description="Menghilangkan segala data pelanggaran pengguna.")
@@ -270,8 +270,8 @@ class Moderation(commands.Cog):
         embed = discord.Embed(title="❗Ultimate Ban❗", color = ctx.author.colour)
         embed.description = f"**`{user}`** telah diban!"
         embed.add_field(name = "Alasan", value = reason, inline = False)
-        embed.set_thumbnail(url = user.avatar.url if not user.avatar is None else getenv('normalpfp'))
-        embed.set_footer(text=f"Dieksekusi oleh {ctx.author} | ID:{ctx.author.id}", icon_url=ctx.author.avatar.url)
+        embed.set_thumbnail(url = user.display_avatar.url)
+        embed.set_footer(text=f"Dieksekusi oleh {ctx.author} | ID:{ctx.author.id}", icon_url=ctx.author.display_avatar.url)
         await ctx.reply(embed = embed)
 
     @commands.hybrid_command(description="Unban seseorang yang telah diban sebelumnya.")

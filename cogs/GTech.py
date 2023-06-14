@@ -77,7 +77,7 @@ class GTech(commands.Cog):
         kelas = data['kelas']
         divisi = data['divisi']
         e = discord.Embed(title="G-Tech Member Info", color=user.colour)
-        e.set_thumbnail(url=user.avatar.url)
+        e.set_thumbnail(url=user.display_avatar.url)
         e.description = f"**Nama:** {nama}\n**Kelas:** {kelas}\n**Divisi:** {divisi}"
         await ctx.reply(embed = e)
 

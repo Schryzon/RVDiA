@@ -208,7 +208,7 @@ class General(commands.Cog):
         Support: (ID, @Mention, username, name#tag)
         """
         member = member or ctx.author
-        avatar_url = member.avatar.url if not member.avatar is None else getenv('normalpfp')
+        avatar_url = member.display_avatar.url # Avoids returning None
         bot = member.bot
 
         if bot == True:
@@ -261,6 +261,8 @@ class General(commands.Cog):
         embed.set_footer(text=f"ID: {member.id}", icon_url=avatar_url)
         await ctx.reply(embed=embed)
 
+    
+    # Might change API, sometimes it refuses to connect
     @avatar_command.command(aliases=['grayscale'], description="Ubah foto profil menjadi grayscale (hitam putih).")
     @app_commands.rename(user='pengguna')
     @has_pfp()
@@ -268,7 +270,7 @@ class General(commands.Cog):
     async def greyscale(self, ctx, *, user:discord.User = None):
         """Ubah foto profil menjadi grayscale."""
         user = user or ctx.author
-        avatar = user.avatar.with_format("png").url if not user.avatar is None else getenv('normalpfp')
+        avatar = user.display_avatar.with_format("png").url
         async with aiohttp.ClientSession() as session:
             async with session.get(f'https://some-random-api.ml/canvas/greyscale?avatar={avatar}') as data:
                 image = BytesIO(await data.read())
@@ -282,7 +284,7 @@ class General(commands.Cog):
     async def invert(self, ctx, *, user:discord.User = None):
         """Ubah foto profil menjadi inverted."""
         user = user or ctx.author
-        avatar = user.avatar.with_format("png").url if not user.avatar is None else getenv('normalpfp')
+        avatar = user.display_avatar.with_format("png").url
         async with aiohttp.ClientSession() as session:
             async with session.get(f'https://some-random-api.ml/canvas/invert?avatar={avatar}') as data:
                 image = BytesIO(await data.read())
