@@ -33,7 +33,7 @@ class GTech(commands.GroupCog, name='gtech'):
             embed.set_image(url = news['attachments'])
         await channel.send("*Knock, knock!* Ada yang baru nih di G-Tech!", embed = embed)
 
-    @app_commands.command(aliases=['reg'], description="Tambahkan pengguna ke database.")
+    @app_commands.command(description="Tambahkan pengguna ke database.")
     @app_commands.describe(user='Akun Discord anggota',
                            kelas='Kelas (Contoh: XI IPA 5)',
                            divisi = 'Divisi (Contoh: Word, Programming, Desain)',
@@ -52,7 +52,7 @@ class GTech(commands.GroupCog, name='gtech'):
         db.insert_one({'_id':user.id, 'kelas':kelas, 'divisi':divisi, 'nama':nama})
         await interaction.response.send_message(f'`{user}` telah didaftarkan ke database G-Tech.')
 
-    @app_commands.command(aliases=['gtechmember'], description="Lihat info anggota G-Tech dari database.")
+    @app_commands.command(description="Lihat info anggota G-Tech dari database.")
     @app_commands.describe(user='Anggota yang mana?')
     @app_commands.rename(user='anggota')
     @in_gtech_server()
@@ -73,7 +73,7 @@ class GTech(commands.GroupCog, name='gtech'):
         e.description = f"**Nama:** {nama}\n**Kelas:** {kelas}\n**Divisi:** {divisi}"
         await interaction.response.send_message(embed = e)
 
-    @app_commands.command(aliases=['erreg', 'unreg', 'unregister'], description="Hapus data anggota dari database.")
+    @app_commands.command(description="Hapus data anggota dari database.")
     @app_commands.describe(user='Pengguna yang ingin dihapus datanya.')
     @is_perangkat()
     @in_gtech_server()
@@ -138,7 +138,7 @@ class GTech(commands.GroupCog, name='gtech'):
             embed.set_image(url = news['attachments'])
         await interaction.response.send_message(embed = embed)
 
-    @app_commands.command(aliases = ['rmnews'], description="Hapus berita terbaru dari database.")
+    @app_commands.command(description="Hapus berita terbaru dari database.")
     @is_perangkat()
     @is_member_check()
     @in_gtech_server()
