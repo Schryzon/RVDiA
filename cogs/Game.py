@@ -224,6 +224,7 @@ class GuessDropdown(discord.ui.Select):
         self.number = number
         self.attempt = attempt
         self.hints = hint
+        self.level = level
         num_amount = guess_level_convert(level)
         options = []
         for i in range(1, num_amount+1):
