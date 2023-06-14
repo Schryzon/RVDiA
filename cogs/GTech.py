@@ -1,31 +1,24 @@
+"""
+Experimental Cog, for the future.
+"""
 from os import getenv
 import discord
 from discord import app_commands
 from discord.ext import commands
 from scripts.main import connectdb, in_gtech_server, is_member_check, is_perangkat, check_blacklist
 
-class GTech(commands.Cog):
+class GTech(commands.GroupCog, name='gtech'):
     """
     Kategori khusus bagi anggota G-Tech Re'sman
     """
     def __init__(self, bot):
         self.bot = bot
+        super().__init__()
 
     def is_member(self, id:int): #Used for gaining data only
         db = connectdb("Gtech")
         data = db.find_one({'_id':id})
         return data
-    
-    @commands.hybrid_group(name='gtech')
-    @in_gtech_server()
-    @is_member_check()
-    @check_blacklist()
-    async def gtech_command(self, ctx:commands.Context) -> None:
-        """
-        Kumpulan command khusus untuk anggota G-Tech Re'sman. [GROUP]
-        """
-        await self.news(ctx)
-        pass
 
     async def send_news(self, channel_id:int):
         db = connectdb("Technews")
@@ -40,7 +33,7 @@ class GTech(commands.Cog):
             embed.set_image(url = news['attachments'])
         await channel.send("*Knock, knock!* Ada yang baru nih di G-Tech!", embed = embed)
 
-    @gtech_command.command(aliases=['reg'], description="Tambahkan pengguna ke database.")
+    @app_commands.command(aliases=['reg'], description="Tambahkan pengguna ke database.")
     @app_commands.describe(user='Akun Discord anggota',
                            kelas='Kelas (Contoh: XI IPA 5)',
                            divisi = 'Divisi (Contoh: Word, Programming, Desain)',
@@ -48,97 +41,94 @@ class GTech(commands.Cog):
                         )
     @in_gtech_server()
     @check_blacklist()
-    async def register(self, ctx, user:discord.Member, kelas, divisi, *, nama):
+    async def register(self, interaction:discord.Interaction, user:discord.Member, nama:str, kelas:str, divisi:str):
         """
         Tambahkan pengguna ke database.
         """
         db = connectdb('Gtech')
         data = db.find_one({'_id':user.id})
         if not data is None:
-            return await ctx.reply('Pengguna sudah ada di database!')
+            return await interaction.response.send_message('Pengguna sudah ada di database!', ephemeral=True)
         db.insert_one({'_id':user.id, 'kelas':kelas, 'divisi':divisi, 'nama':nama})
-        await ctx.reply(f'`{user}` telah didaftarkan ke database G-Tech.')
+        await interaction.response.send_message(f'`{user}` telah didaftarkan ke database G-Tech.')
 
-    @gtech_command.command(aliases=['gtechmember'], description="Lihat info anggota G-Tech dari database.")
+    @app_commands.command(aliases=['gtechmember'], description="Lihat info anggota G-Tech dari database.")
     @app_commands.describe(user='Anggota yang mana?')
     @app_commands.rename(user='anggota')
     @in_gtech_server()
     @is_member_check()
     @check_blacklist()
-    async def member(self, ctx, *, user:discord.Member = None):
+    async def member(self, interaction:discord.Interaction, user:discord.Member):
         """
         Lihat info anggota G-Tech dari database.
         """
-        user = user or ctx.author
         data = self.is_member(user.id)
         if data is None:
-            return await ctx.reply('Pengguna belum ada di database!')
+            return await interaction.response.send_message(f'{user} belum ada di database!', ephemeral=True)
         nama = data['nama']
         kelas = data['kelas']
         divisi = data['divisi']
-        e = discord.Embed(title="G-Tech Member Info", color=user.colour)
+        e = discord.Embed(title="Info Anggota G-Tech", color=user.colour)
         e.set_thumbnail(url=user.display_avatar.url)
         e.description = f"**Nama:** {nama}\n**Kelas:** {kelas}\n**Divisi:** {divisi}"
-        await ctx.reply(embed = e)
+        await interaction.response.send_message(embed = e)
 
-    @gtech_command.command(aliases=['erreg', 'unreg', 'unregister'], description="Hapus data anggota dari database.")
+    @app_commands.command(aliases=['erreg', 'unreg', 'unregister'], description="Hapus data anggota dari database.")
     @app_commands.describe(user='Pengguna yang ingin dihapus datanya.')
     @is_perangkat()
     @in_gtech_server()
     @check_blacklist()
-    async def erasemember(self, ctx:commands.Context, *, user:discord.Member = None):
+    async def erasemember(self, interaction:discord.Interaction, *, user:discord.Member):
         """
         Hapus data anggota dari database.
         """
-        user = user or ctx.author
         db = connectdb('Gtech')
         data = db.find_one({'_id':user.id})
         if data is None:
-            return await ctx.reply('Pengguna belum ada di database!')
+            return await interaction.response.send_message('Pengguna belum ada di database!', ephemeral=True)
         db.find_one_and_delete({'_id':user.id})
-        await ctx.reply(f'{user} telah dihapus dari database G-Tech.')
+        await interaction.response.send_message(f'{user} telah dihapus dari database G-Tech.')
 
 
-    @gtech_command.command(description="Post sesuatu yang menarik ke channel pengumuman! "+
-                                "Format: Judul | Deskripsi"
-    )
-    @app_commands.describe(content="Apa yang ingin disampaikan? Format: Judul | Deskripsi")
+    @app_commands.command(description="Post sesuatu yang menarik ke channel pengumuman!")
+    @app_commands.describe(title="Apa judul dari beritanya?")
+    @app_commands.describe(content="Apa yang ingin disampaikan?")
+    @app_commands.describe(attachment="Apakah ada gambar sebagai lampiran?")
+    @app_commands.rename(title='judul')
+    @app_commands.rename(content='isi')
+    @app_commands.rename(attachment='lampiran')
     @is_perangkat()
     @in_gtech_server()
     @is_member_check()
     @check_blacklist()
-    async def post(self, ctx, *, content:str):
+    async def post(self, interaction:discord.Interaction, title:str, content:str, attachment:discord.Attachment=None):
         """
         Post sesuatu yang menarik ke channel pengumuman!
         """
         db = connectdb('Technews')
         oldnews = db.find_one({'_id':1})
-        attachment = ctx.message.attachments or None
         if attachment is not None:
-            attachment = attachment[0].url
-        data = self.is_member(ctx.author.id)
-        texts = content.split(' | ')
-        title = texts[0]
-        desc = texts[1]
+            attachment = attachment.url
+        data = self.is_member(interaction.user.id)
         if oldnews is None:
-            db.insert_one({'_id':1, 'author':data["nama"], 'kelas':data["kelas"], 'title':title, 'desc':desc, 'attachments':attachment})
+            db.insert_one({'_id':1, 'author':data["nama"], 'kelas':data["kelas"], 'title':title, 'desc':content, 'attachments':attachment})
         else:
-            db.find_one_and_replace({'_id':1}, {'author':data["nama"], 'kelas':data["kelas"], 'title':title, 'desc':desc, 'attachments':attachment})
-        await ctx.reply('Berita baru telah diposting!')
+            db.find_one_and_replace({'_id':1}, {'author':data["nama"], 'kelas':data["kelas"], 'title':title, 'desc':content, 'attachments':attachment})
+        await interaction.response.send_message('Berita baru telah diposting!', ephemeral=True)
         await self.send_news(997749511432712263)
 
-    @gtech_command.command(description="Lihat berita terbaru tentang G-Tech!")
+    @app_commands.command(description="Lihat berita terbaru tentang G-Tech!")
     @in_gtech_server()
     @is_member_check()
     @check_blacklist()
-    async def news(self, ctx:commands.Context):
+    async def news(self, interaction:discord.Interaction):
         """
         Lihat berita terbaru tentang G-Tech!
         """
         db = connectdb('Technews')
         news = db.find_one({'_id':1})
         if news is None:
-            return await ctx.reply('Saat ini belum ada berita baru untuk G-Tech Re\'sman, stay tuned!')
+            return await interaction.response.send_message('Saat ini belum ada berita baru untuk G-Tech Re\'sman, stay tuned!', ephemeral=True)
         embed = discord.Embed(title=news['title'], color = 0xff0000)
         embed.set_thumbnail(url = getenv('gtechlogo'))
         embed.add_field(name = "Author:", value=f'{news["author"]} ({news["kelas"]})', inline=False)
@@ -146,22 +136,23 @@ class GTech(commands.Cog):
         embed.set_author(name = "Berita Terbaru G-Tech Re'sman")
         if news['attachments'] is not None:
             embed.set_image(url = news['attachments'])
-        await ctx.reply(embed = embed)
+        await interaction.response.send_message(embed = embed)
 
-    @gtech_command.command(aliases = ['rmnews'], description="Hapus berita terbaru dari database.")
+    @app_commands.command(aliases = ['rmnews'], description="Hapus berita terbaru dari database.")
     @is_perangkat()
+    @is_member_check()
     @in_gtech_server()
     @check_blacklist()
-    async def deletenews(self, ctx:commands.Context):
+    async def deletenews(self, interaction:discord.Interaction):
         """
         Hapus berita terbaru dari database.
         """
         db = connectdb('Technews')
-        data = self.is_member(ctx.author.id)
+        data = self.is_member(interaction.user.id)
         if data is None:
-            return await ctx.reply('Tolong daftarkan akun Discordmu ke database terlebih dahulu!')
+            return await interaction.response.send_message('Tolong daftarkan akun Discordmu ke database terlebih dahulu!')
         db.find_one_and_delete({'_id':1})
-        await ctx.reply('Berita terakhir telah dihapus.')
+        await interaction.response.send_message('Berita terakhir telah dihapus.', ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(GTech(bot))
