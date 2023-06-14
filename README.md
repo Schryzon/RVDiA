@@ -30,7 +30,7 @@ Bot ini menggunakan Bahasa Indonesia dan memiliki command khusus untuk anggota-a
 (Untuk format `.env`, bisa dilihat di `secrets.env.example` ya! Jangan lupa untuk selalu menjaga keamanan bot kalian!)
 
 ## Informasi Tambahan
-Proyek ini __hanya untuk sekedar hobi__ dan tidak untuk kepentingan komersial dan lain-lain. Oleh sebab itu, RVDiA menggunakan dua priviliged intents `discord.Intents.members` & `discord.Intents.message_content` serta memiliki batasan `100 server` yang bisa di-join (karena saya tidak berani untuk apply whitelisting saat ini, mungkin suatu hari nanti, hehe...)
+Proyek ini __hanya untuk sekedar hobi__ dan tidak untuk kepentingan komersial dan lain-lain. Oleh sebab itu, RVDiA menggunakan dua priviliged intents `discord.Intents.message_content` serta memiliki batasan `100 server` yang bisa di-join (karena saya tidak berani untuk apply whitelisting saat ini, mungkin suatu hari nanti, hehe...)
 
 Saat ini RVDiA, dihost dengan menggunakan Heroku. Jadi, jika kalian ingin menjalankan botnya saya sarankan untuk menggunakan service Heroku. Tetapi, jika kalian hanya ingin sekedar menggunakan botnya secara lokal melalui komputer pribadi juga tidak masalah.
 
