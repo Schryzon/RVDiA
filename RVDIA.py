@@ -110,8 +110,8 @@ async def on_ready():
     print('Internal cogs loaded!')
     
     if not rvdia.synced:
-      await rvdia.tree.sync() # Global slash commands sync
-      rvdia.synced = True
+      synced_commands = await rvdia.tree.sync() # Global slash commands sync, also returns a list of commands.
+      rvdia.synced = [True, len(synced_commands)]
       print('Slash Commands up for syncing!')
 
     if not change_status.is_running():
@@ -454,5 +454,6 @@ async def on_message(msg:discord.Message):
           except discord.Forbidden:
              return
 
+# Didn't know I'd use this, but pretty coolio
 if __name__ == "__main__":
   rvdia.run(token=os.getenv('token'))

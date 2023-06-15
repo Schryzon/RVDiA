@@ -1,3 +1,9 @@
+"""
+The most STRESSFUL file I've ever made
+Like, what the hell have I typed all this time?!
+Do all of these even make sense???
+"""
+
 import asyncio
 import discord
 import datetime

@@ -7,7 +7,7 @@ from discord import app_commands
 from discord.ext import commands
 from scripts.main import connectdb, in_gtech_server, is_member_check, is_perangkat, check_blacklist
 
-class GTech(commands.GroupCog, name='gtech'):
+class GTech(commands.GroupCog, group_name='gtech'):
     """
     Kategori khusus bagi anggota G-Tech Re'sman
     """
@@ -155,4 +155,8 @@ class GTech(commands.GroupCog, name='gtech'):
         await interaction.response.send_message('Berita terakhir telah dihapus.', ephemeral=True)
 
 async def setup(bot:commands.Bot):
-    await bot.add_cog(GTech(bot))
+    await bot.add_cog(GTech(bot, guilds=[
+        discord.Object(872815705450483732), # AKT 16
+        discord.Object(997500206511833128) # AKT 17
+        # Reserved for AKT 18!
+    ]))

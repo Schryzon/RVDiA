@@ -1,3 +1,9 @@
+"""
+Somewhat unimportant
+Discord is developing their own features so...
+I don't think this will hold up
+"""
+
 import discord
 from discord import NotFound, app_commands
 from scripts.main import check_blacklist, connectdb
