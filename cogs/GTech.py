@@ -155,8 +155,8 @@ class GTech(commands.GroupCog, group_name='gtech'):
         await interaction.response.send_message('Berita terakhir telah dihapus.', ephemeral=True)
 
 async def setup(bot:commands.Bot):
-    await bot.add_cog(GTech(bot, guilds=[
+    await bot.add_cog(GTech(bot), guilds=[
         discord.Object(872815705450483732), # AKT 16
         discord.Object(997500206511833128) # AKT 17
         # Reserved for AKT 18!
-    ]))
+    ])
