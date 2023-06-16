@@ -36,7 +36,7 @@ class RVDIA(commands.AutoShardedBot):
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "公式 [Official] v1.1.9"
+    self.__version__ = "Evolution v1.0.0"
     self.event_mode = True
     self.color = 0xff4df0
     self.runtime = time() # UNIX float

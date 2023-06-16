@@ -18,8 +18,9 @@ from discord.ext import commands
 from scripts.main import connectdb, check_blacklist, has_registered, level_up, send_level_up_msg
 
 class FightView(View):
-    def __init__(self):
+    def __init__(self, instance):
         super().__init__(timeout=25.0)
+        self.instance = instance
 
     @button(label = 'Serang', custom_id='attack', style=discord.ButtonStyle.danger, emoji='💥')
     async def attack(self, interaction:discord.Interaction, button:Button):
@@ -52,6 +53,8 @@ class GameInstance():
         self.ctx = ctx
         self.bot = bot
         self.command_name = ctx.command.name
+        self.user1_defend = False
+        self.user2_defend = False
 
     async def gather_data(self):
         database = connectdb('Game')
@@ -97,6 +100,13 @@ class GameInstance():
         hit_chance = 100 - miss_chance
         attack_chance = random.randint(0, 100)
 
+        if dealer_id == self.user1.id and is_defending:
+            self.user2_defend = False
+        elif dealer_id == self.user2.id and is_defending:
+            self.user1_defend = False
+        elif dealer_id == 1 and is_defending:
+            self.user1_defend = False
+
         if hit_chance >= attack_chance:
             if dealer_id == self.user1.id: # Might work
                 self.user2_hp = self.user2_hp - damage
@@ -107,13 +117,18 @@ class GameInstance():
         
         else:
             return 0
-
+        
+    def defend(self, user):
+        if user == self.user1:
+            self.user1_defend = True
+        else:
+            self.user2_defend = True
     
-    def check_button_1(self, interaction:discord.Interaction, button:Button):
+    """def check_button_1(self, interaction:discord.Interaction, button:Button):
         return interaction.user == self.user1 and interaction.message.channel == self.ctx.channel
     
     def check_button_2(self, interaction:discord.Interaction, button:Button):
-        return interaction.user == self.user2 and interaction.message.channel == self.ctx.channel
+        return interaction.user == self.user2 and interaction.message.channel == self.ctx.channel"""
 
     async def start(self):
         # Start -> Create Thread -> While loop (this is for later zzz)
@@ -122,17 +137,17 @@ class GameInstance():
         datas = await self.gather_data()
         await self.ctx.reply('⚔️ Perang dimulai!') # I'll just use this for now
         await asyncio.sleep(2.7)
-        fight_view = FightView()
 
-        user1_defending = False
-        user2_defending = False
+
+
         while self.user1_hp > 0 and self.user2_hp > 0:
-            await self.ctx.channel.send(f'<@{self.user1.id}> Giliranmu!', view=FightView())
-            res_1 = await self.bot.wait_for('button_click', check = self.check_button_1, timeout = 25.0) # Capekkkkk
+            fight_view1 = FightView()
+            await self.ctx.channel.send(f'<@{self.user1.id}> Giliranmu!', view=fight_view1)
+            res_1 = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel, timeout = 25.0) # Detect a message from RVDiA
 
-            match res_1.custom_id:
-                case "attack":
-                    damage = self.attack(datas[0]['stats'], datas[1]['stats'], self.user1.id, user2_defending)
+            match res_1.content:
+                case "Opsi terpilih: 💥Serang":
+                    damage = self.attack(datas[0]['stats'], datas[1]['stats'], self.user1.id, self.user2_defend)
                     embed = discord.Embed(title=f'💥{self.user1.display_name} Menyerang!', color=self.user1.color)
                     if isinstance(self.user2, discord.Member):
                         embed.description = f"**`{damage}` Damage!**\nHP <@{self.user2.id}> tersisa `{self.user2_hp}` HP!"
@@ -140,17 +155,15 @@ class GameInstance():
                         embed.description = f"**`{damage}` Damage!**\nHP {self.user2['name']} tersisa `{self.user2_hp}` HP!"
                     embed.set_thumbnail(url=self.user1.display_avatar.url)
                     await self.ctx.channel.send(embed=embed)
-                    if user2_defending:
-                        user2_defending = False
 
-                case "defend":
-                    user1_defending = True
+                case "Opsi terpilih: 🛡️Tahan":
+                    self.defend(self.user1)
                     embed = discord.Embed(title=f'🛡️{self.user1.display_name} Melindungi Diri!', color=self.user1.color)
                     embed.description = f"**Defense bertambah `+15` untuk serangan selanjutnya!**"
                     embed.set_thumbnail(url=self.user1.display_avatar.url)
                     await self.ctx.channel.send(embed=embed)
 
-                case "end":
+                case "Opsi terpilih: 🏃Kabur":
                     await self.ctx.channel.send(f'⛔ <@{self.user1.id}>  Mengakhiri perang.')
                     return
 
@@ -164,27 +177,26 @@ class GameInstance():
             await asyncio.sleep(2.5)
 
             if isinstance(self.user2, discord.Member):
-                await self.ctx.channel.send(f'<@{self.user2.id}> Giliranmu!', view=FightView())
-                res_2 = await self.bot.wait_for('button_click', check = self.check_button_2, timeout = 25.0)
+                fight_view2 = FightView()
+                await self.ctx.channel.send(f'<@{self.user2.id}> Giliranmu!', view=fight_view2)
+                res_2 = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel, timeout = 25.0)
 
-                match res_2.custom_id:
-                    case "attack":
-                        damage = self.attack(datas[1]['stats'], datas[0]['stats'], self.user2.id, user1_defending)
+                match res_2.content:
+                    case "Opsi terpilih: 💥Serang":
+                        damage = self.attack(datas[1]['stats'], datas[0]['stats'], self.user2.id, self.user1_defend)
                         embed = discord.Embed(title=f'💥{self.user2.display_name} Menyerang!', color=self.user2.color)
                         embed.description = f"**`{damage}` Damage!**\nHP <@{self.user1.id}> tersisa `{self.user1_hp}` HP!"
                         embed.set_thumbnail(url=self.user2.display_avatar.url)
                         await self.ctx.channel.send(embed=embed)
-                        if user1_defending:
-                            user1_defending = False
 
-                    case "defend":
-                        user2_defending = True
+                    case "Opsi terpilih: 🛡️Tahan":
+                        self.defend(self.user2)
                         embed = discord.Embed(title=f'🛡️{self.user2.display_name} Melindungi Diri!', color=self.user2.color)
                         embed.description = f"**Defense bertambah `+15` untuk serangan selanjutnya!**"
                         embed.set_thumbnail(url=self.user2.display_avatar.url)
                         await self.ctx.channel.send(embed=embed)
 
-                    case "end":
+                    case "":
                         await self.ctx.channel.send(f'⛔ <@{self.user2.id}>  Mengakhiri perang.')
                         return
 
@@ -195,16 +207,14 @@ class GameInstance():
                 choice = random.choice(['attack', 'defend'])
                 match choice:
                     case "attack":
-                        damage = self.attack(datas[1]['stats'], datas[0]['stats'], 1, user1_defending)
+                        damage = self.attack(datas[1]['stats'], datas[0]['stats'], 1, self.user1_defend)
                         embed = discord.Embed(title=f'💥{self.user2["name"]} Menyerang!', color=0xff0000)
                         embed.description = f"**`{damage}` Damage!**\nHP <@{self.user1.id}> tersisa `{self.user1_hp}` HP!"
                         # ADD EMBED THUMBNAIL
                         await self.ctx.channel.send(embed=embed)
-                        if user1_defending:
-                            user1_defending = False
 
                     case "defend":
-                        user2_defending = True
+                        self.defend(self.user2)
                         embed = discord.Embed(title=f'🛡️{self.user2["name"]} Melindungi Diri!', color=0xff0000)
                         embed.description = f"**Defense bertambah `+15` untuk serangan selanjutnya!**"
                         # ADD EMBED THUMBNAIL
