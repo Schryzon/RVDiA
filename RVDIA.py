@@ -20,7 +20,6 @@ from scripts.help_menu.help import Help
 from discord.ext import commands, tasks
 from random import choice as rand
 from contextlib import suppress
-# from scripts.suburl import SurblChecker, DomainInexistentException
 from scripts.main import connectdb, titlecase
 load_dotenv('./secrets.env') # Loads the .env file from python-dotenv pack
 
@@ -36,7 +35,7 @@ class RVDIA(commands.AutoShardedBot):
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "Evolution v1.0.0"
+    self.__version__ = "EVO v1.0.1"
     self.event_mode = True
     self.color = 0xff4df0
     self.runtime = time() # UNIX float
@@ -81,7 +80,7 @@ async def on_ready():
     
     if not rvdia.synced:
       synced_commands = await rvdia.tree.sync() # Global slash commands sync, also returns a list of commands.
-      await asyncio.sleep(1.2) # Avoid rate limit
+      await asyncio.sleep(1.5) # Avoid rate limit
       await rvdia.tree.sync(guild=discord.Object(997500206511833128)) # Wonder if it fixes with this??
       rvdia.synced = [True, len(synced_commands)]
       print('Slash Commands up for syncing!')
@@ -288,49 +287,12 @@ async def on_message(msg:discord.Message):
        )
        embed.add_field(
           name='Cara Pakai Commandnya Gimana Dong?',
-          value=f'RVDiA masih bisa membaca pesanmu ketika di mention dengan {rvdia.user.mention}. Jadi, sebagai alternatif dari prefix/awalan biasa, kamu bisa memakai mention!\nContoh: {rvdia.user.mention} help\n\nJangan lupa kalau command slash (awalan / ) bisa juga dipakai sebagai alternatif.',
+          value=f'RVDiA masih bisa membaca pesanmu ketika di mention dengan {rvdia.user.mention}. Jadi, sebagai alternatif dari prefix/awalan biasa, kamu bisa memakai mention!\nContoh: {rvdia.user.mention} help\nAkan tetapi, semua error berkaitan dengan command pesan tidak akan mengalami perbaikan karena alasan peralihan sistem prefix.\n\nJangan lupa kalau command slash (awalan / ) bisa juga dipakai sebagai alternatif.',
           inline=False
        )
        embed.set_thumbnail(url = rvdia.user.display_avatar.url)
        embed.set_footer(text='Pesan ini tidak akan muncul lagi sekitar 1 minggu dari 16 Juni 2023.\nTerima kasih karena telah setia menggunakan RVDiA!')
        await msg.reply(embed=embed)
-
-    # Chat command, I wanna make something cool here
-    if msg.content.lower().startswith('rvdia, '):
-        try:
-          async with msg.channel.typing():
-            openai.api_key = os.getenv('openaikey')
-            message = msg.content.lower().lstrip('rvdia,')
-            result = await openai.ChatCompletion.acreate(
-                model="gpt-3.5-turbo",
-                temperature=1.2,
-                messages=[
-                {"role":'system', 'content':os.getenv('rolesys')+f' You are currently talking to {msg.author}'},
-                {"role": "user", "content": message}
-                ]
-            )
-
-            if len(message) > 256:
-               message = message[:253] + '...' #Adding ... from 253rd character, ignoring other characters.
-
-            embed = discord.Embed(
-              title=' '.join((titlecase(word) for word in message.split(' '))), 
-              color=msg.author.color, 
-              timestamp=msg.created_at
-              )
-            embed.description = result['choices'][0]['message']['content']
-            embed.set_author(name=msg.author)
-            embed.set_footer(text='Jika ada yang ingin ditanyakan, bisa langsung direply!')
-          await msg.channel.send(embed=embed)
-          return
-        
-        except Exception as e:
-           if "currently overloaded with other requests." in str(e):
-              return await msg.channel.send('Maaf, fitur ini sedang dalam gangguan. Mohon dicoba nanti!')
-           await msg.channel.send('Ada yang bermasalah dengan fitur ini, aku sudah mengirimkan laporan ke developer!')
-           channel = rvdia.get_channel(906123251997089792)
-           await channel.send(f'`{e}` Untuk fitur GPT-3.5 Turbo!')
-           print(e)
 
     if msg.reference:
         try:
@@ -432,22 +394,6 @@ async def on_message(msg:discord.Message):
            channel = rvdia.get_channel(906123251997089792)
            await channel.send(f'`{e}` Untuk fitur balasan GPT-3.5 Turbo!')
            print(e)
-
-    # Took me 2 hours to figure this out. [DISABLED FEATURE]
-    """
-    website_prefixes = ['http://', 'https://', 'www.']
-    if any(msg.content.startswith(prefix) for prefix in website_prefixes):
-      checker = SurblChecker()
-      with suppress(DomainInexistentException):
-        check = checker.is_spam(msg.content)
-        if check is True:
-          try:
-            await msg.delete()
-            await msg.channel.send(f'{msg.author.mention} Spam website terdeteksi. Apabila ini sebuah kesalahan, mohon beri tahu pembuat bot.')
-
-          except discord.Forbidden:
-             return
-    """
 
 # Didn't know I'd use this, but pretty coolio
 if __name__ == "__main__":

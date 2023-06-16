@@ -12,7 +12,7 @@ from scripts.main import heading, Url_Buttons, has_pfp
 from discord import app_commands
 from discord.ext import commands
 from discord.ui import View, Button
-from scripts.main import client, connectdb, check_blacklist, event_available, titlecase
+from scripts.main import client, check_blacklist, event_available, titlecase
 from time import time
 from PIL import Image
 from io import BytesIO
@@ -106,7 +106,7 @@ class General(commands.Cog):
         embed.add_field(name = "Nyala Sejak", value = f"<t:{round(self.bot.runtime)}>\n(<t:{round(self.bot.runtime)}:R>)", inline = False)
         embed.add_field(name = "Jumlah Server", value = f"{len(self.bot.guilds)} Server")
         embed.add_field(name = "Jumlah Pengguna", value = f"{m} Pengguna")
-        embed.add_field(name = "Jumlah Command", value = f"Normal: `{len(self.bot.commands)}`\nSlash: `{self.bot.synced[1]}`", inline=False)
+        embed.add_field(name = "Jumlah Command", value = f"Semua: `{len(self.bot.commands)}`\nGlobal: `{self.bot.synced[1]}`", inline=False)
         embed.set_footer(text="Jangan lupa tambahkan aku ke servermu! ❤️")
         await ctx.send(embed=embed, view=Url_Buttons())
     

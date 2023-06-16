@@ -5,7 +5,6 @@ Do all of these even make sense???
 """
 
 import asyncio
-from typing import Optional
 import discord
 import datetime
 import time
@@ -126,11 +125,6 @@ class GameInstance():
         else:
             self.user2_defend = True
     
-    """def check_button_1(self, interaction:discord.Interaction, button:Button):
-        return interaction.user == self.user1 and interaction.message.channel == self.ctx.channel
-    
-    def check_button_2(self, interaction:discord.Interaction, button:Button):
-        return interaction.user == self.user2 and interaction.message.channel == self.ctx.channel"""
 
     async def start(self):
         # Start -> Create Thread -> While loop (this is for later zzz)
@@ -145,7 +139,7 @@ class GameInstance():
         while self.user1_hp > 0 and self.user2_hp > 0:
             fight_view1 = FightView()
             await self.ctx.channel.send(f'<@{self.user1.id}> Giliranmu!', view=fight_view1)
-            res_1 = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel, timeout = 25.0) # Detect a message from RVDiA
+            res_1 = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and r.content.startswith('Opsi terpilih: '), timeout = 25.0) # Detect a message from RVDiA
 
             match res_1.content:
                 case "Opsi terpilih: 💥Serang":

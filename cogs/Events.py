@@ -1,8 +1,6 @@
 import discord
-import random
 from discord.ext import commands
 from datetime import datetime
-from scripts.main import connectdb
 
 class Events(commands.Cog):
     """

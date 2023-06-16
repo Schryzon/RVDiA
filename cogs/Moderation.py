@@ -5,7 +5,7 @@ I don't think this will hold up
 """
 
 import discord
-from discord import NotFound, app_commands
+from discord import app_commands
 from scripts.main import check_blacklist, connectdb
 from os import getenv
 from discord.ext import commands
@@ -132,6 +132,8 @@ class Moderation(commands.Cog):
             embed = discord.Embed(title=f'Daftar Invite {ctx.guild.name}', color=ctx.author.color, timestamp=ctx.message.created_at)
             embed.set_thumbnail(url=ctx.guild.icon.url)
             embed.description = '\n'.join(invite_list)
+            if embed.description == '\n' or None:
+                return await ctx.reply("Sepertinya server ini belum membuat invite apapun!")
             await ctx.reply(embed=embed)
 
         except AttributeError:
