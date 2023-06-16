@@ -32,7 +32,7 @@ class FightView(View):
         await asyncio.sleep(0.5)
 
     @button(label='Kabur', custom_id='end', style=discord.ButtonStyle.gray, emoji='🏃')
-    async def defend(self, interaction:discord.Interaction, button:Button):
+    async def flee(self, interaction:discord.Interaction, button:Button):
         await interaction.response.send_message("Opsi terpilih: 🏃Kabur")
         await asyncio.sleep(0.5)
 
@@ -87,7 +87,7 @@ class GameInstance():
         return [comp_data1, comp_data2] # List containing dict, feeling stressful
 
 
-    def attack(self, dealer_stat:list, taker_stat:list, dealer_id:id, is_defending:bool):
+    def attack(self, dealer_stat:list, taker_stat:list, dealer_id:int, is_defending:bool):
         user_1_atk, user_1_def, user_1_agl = dealer_stat[0], dealer_stat[1], dealer_stat[2]
         user_2_atk, user_2_def, user_2_agl = taker_stat[0], taker_stat[1], taker_stat[2]
 
@@ -99,12 +99,15 @@ class GameInstance():
         hit_chance = 100 - miss_chance
         attack_chance = random.randint(0, 100)
 
-        if dealer_id == self.user1.id and is_defending:
-            self.user2_defend = False
-        elif dealer_id == self.user2.id and is_defending:
-            self.user1_defend = False
-        elif dealer_id == 1 and is_defending:
-            self.user1_defend = False
+        try:
+            if dealer_id == self.user1.id and is_defending:
+                self.user2_defend = False
+            elif dealer_id == self.user2.id and is_defending:
+                self.user1_defend = False
+            
+        except:
+            if dealer_id == 1 and is_defending:
+                self.user1_defend = False
 
         if hit_chance >= attack_chance:
             if dealer_id == self.user1.id: # Might work
