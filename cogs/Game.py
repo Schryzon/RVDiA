@@ -5,6 +5,7 @@ Do all of these even make sense???
 """
 
 import asyncio
+from typing import Optional
 import discord
 import datetime
 import time
@@ -15,6 +16,25 @@ from discord.ui import View, Button, button
 from discord import app_commands
 from discord.ext import commands
 from scripts.main import connectdb, check_blacklist, has_registered, level_up, send_level_up_msg
+
+class FightView(View):
+    def __init__(self):
+        super().__init__(timeout=25.0)
+
+    @button(label = 'Serang', custom_id='attack', style=discord.ButtonStyle.danger, emoji='💥')
+    async def attack(self, interaction:discord.Interaction, button:Button):
+        await interaction.response.send_message("Opsi terpilih: 💥Serang")
+        await asyncio.sleep(0.5)
+
+    @button(label='Tahan', custom_id='defend', style=discord.ButtonStyle.blurple, emoji='🛡️')
+    async def defend(self, interaction:discord.Interaction, button:Button):
+        await interaction.response.send_message("Opsi terpilih: 🛡️Tahan")
+        await asyncio.sleep(0.5)
+
+    @button(label='Kabur', custom_id='end', style=discord.ButtonStyle.gray, emoji='🏃')
+    async def defend(self, interaction:discord.Interaction, button:Button):
+        await interaction.response.send_message("Opsi terpilih: 🏃Kabur")
+        await asyncio.sleep(0.5)
 
 class GameInstance():
     def __init__(self, ctx:commands.Context, user1:discord.Member, user2, bot):
@@ -89,6 +109,11 @@ class GameInstance():
             return 0
 
     
+    def check_button_1(self, interaction:discord.Interaction, button:Button):
+        return interaction.user == self.user1 and interaction.message.channel == self.ctx.channel
+    
+    def check_button_2(self, interaction:discord.Interaction, button:Button):
+        return interaction.user == self.user2 and interaction.message.channel == self.ctx.channel
 
     async def start(self):
         # Start -> Create Thread -> While loop (this is for later zzz)
@@ -97,14 +122,15 @@ class GameInstance():
         datas = await self.gather_data()
         await self.ctx.reply('⚔️ Perang dimulai!') # I'll just use this for now
         await asyncio.sleep(2.7)
+        fight_view = FightView()
 
         user1_defending = False
         user2_defending = False
         while self.user1_hp > 0 and self.user2_hp > 0:
-            await self.ctx.channel.send(f'<@{self.user1.id}> Giliranmu, ketik `attack`, `defend`, atau `end` di chat!')
-            res_1 = await self.bot.wait_for('message', check = lambda r: r.author == self.user1 and r.channel == self.ctx.channel, timeout = 25.0) # Capekkkkk
+            await self.ctx.channel.send(f'<@{self.user1.id}> Giliranmu!', view=FightView())
+            res_1 = await self.bot.wait_for('button_click', check = self.check_button_1, timeout = 25.0) # Capekkkkk
 
-            match res_1.content.lower():
+            match res_1.custom_id:
                 case "attack":
                     damage = self.attack(datas[0]['stats'], datas[1]['stats'], self.user1.id, user2_defending)
                     embed = discord.Embed(title=f'💥{self.user1.display_name} Menyerang!', color=self.user1.color)
@@ -138,10 +164,10 @@ class GameInstance():
             await asyncio.sleep(2.5)
 
             if isinstance(self.user2, discord.Member):
-                await self.ctx.channel.send(f'<@{self.user2.id}> Giliranmu, ketik `attack`, `defend`, atau `end` di chat!')
-                res_2 = await self.bot.wait_for('message', check = lambda r: r.author == self.user2 and r.channel == self.ctx.channel, timeout = 25.0)
+                await self.ctx.channel.send(f'<@{self.user2.id}> Giliranmu!', view=FightView())
+                res_2 = await self.bot.wait_for('button_click', check = self.check_button_2, timeout = 25.0)
 
-                match res_2.content.lower():
+                match res_2.custom_id:
                     case "attack":
                         damage = self.attack(datas[1]['stats'], datas[0]['stats'], self.user2.id, user1_defending)
                         embed = discord.Embed(title=f'💥{self.user2.display_name} Menyerang!', color=self.user2.color)
@@ -210,6 +236,8 @@ class GameInstance():
                 await self.ctx.channel.send(embed=embed)
 
         return
+    
+
     
 def guess_level_convert(level:str):
     """
