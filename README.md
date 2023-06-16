@@ -41,6 +41,8 @@ Join [CyroN Central server](https://discord.gg/QqWCnk6zxw) di Discord dan hubung
 ### Credits
 Terima kasih terutama untuk Riverdia (atas inspirasi nama bot), iMaze, Mouchi, Dez, Zenchew, Ismita, Pockii, Kyuu, Kazama, Bcntt, Nateflakes, nathawiguna, opensourze, Shiruto, Satya Yoga dan masih banyak lagi karena telah membantu saya pada proyek-proyek sebelumnya!
 
+Note: I do not own the rights to the arts of RVDiA (Haruna Sakurai). Though, I will change them once requested by the owner(s).
+
 **Made with ❤️ and dedication, Jayananda**
 
 Farewell, Yuyuko, Pandora, and Historia. You will be missed.
