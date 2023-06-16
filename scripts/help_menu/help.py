@@ -419,7 +419,7 @@ class Help(HelpCommand, commands.Cog):
         """Returns help command's ending note. This is mainly useful to override for i18n purposes."""
         note = self.ending_note or (
             'Ketik "{help.clean_prefix}{help.invoked_with} (command)" untuk info command mendetail.\n'
-            'Ketik "{help.clean_prefix}{help.invoked_with} (kategori)" untuk melihat info kategori.'
+            'Ketik "{help.clean_prefix}{help.invoked_with} (group)" untuk melihat info kategori/group.'
         )
         return note.format(
             ctx=self.context,

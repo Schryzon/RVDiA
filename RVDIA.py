@@ -20,42 +20,13 @@ from scripts.help_menu.help import Help
 from discord.ext import commands, tasks
 from random import choice as rand
 from contextlib import suppress
-from scripts.suburl import SurblChecker, DomainInexistentException
+# from scripts.suburl import SurblChecker, DomainInexistentException
 from scripts.main import connectdb, titlecase
 load_dotenv('./secrets.env') # Loads the .env file from python-dotenv pack
 
-
-def get_prefix(client, message):
-  """
-  Gain prefix from database
-  """
-  try:
-    database = connectdb('Prefixes')
-    data = database.find_one({'_id': message.guild.id})
-    if data is None:
-      database.insert_one(({'_id':message.guild.id, 'prefix':['R-', 'r-', 'rvd ', 'Rvd ', 'RVD ']}))
-      new = database.find_one({'_id': message.guild.id})
-      return new['prefix']
-    else:
-      return data['prefix']
-  except:
-    return ['R-', 'r-', 'rvd ', 'Rvd ', 'RVD ']
-
-def when_mentioned_or_function(func):
-    """
-    Add @RVDIA as a prefix, along with the obtained prefixes from DB.
-    """
-    def inner(bot, message):
-        prefix = func(bot, message)
-        if isinstance(prefix, str):
-           prefix = [prefix]
-        prefix = commands.when_mentioned(bot, message) + prefix
-        return prefix
-    return inner
-
 # Setting up bot privileged intents (there might be a simpler way)
 bot_intents = discord.Intents.default()
-bot_intents.message_content = True
+bot_intents.message_content = True # Bye bye soon
 
 class RVDIA(commands.AutoShardedBot):
   """
@@ -65,14 +36,14 @@ class RVDIA(commands.AutoShardedBot):
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "公式 [Official] v1.1.8"
+    self.__version__ = "公式 [Official] v1.1.9"
     self.event_mode = True
     self.color = 0xff4df0
     self.runtime = time() # UNIX float
 
     super().__init__(
       # command_prefix=commands.when_mentioned(), Maybe start on the 20th
-      command_prefix=when_mentioned_or_function(get_prefix), 
+      command_prefix=commands.when_mentioned(), 
       case_insensitive=True, 
       strip_after_prefix=False, 
       intents=bot_intents,
@@ -124,17 +95,17 @@ async def on_ready():
 
     print("RVDIA is ready.")
 
-@tasks.loop(minutes=3)
+@tasks.loop(minutes=5)
 async def change_status():
   """
-  Looping status, rate = 1 minute
+  Looping status, rate = 5 minute
   """
   is_event = 'Event mode ON!' if rvdia.event_mode == True else 'Standard mode'
   users = 0
   for guilds in rvdia.guilds:
     users += guilds.member_count -1
   user_count_status = f'{users} users'
-  all_status=['in my room', 'in G-Tech Server', '"How to be a cutie"', 'you', 'r-help', 'G-Tech members',
+  all_status=['in my room', 'in G-Tech Server', '"How to be a cutie"', 'you', 'G-Tech members',
                   'Ephotech 2023', user_count_status, 'with Schryzon', f'{rvdia.__version__}',
                   '/help', 'What should I do today?', 'Add me!', is_event, 'Ongeki!bright Memory', '~♪',
                   'Re:Volution'
@@ -151,7 +122,7 @@ async def change_status():
     type = discord.Game(status)
   await rvdia.change_presence(status = discord.Status.idle, activity=type)
 
-@tasks.loop(minutes=20)
+@tasks.loop(hours=1)
 async def update_guild_status():
     """
     Sends data regarding shard and server count to Top.gg
@@ -291,6 +262,8 @@ async def whitelist(ctx:commands.Context, user:discord.User):
    blacklisted.find_one_and_delete({'_id':user.id})
    await ctx.reply(f'`{user}` telah diwhitelist!')
 
+old_prefixes = ['r-', 'rvd']
+
 @rvdia.event
 async def on_message(msg:discord.Message):
     if not msg.guild:
@@ -301,8 +274,27 @@ async def on_message(msg:discord.Message):
     if msg.author.bot == True:
         return
     
-    if msg.content == "RVDIA":
-        await msg.reply(f"Haii, {msg.author.name}! Silahkan tambahkan prefix-ku untuk menggunakan command!")
+    if any(msg.content.lower().startswith(prefix) for prefix in old_prefixes):
+       embed = discord.Embed(title='Pembaruan Sistem Prefix', color=0xff0000)
+       embed.description = "Sepertinya kamu telah menggunakan awalan semula RVDiA.\nMohon maaf atas ketidaknyamanannya. RVDiA telah mengalami pembaruan sesuai dengan ketentuan Discord mengenai `Message Content Data Access`."
+       embed.add_field(
+          name='Maksudnya Gimana Tuh?',
+          value='Jadi, dari tanggal 16 Juni 2023, Schryzon (pencipta RVDiA) telah menentukan rencananya untuk mempersiapkan RVDiA untuk verifikasi.\nSalah satu metode yang kurang beresiko untuk menjalankan hal tersebut yakni dengan mematikan akses data RVDiA dalam hal membaca isi pesan.',
+          inline=False
+       )
+       embed.add_field(
+          name='Lah Kok Gitu?',
+          value='Karena Schryzon tidak ingin repot dalam memverifikasi RVDiA (simpelnya yah). Jika akses data ke pesan terus dinyalakan, maka Schryzon harus juga meminta persetujuan dari pihak Discord untuk __whitelist__ RVDiA agar bisa terus membaca isi pesan dari pengguna.',
+          inline=False
+       )
+       embed.add_field(
+          name='Cara Pakai Commandnya Gimana Dong?',
+          value=f'RVDiA masih bisa membaca pesanmu ketika di mention dengan {rvdia.user.mention}. Jadi, sebagai alternatif dari prefix/awalan biasa, kamu bisa memakai mention!\nContoh: {rvdia.user.mention} help\n\nJangan lupa kalau command slash (awalan / ) bisa juga dipakai sebagai alternatif.',
+          inline=False
+       )
+       embed.set_thumbnail(url = rvdia.user.display_avatar.url)
+       embed.set_footer(text='Pesan ini tidak akan muncul lagi sekitar 1 minggu dari 16 Juni 2023.\nTerima kasih karena telah setia menggunakan RVDiA!')
+       await msg.reply(embed=embed)
 
     # Chat command, I wanna make something cool here
     if msg.content.lower().startswith('rvdia, '):
@@ -442,7 +434,8 @@ async def on_message(msg:discord.Message):
            await channel.send(f'`{e}` Untuk fitur balasan GPT-3.5 Turbo!')
            print(e)
 
-    # Took me 2 hours to figure this out.
+    # Took me 2 hours to figure this out. [DISABLED FEATURE]
+    """
     website_prefixes = ['http://', 'https://', 'www.']
     if any(msg.content.startswith(prefix) for prefix in website_prefixes):
       checker = SurblChecker()
@@ -455,6 +448,7 @@ async def on_message(msg:discord.Message):
 
           except discord.Forbidden:
              return
+    """
 
 # Didn't know I'd use this, but pretty coolio
 if __name__ == "__main__":

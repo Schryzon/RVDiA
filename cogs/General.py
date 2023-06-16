@@ -70,6 +70,9 @@ class General(commands.Cog):
         )
     @check_blacklist()
     async def say(self, ctx:commands.Context, attachment:discord.Attachment=None, *, teks:str=None):
+        """
+        Mengulangi apapun yang kamu katakan!
+        """
         if attachment:
             await attachment.save(attachment.filename)
             file = discord.File(attachment.filename)
@@ -89,12 +92,6 @@ class General(commands.Cog):
         """
         Memperlihatkan segalanya tentang aku!
         """
-        database = connectdb('Prefixes')
-        prefix = database.find_one({'_id': ctx.guild.id})
-        if prefix is None:
-            prefix = ['@RVDIA', 'r-', 'rvd ']
-        else:
-            prefix = prefix['prefix']
         m = 0
         for k in self.bot.guilds:
             m += k.member_count -1
@@ -104,7 +101,7 @@ class General(commands.Cog):
         embed.add_field(name = "Versi", value = f"{self.bot.__version__}", inline=False)
         embed.add_field(name = "Mode", value = f"Event Mode" if self.bot.event_mode else "Standard Mode", inline=False)
         embed.add_field(name = "Pencipta", value = f"<@877008612021661726> (Jayananda)", inline=False)
-        embed.add_field(name = "Prefix", value = '@RVDIA | '+f" | ".join(prefix)+f' | / (slash)')
+        embed.add_field(name = "Prefix", value = '@RVDIA | / (slash)')
         embed.add_field(name = "Bahasa Pemrograman", value=f"Python ({pyver[:6]})\ndiscord.py ({discord.__version__})", inline=False)
         embed.add_field(name = "Nyala Sejak", value = f"<t:{round(self.bot.runtime)}>\n(<t:{round(self.bot.runtime)}:R>)", inline = False)
         embed.add_field(name = "Jumlah Server", value = f"{len(self.bot.guilds)} Server")
@@ -131,30 +128,6 @@ class General(commands.Cog):
         embed= discord.Embed(title= "Ping--Pong!", color=0x964b00, timestamp=ctx.message.created_at)
         embed.description = f"**Discord API:** `{round(self.bot.latency*1000)} ms`\n**MongoDB:** `{mongoping}`"
         await ctx.reply(embed=embed)
-
-    @rvdia_command.command(name='prefix', description='Ganti prefix dari RVDIA.', aliases=['changeprefix'])
-    @app_commands.describe(prefix='Mau diganti awalan command jadi apa?')
-    @commands.has_permissions(manage_guild=True)
-    @check_blacklist()
-    async def prefix(self, ctx:commands.Context, *, prefix:str):
-        """
-        Ganti message prefix RVDIA.
-        """
-        current_prefix = connectdb('Prefixes')
-        check_prefix = current_prefix.find_one({'_id': ctx.guild.id})
-
-        if check_prefix is None:
-            current_prefix.insert_one({'_id':ctx.guild.id, 'prefix':prefix})
-
-        else:
-            reset_prefix = ['restart', 'reset', 'return']
-            if any(prefix.lower() == reset for reset in reset_prefix):
-                current_prefix.find_one_and_update({'_id':ctx.guild.id}, {'$set':{'prefix':['r-', 'R-', 'rvd ', 'Rvd ', 'RVD ']}})
-                return await ctx.reply('Prefix telah kembali seperti semula!')
-            else:
-                current_prefix.find_one_and_update({'_id':ctx.guild.id}, {'$set':{'prefix':prefix}})
-
-        await ctx.reply(f'Message prefix telah diganti ke **`{prefix}`**\nUntuk mengembalikan prefix seperti semula, `{prefix}rvdia prefix reset`')
 
     @rvdia_command.command(description = 'Memperlihatkan informasi event yang berlangsung.')
     @check_blacklist()

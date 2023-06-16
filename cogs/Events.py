@@ -28,11 +28,6 @@ class Events(commands.Cog):
         embed.add_field(name='Members', value=guild.member_count, inline=False)
         embed.add_field(name='ID', value=guild.id, inline=False)
         await channel.send(embed=embed)
-        database = connectdb('Prefixes')
-        try:
-            database.find_one_and_delete({'_id': guild.id})
-        except:
-            return
 
     
 async def setup(bot):
