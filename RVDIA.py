@@ -42,8 +42,7 @@ class RVDIA(commands.AutoShardedBot):
     self.runtime = time() # UNIX float
 
     super().__init__(
-      # command_prefix=commands.when_mentioned(), Maybe start on the 20th
-      command_prefix=commands.when_mentioned(), 
+      command_prefix=commands.when_mentioned, 
       case_insensitive=True, 
       strip_after_prefix=False, 
       intents=bot_intents,
@@ -274,7 +273,7 @@ async def on_message(msg:discord.Message):
     if msg.author.bot == True:
         return
     
-    if any(msg.content.lower().startswith(prefix) for prefix in old_prefixes):
+    if any(prefix in msg.content.lower() for prefix in old_prefixes):
        embed = discord.Embed(title='Pembaruan Sistem Prefix', color=0xff0000)
        embed.description = "Sepertinya kamu telah menggunakan awalan semula RVDiA.\nMohon maaf atas ketidaknyamanannya. RVDiA telah mengalami pembaruan sesuai dengan ketentuan Discord mengenai `Message Content Data Access`."
        embed.add_field(
