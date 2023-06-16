@@ -18,9 +18,8 @@ from discord.ext import commands
 from scripts.main import connectdb, check_blacklist, has_registered, level_up, send_level_up_msg
 
 class FightView(View):
-    def __init__(self, instance):
+    def __init__(self):
         super().__init__(timeout=25.0)
-        self.instance = instance
 
     @button(label = 'Serang', custom_id='attack', style=discord.ButtonStyle.danger, emoji='💥')
     async def attack(self, interaction:discord.Interaction, button:Button):
