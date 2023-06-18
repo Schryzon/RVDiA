@@ -269,6 +269,7 @@ class AI():
         self.defend_mood = 0
         self.escape_mood = 0
         self.traits = [self.attack_mood, self.defend_mood, self.escape_mood]
+        self.actions = ["attack", "defend", "run"]
     
     async def decide(self):
         datas = await self.instance.gather_data()
@@ -307,19 +308,11 @@ class AI():
 
         sorted_traits = sorted(self.traits, reverse=True)
         if sorted_traits[0] == sorted_traits[1]:
-            action = random.choice(self.traits)
+            action = random.choice(self.actions)
         else:
-            action = random.choice(sorted_traits)
+            action = random.choice([action for trait, action in zip(self.traits, self.actions) if trait == sorted_traits[0]])
 
-        match action:
-            case self.attack_mood:
-                return "attack"
-            case self.defend_mood:
-                return "defend"
-            case self.escape_mood:
-                return "run"
-            case _:
-                return "defend"
+        return action
     
 def guess_level_convert(level:str):
     """
