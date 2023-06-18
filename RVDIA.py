@@ -260,7 +260,7 @@ async def whitelist(ctx:commands.Context, user:discord.User):
    blacklisted.find_one_and_delete({'_id':user.id})
    await ctx.reply(f'`{user}` telah diwhitelist!')
 
-old_prefixes = ['r-', 'rvd']
+old_prefixes = ['r-', 'rvd ']
 
 @rvdia.event
 async def on_message(msg:discord.Message):
