@@ -200,7 +200,8 @@ class GameInstance():
                         await self.ctx.channel.send("Opsi tidak valid, giliran dilewatkan.")
 
             else:
-                choice = random.choice(['attack', 'defend'])
+                ai = AI(self)
+                choice = await ai.decide()
                 match choice:
                     case "attack":
                         damage = self.attack(datas[1]['stats'], datas[0]['stats'], 1, self.user1_defend)
@@ -213,6 +214,12 @@ class GameInstance():
                         self.defend(self.user2)
                         embed = discord.Embed(title=f'🛡️{self.user2["name"]} Melindungi Diri!', color=0xff0000)
                         embed.description = f"**Defense bertambah `+15` untuk serangan selanjutnya!**"
+                        # ADD EMBED THUMBNAIL
+                        await self.ctx.channel.send(embed=embed)
+
+                    case "run":
+                        embed = discord.Embed(title=f'🏃{self.user2["name"]} Kabur!', color=0xff0000)
+                        embed.description = f"**Sayang sekali!\nCoba lagi nanti!**"
                         # ADD EMBED THUMBNAIL
                         await self.ctx.channel.send(embed=embed)
 
@@ -243,7 +250,76 @@ class GameInstance():
 
         return
     
+class AI():
+    """
+    Generic AI class for fight & battle commands
+    Using mood system cause it's the best one I could think of
+    So yeah, like, share, and subscribe
+    """
+    # TO DO: HANDLE SPELLS & ITEMS
+    def __init__(self, instance:GameInstance) -> None:
+        self.instance = instance
+        self.user1 = instance.user1
+        self.user2 = instance.user2
+        self.user1_hp = instance.user1_hp
+        self.user2_hp = instance.user2_hp
+        self.user1_defend = instance.user1_defend
+        self.user2_defend = instance.user2_defend
+        self.attack_mood = 0
+        self.defend_mood = 0
+        self.escape_mood = 0
+        self.traits = [self.attack_mood, self.defend_mood, self.escape_mood]
+    
+    async def decide(self):
+        datas = await self.instance.gather_data()
+        user1_stats = datas[0]['stats']
+        user2_stats = datas[1]['stats']
+        user_1_atk, user_1_def, user_1_agl = user1_stats[0], user1_stats[1], user1_stats[2]
+        user_2_atk, user_2_def, user_2_agl = user2_stats[0], user2_stats[1], user2_stats[2]
 
+        if self.user1_hp > self.user2_hp:
+            self.attack_mood += 10
+            self.defend_mood += 25
+            self.escape_mood += 15
+            if self.user1_defend:
+                self.defend_mood += 10
+                self.escape_mood += 8
+        else:
+            self.attack_mood += 30
+            self.defend_mood += 7
+            self.escape_mood += 5
+            if self.user2_defend:
+                self.attack_mood += 10
+        
+        if user_1_atk >= user_2_def:
+            self.defend_mood += 15
+            self.escape_mood += 10
+
+        else:
+            self.defend_mood += 10
+            self.attack_mood += 10
+
+        if user_2_agl >= user_1_agl:
+            self.escape_mood += 5
+        
+        else:
+            self.escape_mood += 15
+
+        sorted_traits = sorted(self.traits, reverse=True)
+        if sorted_traits[0] == sorted_traits[1]:
+            action = random.choice(self.traits)
+        else:
+            action = random.choice(sorted_traits)
+
+        match action:
+            case self.attack_mood:
+                return "attack"
+            case self.defend_mood:
+                return "defend"
+            case self.escape_mood:
+                return "run"
+            case _:
+                return "defend"
     
 def guess_level_convert(level:str):
     """
