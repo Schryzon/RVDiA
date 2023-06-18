@@ -139,7 +139,12 @@ class GameInstance():
         while self.user1_hp > 0 and self.user2_hp > 0:
             fight_view1 = FightView()
             await self.ctx.channel.send(f'<@{self.user1.id}> Giliranmu!', view=fight_view1)
-            res_1 = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and r.content.startswith('Opsi terpilih: '), timeout = 25.0) # Detect a message from RVDiA
+
+            try:
+                res_1 = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and r.content.startswith('Opsi terpilih: '), timeout = 25.0) # Detect a message from RVDiA
+
+            except asyncio.TimeoutError:
+                return await self.ctx.channel.send(f"🏃{self.user1.mention} kabur dari perang!")
 
             match res_1.content:
                 case "Opsi terpilih: 💥Serang":
@@ -160,11 +165,11 @@ class GameInstance():
                     await self.ctx.channel.send(embed=embed)
 
                 case "Opsi terpilih: 🏃Kabur":
-                    await self.ctx.channel.send(f'⛔ <@{self.user1.id}>  Mengakhiri perang.')
+                    await self.ctx.channel.send(f'⛔ <@{self.user1.id}>  mengakhiri perang.')
                     return
 
                 case _:
-                    await self.ctx.channel.send("Opsi tidak valid, giliran dilewatkan.")
+                    await self.ctx.channel.send("Opsi tidak valid, giliran dilewatkan.") # This was actually possible, now it's an easter egg!
 
             if self.user2_hp <= 0:
                 await asyncio.sleep(2.5)
@@ -175,8 +180,13 @@ class GameInstance():
             if isinstance(self.user2, discord.Member):
                 fight_view2 = FightView()
                 await self.ctx.channel.send(f'<@{self.user2.id}> Giliranmu!', view=fight_view2)
-                res_2 = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel, timeout = 25.0)
 
+                try:
+                    res_2 = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel, timeout = 25.0)
+
+                except asyncio.TimeoutError:
+                    return await self.ctx.channel.send(f"🏃{self.user2.mention} kabur dari perang!")
+            
                 match res_2.content:
                     case "Opsi terpilih: 💥Serang":
                         damage = self.attack(datas[1]['stats'], datas[0]['stats'], self.user2.id, self.user1_defend)
@@ -193,7 +203,7 @@ class GameInstance():
                         await self.ctx.channel.send(embed=embed)
 
                     case "":
-                        await self.ctx.channel.send(f'⛔ <@{self.user2.id}>  Mengakhiri perang.')
+                        await self.ctx.channel.send(f'⛔ <@{self.user2.id}>  mengakhiri perang.')
                         return
 
                     case _:
@@ -221,7 +231,7 @@ class GameInstance():
                         embed = discord.Embed(title=f'🏃{self.user2["name"]} Kabur!', color=0xff0000)
                         embed.description = f"**Sayang sekali!\nCoba lagi nanti!**"
                         # ADD EMBED THUMBNAIL
-                        await self.ctx.channel.send(embed=embed)
+                        return await self.ctx.channel.send(embed=embed)
 
 
             await asyncio.sleep(2.5)
