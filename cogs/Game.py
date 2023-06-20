@@ -305,18 +305,17 @@ class AI():
         if self.user1_hp > self.user2_hp:
             self.attack_mood += 12
             self.defend_mood += 14
-            self.escape_mood += 10
+            self.escape_mood += 6
             if self.user1_defend:
                 self.defend_mood += 8
-                self.escape_mood += 6
 
             if self.user2_defend:
                 self.defend_mood += 8
+                self.attack_mood += 7
 
         else:
             self.attack_mood += 20
             self.defend_mood += 10
-            self.escape_mood += 5
             if self.user2_defend:
                 self.attack_mood += 8
 
@@ -324,8 +323,9 @@ class AI():
                 self.defend_mood += 8
 
         if user_1_atk >= user_2_def:
+            self.attack_mood += 5
             self.defend_mood += 12
-            self.escape_mood += 4
+            self.escape_mood += 3
 
         else:
             self.defend_mood += 6
@@ -343,11 +343,11 @@ class AI():
             case "SUPER BOSS":
                 self.escape_mood = 0
             case "BOSS":
-                self.escape_mood = 1
+                self.escape_mood = 0
             case "SUPER HIGH":
                 self.escape_mood = 5
             case "HIGH":
-                self.escape_mood = 10
+                self.escape_mood = 7
 
         sorted_traits = sorted(self.traits, reverse=True)
         if random.random() < 0.2:
