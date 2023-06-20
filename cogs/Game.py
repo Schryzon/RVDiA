@@ -350,7 +350,7 @@ class AI():
                 self.escape_mood = 7
 
         sorted_traits = sorted(self.traits, reverse=True)
-        if random.random() < 0.2:
+        if random.random() < 0.1:
             action = random.choice(self.actions)
         else:
             action = random.choice([action for trait, action in zip(self.traits, self.actions) if trait == sorted_traits[0]])
