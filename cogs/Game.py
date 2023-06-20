@@ -22,16 +22,22 @@ class FightView(View):
 
     @button(label = 'Serang', custom_id='attack', style=discord.ButtonStyle.danger, emoji='💥')
     async def attack(self, interaction:discord.Interaction, button:Button):
+        if interaction.message.mentions[0] != interaction.user:
+            return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
         await interaction.response.send_message("Opsi terpilih: 💥Serang")
         await asyncio.sleep(0.5)
 
     @button(label='Tahan', custom_id='defend', style=discord.ButtonStyle.blurple, emoji='🛡️')
     async def defend(self, interaction:discord.Interaction, button:Button):
+        if interaction.message.mentions[0] != interaction.user:
+            return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
         await interaction.response.send_message("Opsi terpilih: 🛡️Tahan")
         await asyncio.sleep(0.5)
 
     @button(label='Kabur', custom_id='end', style=discord.ButtonStyle.gray, emoji='🏃')
     async def flee(self, interaction:discord.Interaction, button:Button):
+        if interaction.message.mentions[0] != interaction.user:
+            return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
         await interaction.response.send_message("Opsi terpilih: 🏃Kabur")
         await asyncio.sleep(0.5)
 
@@ -86,14 +92,18 @@ class GameInstance():
         return [comp_data1, comp_data2] # List containing dict, feeling stressful
 
 
-    def attack(self, dealer_stat:list, taker_stat:list, dealer_id:int, is_defending:bool):
+    async def attack(self, dealer_stat:list, taker_stat:list, dealer_id:int, is_defending:bool):
+        datas = await self.gather_data() # Only needing second user's HP
+        user_2_max_hp = datas[1]['hp']
         user_1_atk, user_1_def, user_1_agl = dealer_stat[0], dealer_stat[1], dealer_stat[2]
         user_2_atk, user_2_def, user_2_agl = taker_stat[0], taker_stat[1], taker_stat[2]
 
         if is_defending:
             user_2_def += 15
-
-        damage = round(max(0, user_1_atk*(random.randint(70, 100) - user_2_def)/100))
+        if dealer_id != 1:
+            damage = round(max(0, user_1_atk*(random.randint(90, 100) - user_2_def)/user_2_max_hp))
+        else:
+            damage = round(max(0, user_1_atk*(random.randint(90, 100) - user_2_def)/100))
         miss_chance = (user_2_agl - user_1_agl)*2 + 5
         hit_chance = 100 - miss_chance
         attack_chance = random.randint(0, 100)
@@ -131,7 +141,8 @@ class GameInstance():
         # How do I check if other game instances are runnin tho
         self.running = True
         datas = await self.gather_data()
-        await self.ctx.reply('⚔️ Perang dimulai!') # I'll just use this for now
+        if isinstance(self.user2, discord.Member):
+            await self.ctx.reply(f'⚔️ Perang dimulai!\nMusuh: {self.user2.mention}') # I'll just use this for now
         await asyncio.sleep(2.7)
 
 
@@ -148,7 +159,7 @@ class GameInstance():
 
             match res_1.content:
                 case "Opsi terpilih: 💥Serang":
-                    damage = self.attack(datas[0]['stats'], datas[1]['stats'], self.user1.id, self.user2_defend)
+                    damage = await self.attack(datas[0]['stats'], datas[1]['stats'], self.user1.id, self.user2_defend)
                     embed = discord.Embed(title=f'💥{self.user1.display_name} Menyerang!', color=self.user1.color)
                     if isinstance(self.user2, discord.Member):
                         embed.description = f"**`{damage}` Damage!**\nHP <@{self.user2.id}> tersisa `{self.user2_hp}` HP!"
@@ -189,7 +200,7 @@ class GameInstance():
             
                 match res_2.content:
                     case "Opsi terpilih: 💥Serang":
-                        damage = self.attack(datas[1]['stats'], datas[0]['stats'], self.user2.id, self.user1_defend)
+                        damage = await self.attack(datas[1]['stats'], datas[0]['stats'], self.user2.id, self.user1_defend)
                         embed = discord.Embed(title=f'💥{self.user2.display_name} Menyerang!', color=self.user2.color)
                         embed.description = f"**`{damage}` Damage!**\nHP <@{self.user1.id}> tersisa `{self.user1_hp}` HP!"
                         embed.set_thumbnail(url=self.user2.display_avatar.url)
@@ -202,7 +213,7 @@ class GameInstance():
                         embed.set_thumbnail(url=self.user2.display_avatar.url)
                         await self.ctx.channel.send(embed=embed)
 
-                    case "":
+                    case "Opsi terpilih: 🏃Kabur":
                         await self.ctx.channel.send(f'⛔ <@{self.user2.id}>  mengakhiri perang.')
                         return
 
@@ -214,7 +225,7 @@ class GameInstance():
                 choice = await ai.decide()
                 match choice:
                     case "attack":
-                        damage = self.attack(datas[1]['stats'], datas[0]['stats'], 1, self.user1_defend)
+                        damage = await self.attack(datas[1]['stats'], datas[0]['stats'], 1, self.user1_defend)
                         embed = discord.Embed(title=f'💥{self.user2["name"]} Menyerang!', color=0xff0000)
                         embed.description = f"**`{damage}` Damage!**\nHP <@{self.user1.id}> tersisa `{self.user1_hp}` HP!"
                         # ADD EMBED THUMBNAIL
@@ -289,32 +300,51 @@ class AI():
         user_2_atk, user_2_def, user_2_agl = user2_stats[0], user2_stats[1], user2_stats[2]
 
         if self.user1_hp > self.user2_hp:
-            self.attack_mood += 10
-            self.defend_mood += 25
-            self.escape_mood += 15
+            self.attack_mood += 9
+            self.defend_mood += 17
+            self.escape_mood += 10
             if self.user1_defend:
                 self.defend_mood += 10
                 self.escape_mood += 8
+
+            if self.user2_defend:
+                self.defend_mood += 10
+
         else:
             self.attack_mood += 30
-            self.defend_mood += 7
+            self.defend_mood += 12
             self.escape_mood += 5
             if self.user2_defend:
                 self.attack_mood += 10
-        
+
+            if self.user1_defend:
+                self.defend_mood += 10
+
         if user_1_atk >= user_2_def:
-            self.defend_mood += 15
-            self.escape_mood += 10
+            self.defend_mood += 18
+            self.escape_mood += 5
 
         else:
-            self.defend_mood += 10
-            self.attack_mood += 10
+            self.defend_mood += 7
+            self.attack_mood += 16
 
         if user_2_agl >= user_1_agl:
-            self.escape_mood += 5
+            self.escape_mood += 3
         
         else:
-            self.escape_mood += 15
+            self.escape_mood += 5
+
+        # Defining escape moods based on level. (Does not apply to LOW - SUPER NORMAL)
+        tier = self.user2['tier']
+        match tier:
+            case "SUPER BOSS":
+                self.escape_mood = 0
+            case "BOSS":
+                self.escape_mood = 2
+            case "SUPER HIGH":
+                self.escape_mood = 8
+            case "HIGH":
+                self.escape_mood = 14
 
         sorted_traits = sorted(self.traits, reverse=True)
         if sorted_traits[0] == sorted_traits[1]:
