@@ -99,7 +99,7 @@ class GameInstance():
         user_2_atk, user_2_def, user_2_agl = taker_stat[0], taker_stat[1], taker_stat[2]
 
         if is_defending:
-            user_2_def += 15
+            user_2_def += random.randint(8, 15)
         if dealer_id != 1:
             damage = round(max(0, user_1_atk*(random.randint(90, 100) - user_2_def)/user_2_max_hp))
         else:
@@ -143,6 +143,8 @@ class GameInstance():
         datas = await self.gather_data()
         if isinstance(self.user2, discord.Member):
             await self.ctx.reply(f'⚔️ Perang dimulai!\nMusuh: {self.user2.mention}') # I'll just use this for now
+        else:
+            await self.ctx.reply(f"⚔️ Perang dimulai!\nMusuh: **`{self.user2['name']}`**\nLevel: **``{self.user2['tier']}``**")
         await asyncio.sleep(2.7)
 
 
@@ -171,7 +173,7 @@ class GameInstance():
                 case "Opsi terpilih: 🛡️Tahan":
                     self.defend(self.user1)
                     embed = discord.Embed(title=f'🛡️{self.user1.display_name} Melindungi Diri!', color=self.user1.color)
-                    embed.description = f"**Defense bertambah `+15` untuk serangan selanjutnya!**"
+                    embed.description = f"**Defense bertambah untuk serangan selanjutnya!**"
                     embed.set_thumbnail(url=self.user1.display_avatar.url)
                     await self.ctx.channel.send(embed=embed)
 
@@ -209,7 +211,7 @@ class GameInstance():
                     case "Opsi terpilih: 🛡️Tahan":
                         self.defend(self.user2)
                         embed = discord.Embed(title=f'🛡️{self.user2.display_name} Melindungi Diri!', color=self.user2.color)
-                        embed.description = f"**Defense bertambah `+15` untuk serangan selanjutnya!**"
+                        embed.description = f"**Defense bertambah untuk serangan selanjutnya!**"
                         embed.set_thumbnail(url=self.user2.display_avatar.url)
                         await self.ctx.channel.send(embed=embed)
 
@@ -234,13 +236,14 @@ class GameInstance():
                     case "defend":
                         self.defend(self.user2)
                         embed = discord.Embed(title=f'🛡️{self.user2["name"]} Melindungi Diri!', color=0xff0000)
-                        embed.description = f"**Defense bertambah `+15` untuk serangan selanjutnya!**"
+                        embed.description = f"**Defense bertambah untuk serangan selanjutnya!**"
                         # ADD EMBED THUMBNAIL
                         await self.ctx.channel.send(embed=embed)
 
                     case "run":
                         embed = discord.Embed(title=f'🏃{self.user2["name"]} Kabur!', color=0xff0000)
                         embed.description = f"**Sayang sekali!\nCoba lagi nanti!**"
+                        embed.set_footer(text="Tidak ada hadiah ketika musuh kabur!")
                         # ADD EMBED THUMBNAIL
                         return await self.ctx.channel.send(embed=embed)
 
@@ -340,14 +343,14 @@ class AI():
             case "SUPER BOSS":
                 self.escape_mood = 0
             case "BOSS":
-                self.escape_mood = 2
+                self.escape_mood = 5
             case "SUPER HIGH":
-                self.escape_mood = 8
+                self.escape_mood = 10
             case "HIGH":
-                self.escape_mood = 14
+                self.escape_mood = 15
 
         sorted_traits = sorted(self.traits, reverse=True)
-        if sorted_traits[0] == sorted_traits[1]:
+        if random.random() < 0.35:
             action = random.choice(self.actions)
         else:
             action = random.choice([action for trait, action in zip(self.traits, self.actions) if trait == sorted_traits[0]])
