@@ -303,39 +303,39 @@ class AI():
         user_2_atk, user_2_def, user_2_agl = user2_stats[0], user2_stats[1], user2_stats[2]
 
         if self.user1_hp > self.user2_hp:
-            self.attack_mood += 9
-            self.defend_mood += 17
+            self.attack_mood += 12
+            self.defend_mood += 14
             self.escape_mood += 10
             if self.user1_defend:
-                self.defend_mood += 10
-                self.escape_mood += 8
+                self.defend_mood += 8
+                self.escape_mood += 6
 
             if self.user2_defend:
-                self.defend_mood += 10
+                self.defend_mood += 8
 
         else:
-            self.attack_mood += 30
-            self.defend_mood += 12
+            self.attack_mood += 20
+            self.defend_mood += 10
             self.escape_mood += 5
             if self.user2_defend:
-                self.attack_mood += 10
+                self.attack_mood += 8
 
             if self.user1_defend:
-                self.defend_mood += 10
+                self.defend_mood += 8
 
         if user_1_atk >= user_2_def:
-            self.defend_mood += 18
-            self.escape_mood += 5
+            self.defend_mood += 12
+            self.escape_mood += 4
 
         else:
-            self.defend_mood += 7
-            self.attack_mood += 16
+            self.defend_mood += 6
+            self.attack_mood += 10
 
         if user_2_agl >= user_1_agl:
-            self.escape_mood += 3
+            self.escape_mood += 2
         
         else:
-            self.escape_mood += 5
+            self.escape_mood += 4
 
         # Defining escape moods based on level. (Does not apply to LOW - SUPER NORMAL)
         tier = self.user2['tier']
@@ -343,14 +343,14 @@ class AI():
             case "SUPER BOSS":
                 self.escape_mood = 0
             case "BOSS":
-                self.escape_mood = 5
+                self.escape_mood = 1
             case "SUPER HIGH":
-                self.escape_mood = 10
+                self.escape_mood = 5
             case "HIGH":
-                self.escape_mood = 15
+                self.escape_mood = 10
 
         sorted_traits = sorted(self.traits, reverse=True)
-        if random.random() < 0.35:
+        if random.random() < 0.2:
             action = random.choice(self.actions)
         else:
             action = random.choice([action for trait, action in zip(self.traits, self.actions) if trait == sorted_traits[0]])
