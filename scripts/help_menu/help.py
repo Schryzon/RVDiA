@@ -565,4 +565,4 @@ class Help(HelpCommand, commands.Cog):
                 "Aku tidak bisa menemukan command itu!\nCheck lagi command yang ada dengan `/help`!", ephemeral=True
             )
 
-        return await super().send_error_message("Aku tidak bisa menemukan command itu!\nCheck lagi command yang ada dengan `r-help`!")
+        return await super().send_error_message("Aku tidak bisa menemukan command itu!\nCheck lagi command yang ada dengan `@RVDIA help`!")

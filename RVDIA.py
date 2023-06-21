@@ -31,10 +31,12 @@ class RVDIA(commands.AutoShardedBot):
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "EVO v1.0.4"
+    self.__version__ = "EVO v1.0.5"
     self.event_mode = True
     self.color = 0xff4df0
     self.runtime = time() # UNIX float
+    self.coin_emoji = "<:rvdia_coin:1121004598962954300>"
+    self.coin_emoji_anim = "<a:rvdia_coin_anim:1121004592033955860>"
 
     super().__init__(
       command_prefix=commands.when_mentioned, 

@@ -15,7 +15,7 @@ from discord.ui import View, Button, button
 from discord import app_commands
 from discord.ext import commands
 from scripts.main import connectdb, check_blacklist, has_registered
-from scripts.game import level_up, send_level_up_msg
+from scripts.game import level_up, send_level_up_msg, split_reward_string, give_rewards
 
 class FightView(View):
     def __init__(self):
@@ -94,8 +94,10 @@ class GameInstance():
 
 
     async def attack(self, dealer_stat:list, taker_stat:list, dealer_id:int, is_defending:bool):
-        datas = await self.gather_data() # Only needing second user's HP
-        user_2_max_hp = datas[1]['hp']
+        try:
+            user_2_max_hp = self.user2['hp']
+        except AttributeError: # Ignore on Attr Error
+            pass
         user_1_atk, user_1_def, user_1_agl = dealer_stat[0], dealer_stat[1], dealer_stat[2]
         user_2_atk, user_2_def, user_2_agl = taker_stat[0], taker_stat[1], taker_stat[2]
 
@@ -254,16 +256,44 @@ class GameInstance():
         if self.user1_hp > self.user2_hp:
             embed = discord.Embed(title=f"{self.user1.display_name} Menang!", color=0xffff00)
             embed.description = f"Dengan `{self.user1_hp}` HP tersisa!"
+            if not isinstance(self.user2, discord.Member):
+                rewards = self.user2['reward']
+                rewards = split_reward_string(rewards)
+                if len(rewards) == 3:
+                    embed.add_field(
+                        name = "Kamu Memperoleh:",
+                        value= f"`{rewards[0]}` EXP\n{self.bot.coin_emoji_anim} `{rewards[1]}` Koin\n 👹 `{rewards[2]}` Karma",
+                        inline=False
+                    )
+                    await give_rewards(self.ctx, self.user1, rewards[0], rewards[1], rewards[2])
+                else:
+                    embed.add_field(
+                        name="Kamu Memperoleh:",
+                        value= f"`{rewards[0]}` EXP\n{self.bot.coin_emoji_anim} `{rewards[1]}` Koin",
+                        inline=False
+                    )
+                    await give_rewards(self.ctx, self.user1, rewards[0], rewards[1])
+            else:
+                embed.add_field(
+                        name="Kamu Memperoleh:",
+                        value= f"{self.bot.coin_emoji_anim} `15` Koin\n 👹 `5` Karma",
+                        inline=False
+                    )
+                await give_rewards(self.ctx, self.user1, 0, 15, 5)
             embed.set_thumbnail(url = self.user1.display_avatar.url)
-            embed.set_footer(text='Kamu memperoleh 15 koin dan 5 karma!')
             await self.ctx.channel.send(embed=embed)
 
         else:
             if isinstance(self.user2, discord.Member):
                 embed = discord.Embed(title=f"{self.user2.display_name} Menang!", color=0xffff00)
                 embed.description = f"Dengan `{self.user2_hp}` HP tersisa!"
+                embed.add_field(
+                        name="Kamu Memperoleh:",
+                        value= f"{self.bot.coin_emoji_anim} `15` Koin\n 👹 `5` Karma",
+                        inline=False
+                    )
+                await give_rewards(self.ctx, self.user2, 0, 15, 5)
                 embed.set_thumbnail(url = self.user2.display_avatar.url)
-                embed.set_footer(text='Kamu memperoleh 15 koin dan 5 karma!')
                 await self.ctx.channel.send(embed=embed)
 
             else:
@@ -572,7 +602,7 @@ class EnemyDropdown(discord.ui.Select):
                 )
         embed.set_thumbnail(url = interaction.user.display_avatar.url) # Lazy, might add a placeholder later
         embed.set_footer(text="Kamu bisa melawan salah satu dari mereka dengan command battle!")
-        await interaction.response.send_message(embed=embed, view=EnemyView())
+        await interaction.response.edit_message(embed=embed, view=EnemyView())
 
 class EnemyView(View):
     def __init__(self):
@@ -614,7 +644,7 @@ class ShopView(View):
         end_index = start_index + self.options_per_page
 
         def generate_embed_field(index, item, owned_count):
-            return embed.add_field(
+            embed.add_field(
                 name=f"{index}. {item['name']}",
                 value=f"**`{item['desc']}`**\n({item['func']})\n**Tipe:** {item['type']}\n**Harga:** {item['cost']} {item['paywith']}\n**Dimiliki:** {owned_count}",
                 inline=False
@@ -637,22 +667,31 @@ class ShopView(View):
         return 0
 
 
-    @discord.ui.button(label='◀', custom_id='back', style=discord.ButtonStyle.blurple, row=1)
+    @discord.ui.button(label='◀', custom_id='back', style=discord.ButtonStyle.blurple)
     async def back(self, button: discord.ui.Button, interaction: discord.Interaction):
+        max_page = (len(self.owned) - 1) // self.options_per_page + 1
         if self.page > 1:
             self.page -= 1
             embed = await self.update_embed()
             await interaction.response.edit_message(embed=embed)
+        else:
+            self.page = max_page
+            embed=await self.update_embed()
+            await interaction.response.send_message(embed=embed)
 
-    @discord.ui.button(label='✖', style=discord.ButtonStyle.danger, row=1, custom_id='delete')
+    @discord.ui.button(label='✖', style=discord.ButtonStyle.danger, custom_id='delete')
     async def _delete(self, button: discord.ui.Button, interaction: discord.Interaction):
         await interaction.message.delete()
 
-    @discord.ui.button(label='▶', custom_id='next', style=discord.ButtonStyle.blurple, row=1)
+    @discord.ui.button(label='▶', custom_id='next', style=discord.ButtonStyle.blurple)
     async def next(self, button: discord.ui.Button, interaction: discord.Interaction):
         max_page = (len(self.owned) - 1) // self.options_per_page + 1
         if self.page < max_page:
             self.page += 1
+            embed = await self.update_embed()
+            await interaction.response.edit_message(embed=embed)
+        else:
+            self.page = 1
             embed = await self.update_embed()
             await interaction.response.edit_message(embed=embed)
 
@@ -702,6 +741,8 @@ class Game(commands.Cog):
             'equipments':[]         # Push it to here also
         })
         await ctx.reply(f'Akunmu sudah didaftarkan!\nSelamat datang di Re:Volution, **`{name}`**!')
+        await asyncio.sleep(0.7)
+        await self.account(ctx, ctx.author)
     
     @game.command(description='Menghapuskan akunmu dari Re:Volution.')
     @has_registered()
@@ -841,7 +882,7 @@ class Game(commands.Cog):
             return 0
 
         def generate_embed_field(index, item, owned_count):
-            return embed.add_field(
+            embed.add_field(
                 name=f"{index}. {item['name']}",
                 value=f"**`{item['desc']}`**\n({item['func']})\n**Tipe:** {item['type']}\n**Harga:** {item['cost']} {item['paywith']}\n**Dimiliki:** {owned_count}",
                 inline=False
@@ -878,6 +919,8 @@ class Game(commands.Cog):
     @game.command(description='Lawan musuh-musuh yang ada di Re:Volution!')
     @app_commands.describe(enemy_tier='Musuh level berapa yang ingin kamu lawan?')
     @app_commands.rename(enemy_tier='level')
+    @app_commands.describe(enemy_name='Nama musuh yang ingin kamu lawan?')
+    @app_commands.rename(enemy_name = 'nama_musuh')
     @app_commands.choices(enemy_tier=[
         app_commands.Choice(name='BOSS', value='boss'),
         app_commands.Choice(name='ELITE', value='elite'),
@@ -887,7 +930,7 @@ class Game(commands.Cog):
     ])
     @has_registered()
     @check_blacklist()
-    async def battle(self, ctx:commands.Context, enemy_tier:app_commands.Choice[str]): # Choice[value_type]
+    async def battle(self, ctx:commands.Context, enemy_tier:app_commands.Choice[str], enemy_name:str=None): # Choice[value_type]
         """
         Lawan musuh-musuh yang ada di Re:Volution!
         """
@@ -895,7 +938,13 @@ class Game(commands.Cog):
             content = file.read()
             enemies = json.loads(content)
         
-        enemy = random.choice(enemies)
+        if enemy_name:
+            for dict in enemies:
+                if dict['name'].lower() == enemy_name.lower():
+                    enemy = dict
+                    break
+        else:
+            enemy = random.choice(enemies)
 
         game = GameInstance(ctx, ctx.author, enemy, self.bot)
         await game.start()
