@@ -16,7 +16,10 @@ def level_up(ctx):
 
     if current_exp >= next_exp:
         calculated_exp = 50 * (1.2**(user_level-1))     # new exp = base exp * (factor ^ (current level - 1))
-        database.find_one_and_update({'_id':ctx.author.id}, {'$set':{'exp':0, 'next_exp':calculated_exp, 'level':user_level+1}})
+        if isinstance(ctx, discord.Member):
+            database.find_one_and_update({'_id':ctx.id}, {'$set':{'exp':0, 'next_exp':calculated_exp, 'level':user_level+1}})
+        else:
+            database.find_one_and_update({'_id':ctx.author.id}, {'$set':{'exp':0, 'next_exp':calculated_exp, 'level':user_level+1}})
         return True
     
     return False
