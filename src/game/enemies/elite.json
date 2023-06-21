@@ -1,0 +1,72 @@
+[
+    {
+        "name":"Lagtanis",
+        "desc":"Dewa utama; Petir.",
+        "tier":"SUPER ELITE",
+        "hp":840,
+        "atk":66,
+        "def":53,
+        "agl":42,
+        "reward":[
+            "exp+1500",
+            "cns+150",
+            "krm+40"
+        ]
+    },
+    {
+        "name":"Daiki",
+        "desc":"Dewi kedua; Angin.",
+        "tier":"ELITE",
+        "hp":740,
+        "atk":58,
+        "def":40,
+        "agl":71,
+        "reward":[
+            "exp+1500",
+            "cns+150",
+            "krm+40"
+        ]
+    },
+    {
+        "name":"Yizai Qi",
+        "desc":"Dewa ketiga; Api.",
+        "tier":"SUPER ELITE",
+        "hp":884,
+        "atk":70,
+        "def":42,
+        "agl":50,
+        "reward":[
+            "exp+1500",
+            "cns+150",
+            "krm+40"
+        ]
+    },
+    {
+        "name":"Rahjda",
+        "desc":"Dewa keempat; Tanah.",
+        "tier":"ELITE",
+        "hp":650,
+        "atk":56,
+        "def":79,
+        "agl":38,
+        "reward":[
+            "exp+1500",
+            "cns+150",
+            "krm+40"
+        ]
+    },
+    {
+        "name":"Arheious",
+        "desc":"Dewi kelima; Air.",
+        "tier":"SUPER ELITE",
+        "hp":900,
+        "atk":64,
+        "def":30,
+        "agl":58,
+        "reward":[
+            "exp+1500",
+            "cns+150",
+            "krm+40"
+        ]
+    }
+]

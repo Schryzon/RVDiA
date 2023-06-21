@@ -8,9 +8,9 @@
         "def":5,
         "agl":6,
         "reward":[
-            "exp+1500",
-            "cns+150",
-            "krm+40"
+            "exp+10",
+            "cns+5",
+            "krm+1"
         ]
     },
     {
@@ -22,23 +22,21 @@
         "def":5,
         "agl":8,
         "reward":[
-            "exp+1500",
-            "cns+150",
-            "krm+40"
+            "exp+12",
+            "cns+7"
         ]
     },
     {
         "name":"Reivyun",
         "desc":"Suku kuno terlemah di Land of Revolution.",
         "tier":"LOW",
-        "hp":70,
+        "hp":65,
         "atk":8,
         "def":2,
         "agl":7,
         "reward":[
-            "exp+1500",
-            "cns+150",
-            "krm+40"
+            "exp+15",
+            "cns+10"
         ]
     }
 ]

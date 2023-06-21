@@ -22,9 +22,23 @@
         "def":56,
         "agl":80,
         "reward":[
-            "exp+5000",
-            "cns+700",
-            "krm+150"
+            "exp+4999",
+            "cns+699",
+            "krm+149"
+        ]
+    },
+    {
+        "name":"Shiruto",
+        "desc":"Jiwa yang terpisah.",
+        "tier":"BONUS ENEMY",
+        "hp":630,
+        "atk":85,
+        "def":43,
+        "agl":60,
+        "reward":[
+            "exp+1500",
+            "cns+150",
+            "krm+40"
         ]
     },
     {

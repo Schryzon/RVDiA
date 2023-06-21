@@ -14,7 +14,8 @@ from os import getenv, listdir, path
 from discord.ui import View, Button, button
 from discord import app_commands
 from discord.ext import commands
-from scripts.main import connectdb, check_blacklist, has_registered, level_up, send_level_up_msg
+from scripts.main import connectdb, check_blacklist, has_registered
+from scripts.game import level_up, send_level_up_msg
 
 class FightView(View):
     def __init__(self):
@@ -875,6 +876,7 @@ class Game(commands.Cog):
     @app_commands.rename(enemy_tier='level')
     @app_commands.choices(enemy_tier=[
         app_commands.Choice(name='BOSS', value='boss'),
+        app_commands.Choice(name='ELITE', value='elite'),
         app_commands.Choice(name='High (Tinggi)', value='high'),
         app_commands.Choice(name="Normal (Sedang)", value='normal'),
         app_commands.Choice(name='Low (Rendah)', value='low')
