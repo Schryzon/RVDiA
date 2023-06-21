@@ -941,13 +941,16 @@ class Game(commands.Cog):
         with open(f'./src/game/enemies/{enemy_tier.value}.json') as file:
             content = file.read()
             enemies = json.loads(content)
+            
+        enemy = None
         
         if enemy_name:
             for dict in enemies:
                 if dict['name'].lower() == enemy_name.lower():
                     enemy = dict
                     break
-            if enemy == None:
+
+            if enemy is None:
                 return await ctx.reply(f"Aku tidak dapat menemukan musuh bernama **`{enemy_name}`** di level **`{enemy_tier.value.upper()}`**\nPastikan nama musuh dan/atau levelnya benar!")
         else:
             enemy = random.choice(enemies)

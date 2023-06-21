@@ -23,11 +23,18 @@ def level_up(ctx):
 
 async def send_level_up_msg(ctx:commands.Context, user:discord.Member = None):
     database = connectdb('Game')
-    player = user or ctx.author
-    data = database.find_one({'_id':player.id})
+    if user is None:
+        data = database.find_one({'_id':ctx.author.id})
+    else:
+        data = database.find_one({'_id':user.id})
     next_exp = data['next_exp']
     user_level = data['level']
-    return await ctx.channel.send(f'Selamat, {player.mention}!\nKamu telah naik ke level `{user_level}`! (EXP: `{next_exp}`)')
+    if user:
+        return await ctx.channel.send(f'Selamat, {user.mention}!\nKamu telah naik ke level `{user_level}`!\nEXP selanjutnya: `{next_exp}`')
+    else:
+        return await ctx.channel.send(f'Selamat, {ctx.author.mention}!\nKamu telah naik ke level `{user_level}`!\nEXP selanjutnya: `{next_exp}`')
+
+    
 
 def split_reward_string(rewards:list):
     array = []
