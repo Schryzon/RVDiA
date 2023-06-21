@@ -262,21 +262,21 @@ class GameInstance():
                 if len(rewards) == 3:
                     embed.add_field(
                         name = "Kamu Memperoleh:",
-                        value= f"`{rewards[0]}` EXP\n{self.bot.coin_emoji_anim} `{rewards[1]}` Koin\n 👹 `{rewards[2]}` Karma",
+                        value= f"⬆️ `{rewards[0]}` EXP\n{self.bot.coin_emoji_anim} `{rewards[1]}` Koin\n👹 `{rewards[2]}` Karma",
                         inline=False
                     )
                     await give_rewards(self.ctx, self.user1, rewards[0], rewards[1], rewards[2])
                 else:
                     embed.add_field(
                         name="Kamu Memperoleh:",
-                        value= f"`{rewards[0]}` EXP\n{self.bot.coin_emoji_anim} `{rewards[1]}` Koin",
+                        value= f"⬆️ `{rewards[0]}` EXP\n{self.bot.coin_emoji_anim} `{rewards[1]}` Koin",
                         inline=False
                     )
                     await give_rewards(self.ctx, self.user1, rewards[0], rewards[1])
             else:
                 embed.add_field(
                         name="Kamu Memperoleh:",
-                        value= f"{self.bot.coin_emoji_anim} `15` Koin\n 👹 `5` Karma",
+                        value= f"{self.bot.coin_emoji_anim} `15` Koin\n👹 `5` Karma",
                         inline=False
                     )
                 await give_rewards(self.ctx, self.user1, 0, 15, 5)
@@ -438,7 +438,7 @@ class GuessGameView(View):
     Buttons and stuff
     """
     def __init__(self, number:int, attempt:int, hint_left:int, level:str, last_number:int=None):
-        super().__init__(timeout=20) # Always be put up first
+        super().__init__(timeout=None) # Maybe None prevents it from timing out too soon.
         self.hints = hint_left
         self.last = last_number
         self.number = number
@@ -602,7 +602,7 @@ class EnemyDropdown(discord.ui.Select):
                 )
         embed.set_thumbnail(url = interaction.user.display_avatar.url) # Lazy, might add a placeholder later
         embed.set_footer(text="Kamu bisa melawan salah satu dari mereka dengan command battle!")
-        await interaction.response.edit_message(embed=embed, view=EnemyView())
+        await interaction.response.edit_message(content='', embed=embed, view=EnemyView())
 
 class EnemyView(View):
     def __init__(self):
@@ -786,7 +786,11 @@ class Game(commands.Cog):
             )
             embed = discord.Embed(title='Bonus Harianmu', color=0x00FF00, timestamp=next_login)
             embed.set_thumbnail(url=ctx.author.display_avatar.url)
-            embed.description = f'Kamu mendapatkan:\n`{new_coins}` koin;\n`{new_karma}` karma;\n`{new_exp}` EXP!'
+            embed.add_field(
+                name="Kamu Memperoleh:",
+                value=f"{self.bot.coin_emoji_anim} `{new_coins}` Koin\n👹 `{new_karma}` Karma\n⬆️ `{new_exp}` EXP!'",
+                inline=False
+            )
             embed.set_footer(text='Bonus selanjutnya pada ')
             await ctx.reply(embed=embed)
 
@@ -828,19 +832,19 @@ class Game(commands.Cog):
 
         embed.add_field(
             name=f'Level {level}', 
-            value=f'EXP: `{exp}`/`{next_exp}`', 
+            value=f'⬆️ EXP: `{exp}`/`{next_exp}`', 
             inline=False
             )
 
         embed.add_field(
             name=f'Status Keuangan',
-            value=f'Koin: `{coins}`\nKarma: `{karma}`', 
+            value=f'{self.bot.coin_emoji} Koin: `{coins}`\n👹 Karma: `{karma}`', 
             inline=False
             )
 
         embed.add_field(
             name=f'Statistik Tempur', 
-            value=f'Attack: `{attack}`\nDefense: `{defense}`\nAgility: `{agility}`', 
+            value=f'💥 Attack: `{attack}`\n🛡️ Defense: `{defense}`\n👟 Agility: `{agility}`', 
             inline=False
             )
         
@@ -943,6 +947,8 @@ class Game(commands.Cog):
                 if dict['name'].lower() == enemy_name.lower():
                     enemy = dict
                     break
+            if enemy == None:
+                return await ctx.reply(f"Aku tidak dapat menemukan musuh bernama **`{enemy_name}`** di level **`{enemy_tier.value.upper()}`**\nPastikan nama musuh dan/atau levelnya benar!")
         else:
             enemy = random.choice(enemies)
 
