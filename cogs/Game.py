@@ -740,7 +740,7 @@ class Game(commands.Cog):
         })
         await ctx.reply(f'Akunmu sudah didaftarkan!\nSelamat datang di Re:Volution, **`{name}`**!')
         await asyncio.sleep(0.7)
-        await self.account(ctx, ctx.author)
+        await self.account(ctx)
     
     @game.command(description='Menghapuskan akunmu dari Re:Volution.')
     @has_registered()
