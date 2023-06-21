@@ -23,10 +23,6 @@ from contextlib import suppress
 from scripts.main import connectdb, titlecase
 load_dotenv('./secrets.env') # Loads the .env file from python-dotenv pack
 
-# Setting up bot privileged intents (there might be a simpler way)
-bot_intents = discord.Intents.default()
-bot_intents.message_content = True # Bye bye soon
-
 class RVDIA(commands.AutoShardedBot):
   """
   A subclass of commands.AutoShardedBot; RVDiA herself.
@@ -35,7 +31,7 @@ class RVDIA(commands.AutoShardedBot):
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "EVO v1.0.3"
+    self.__version__ = "EVO v1.0.4"
     self.event_mode = True
     self.color = 0xff4df0
     self.runtime = time() # UNIX float
@@ -44,7 +40,7 @@ class RVDIA(commands.AutoShardedBot):
       command_prefix=commands.when_mentioned, 
       case_insensitive=True, 
       strip_after_prefix=False, 
-      intents=bot_intents,
+      intents=discord.Intents.default(), # Finally got to this stage.
 
       help_command=Help(
             no_category = "Tak tergolongkan", 

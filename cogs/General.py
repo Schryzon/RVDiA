@@ -245,9 +245,11 @@ class General(commands.Cog):
         """Ubah foto profil menjadi grayscale."""
         user = user or ctx.author
         avatar = user.display_avatar.with_format("png").url
-        response = requests.get(f'https://some-random-api.ml/canvas/greyscale?avatar={avatar}')
-        image = BytesIO(response.content)
-        await ctx.reply(file=discord.File(image, 'Grayscale.png'))
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f'https://some-random-api.com/canvas/filter/greyscale?avatar={avatar}') as data:
+                image = BytesIO(await data.read())
+                await session.close()
+                await ctx.reply(file=discord.File(image, 'Grayscale.png'))
 
     @avatar_command.command(description="Ubah foto profil menjadi inverted (warna terbalik).")
     @app_commands.rename(user='pengguna')
@@ -257,9 +259,11 @@ class General(commands.Cog):
         """Ubah foto profil menjadi inverted."""
         user = user or ctx.author
         avatar = user.display_avatar.with_format("png").url
-        response = requests.get(f'https://some-random-api.ml/canvas/invert?avatar={avatar}')
-        image = BytesIO(response.content)
-        await ctx.reply(file=discord.File(image, 'Inverted.png'))
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f'https://some-random-api.com/canvas/filter/invert?avatar={avatar}') as data:
+                image = BytesIO(await data.read())
+                await session.close()
+                await ctx.reply(file=discord.File(image, 'Inverted.png'))
 
 
 class Utilities(commands.Cog):
