@@ -32,7 +32,7 @@ async def send_level_up_msg(ctx:commands.Context, user:discord.Member = None):
 def split_reward_string(rewards:list):
     array = []
     for reward in rewards:
-        array.append(reward.split('+')[1])
+        array.append(int(reward.split('+')[1]))
     return array
 
 async def give_rewards(ctx:commands.Context, user:discord.Member, exp:int, coins:int, karma:int=0):
