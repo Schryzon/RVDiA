@@ -345,6 +345,10 @@ class AI():
                 self.escape_mood = 0
             case "BOSS":
                 self.escape_mood = 0
+            case "SUPER ELITE":
+                self.escape_mood = 1
+            case "ELITE":
+                self.escape_mood = 2
             case "SUPER HIGH":
                 self.escape_mood = 5
             case "HIGH":
