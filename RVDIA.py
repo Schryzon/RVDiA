@@ -31,12 +31,13 @@ class RVDIA(commands.AutoShardedBot):
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "EVO v1.0.5"
+    self.__version__ = "EVO v1.0.6"
     self.event_mode = True
     self.color = 0xff4df0
     self.runtime = time() # UNIX float
     self.coin_emoji = "<:rvdia_coin:1121004598962954300>"
     self.coin_emoji_anim = "<a:rvdia_coin_anim:1121004592033955860>"
+    self.rvdia_emoji = '<:rvdia:1082789733001875518>'
 
     super().__init__(
       command_prefix=commands.when_mentioned, 
@@ -48,7 +49,7 @@ class RVDIA(commands.AutoShardedBot):
             no_category = "Tak tergolongkan", 
             color = self.color,
             active_time = 60,
-            image_url = os.getenv('bannerhelp'),
+            image_url = os.getenv('bannerhelp') if not self.event_mode else os.getenv('bannerevent'),
             index_title = "Kategori Command",
             timeout=20,
             case_insensitive = True
@@ -258,8 +259,6 @@ async def whitelist(ctx:commands.Context, user:discord.User):
    blacklisted.find_one_and_delete({'_id':user.id})
    await ctx.reply(f'`{user}` telah diwhitelist!')
 
-old_prefixes = ['r-', 'rvd ']
-
 @rvdia.event
 async def on_message(msg:discord.Message):
     if not msg.guild:
@@ -269,28 +268,6 @@ async def on_message(msg:discord.Message):
 
     if msg.author.bot == True:
         return
-    
-    if any(prefix in msg.content.lower() for prefix in old_prefixes):
-       embed = discord.Embed(title='Pembaruan Sistem Prefix', color=0xff0000)
-       embed.description = "Sepertinya kamu telah menggunakan awalan semula RVDiA.\nMohon maaf atas ketidaknyamanannya. RVDiA telah mengalami pembaruan sesuai dengan ketentuan Discord mengenai `Message Content Data Access`."
-       embed.add_field(
-          name='Maksudnya Gimana Tuh?',
-          value='Jadi, dari tanggal 16 Juni 2023, Schryzon (pencipta RVDiA) telah menentukan rencananya untuk mempersiapkan RVDiA untuk verifikasi.\nSalah satu metode yang kurang beresiko untuk menjalankan hal tersebut yakni dengan mematikan akses data RVDiA dalam hal membaca isi pesan.',
-          inline=False
-       )
-       embed.add_field(
-          name='Lah Kok Gitu?',
-          value='Karena Schryzon tidak ingin repot dalam memverifikasi RVDiA (simpelnya yah). Jika akses data ke pesan terus dinyalakan, maka Schryzon harus juga meminta persetujuan dari pihak Discord untuk __whitelist__ RVDiA agar bisa terus membaca isi pesan dari pengguna.',
-          inline=False
-       )
-       embed.add_field(
-          name='Cara Pakai Commandnya Gimana Dong?',
-          value=f'RVDiA masih bisa membaca pesanmu ketika di mention dengan {rvdia.user.mention}. Jadi, sebagai alternatif dari prefix/awalan biasa, kamu bisa memakai mention!\nContoh: {rvdia.user.mention} help\nAkan tetapi, semua error berkaitan dengan command pesan tidak akan mengalami perbaikan karena alasan peralihan sistem prefix.\n\nJangan lupa kalau command slash (awalan / ) bisa juga dipakai sebagai alternatif.',
-          inline=False
-       )
-       embed.set_thumbnail(url = rvdia.user.display_avatar.url)
-       embed.set_footer(text='Pesan ini tidak akan muncul lagi sekitar 1 minggu dari 16 Juni 2023.\nTerima kasih karena telah setia menggunakan RVDiA!')
-       await msg.reply(embed=embed)
 
     if msg.reference:
         try:

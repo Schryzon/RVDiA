@@ -15,9 +15,10 @@ def level_up(ctx):
 
 
     if current_exp >= next_exp:
-        calculated_exp = 50 * (1.2**(user_level-1))     # new exp = base exp * (factor ^ (current level - 1))
+        calculated_exp = round(50 * (1.2**(user_level-1)))     # new exp = base exp * (factor ^ (current level - 1))
         if isinstance(ctx, discord.Member):
-            database.find_one_and_update({'_id':ctx.id}, {'$set':{'exp':0, 'next_exp':calculated_exp, 'level':user_level+1}})
+            database.find_one_and_update({'_id':ctx.id}, {'$set':{'exp':0, 'next_exp':calculated_exp, 'level':user_level+1}, 
+                                                          '$inc':{'attack':2, 'defense':2, 'agility':2}})
         else:
             database.find_one_and_update({'_id':ctx.author.id}, {'$set':{'exp':0, 'next_exp':calculated_exp, 'level':user_level+1}})
         return True
@@ -51,6 +52,5 @@ async def give_rewards(ctx:commands.Context, user:discord.Member, exp:int, coins
         {'_id':user.id},
         {'$inc':{'exp':exp, 'coins':coins, 'karma':karma}}
     )
-    await asyncio.sleep(1.5)
     if level_up(user):
         return await send_level_up_msg(ctx, user)

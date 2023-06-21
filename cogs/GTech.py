@@ -1,6 +1,8 @@
 """
 Experimental Cog, for the future.
+(Currently fully functional)
 """
+
 from os import getenv
 import discord
 from discord import app_commands

@@ -1,12 +1,12 @@
 [
     {
-        "name":"XYI Ninja",
-        "desc":"Pengintai cerdas; sangat lincah!",
+        "name":"XYI-NINJA",
+        "desc":"Pengintai cerdas - sangat lincah!",
         "tier":"NORMAL",
         "hp":80,
         "atk":14,
         "def":8,
-        "agl":25,
+        "agl":20,
         "reward":[
             "exp+30",
             "cns+14",
@@ -15,7 +15,7 @@
     },
     {
         "name":"KOU-RAI",
-        "desc":"Manusia hybrid dengan kecerdasan luar biasa.",
+        "desc":"Manusia hybrid - Kecerdasan.",
         "tier":"NORMAL",
         "hp":100,
         "atk":19,
@@ -24,7 +24,49 @@
         "reward":[
             "exp+36",
             "cns+17",
-            "krm+3"
+            "krm+2"
+        ]
+    },
+    {
+        "name":"AKA-ZUMI",
+        "desc":"Manusia hybrid - Kelincahan.",
+        "tier":"NORMAL",
+        "hp":100,
+        "atk":20,
+        "def":8,
+        "agl":17,
+        "reward":[
+            "exp+36",
+            "cns+17",
+            "krm+2"
+        ]
+    },
+    {
+        "name":"SHIN-KURO",
+        "desc":"Manusia hybrid - Kekuatan.",
+        "tier":"SUPER NORMAL",
+        "hp":120,
+        "atk":25,
+        "def":10,
+        "agl":11,
+        "reward":[
+            "exp+40",
+            "cns+20",
+            "krm+2"
+        ]
+    },
+    {
+        "name":"CHI-SAKI",
+        "desc":"Manusia hybrid - Keberanian.",
+        "tier":"SUPER NORMAL",
+        "hp":130,
+        "atk":27,
+        "def":16,
+        "agl":0,
+        "reward":[
+            "exp+42",
+            "cns+22",
+            "krm+2"
         ]
     }
 ]

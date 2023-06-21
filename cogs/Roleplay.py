@@ -1,7 +1,5 @@
 """
 Just a damn filler
-I'm sick, tired, and all that
-But still, I'm gonna try...
 All commands require you to vote
 """
 

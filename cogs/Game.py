@@ -103,7 +103,7 @@ class GameInstance():
 
         if is_defending:
             user_2_def += random.randint(8, 15)
-        if dealer_id != 1:
+        if dealer_id != 1 and self.ctx.command.name == "battle":
             damage = round(max(0, user_1_atk*(random.randint(90, 100) - user_2_def)/user_2_max_hp))
         else:
             damage = round(max(0, user_1_atk*(random.randint(90, 100) - user_2_def)/100))
@@ -280,6 +280,7 @@ class GameInstance():
                         inline=False
                     )
                 await give_rewards(self.ctx, self.user1, 0, 15, 5)
+            await asyncio.sleep(0.7)
             embed.set_thumbnail(url = self.user1.display_avatar.url)
             await self.ctx.channel.send(embed=embed)
 
@@ -363,10 +364,7 @@ class AI():
             self.attack_mood += 10
 
         if user_2_agl >= user_1_agl:
-            self.escape_mood += 2
-        
-        else:
-            self.escape_mood += 4
+            self.escape_mood += 3
 
         # Defining escape moods based on level. (Does not apply to LOW - SUPER NORMAL)
         tier = self.user2['tier']
@@ -380,12 +378,12 @@ class AI():
             case "ELITE":
                 self.escape_mood = 2
             case "SUPER HIGH":
-                self.escape_mood = 5
+                self.escape_mood = 4
             case "HIGH":
-                self.escape_mood = 7
+                self.escape_mood = 5
 
         sorted_traits = sorted(self.traits, reverse=True)
-        if random.randint(0, 100) < 9:
+        if random.randint(0, 100) < 5:
             action = random.choice(self.actions)
         else:
             action = random.choice([action for trait, action in zip(self.traits, self.actions) if trait == sorted_traits[0]])
@@ -555,7 +553,7 @@ class ShopDropdown(discord.ui.Select):
             update_ = {'$inc': {currency: cost*-1}}
             database.update_one(filter=filter_, update=update_)
 
-            await interaction.response.send_message(f"Pembelian berhasil!\nKamu telah membeli `{matched_dict['name']}`")
+            await interaction.response.send_message(f"Pembelian berhasil!\nKamu telah membeli `{matched_dict['name']}`", ephemeral=True)
 
         else:
             currency = 'coins' if matched_dict['paywith'] == "Koin" else 'karma'
@@ -568,7 +566,7 @@ class ShopDropdown(discord.ui.Select):
             
             database.update_one({'_id': interaction.user.id}, {'$inc':{currency: cost*-1}}) # Second update, avoiding conflict
 
-            await interaction.response.send_message(f"Pembelian berhasil!\nKamu telah membeli `{matched_dict['name']}`")
+            await interaction.response.send_message(f"Pembelian berhasil!\nKamu telah membeli `{matched_dict['name']}`", ephemeral=True)
 
 class EnemyDropdown(discord.ui.Select):
     def __init__(self):
@@ -825,7 +823,7 @@ class Game(commands.Cog):
         attack, defense, agility = data['attack'], data['defense'], data['agility']
         special_skills = data['special_skills']
 
-        embed = discord.Embed(title=player_name, timestamp=last_login)
+        embed = discord.Embed(title=player_name, timestamp=last_login, color=ctx.author.color)
         embed.set_author(name='Info Akun Re:Volution:')
         embed.description = f'Alias: {user}'
         embed.set_thumbnail(url=user.display_avatar.url)
@@ -915,7 +913,7 @@ class Game(commands.Cog):
         Tantang seseorang ke sebuah duel!
         """
         if member.bot:
-            return await ctx.reply('Bot tidak bisa melakukan perlawanan!')
+            return await ctx.reply('Bot tidak bisa melakukan perlawanan!', ephemeral=True)
         game = GameInstance(ctx, ctx.author, member, self.bot)
         await game.start()
 
@@ -950,8 +948,8 @@ class Game(commands.Cog):
                     enemy = dict
                     break
 
-            if enemy is None:
-                return await ctx.reply(f"Aku tidak dapat menemukan musuh bernama **`{enemy_name}`** di level **`{enemy_tier.value.upper()}`**\nPastikan nama musuh dan/atau levelnya benar!")
+            if enemy == None:
+                return await ctx.reply(f"Aku tidak dapat menemukan musuh bernama **`{enemy_name}`** di level **`{enemy_tier.value.upper()}`**\nPastikan nama musuh dan/atau levelnya benar!", ephemeral=True)
         else:
             enemy = random.choice(enemies)
 
@@ -986,10 +984,10 @@ class Game(commands.Cog):
         current_acc_data = database.find_one({'_id':ctx.author.id})
         old_acc_data = database.find_one({'_id':old_acc.id})
         if not old_acc_data:
-            return await ctx.reply("Akun Re:Volution tidak ditemukan!\nJika tidak yakin dengan ID akun Discord lamamu, silahkan hubungi langsung Schryzon#4302!")
+            return await ctx.reply("Akun Re:Volution tidak ditemukan!\nJika tidak yakin dengan ID akun Discord lamamu, silahkan hubungi langsung Schryzon!", ephemeral=True)
         
         if ctx.author.id == old_acc_data['_id']:
-            return await ctx.reply("Hey! Akun yang kamu cantumkan sama dengan akun Discordmu saat ini!")
+            return await ctx.reply("Hey! Akun yang kamu cantumkan sama dengan akun Discordmu saat ini!", ephemeral=True)
         
         embed = discord.Embed(title="Request Transfer Data Akun", color=ctx.author.color, timestamp=ctx.message.created_at)
         embed.add_field(

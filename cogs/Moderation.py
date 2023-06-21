@@ -104,7 +104,7 @@ class Moderation(commands.Cog):
         Buat invite instan!
         """
         created_invite = await ctx.channel.create_invite(
-            reason=f'Created using r-invite create command by {ctx.author}.', 
+            reason=f'Created using /invite create command by {ctx.author}.', 
             max_age=expire,
             max_uses=max_use
             )
@@ -168,9 +168,9 @@ class Moderation(commands.Cog):
         Memberikan pelanggaran kepada pengguna.
         """
         if ctx.author == member:
-            return await ctx.reply("Kamu tidak bisa memberikan pelanggaran kepada dirimu!")
+            return await ctx.reply("Kamu tidak bisa memberikan pelanggaran kepada dirimu!", ephemeral=True)
         if member.bot:
-            return await ctx.reply("Uh... sepertinya memberikan pelanggaran kepada bot itu kurang berguna.")
+            return await ctx.reply("Uh... sepertinya memberikan pelanggaran kepada bot itu kurang berguna.", ephemeral=True)
         db = connectdb("Warns")
         reason = reason or "Tidak ada alasan dispesifikasi."
         warns = db.find_one({"_id":member.id, "guild_id":ctx.guild.id})
