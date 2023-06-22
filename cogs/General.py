@@ -606,7 +606,7 @@ class Support(commands.GroupCog, group_name='support'):
 
     @commands.hybrid_command(description = 'Mengirimkan link untuk server supportku!')
     @check_blacklist()
-    async def server(self, ctx:commands.Context):
+    async def guild(self, ctx:commands.Context):
         """
         Mengirimkan link untuk server supportku!
         """
