@@ -149,8 +149,7 @@ class GameInstance():
         else:
             await self.ctx.reply(f"⚔️ Perang dimulai!\nMusuh: **`{self.user2['name']}`**\nLevel: **``{self.user2['tier']}``**")
         await asyncio.sleep(2.7)
-
-
+        turns = 1
 
         while self.user1_hp > 0 and self.user2_hp > 0:
             fight_view1 = FightView()
@@ -226,7 +225,7 @@ class GameInstance():
                         await self.ctx.channel.send("Opsi tidak valid, giliran dilewatkan.")
 
             else:
-                ai = AI(self)
+                ai = AI(self, turns)
                 choice = await ai.decide()
                 match choice:
                     case "attack":
@@ -249,7 +248,8 @@ class GameInstance():
                         embed.set_footer(text="Tidak ada hadiah ketika musuh kabur!")
                         # ADD EMBED THUMBNAIL
                         return await self.ctx.channel.send(embed=embed)
-
+                    
+            turns += 1
 
             await asyncio.sleep(2.5)
 
@@ -313,7 +313,7 @@ class AI():
     So yeah, like, share, and subscribe
     """
     # TO DO: HANDLE SPELLS & ITEMS
-    def __init__(self, instance:GameInstance) -> None:
+    def __init__(self, instance:GameInstance, turns:int) -> None:
         self.instance = instance
         self.user1 = instance.user1
         self.user2 = instance.user2
@@ -324,8 +324,11 @@ class AI():
         self.attack_mood = 0
         self.defend_mood = 0
         self.escape_mood = 0
+        self.turns = turns
         self.traits = [self.attack_mood, self.defend_mood, self.escape_mood]
-        self.actions = ["attack", "defend", "run"]
+        self.actions = ["attack", "defend"]
+        if self.turns > 6:
+            self.actions.append("run")
     
     async def decide(self):
         datas = await self.instance.gather_data()
@@ -366,7 +369,7 @@ class AI():
         if user_2_agl >= user_1_agl:
             self.escape_mood += 3
 
-        # Defining escape moods based on level. (Does not apply to LOW - SUPER NORMAL)
+        # Defining escape moods based on level. (Does not apply to LOW - SUPER NORMAL & BONUS ENEMY)
         tier = self.user2['tier']
         match tier:
             case "SUPER BOSS":
@@ -383,7 +386,7 @@ class AI():
                 self.escape_mood = 5
 
         sorted_traits = sorted(self.traits, reverse=True)
-        if random.randint(0, 100) < 5:
+        if random.randint(0, 100) < 20:
             action = random.choice(self.actions)
         else:
             action = random.choice([action for trait, action in zip(self.traits, self.actions) if trait == sorted_traits[0]])
@@ -693,25 +696,14 @@ class ShopView(View):
             embed = await self.update_embed()
             await interaction.response.edit_message(embed=embed)
 
-class Game(commands.Cog):
+class Game(commands.GroupCog, group_name = 'game'):
     """
     Kumpulan command game RPG RVDIA (Re:Volution).
     """
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.hybrid_group(name='game')
-    @has_registered()
-    @check_blacklist()
-    async def game(self, ctx:commands.Context, *, user:discord.User=None):
-        """
-        Kumpulan command game RPG RVDIA. [GROUP]
-        """
-        user = user or ctx.author
-        await self.account(ctx, user=user)
-        pass
-
-    @game.command(aliases=['reg'], description='Daftarkan akunmu ke Re:Volution!')
+    @commands.hybrid_command(aliases=['reg'], description='Daftarkan akunmu ke Re:Volution!')
     @app_commands.describe(name='Nama apa yang ingin kamu pakai di dalam gamenya?')
     @check_blacklist()
     async def register(self, ctx:commands.Context, *, name:str=None):
@@ -742,7 +734,7 @@ class Game(commands.Cog):
         await asyncio.sleep(0.7)
         await self.account(ctx)
     
-    @game.command(description='Menghapuskan akunmu dari Re:Volution.')
+    @commands.hybrid_command(description='Menghapuskan akunmu dari Re:Volution.')
     @has_registered()
     @check_blacklist()
     async def resign(self, ctx:commands.Context):
@@ -755,7 +747,7 @@ class Game(commands.Cog):
         if view.value is None:
             await ctx.channel.send('Waktu habis, penghapusan akun dibatalkan.')
 
-    @game.command(aliases=['login'], description='Dapatkan bonus login harian!')
+    @commands.hybrid_command(aliases=['login'], description='Dapatkan bonus login harian!')
     @has_registered()
     @check_blacklist()
     async def daily(self, ctx:commands.Context):
@@ -795,7 +787,7 @@ class Game(commands.Cog):
             if level_up(ctx):
                 return await send_level_up_msg(ctx)
             
-    @game.command(description='Lihat profil pengguna di Re:Volution!')
+    @commands.hybrid_command(description='Lihat profil pengguna di Re:Volution!')
     @app_commands.describe(user='Pengguna mana yang ingin dilihat akunnya?')
     @app_commands.rename(user='pengguna')
     @has_registered()
@@ -855,7 +847,7 @@ class Game(commands.Cog):
         embed.set_footer(text='Login harian terakhir ')
         await ctx.reply(embed = embed)
 
-    @game.command(description="Beli item atau perlengkapan perang!")
+    @commands.hybrid_command(description="Beli item atau perlengkapan perang!")
     @has_registered()
     @check_blacklist()
     async def shop(self, ctx:commands.Context):
@@ -903,7 +895,7 @@ class Game(commands.Cog):
         view = ShopView(ctx)
         await ctx.reply(embed = embed, view=view)
 
-    @game.command(description='Tantang seseorang ke sebuah duel!')
+    @commands.hybrid_command(description='Tantang seseorang ke sebuah duel!')
     @app_commands.describe(member='Siapa yang ingin kamu lawan?')
     @app_commands.rename(member='pengguna')
     @has_registered()
@@ -918,7 +910,7 @@ class Game(commands.Cog):
         await game.start()
 
 
-    @game.command(description='Lawan musuh-musuh yang ada di Re:Volution!')
+    @commands.hybrid_command(description='Lawan musuh-musuh yang ada di Re:Volution!')
     @app_commands.describe(enemy_tier='Musuh level berapa yang ingin kamu lawan?')
     @app_commands.rename(enemy_tier='level')
     @app_commands.describe(enemy_name='Nama musuh yang ingin kamu lawan?')
@@ -957,7 +949,7 @@ class Game(commands.Cog):
         await game.start()
 
 
-    @game.command(description='Lihat daftar musuh yang muncul di Re:Volution!', aliases=['enemy'])
+    @commands.hybrid_command(description='Lihat daftar musuh yang muncul di Re:Volution!', aliases=['enemy'])
     @has_registered()
     @check_blacklist()
     async def enemies(self, ctx:commands.Context):
@@ -969,7 +961,7 @@ class Game(commands.Cog):
             await ctx.reply(f"Untuk melihat daftar musuh, silahkan tekan di bawah ini ↓", view=view)
 
 
-    @game.command(description='Request untuk pemindahan data akun.')
+    @commands.hybrid_command(description='Request untuk pemindahan data akun.')
     @app_commands.describe(old_acc = "Akun Discord lamamu atau ID akun Discord lamamu.")
     @app_commands.describe(reason = "Alasan request pemindahan data akun.")
     @app_commands.rename(reason = "alasan")
@@ -1015,7 +1007,7 @@ class Game(commands.Cog):
         await ctx.send("Aku telah mengirimkan request transfer data akun ke developer!\nMohon ditunggu persetujuannya ya!\nJangan lupa untuk mengaktifkan pesan DM dari aku karena nanti akan diberikan info apabila disetujui/ditolak.")
 
 
-    @game.command(description='Ayo main tebak angka bersamaku!')
+    @commands.hybrid_command(description='Ayo main tebak angka bersamaku!')
     @app_commands.describe(level='Tingkat kesulitan mana yang akan kamu pilih?')
     @app_commands.choices(level=[
         app_commands.Choice(name='SUPER', value='SUPER'),

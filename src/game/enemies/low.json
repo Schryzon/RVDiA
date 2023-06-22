@@ -38,5 +38,18 @@
             "exp+15",
             "cns+10"
         ]
+    },
+    {
+        "name":"New Hero",
+        "desc":"Petualang baru di Re:Volution.",
+        "tier":"LOW",
+        "hp":50,
+        "atk":7,
+        "def":1,
+        "agl":5,
+        "reward":[
+            "exp+11",
+            "cns+8"
+        ]
     }
 ]

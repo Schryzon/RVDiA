@@ -3,7 +3,7 @@ import os
 from discord.ext import commands
 from scripts.main import check_blacklist, event_available
 
-class Event(commands.Cog):
+class Event(commands.GroupCog, group_name = 'event'):
     """
     Kumpulan command untuk event (ajang) yang sedang berlangsung.
     """
@@ -18,17 +18,7 @@ class Event(commands.Cog):
             case False: return False
             case _: return False
 
-    @commands.hybrid_group(name='event')
-    @event_available()
-    @check_blacklist()
-    async def event(self, ctx) -> None:
-        """
-        Kumpulan command untuk event (ajang) yang sedang berlangsung. [GROUP]
-        """
-        await self.info(ctx)
-        pass
-
-    @event.command(name='info', description = 'Lihat info event yang sedang berlangsung!')
+    @commands.hybrid_command(name='info', description = 'Lihat info event yang sedang berlangsung!')
     @event_available()
     @check_blacklist()
     async def info(self, ctx:commands.Context) -> None:

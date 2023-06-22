@@ -1,7 +1,7 @@
 """
 Schryzon/Jayananda (11)
 G-Tech Re'sman Programming Division
-RVDIA (Revolutionary Virtual Discord Assistant)
+RVDiA (Revolutionary Virtual Discord Assistant)
 Inspired by Haruna Sakurai from Ongeki!
 Feel free to edit, recreate, publish, and do other stuff.
 Contributions are welcome.
@@ -27,7 +27,7 @@ class RVDIA(commands.AutoShardedBot):
   """
   A subclass of commands.AutoShardedBot; RVDiA herself.
   This is in order to make her attributes easier to maintain.
-  (Nah, I'm just lazy.)
+  (Nah, I'm just lazy tbh.)
   """
   def __init__(self, **kwargs):
     self.synced = False
@@ -38,6 +38,7 @@ class RVDIA(commands.AutoShardedBot):
     self.coin_emoji = "<:rvdia_coin:1121004598962954300>"
     self.coin_emoji_anim = "<a:rvdia_coin_anim:1121004592033955860>"
     self.rvdia_emoji = '<:rvdia:1082789733001875518>'
+    self.cyron_emoji = '<:cyron:1082789553263349851>' # Join up!!!
 
     super().__init__(
       command_prefix=commands.when_mentioned, 

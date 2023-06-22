@@ -1,4 +1,5 @@
 import base64
+import re
 import os
 import discord
 import openai
@@ -235,10 +236,10 @@ class General(commands.Cog):
         embed.set_footer(text=f"ID: {member.id}", icon_url=avatar_url)
         await ctx.reply(embed=embed)
 
-    
-    # Might change API, sometimes it refuses to connect
+
     @avatar_command.command(aliases=['grayscale'], description="Ubah foto profil menjadi grayscale (hitam putih).")
     @app_commands.rename(user='pengguna')
+    @app_commands.describe(user='Foto profil siapa yang ingin diedit?')
     @has_pfp()
     @check_blacklist()
     async def greyscale(self, ctx, *, user:discord.User = None):
@@ -253,6 +254,7 @@ class General(commands.Cog):
 
     @avatar_command.command(description="Ubah foto profil menjadi inverted (warna terbalik).")
     @app_commands.rename(user='pengguna')
+    @app_commands.describe(user='Foto profil siapa yang ingin diedit?')
     @has_pfp()
     @check_blacklist()
     async def invert(self, ctx, *, user:discord.User = None):
@@ -264,6 +266,36 @@ class General(commands.Cog):
                 image = BytesIO(await data.read())
                 await session.close()
                 await ctx.reply(file=discord.File(image, 'Inverted.png'))
+
+    @avatar_command.command(description="Meng-crop lingkaran pada foto profilmu!")
+    @app_commands.rename(user='pengguna')
+    @app_commands.describe(user='Foto profil siapa yang ingin diedit?')
+    @has_pfp()
+    @check_blacklist()
+    async def circle(self, ctx, *, user:discord.User = None):
+        """Meng-crop lingkaran pada foto profilmu!"""
+        user = user or ctx.author
+        avatar = user.display_avatar.with_format("png").url
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f'https://some-random-api.com/canvas/misc/circle?avatar={avatar}') as data:
+                image = BytesIO(await data.read())
+                await session.close()
+                await ctx.reply(file=discord.File(image, 'Circled.png'))
+
+    @avatar_command.command(description="Membuat foto profilmu menjadi buram!")
+    @app_commands.rename(user='pengguna')
+    @app_commands.describe(user='Foto profil siapa yang ingin diedit?')
+    @has_pfp()
+    @check_blacklist()
+    async def blur(self, ctx, *, user:discord.User = None):
+        """Membuat foto profilmu menjadi buram!"""
+        user = user or ctx.author
+        avatar = user.display_avatar.with_format("png").url
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f'https://some-random-api.com/canvas/misc/blur?avatar={avatar}') as data:
+                image = BytesIO(await data.read())
+                await session.close()
+                await ctx.reply(file=discord.File(image, 'Blurred.png'))
 
 
 class Utilities(commands.Cog):
@@ -505,7 +537,56 @@ class Utilities(commands.Cog):
         await ctx.reply(file=file, embed=embed)
         os.remove('./variation.png')
 
-class Support(commands.Cog):
+    @commands.hybrid_command(description="Memperlihatkan warna dari nilai hexadecimal.")
+    @app_commands.rename(user='pengguna')
+    @app_commands.describe(user='Foto profil siapa yang ingin diedit?')
+    @has_pfp()
+    @check_blacklist()
+    async def hex(self, ctx:commands.Context, hex:str):
+        """Memperlihatkan warna dari nilai hexadecimal."""
+        if "#" in hex:
+            hex = hex.split('#')[1]
+
+        async def validate_hex(hex_str:str):
+            pattern = r'^[0-9A-Fa-f]+$'  # Regular expression pattern for hexadecimal string
+            if not re.match(pattern, hex_str):
+                raise ValueError("Invalid hex!")
+            
+        try:
+            await validate_hex(hex)
+        except: # Malas
+            return await ctx.reply(f"`{hex}` bukan merupakan kode hexadecimal yang valid!", ephemeral=True)
+        
+        hex_code = int(hex, 16)
+        red = (hex_code >> 16) & 0xff # Bitwise right shift
+        green = (hex_code >> 8) & 0xff
+        blue = hex_code & 0xff
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f'https://some-random-api.com/canvas/misc/colorviewer?hex={hex}') as data:
+                image = BytesIO(await data.read())
+                await session.close()
+                await ctx.reply(content=f"Hex: #{hex.upper()}\nRGB: ({red}, {green}, {blue})", file=discord.File(image, f'{hex.upper()}.png'))
+
+    @commands.hybrid_command(description="Memperlihatkan warna dari nilai RGB.")
+    @app_commands.describe(
+        red='Warna merah (0 - 255)',
+        green='Warna hijau (0 - 255)',
+        blue='Warna biru (0 - 255)'
+        )
+    @has_pfp()
+    @check_blacklist()
+    async def rgb(self, ctx:commands.Context, red:int, green:int, blue:int):
+        """Memperlihatkan warna dari nilai RGB."""
+        rgb = [red, green, blue]
+        if any(color > 255 for color in rgb):
+            return await ctx.reply("Salah satu nilai dari warna RGB melebihi 255!\nPastikan nilai RGB valid!", ephemeral=True)
+        async with aiohttp.ClientSession() as session:
+            initial_connection = await session.get(f'https://some-random-api.com/canvas/misc/hex?rgb={red},{green},{blue}')
+            data = await initial_connection.json()
+            hex_string = data['hex'].split('#')[1]
+        await self.hex(ctx, hex_string) # Cheat
+
+class Support(commands.GroupCog, group_name='support'):
     """
     Kumpulan command khusus untuk memperoleh bantuan dan pemberian saran/kritik.
     """
@@ -524,16 +605,7 @@ class Support(commands.Cog):
             )
             self.add_item(support_server)
 
-    @commands.hybrid_group(name='support')
-    @check_blacklist()
-    async def support_command(self, ctx:commands.Context) -> None:
-        """
-        Kumpulan command khusus untuk memperoleh bantuan dan pemberian kesan dan pesan. [GROUP]
-        """
-        await self.server(ctx)
-        pass
-
-    @support_command.command(description = 'Mengirimkan link untuk server supportku!')
+    @commands.hybrid_command(description = 'Mengirimkan link untuk server supportku!')
     @check_blacklist()
     async def server(self, ctx:commands.Context):
         """
@@ -541,7 +613,7 @@ class Support(commands.Cog):
         """
         await ctx.reply(f"Untuk join serverku agar dapat mengetahui lebih banyak tentang RVDiA, silahkan tekan link di bawah!\nhttps://discord.gg/QqWCnk6zxw\nAtau tekan tombol abu-abu di bawah ini.", view=self.Support_Button())
 
-    @support_command.command(description = 'Berikan aku saran untuk perbaikan atau penambahan fitur!')
+    @commands.hybrid_command(description = 'Berikan aku saran untuk perbaikan atau penambahan fitur!')
     @app_commands.rename(text='saran')
     @app_commands.rename(attachment='lampiran')
     @app_commands.describe(text='Apa yang ingin kamu sampaikan?')
