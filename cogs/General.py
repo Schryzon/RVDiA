@@ -604,6 +604,18 @@ class Support(commands.GroupCog, group_name='support'):
             )
             self.add_item(support_server)
 
+    class Donate_Button(View):
+        def __init__(self):
+            super().__init__(timeout=None)
+
+            donate = Button(
+                label= "Saweria Link",
+                emoji = '<:rvdia_happy:1121412270220660803>',
+                style = discord.ButtonStyle.blurple,
+                url = 'https://saweria.co/schryzon'
+            )
+            self.add_item(donate)
+
     @commands.hybrid_command(description = 'Mengirimkan link untuk server supportku!')
     @check_blacklist()
     async def guild(self, ctx:commands.Context):
@@ -611,6 +623,14 @@ class Support(commands.GroupCog, group_name='support'):
         Mengirimkan link untuk server supportku!
         """
         await ctx.reply(f"Untuk join serverku agar dapat mengetahui lebih banyak tentang RVDiA, silahkan tekan link di bawah!\nhttps://discord.gg/QqWCnk6zxw\nAtau tekan tombol abu-abu di bawah ini.", view=self.Support_Button())
+
+    @commands.hybrid_command(description = 'Dukung RVDiA melalui Saweria!')
+    @check_blacklist()
+    async def donate(self, ctx:commands.Context):
+        """
+        Dukung RVDiA melalui Saweria!
+        """
+        await ctx.reply(f"Untuk mendukung RVDiA secara finansial, tekan link di bawah ini!\nhttps://saweria.co/schryzon\nAtau tekan tombol abu-abu di bawah ini. Terima kasih!", view=self.Donate_Button())
 
     @commands.hybrid_command(description = 'Berikan aku saran untuk perbaikan atau penambahan fitur!')
     @app_commands.rename(text='saran')

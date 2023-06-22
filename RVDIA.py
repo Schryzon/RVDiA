@@ -38,6 +38,7 @@ class RVDIA(commands.AutoShardedBot):
     self.coin_emoji = "<:rvdia_coin:1121004598962954300>"
     self.coin_emoji_anim = "<a:rvdia_coin_anim:1121004592033955860>"
     self.rvdia_emoji = '<:rvdia:1082789733001875518>'
+    self.rvdia_emoji_happy = '<:rvdia_happy:1121412270220660803>'
     self.cyron_emoji = '<:cyron:1082789553263349851>' # Join up!!!
 
     super().__init__(
