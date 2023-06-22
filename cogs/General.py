@@ -538,8 +538,7 @@ class Utilities(commands.Cog):
         os.remove('./variation.png')
 
     @commands.hybrid_command(description="Memperlihatkan warna dari nilai hexadecimal.")
-    @app_commands.rename(user='pengguna')
-    @app_commands.describe(user='Foto profil siapa yang ingin diedit?')
+    @app_commands.describe(hex='Kode hexadecimal (Contoh: FF0000).')
     @has_pfp()
     @check_blacklist()
     async def hex(self, ctx:commands.Context, hex:str):
