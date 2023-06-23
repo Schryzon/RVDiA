@@ -703,7 +703,7 @@ class Game(commands.GroupCog, group_name = 'game'):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(description='Daftarkan akunmu ke Re:Volution!')
+    @commands.hybrid_command(aliases=['reg'], description='Daftarkan akunmu ke Re:Volution!')
     @app_commands.describe(name='Nama apa yang ingin kamu pakai di dalam gamenya?')
     @check_blacklist()
     async def register(self, ctx:commands.Context, *, name:str=None):
@@ -734,7 +734,7 @@ class Game(commands.GroupCog, group_name = 'game'):
         await asyncio.sleep(0.7)
         await self.account(ctx)
     
-    @app_commands.command(description='Menghapuskan akunmu dari Re:Volution.')
+    @commands.hybrid_command(description='Menghapuskan akunmu dari Re:Volution.')
     @has_registered()
     @check_blacklist()
     async def resign(self, ctx:commands.Context):
@@ -747,7 +747,7 @@ class Game(commands.GroupCog, group_name = 'game'):
         if view.value is None:
             await ctx.channel.send('Waktu habis, penghapusan akun dibatalkan.')
 
-    @app_commands.command(description='Dapatkan bonus login harian!')
+    @commands.hybrid_command(aliases=['login'], description='Dapatkan bonus login harian!')
     @has_registered()
     @check_blacklist()
     async def daily(self, ctx:commands.Context):
@@ -787,7 +787,7 @@ class Game(commands.GroupCog, group_name = 'game'):
             if level_up(ctx):
                 return await send_level_up_msg(ctx)
             
-    @app_commands.command(description='Lihat profil pengguna di Re:Volution!')
+    @commands.hybrid_command(description='Lihat profil pengguna di Re:Volution!')
     @app_commands.describe(user='Pengguna mana yang ingin dilihat akunnya?')
     @app_commands.rename(user='pengguna')
     @has_registered()
@@ -847,7 +847,7 @@ class Game(commands.GroupCog, group_name = 'game'):
         embed.set_footer(text='Login harian terakhir ')
         await ctx.reply(embed = embed)
 
-    @app_commands.command(description="Beli item atau perlengkapan perang!")
+    @commands.hybrid_command(description="Beli item atau perlengkapan perang!")
     @has_registered()
     @check_blacklist()
     async def shop(self, ctx:commands.Context):
@@ -895,7 +895,7 @@ class Game(commands.GroupCog, group_name = 'game'):
         view = ShopView(ctx)
         await ctx.reply(embed = embed, view=view)
 
-    @app_commands.command(description='Tantang seseorang ke sebuah duel!')
+    @commands.hybrid_command(description='Tantang seseorang ke sebuah duel!')
     @app_commands.describe(member='Siapa yang ingin kamu lawan?')
     @app_commands.rename(member='pengguna')
     @has_registered()
@@ -910,7 +910,7 @@ class Game(commands.GroupCog, group_name = 'game'):
         await game.start()
 
 
-    @app_commands.command(description='Lawan musuh-musuh yang ada di Re:Volution!')
+    @commands.hybrid_command(description='Lawan musuh-musuh yang ada di Re:Volution!')
     @app_commands.describe(enemy_tier='Musuh level berapa yang ingin kamu lawan?')
     @app_commands.rename(enemy_tier='level')
     @app_commands.describe(enemy_name='Nama musuh yang ingin kamu lawan?')
@@ -949,7 +949,7 @@ class Game(commands.GroupCog, group_name = 'game'):
         await game.start()
 
 
-    @app_commands.command(description='Lihat daftar musuh yang muncul di Re:Volution!')
+    @commands.hybrid_command(description='Lihat daftar musuh yang muncul di Re:Volution!', aliases=['enemy'])
     @has_registered()
     @check_blacklist()
     async def enemies(self, ctx:commands.Context):
@@ -961,7 +961,7 @@ class Game(commands.GroupCog, group_name = 'game'):
             await ctx.reply(f"Untuk melihat daftar musuh, silahkan tekan di bawah ini ↓", view=view)
 
 
-    @app_commands.command(description='Request untuk pemindahan data akun.')
+    @commands.hybrid_command(description='Request untuk pemindahan data akun.')
     @app_commands.describe(old_acc = "Akun Discord lamamu atau ID akun Discord lamamu.")
     @app_commands.describe(reason = "Alasan request pemindahan data akun.")
     @app_commands.rename(reason = "alasan")
@@ -1007,7 +1007,7 @@ class Game(commands.GroupCog, group_name = 'game'):
         await ctx.send("Aku telah mengirimkan request transfer data akun ke developer!\nMohon ditunggu persetujuannya ya!\nJangan lupa untuk mengaktifkan pesan DM dari aku karena nanti akan diberikan info apabila disetujui/ditolak.")
 
 
-    @app_commands.command(description='Ayo main tebak angka bersamaku!')
+    @commands.hybrid_command(description='Ayo main tebak angka bersamaku!')
     @app_commands.describe(level='Tingkat kesulitan mana yang akan kamu pilih?')
     @app_commands.choices(level=[
         app_commands.Choice(name='SUPER', value='SUPER'),

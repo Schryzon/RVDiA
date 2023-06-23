@@ -618,19 +618,19 @@ class Support(commands.GroupCog, group_name='support'):
 
     @app_commands.command(description = 'Mengirimkan link untuk server supportku!')
     @check_blacklist()
-    async def guild(self, ctx:commands.Context):
+    async def guild(self, interaction:discord.Interaction):
         """
         Mengirimkan link untuk server supportku!
         """
-        await ctx.reply(f"Untuk join serverku agar dapat mengetahui lebih banyak tentang RVDiA, silahkan tekan link di bawah!\nhttps://discord.gg/QqWCnk6zxw\nAtau tekan tombol abu-abu di bawah ini.", view=self.Support_Button())
+        await interaction.response.send_message(f"Untuk join serverku agar dapat mengetahui lebih banyak tentang RVDiA, silahkan tekan link di bawah!\nhttps://discord.gg/QqWCnk6zxw\nAtau tekan tombol abu-abu di bawah ini.", view=self.Support_Button())
 
     @app_commands.command(description = 'Dukung RVDiA melalui Saweria!')
     @check_blacklist()
-    async def donate(self, ctx:commands.Context):
+    async def donate(self, interaction:discord.Interaction):
         """
         Dukung RVDiA melalui Saweria!
         """
-        await ctx.reply(f"Untuk mendukung RVDiA secara finansial, tekan link di bawah ini!\nhttps://saweria.co/schryzon\nAtau tekan tombol abu-abu di bawah ini. Terima kasih!", view=self.Donate_Button())
+        await interaction.response.send_message(f"Untuk mendukung RVDiA secara finansial, tekan link di bawah ini!\nhttps://saweria.co/schryzon\nAtau tekan tombol abu-abu di bawah ini. Terima kasih!", view=self.Donate_Button())
 
     @app_commands.command(description = 'Berikan aku saran untuk perbaikan atau penambahan fitur!')
     @app_commands.rename(text='saran')
@@ -638,19 +638,19 @@ class Support(commands.GroupCog, group_name='support'):
     @app_commands.describe(text='Apa yang ingin kamu sampaikan?')
     @app_commands.describe(attachment='Apakah ada contoh gambarnya? (Opsional)')
     @check_blacklist()
-    async def suggest(self, ctx:commands.Context, text:str, attachment:discord.Attachment = None):
+    async def suggest(self, interaction:discord.Interaction, text:str, attachment:discord.Attachment = None):
         """
         Berikan aku saran untuk perbaikan atau penambahan fitur!
         """
         channel = self.bot.get_channel(1118145279464570921)
-        embed = discord.Embed(title="Saran Baru!", color=ctx.author.color, timestamp=ctx.message.created_at)
-        embed.set_author(name=f"Dari {ctx.author}")
+        embed = discord.Embed(title="Saran Baru!", color=interaction.user.color, timestamp=interaction.message.created_at)
+        embed.set_author(name=f"Dari {interaction.user}")
         if attachment:
             embed.set_image(url = attachment.url)
         embed.description = text
-        embed.set_thumbnail(url = ctx.author.display_avatar.url) # New knowledge get!
+        embed.set_thumbnail(url = interaction.user.display_avatar.url) # New knowledge get!
         await channel.send(embed=embed)
-        await ctx.reply(f"Terima kasih atas sarannya!\nSemoga RVDiA akan selalu bisa memenuhi ekspektasimu!")
+        await interaction.response.send_message(f"Terima kasih atas sarannya!\nSemoga RVDiA akan selalu bisa memenuhi ekspektasimu!")
 
 async def setup(bot:commands.Bot):
     await bot.add_cog(General(bot))

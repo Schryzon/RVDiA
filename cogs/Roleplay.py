@@ -29,7 +29,7 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         
     async def create_embed_and_sendGIF(
             self, 
-            ctx:commands.Context, 
+            interaction:discord.Interaction, 
             url:str,
             source:str,
             action:str,
@@ -39,152 +39,152 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         Lazy me lol
         """
         if not user:
-            embed = discord.Embed(title=f'{ctx.author.display_name} {action}!', color=ctx.author.color)
+            embed = discord.Embed(title=f'{interaction.user.display_name} {action}!', color=interaction.user.color)
         else:
-            embed = discord.Embed(title=f'{ctx.author.display_name} {action} {user.display_name}!', color=ctx.author.color)
+            embed = discord.Embed(title=f'{interaction.user.display_name} {action} {user.display_name}!', color=interaction.user.color)
         embed.set_image(url=url)
         embed.set_footer(text=f'Source: {source}')
-        await ctx.send(embed=embed)
+        await interaction.response.send_message(embed=embed)
 
     @app_commands.command(description='Peluk seseorang!')
     @app_commands.describe(user='Siapa yang ingin kamu peluk?')
     @app_commands.rename(user='pengguna')
     @check_blacklist()
     @has_voted()
-    async def hug(self, ctx:commands.Context, *, user:discord.Member):
+    async def hug(self, interaction:discord.Interaction, *, user:discord.Member):
         """
         Peluk seseorang!
         """
         get_request = await self.nekos_get('hug')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Memeluk', user)
+        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Memeluk', user)
     
     @app_commands.command(description='Cium seseorang!')
     @app_commands.describe(user='Siapa yang ingin kamu cium?')
     @app_commands.rename(user='pengguna')
     @check_blacklist()
     @has_voted()
-    async def kiss(self, ctx:commands.Context, *, user:discord.Member):
+    async def kiss(self, interaction:discord.Interaction, *, user:discord.Member):
         """
         Cium seseorang!
         """
         get_request = await self.nekos_get('kiss')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Mencium', user)
+        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Mencium', user)
     
     @app_commands.command(description='Tampar seseorang!')
     @app_commands.describe(user='Siapa yang ingin kamu tampar?')
     @app_commands.rename(user='pengguna')
     @check_blacklist()
     @has_voted()
-    async def slap(self, ctx:commands.Context, *, user:discord.Member):
+    async def slap(self, interaction:discord.Interaction, *, user:discord.Member):
         """
         Tampar seseorang!
         """
         get_request = await self.nekos_get('slap')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Menampar', user)
+        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Menampar', user)
     
     @app_commands.command(description='Ungkapkan ekspresi tertawamu!')
     @check_blacklist()
     @has_voted()
-    async def laugh(self, ctx:commands.Context):
+    async def laugh(self, interaction:discord.Interaction):
         """
         Ungkapkan ekspresi tertawamu!
         """
         get_request = await self.nekos_get('laugh')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Tertawa')
+        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Tertawa')
     
     @app_commands.command(description='Ungkapkan ekspresi bahagiamu!')
     @check_blacklist()
     @has_voted()
-    async def happy(self, ctx:commands.Context):
+    async def happy(self, interaction:discord.Interaction):
         """
         Ungkapkan ekspresi bahagiamu!
         """
         get_request = await self.nekos_get('happy')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Merasa Bahagia')
+        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Merasa Bahagia')
     
     @app_commands.command(description='Ungkapkan ekspresi berpikirmu!')
     @check_blacklist()
     @has_voted()
-    async def think(self, ctx:commands.Context):
+    async def think(self, interaction:discord.Interaction):
         """
         Ungkapkan ekspresi berpikirmu!
         """
         get_request = await self.nekos_get('think')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Sedang Berpikir')
+        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Sedang Berpikir')
     
     @app_commands.command(description='Ungkapkan ekspresi malumu!')
     @check_blacklist()
     @has_voted()
-    async def blush(self, ctx:commands.Context):
+    async def blush(self, interaction:discord.Interaction):
         """
         Ungkapkan ekspresi malumu!
         """
         get_request = await self.nekos_get('blush')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Merasa Malu')
+        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Merasa Malu')
     
     @app_commands.command(description='Ungkapkan ekspresi sedihmu!')
     @check_blacklist()
     @has_voted()
-    async def cry(self, ctx:commands.Context):
+    async def cry(self, interaction:discord.Interaction):
         """
         Ungkapkan ekspresi sedihmu!
         """
         get_request = await self.nekos_get('cry')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Menangis')
+        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Menangis')
 
     @app_commands.command(description='Ungkapkan ekspresi setujumu!')
     @check_blacklist()
     @has_voted()
-    async def agree(self, ctx:commands.Context):
+    async def agree(self, interaction:discord.Interaction):
         """
         Ungkapkan ekspresi setujumu!
         """
         get_request = await self.nekos_get('thumbsup')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Setuju')
+        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Setuju')
     
     @app_commands.command(description='Elus kepala seseorang!')
     @app_commands.describe(user='Siapa yang ingin kamu elus kepalanya?')
     @app_commands.rename(user='pengguna')
     @check_blacklist()
     @has_voted()
-    async def pat(self, ctx:commands.Context, *, user:discord.Member):
+    async def pat(self, interaction:discord.Interaction, *, user:discord.Member):
         """
         Tampar seseorang!
         """
         get_request = await self.nekos_get('slap')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Mengelus Kepala', user)
+        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Mengelus Kepala', user)
     
     @app_commands.command(description='Ungkapkan ekspresi kebosananmu!')
     @check_blacklist()
     @has_voted()
-    async def bored(self, ctx:commands.Context):
+    async def bored(self, interaction:discord.Interaction):
         """
         Ungkapkan ekspresi kebosananmu!
         """
         get_request = await self.nekos_get('bored')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Merasa Bosan')
+        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Merasa Bosan')
 
 async def setup(bot):
     await bot.add_cog(Roleplay(bot))

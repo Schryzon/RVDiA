@@ -22,7 +22,7 @@ class Event(commands.GroupCog, group_name = 'event'):
     @app_commands.command(name='info', description = 'Lihat info event yang sedang berlangsung!')
     @event_available()
     @check_blacklist()
-    async def info(self, ctx:commands.Context) -> None:
+    async def info(self, interaction:discord.Interaction) -> None:
         """
         Lihat info event yang sedang berlangsung!
         """
@@ -32,7 +32,7 @@ class Event(commands.GroupCog, group_name = 'event'):
         embed.description = "Bot yang sebelumnya bernama RVDIA (Revolutionary Virtual Independent Discord Application), telah mengalami perubahan agar namanya lebih simpel dan mudah diingat oleh pengguna.\n\nMulai dari hari ini (<t:1685350330:D>), RVDiA (Revolutionary Virtual Discord Assistant) akan membantumu dalam menyelesaikan segala permasalahan, kecuali yang sangat pribadi yah.\n\nUntuk informasi mengenai fitur Game, akan saya coba implementasikan sebisa mungkin, berhubung jadwal saya yang cukup padat. Saya akan terus mencoba untuk memenuhi tujuan dari Project RVDiA, kebahagiaan, kemampuan, dan pengetahuan.\n\n-Schryzon"
         embed.set_image(url=os.getenv('bannerevent'))
         embed.set_footer(text='Revolusioner, Virtual, Independen; Aktif, Ceria, Menggemaskan.')
-        await ctx.reply(embed=embed)
+        await interaction.response.send_message(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(Event(bot))
