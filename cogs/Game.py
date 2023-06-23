@@ -703,7 +703,7 @@ class Game(commands.GroupCog, group_name = 'game'):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(aliases=['reg'], description='Daftarkan akunmu ke Re:Volution!')
+    @app_commands.command(description='Daftarkan akunmu ke Re:Volution!')
     @app_commands.describe(name='Nama apa yang ingin kamu pakai di dalam gamenya?')
     @check_blacklist()
     async def register(self, ctx:commands.Context, *, name:str=None):
