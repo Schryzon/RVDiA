@@ -95,7 +95,8 @@ class GameInstance():
 
     async def attack(self, dealer_stat:list, taker_stat:list, dealer_id:int, is_defending:bool):
         try:
-            user_2_max_hp = self.user2['hp']
+            if not isinstance(self.user2, discord.Member):
+                user_2_max_hp = self.user2['hp']
         except AttributeError: # Ignore on Attr Error
             pass
         user_1_atk, user_1_def, user_1_agl = dealer_stat[0], dealer_stat[1], dealer_stat[2]
