@@ -159,7 +159,7 @@ class GameInstance():
         user1_data = database.find_one({'_id':user1.id})
         items = user1_data['items']
         view = ItemView(items, user1)
-        await self.ctx.channel.send(f"{user1.mention}, 6 detik untuk memilih item.", view=view)
+        await self.ctx.channel.send(f"{user1.mention}, 10 detik untuk memilih item.", view=view)
 
     async def func_converter(self, func:str, user1, user2):
         func = re.sub(r'\(|\)', '', func)
@@ -227,7 +227,7 @@ class GameInstance():
                 case "Opsi terpilih: 👜Barang":
                     await self.use(self.user1)
                     try:
-                        res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and " menggunakan " in r.content, timeout = 6)
+                        res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and " menggunakan " in r.content, timeout = 10)
                     except asyncio.TimeoutError:
                         await self.ctx.channel.send(f"{self.user1.mention}, giliranmu diskip karena tidak menggunakan item!")
                     func = res_use.content.split('\n')[1] # Dear god hope this works
@@ -250,7 +250,7 @@ class GameInstance():
                         stats = datas[1]['stats']
                         embed = discord.Embed(title=self.user2['name'], color=0xff0000)
                         # embed.set_thumbnail(url=self.user2.display_avatar.url)
-                        embed.description = f"\"{self.user2['desc']}\"\nHP: `{self.user2_hp}`/`100`\nBertahan? `{'TIDAK' if self.user2_defend is False else 'YA'}`"
+                        embed.description = f"\"{self.user2['desc']}\"\nHP: `{self.user2_hp}`/`{datas[1]['hp']}`\nBertahan? `{'TIDAK' if self.user2_defend is False else 'YA'}`"
                         embed.add_field(
                             name="Statisik Tempur",
                             value=f"Attack: `{stats[0]}`\nDefense: `{stats[1]}`\nAgility: `{stats[2]}`",
@@ -314,7 +314,7 @@ class GameInstance():
                     case "Opsi terpilih: 👜Barang":
                         await self.use(self.user2)
                         try:
-                            res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and " menggunakan " in r.content, timeout = 6)
+                            res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and " menggunakan " in r.content, timeout = 10)
                         except asyncio.TimeoutError:
                             await self.ctx.channel.send(f"{self.user2.mention}, giliranmu diskip karena tidak menggunakan item!")
                         func = res_use.content.split('\n')[1] # Dear god hope this works
