@@ -46,7 +46,7 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         embed.set_footer(text=f'Source: {source}')
         await ctx.send(embed=embed)
 
-    @commands.hybrid_command(description='Peluk seseorang!')
+    @app_commands.command(description='Peluk seseorang!')
     @app_commands.describe(user='Siapa yang ingin kamu peluk?')
     @app_commands.rename(user='pengguna')
     @check_blacklist()
@@ -60,7 +60,7 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         anime_name = get_request[1]
         return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Memeluk', user)
     
-    @commands.hybrid_command(description='Cium seseorang!')
+    @app_commands.command(description='Cium seseorang!')
     @app_commands.describe(user='Siapa yang ingin kamu cium?')
     @app_commands.rename(user='pengguna')
     @check_blacklist()
@@ -74,7 +74,7 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         anime_name = get_request[1]
         return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Mencium', user)
     
-    @commands.hybrid_command(description='Tampar seseorang!')
+    @app_commands.command(description='Tampar seseorang!')
     @app_commands.describe(user='Siapa yang ingin kamu tampar?')
     @app_commands.rename(user='pengguna')
     @check_blacklist()
@@ -88,7 +88,7 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         anime_name = get_request[1]
         return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Menampar', user)
     
-    @commands.hybrid_command(description='Ungkapkan ekspresi tertawamu!')
+    @app_commands.command(description='Ungkapkan ekspresi tertawamu!')
     @check_blacklist()
     @has_voted()
     async def laugh(self, ctx:commands.Context):
@@ -100,7 +100,7 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         anime_name = get_request[1]
         return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Tertawa')
     
-    @commands.hybrid_command(description='Ungkapkan ekspresi bahagiamu!')
+    @app_commands.command(description='Ungkapkan ekspresi bahagiamu!')
     @check_blacklist()
     @has_voted()
     async def happy(self, ctx:commands.Context):
@@ -112,7 +112,7 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         anime_name = get_request[1]
         return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Merasa Bahagia')
     
-    @commands.hybrid_command(description='Ungkapkan ekspresi berpikirmu!')
+    @app_commands.command(description='Ungkapkan ekspresi berpikirmu!')
     @check_blacklist()
     @has_voted()
     async def think(self, ctx:commands.Context):
@@ -124,7 +124,7 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         anime_name = get_request[1]
         return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Sedang Berpikir')
     
-    @commands.hybrid_command(description='Ungkapkan ekspresi malumu!')
+    @app_commands.command(description='Ungkapkan ekspresi malumu!')
     @check_blacklist()
     @has_voted()
     async def blush(self, ctx:commands.Context):
@@ -136,7 +136,7 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         anime_name = get_request[1]
         return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Merasa Malu')
     
-    @commands.hybrid_command(description='Ungkapkan ekspresi sedihmu!')
+    @app_commands.command(description='Ungkapkan ekspresi sedihmu!')
     @check_blacklist()
     @has_voted()
     async def cry(self, ctx:commands.Context):
@@ -148,7 +148,7 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         anime_name = get_request[1]
         return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Menangis')
 
-    @commands.hybrid_command(description='Ungkapkan ekspresi setujumu!')
+    @app_commands.command(description='Ungkapkan ekspresi setujumu!')
     @check_blacklist()
     @has_voted()
     async def agree(self, ctx:commands.Context):
@@ -160,7 +160,7 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         anime_name = get_request[1]
         return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Setuju')
     
-    @commands.hybrid_command(description='Elus kepala seseorang!')
+    @app_commands.command(description='Elus kepala seseorang!')
     @app_commands.describe(user='Siapa yang ingin kamu elus kepalanya?')
     @app_commands.rename(user='pengguna')
     @check_blacklist()
@@ -174,7 +174,7 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         anime_name = get_request[1]
         return await self.create_embed_and_sendGIF(ctx, gif_url, anime_name, 'Mengelus Kepala', user)
     
-    @commands.hybrid_command(description='Ungkapkan ekspresi kebosananmu!')
+    @app_commands.command(description='Ungkapkan ekspresi kebosananmu!')
     @check_blacklist()
     @has_voted()
     async def bored(self, ctx:commands.Context):

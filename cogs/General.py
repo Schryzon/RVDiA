@@ -616,7 +616,7 @@ class Support(commands.GroupCog, group_name='support'):
             )
             self.add_item(donate)
 
-    @commands.hybrid_command(description = 'Mengirimkan link untuk server supportku!')
+    @app_commands.command(description = 'Mengirimkan link untuk server supportku!')
     @check_blacklist()
     async def guild(self, ctx:commands.Context):
         """
@@ -624,7 +624,7 @@ class Support(commands.GroupCog, group_name='support'):
         """
         await ctx.reply(f"Untuk join serverku agar dapat mengetahui lebih banyak tentang RVDiA, silahkan tekan link di bawah!\nhttps://discord.gg/QqWCnk6zxw\nAtau tekan tombol abu-abu di bawah ini.", view=self.Support_Button())
 
-    @commands.hybrid_command(description = 'Dukung RVDiA melalui Saweria!')
+    @app_commands.command(description = 'Dukung RVDiA melalui Saweria!')
     @check_blacklist()
     async def donate(self, ctx:commands.Context):
         """
@@ -632,7 +632,7 @@ class Support(commands.GroupCog, group_name='support'):
         """
         await ctx.reply(f"Untuk mendukung RVDiA secara finansial, tekan link di bawah ini!\nhttps://saweria.co/schryzon\nAtau tekan tombol abu-abu di bawah ini. Terima kasih!", view=self.Donate_Button())
 
-    @commands.hybrid_command(description = 'Berikan aku saran untuk perbaikan atau penambahan fitur!')
+    @app_commands.command(description = 'Berikan aku saran untuk perbaikan atau penambahan fitur!')
     @app_commands.rename(text='saran')
     @app_commands.rename(attachment='lampiran')
     @app_commands.describe(text='Apa yang ingin kamu sampaikan?')

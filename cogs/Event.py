@@ -1,5 +1,6 @@
 import discord
 import os
+from discord import app_commands
 from discord.ext import commands
 from scripts.main import check_blacklist, event_available
 
@@ -18,7 +19,7 @@ class Event(commands.GroupCog, group_name = 'event'):
             case False: return False
             case _: return False
 
-    @commands.hybrid_command(name='info', description = 'Lihat info event yang sedang berlangsung!')
+    @app_commands.command(name='info', description = 'Lihat info event yang sedang berlangsung!')
     @event_available()
     @check_blacklist()
     async def info(self, ctx:commands.Context) -> None:
