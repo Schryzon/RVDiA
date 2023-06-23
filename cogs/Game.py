@@ -5,6 +5,7 @@ Do all of these even make sense???
 """
 
 import asyncio
+import re
 import discord
 import datetime
 import time
@@ -33,6 +34,20 @@ class FightView(View):
         if interaction.message.mentions[0] != interaction.user:
             return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
         await interaction.response.send_message("Opsi terpilih: 🛡️Tahan")
+        await asyncio.sleep(0.5)
+
+    @button(label='Barang', custom_id='item', style=discord.ButtonStyle.green, emoji='👜')
+    async def item(self, interaction:discord.Interaction, button:Button):
+        if interaction.message.mentions[0] != interaction.user:
+            return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
+        await interaction.response.send_message("Opsi terpilih: 👜Barang")
+        await asyncio.sleep(0.5)
+
+    @button(label='Musuh', custom_id='check', style=discord.ButtonStyle.gray, emoji='❔')
+    async def check(self, interaction:discord.Interaction, button:Button):
+        if interaction.message.mentions[0] != interaction.user:
+            return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
+        await interaction.response.send_message("Opsi terpilih: ❔Musuh")
         await asyncio.sleep(0.5)
 
     @button(label='Kabur', custom_id='end', style=discord.ButtonStyle.gray, emoji='🏃')
@@ -105,9 +120,9 @@ class GameInstance():
         if is_defending:
             user_2_def += random.randint(8, 15)
         if dealer_id != 1 and self.ctx.command.name == "battle":
-            damage = round(max(0, user_1_atk*(random.randint(90, 100) - user_2_def)/user_2_max_hp))
+            damage = round(max(0, user_1_atk*(random.randint(80, 100) - user_2_def)/user_2_max_hp))
         else:
-            damage = round(max(0, user_1_atk*(random.randint(90, 100) - user_2_def)/100))
+            damage = round(max(0, user_1_atk*(random.randint(80, 100) - user_2_def)/100))
         miss_chance = (user_2_agl - user_1_agl)*2 + 5
         hit_chance = 100 - miss_chance
         attack_chance = random.randint(0, 100)
@@ -139,6 +154,35 @@ class GameInstance():
         else:
             self.user2_defend = True
     
+    async def use(self, user1):
+        database = connectdb('Game')
+        user1_data = database.find_one({'_id':user1.id})
+        items = user1_data['items']
+        view = ItemView(items, user1)
+        await self.ctx.channel.send(f"{user1.mention}, 6 detik untuk memilih item.", view=view)
+
+    async def func_converter(self, func:str, user1, user2):
+        func = re.sub(r'\(|\)', '', func)
+        func = func.split('+')
+        match func[0]:
+            case 'HP':
+                if user1 == self.user1:
+                    self.user1_hp += int(func[1])
+
+                else:
+                    self.user2_hp += int(func[1])
+
+                await self.ctx.channel.send(f'{user1.mention} memulihkan `{func[1]}` HP!')
+
+            case 'DMG':
+                if user1 == self.user1:
+                    self.user2_hp -= int(func[1])
+
+                else:
+                    self.user1_hp -= int(func[1])
+                
+                await self.ctx.channel.send(f'{user1.mention} memberikan `{func[1]}` Damage instan ke {user2.mention}!')
+
 
     async def start(self):
         # Start -> Create Thread -> While loop (this is for later zzz)
@@ -146,7 +190,7 @@ class GameInstance():
         self.running = True
         datas = await self.gather_data()
         if isinstance(self.user2, discord.Member):
-            await self.ctx.reply(f'⚔️ Perang dimulai!\nMusuh: {self.user2.mention}') # I'll just use this for now
+            await self.ctx.reply(f'⚔️ Perang dimulai!\nLawan: {self.user2.mention}') # I'll just use this for now
         else:
             await self.ctx.reply(f"⚔️ Perang dimulai!\nMusuh: **`{self.user2['name']}`**\nLevel: **``{self.user2['tier']}``**")
         await asyncio.sleep(2.7)
@@ -179,6 +223,42 @@ class GameInstance():
                     embed.description = f"**Defense bertambah untuk serangan selanjutnya!**"
                     embed.set_thumbnail(url=self.user1.display_avatar.url)
                     await self.ctx.channel.send(embed=embed)
+
+                case "Opsi terpilih: 👜Barang":
+                    await self.use(self.user1)
+                    try:
+                        res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and " menggunakan " in r.content, timeout = 6)
+                    except asyncio.TimeoutError:
+                        await self.ctx.channel.send(f"{self.user1.mention}, giliranmu diskip karena tidak menggunakan item!")
+                    func = res_use.content.split('\n')[1] # Dear god hope this works
+                    await self.func_converter(func, self.user1, self.user2)
+
+                case "Opsi terpilih: ❔Musuh":
+                    if isinstance(self.user2, discord.Member):
+                        stats = datas[1]['stats']
+                        embed = discord.Embed(title=self.user2.display_name, color=self.user2.color)
+                        embed.set_thumbnail(url=self.user2.display_avatar.url)
+                        embed.description = f"HP: `{self.user2_hp}`/`100`\nBertahan? `{'TIDAK' if self.user2_defend is False else 'YA'}`"
+                        embed.add_field(
+                            name="Statisik Tempur",
+                            value=f"Attack: `{stats[0]}`\nDefense: `{stats[1]}`\nAgility: `{stats[2]}`",
+                            inline=False
+                        )
+                        embed.set_author(name='Info Lawan:')
+                    
+                    else:
+                        stats = datas[1]['stats']
+                        embed = discord.Embed(title=self.user2['name'], color=0xff0000)
+                        # embed.set_thumbnail(url=self.user2.display_avatar.url)
+                        embed.description = f"\"{self.user2['desc']}\"\nHP: `{self.user2_hp}`/`100`\nBertahan? `{'TIDAK' if self.user2_defend is False else 'YA'}`"
+                        embed.add_field(
+                            name="Statisik Tempur",
+                            value=f"Attack: `{stats[0]}`\nDefense: `{stats[1]}`\nAgility: `{stats[2]}`",
+                            inline=False
+                        )
+                        embed.set_author(name='Info Musuh:')
+
+                    await self.ctx.channel.send(embed = embed)
 
                 case "Opsi terpilih: 🏃Kabur":
                     await self.ctx.channel.send(f'⛔ <@{self.user1.id}>  mengakhiri perang.')
@@ -217,6 +297,28 @@ class GameInstance():
                         embed.description = f"**Defense bertambah untuk serangan selanjutnya!**"
                         embed.set_thumbnail(url=self.user2.display_avatar.url)
                         await self.ctx.channel.send(embed=embed)
+
+                    case "Opsi terpilih: ❔Musuh":
+                        stats = datas[0]['stats']
+                        embed = discord.Embed(title=self.user1.display_name, color=self.user1.color)
+                        embed.set_thumbnail(url=self.user1.display_avatar.url)
+                        embed.description = f"HP: `{self.user1_hp}`/`100`\nBertahan? `{'TIDAK' if self.user1_defend is False else 'YA'}`"
+                        embed.add_field(
+                            name="Statisik Tempur",
+                            value=f"Attack: `{stats[0]}`\nDefense: `{stats[1]}`\nAgility: `{stats[2]}`",
+                            inline=False
+                        )
+                        embed.set_author(name='Info Lawan:')
+                        await self.ctx.channel.send(embed = embed)
+
+                    case "Opsi terpilih: 👜Barang":
+                        await self.use(self.user2)
+                        try:
+                            res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and " menggunakan " in r.content, timeout = 6)
+                        except asyncio.TimeoutError:
+                            await self.ctx.channel.send(f"{self.user2.mention}, giliranmu diskip karena tidak menggunakan item!")
+                        func = res_use.content.split('\n')[1] # Dear god hope this works
+                        await self.func_converter(func, self.user2, self.user1)
 
                     case "Opsi terpilih: 🏃Kabur":
                         await self.ctx.channel.send(f'⛔ <@{self.user2.id}>  mengakhiri perang.')
@@ -394,6 +496,57 @@ class AI():
 
         return action
     
+class ItemDropdown(discord.ui.Select):
+    def __init__(self, items:list, user1) -> None:
+        self.user1 = user1
+        self.items = items
+        options = []
+        for index, item in enumerate(items):
+            index += 1
+            if '0-' in item['_id'] and item['usefor'] == 'battle':
+                options.append(discord.SelectOption(
+                    label=f"{index}. {item['name']}",
+                    value=item['_id'],
+                    description=f"{item['desc']} ({item['func'].upper()})"
+                ))
+        if options == []:
+            options.append(discord.SelectOption(
+                    label=f"Tidak ada item!",
+                    value="none",
+                    description=f"Kamu harus membelinya dulu di /game shop!"
+                )
+            )
+        super().__init__(custom_id="itemdrop", placeholder='Pilih item yang ingin kamu pakai!', min_values=1, max_values=1, options=options)
+
+    async def callback(self, interaction:discord.Interaction):
+        if interaction.message.mentions[0].id != interaction.user.id:
+            return await interaction.response.send_message(f"Hey! Kamu tidak diizinkan untuk memilih!", ephemeral=True) #Does this even work
+        if self.values[0] == 'none':
+            return await interaction.response.send_message("Kamu tidak memiliki item apapun!", ephemeral=True)
+        database = connectdb('Game')
+        data = database.find_one({'_id':self.user1.id})
+        db_items = data['items']
+        used_item = None
+        if db_items == self.items:
+            for item in self.items:
+                if item['_id'] == self.values[0] and not item['owned'] <= 0:
+                    database.find_one_and_update(
+                        {'_id':self.user1.id, 'items._id':self.values[0]},
+                        {'$inc':{'items.$.owned':-1}}
+                        )
+                    used_item = [item['name'], item['func']]
+                    break
+
+        if used_item is None:
+            raise Exception("The Item Dropdown callback is behaving wierdly!")
+        await interaction.response.send_message(f"{interaction.user.mention} menggunakan {used_item[0]}\n({used_item[1].upper()})")
+
+
+class ItemView(View):
+    def __init__(self, items:list, user1):
+        super().__init__(timeout=20)
+        self.add_item(ItemDropdown(items, user1))
+    
 def guess_level_convert(level:str):
     """
     Converts to n amount of numbers need to be guessed
@@ -509,6 +662,7 @@ class ResignButton(View):
 class ShopDropdown(discord.ui.Select):
     """
     Buy feature
+    TO DO: TREAT BUYING ITEMS DIFFERENT FROM EQUIPMENTS
     """
     def __init__(self, page:int):
         self.page = page

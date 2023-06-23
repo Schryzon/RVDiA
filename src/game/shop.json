@@ -2,6 +2,7 @@
     {
         "name":"Beginner's Experience",
         "_id":"0-bgexp",
+        "usefor":"free",
         "desc":"Memberikanmu 50 EXP.",
         "type":"Consumable",
         "func":"exp+50",
@@ -39,21 +40,23 @@
         "paywith":"Karma"
     },
     {
+        "name":"Healing Light",
+        "_id":"0-heallight",
+        "usefor":"battle",
+        "desc":"Cahaya yang mampu menyembuhkan lukamu.",
+        "type":"Consumable",
+        "func":"hp+30",
+        "cost":7,
+        "paywith":"Karma"
+    },
+    {
         "name":"Heat Riser",
         "_id":"0-heat",
+        "usefor":"battle",
         "desc":"Menambah damage seranganmu saat bertarung.",
         "type":"Consumable",
         "func":"atk+10",
         "cost":5,
-        "paywith":"Karma"
-    },
-    {
-        "name":"Healing Light",
-        "_id":"0-heallight",
-        "desc":"Cahaya yang mampu menyembuhkan lukamu.",
-        "type":"Consumable",
-        "func":"hep+30",
-        "cost":7,
         "paywith":"Karma"
     },
     {
@@ -69,9 +72,10 @@
     {
         "name":"Rejuvenation Potion",
         "_id":"0-rejuv",
+        "usefor":"battle",
         "desc":"Memulihkan sebagian besar dari lukamu.",
         "type":"Consumable",
-        "func":"hep+100",
+        "func":"hp+100",
         "cost":19,
         "paywith":"Karma"
     }
