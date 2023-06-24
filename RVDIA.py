@@ -31,7 +31,7 @@ class RVDIA(commands.AutoShardedBot):
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "EVO v1.0.7.5"
+    self.__version__ = "EVO v1.0.8"
     self.event_mode = True
     self.color = 0xff4df0
     self.runtime = time() # UNIX float
@@ -367,6 +367,14 @@ async def on_message(msg:discord.Message):
               return await msg.channel.send('Maaf, fitur ini sedang dalam gangguan. Mohon dicoba nanti!')
            elif "unknown message" in str(e).lower() or 'message_id: Value "None" is not snowflake.' in str(e):
               return await msg.channel.send("Hah?!\nSepertinya aku sedang mengalami masalah menemukan pesan yang kamu reply!")
+           elif "403 Forbidden" in str(e) or "Missing Access" in str(e):
+              try:
+                 return await msg.channel.send("Aku kekurangan `permission` untuk menjalankan fitur ini!\nPastikan aku bisa mengirim pesan dan embed di channel ini!")
+              except:
+                 try:
+                    return await msg.author.send("Aku kekurangan `permission` untuk menjalankan fitur ini!\nPastikan aku bisa mengirim pesan dan embed di channel itu!")
+                 except:
+                    return
            await msg.channel.send('Ada yang bermasalah dengan fitur ini, aku sudah mengirimkan laporan ke developer!')
            channel = rvdia.get_channel(906123251997089792)
            await channel.send(f'`{e}` Untuk fitur balasan GPT-3.5 Turbo!')
