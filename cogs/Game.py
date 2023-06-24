@@ -249,7 +249,6 @@ class GameInstance():
                     else:
                         stats = datas[1]['stats']
                         embed = discord.Embed(title=self.user2['name'], color=0xff0000)
-                        # embed.set_thumbnail(url=self.user2.display_avatar.url)
                         embed.description = f"\"{self.user2['desc']}\"\nHP: `{self.user2_hp}`/`{datas[1]['hp']}`\nBertahan? `{'TIDAK' if self.user2_defend is False else 'YA'}`"
                         embed.add_field(
                             name="Statisik Tempur",
@@ -257,6 +256,10 @@ class GameInstance():
                             inline=False
                         )
                         embed.set_author(name='Info Musuh:')
+                        try:
+                            embed.set_thumbnail(url = self.user2['avatar'])
+                        except:
+                            pass
 
                     await self.ctx.channel.send(embed = embed)
 
@@ -335,21 +338,30 @@ class GameInstance():
                         damage = await self.attack(datas[1]['stats'], datas[0]['stats'], 1, self.user1_defend)
                         embed = discord.Embed(title=f'💥{self.user2["name"]} Menyerang!', color=0xff0000)
                         embed.description = f"**`{damage}` Damage!**\nHP <@{self.user1.id}> tersisa `{self.user1_hp}` HP!"
-                        # ADD EMBED THUMBNAIL
+                        try:
+                            embed.set_thumbnail(url = self.user2['avatar'])
+                        except:
+                            pass
                         await self.ctx.channel.send(embed=embed)
 
                     case "defend":
                         self.defend(self.user2)
                         embed = discord.Embed(title=f'🛡️{self.user2["name"]} Melindungi Diri!', color=0xff0000)
                         embed.description = f"**Defense bertambah untuk serangan selanjutnya!**"
-                        # ADD EMBED THUMBNAIL
+                        try:
+                            embed.set_thumbnail(url = self.user2['avatar'])
+                        except:
+                            pass
                         await self.ctx.channel.send(embed=embed)
 
                     case "run":
                         embed = discord.Embed(title=f'🏃{self.user2["name"]} Kabur!', color=0xff0000)
                         embed.description = f"**Sayang sekali!\nCoba lagi nanti!**"
                         embed.set_footer(text="Tidak ada hadiah ketika musuh kabur!")
-                        # ADD EMBED THUMBNAIL
+                        try:
+                            embed.set_thumbnail(url = self.user2['avatar'])
+                        except:
+                            pass
                         return await self.ctx.channel.send(embed=embed)
                     
             turns += 1
@@ -403,8 +415,11 @@ class GameInstance():
             else:
                 embed = discord.Embed(title=f"Kamu Kalah!", color=0xff0000)
                 embed.description = f"{self.user2['name']} menang dengan `{self.user2_hp}` HP tersisa!"
-                # ADD EMBED THUMBNAIL
                 embed.set_footer(text='Tip: Gunakan item dan skill spesial yang kamu miliki!')
+                try:
+                    embed.set_thumbnail(url = self.user2['avatar'])
+                except:
+                    pass
                 await self.ctx.channel.send(embed=embed)
 
         return

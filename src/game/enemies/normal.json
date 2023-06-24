@@ -3,6 +3,7 @@
         "name":"SEI-RO",
         "desc":"Manusia hybrid - Kecepatan.",
         "tier":"NORMAL",
+        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122026093835206656/20230624_122754.png",
         "hp":80,
         "atk":14,
         "def":8,
@@ -17,6 +18,7 @@
         "name":"KOU-RAI",
         "desc":"Manusia hybrid - Kecerdasan.",
         "tier":"NORMAL",
+        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122026092958589068/20230624_122622.png",
         "hp":100,
         "atk":19,
         "def":14,
@@ -31,6 +33,7 @@
         "name":"AKA-ZUMI",
         "desc":"Manusia hybrid - Kelincahan.",
         "tier":"NORMAL",
+        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122026093470298142/20230624_122709.png",
         "hp":100,
         "atk":20,
         "def":8,
@@ -45,6 +48,7 @@
         "name":"SHIN-KURO",
         "desc":"Manusia hybrid - Kekuatan.",
         "tier":"SUPER NORMAL",
+        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122026095353540688/20230624_122931.png",
         "hp":120,
         "atk":25,
         "def":10,
@@ -59,6 +63,7 @@
         "name":"CHI-SAKI",
         "desc":"Manusia hybrid - Keberanian.",
         "tier":"SUPER NORMAL",
+        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122026095017992243/20230624_122840.png",
         "hp":130,
         "atk":27,
         "def":16,
@@ -67,6 +72,21 @@
             "exp+42",
             "cns+22",
             "krm+2"
+        ]
+    },
+    {
+        "name":"FEI-XANG",
+        "desc":"Manusia hybrid - Kesatuan.",
+        "tier":"SUPER NORMAL",
+        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122026092618854480/20230624_122553.png",
+        "hp":105,
+        "atk":33,
+        "def":20,
+        "agl":15,
+        "reward":[
+            "exp+45",
+            "cns+23",
+            "krm+4"
         ]
     }
 ]

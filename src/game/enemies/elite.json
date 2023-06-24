@@ -1,7 +1,7 @@
 [
     {
         "name":"Lagtanis",
-        "desc":"Dewa utama; Petir.",
+        "desc":"Dewa utama - Petir.",
         "tier":"SUPER ELITE",
         "hp":840,
         "atk":66,
@@ -15,7 +15,7 @@
     },
     {
         "name":"Daiki",
-        "desc":"Dewi kedua; Angin.",
+        "desc":"Dewi kedua - Angin.",
         "tier":"ELITE",
         "hp":740,
         "atk":58,
@@ -29,7 +29,7 @@
     },
     {
         "name":"Yizai Qi",
-        "desc":"Dewa ketiga; Api.",
+        "desc":"Dewa ketiga - Api.",
         "tier":"SUPER ELITE",
         "hp":884,
         "atk":70,
@@ -43,7 +43,7 @@
     },
     {
         "name":"Rahjda",
-        "desc":"Dewa keempat; Tanah.",
+        "desc":"Dewa keempat - Tanah.",
         "tier":"ELITE",
         "hp":650,
         "atk":56,
@@ -57,7 +57,7 @@
     },
     {
         "name":"Arheious",
-        "desc":"Dewi kelima; Air.",
+        "desc":"Dewi kelima - Air.",
         "tier":"SUPER ELITE",
         "hp":900,
         "atk":64,
