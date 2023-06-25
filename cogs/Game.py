@@ -171,8 +171,10 @@ class GameInstance():
 
                 else:
                     self.user2_hp += int(func[1])
-
-                await self.ctx.channel.send(f'{user1.mention} memulihkan `{func[1]}` HP!')
+                if isinstance(user1, discord.Member):
+                    await self.ctx.channel.send(f'{user1.mention} memulihkan `{func[1]}` HP!')
+                else:
+                    await self.ctx.channel.send(f"{user1['name']} memulihkan `{func[1]}` HP!")
 
             case 'DMG':
                 if user1 == self.user1:
@@ -181,7 +183,16 @@ class GameInstance():
                 else:
                     self.user1_hp -= int(func[1])
                 
-                await self.ctx.channel.send(f'{user1.mention} memberikan `{func[1]}` Damage instan ke {user2.mention}!')
+                if isinstance(user1, discord.Member):
+                    await self.ctx.channel.send(f'{user1.mention} memberikan `{func[1]}` Damage instan ke {user2.mention}!')
+                else:
+                    await self.ctx.channel.send(f"{user1['name']} memberikan `{func[1]}` Damage instan ke {user2.mention}!")
+
+    async def ai_choose_skill(self, skill_set:list, ai, player):
+        skill = random.choice(skill_set)
+        skill_func = skill['func'].upper()
+        await self.func_converter(skill_func, ai, player)
+        await self.ctx.channel.send(f"{self.user2['name']} menggunakan skill:\n**`{skill['name']}`**\n({skill['desc']})")
 
 
     async def start(self):
@@ -228,10 +239,10 @@ class GameInstance():
                     await self.use(self.user1)
                     try:
                         res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and " menggunakan " in r.content, timeout = 10)
+                        func = res_use.content.split('\n')[1] # Dear god hope this works
+                        await self.func_converter(func, self.user1, self.user2)
                     except asyncio.TimeoutError:
                         await self.ctx.channel.send(f"{self.user1.mention}, giliranmu diskip karena tidak menggunakan item!")
-                    func = res_use.content.split('\n')[1] # Dear god hope this works
-                    await self.func_converter(func, self.user1, self.user2)
 
                 case "Opsi terpilih: ❔Musuh":
                     if isinstance(self.user2, discord.Member):
@@ -318,10 +329,10 @@ class GameInstance():
                         await self.use(self.user2)
                         try:
                             res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and " menggunakan " in r.content, timeout = 10)
+                            func = res_use.content.split('\n')[1] # Dear god hope this works
+                            await self.func_converter(func, self.user2, self.user1)
                         except asyncio.TimeoutError:
                             await self.ctx.channel.send(f"{self.user2.mention}, giliranmu diskip karena tidak menggunakan item!")
-                        func = res_use.content.split('\n')[1] # Dear god hope this works
-                        await self.func_converter(func, self.user2, self.user1)
 
                     case "Opsi terpilih: 🏃Kabur":
                         await self.ctx.channel.send(f'⛔ <@{self.user2.id}>  mengakhiri perang.')
@@ -353,6 +364,9 @@ class GameInstance():
                         except:
                             pass
                         await self.ctx.channel.send(embed=embed)
+
+                    case "skill":
+                        await self.ai_choose_skill(self.user2['skills'], self.user2, self.user1)
 
                     case "run":
                         embed = discord.Embed(title=f'🏃{self.user2["name"]} Kabur!', color=0xff0000)
@@ -442,9 +456,18 @@ class AI():
         self.attack_mood = 0
         self.defend_mood = 0
         self.escape_mood = 0
+        self.skill_mood = 0
         self.turns = turns
         self.traits = [self.attack_mood, self.defend_mood, self.escape_mood]
         self.actions = ["attack", "defend"]
+        if self.turns > 3:
+            try:
+                skills = self.user2['skills']
+                if skills:
+                    self.actions.append("skill")
+
+            except:
+                pass
         if self.turns > 6:
             self.actions.append("run")
     
@@ -459,30 +482,38 @@ class AI():
             self.attack_mood += 12
             self.defend_mood += 14
             self.escape_mood += 6
+            self.skill_mood += 10
             if self.user1_defend:
                 self.defend_mood += 8
+                self.skill_mood += 2
 
             if self.user2_defend:
                 self.defend_mood += 8
                 self.attack_mood += 7
+                self.skill_mood += 1
 
         else:
             self.attack_mood += 20
             self.defend_mood += 10
+            self.skill_mood += 6
             if self.user2_defend:
                 self.attack_mood += 8
+                self.skill_mood += 1
 
             if self.user1_defend:
                 self.defend_mood += 8
+                self.skill_mood += 3
 
         if user_1_atk >= user_2_def:
             self.attack_mood += 5
             self.defend_mood += 12
             self.escape_mood += 3
+            self.skill_mood += 6
 
         else:
             self.defend_mood += 6
             self.attack_mood += 10
+            self.skill_mood += 2
 
         if user_2_agl >= user_1_agl:
             self.escape_mood += 3
@@ -518,13 +549,13 @@ class ItemDropdown(discord.ui.Select):
         options = []
         for index, item in enumerate(items):
             index += 1
-            if '0-' in item['_id'] and item['usefor'] == 'battle':
+            if '0-' in item['_id'] and item['usefor'] == 'battle' and not item['owned'] <= 0:
                 options.append(discord.SelectOption(
                     label=f"{index}. {item['name']}",
                     value=item['_id'],
                     description=f"{item['desc']} ({item['func'].upper()})"
                 ))
-        if options == []:
+        if options == [] or options == None:
             options.append(discord.SelectOption(
                     label=f"Tidak ada item!",
                     value="none",

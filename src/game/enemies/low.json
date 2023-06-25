@@ -12,6 +12,13 @@
             "exp+10",
             "cns+5",
             "krm+1"
+        ],
+        "skills":[
+            {
+                "name":"Slime Headbutt",
+                "desc":"Serangan kepala slime",
+                "func":"dmg+5"
+            }
         ]
     },
     {
@@ -26,6 +33,13 @@
         "reward":[
             "exp+12",
             "cns+7"
+        ],
+        "skills":[
+            {
+                "name":"Arrow Shot",
+                "desc":"Serangan panah",
+                "func":"dmg+7"
+            }
         ]
     },
     {
@@ -40,6 +54,13 @@
         "reward":[
             "exp+15",
             "cns+10"
+        ],
+        "skills":[
+            {
+                "name":"United Strike",
+                "desc":"Serangan kesatuan suku Reivyun",
+                "func":"dmg+13"
+            }
         ]
     },
     {
@@ -54,6 +75,13 @@
         "reward":[
             "exp+11",
             "cns+8"
+        ],
+        "skills":[
+            {
+                "name":"Weak Healing Light",
+                "desc":"Cahaya pemulih luka",
+                "func":"hp+15"
+            }
         ]
     }
 ]

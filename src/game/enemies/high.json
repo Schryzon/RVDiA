@@ -5,9 +5,9 @@
         "tier":"SUPER HIGH",
         "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122026194121015306/20230624_104417.png",
         "hp":250,
-        "atk":60,
-        "def":80,
-        "agl":20,
+        "atk":50,
+        "def":47,
+        "agl":10,
         "reward":[
             "exp+50",
             "cns+25",
