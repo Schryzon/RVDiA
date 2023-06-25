@@ -191,8 +191,9 @@ class GameInstance():
     async def ai_choose_skill(self, skill_set:list, ai, player):
         skill = random.choice(skill_set)
         skill_func = skill['func'].upper()
-        await self.func_converter(skill_func, ai, player)
         await self.ctx.channel.send(f"{self.user2['name']} menggunakan skill:\n**`{skill['name']}`**\n({skill['desc']})")
+        await asyncio.sleep(1)
+        await self.func_converter(skill_func, ai, player)
 
 
     async def start(self):
