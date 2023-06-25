@@ -16,7 +16,6 @@
         "skills":[
             {
                 "name":"Slime Headbutt",
-                "desc":"Serangan kepala slime",
                 "func":"dmg+5"
             }
         ]
@@ -37,7 +36,6 @@
         "skills":[
             {
                 "name":"Arrow Shot",
-                "desc":"Serangan panah",
                 "func":"dmg+7"
             }
         ]
@@ -45,7 +43,7 @@
     {
         "name":"Reivyun",
         "desc":"Suku kuno terlemah di Revolution Dreamland.",
-        "tier":"LOW",
+        "tier":"SUPER LOW",
         "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122156472860680252/20230624_201345.png",
         "hp":65,
         "atk":8,
@@ -58,7 +56,6 @@
         "skills":[
             {
                 "name":"United Strike",
-                "desc":"Serangan kesatuan suku Reivyun",
                 "func":"dmg+13"
             }
         ]

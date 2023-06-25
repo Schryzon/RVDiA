@@ -12,6 +12,20 @@
             "exp+1500",
             "cns+150",
             "krm+40"
+        ],
+        "skills":[
+            {
+                "name":"Karvista",
+                "func":"dmg+25"
+            },
+            {
+                "name":"Hasten",
+                "func":"atk+7"
+            },
+            {
+                "name":"Zakitus",
+                "func":"def+5"
+            }
         ]
     },
     {
@@ -27,6 +41,20 @@
             "exp+1500",
             "cns+150",
             "krm+40"
+        ],
+        "skills":[
+            {
+                "name":"Kaze no Kokoro",
+                "func":"hp+30"
+            },
+            {
+                "name":"Yasashisa Kougeki",
+                "func":"dmg+15"
+            },
+            {
+                "name":"Bougyo Shinjite",
+                "func":"def+10"
+            }
         ]
     },
     {
@@ -42,6 +70,20 @@
             "exp+1500",
             "cns+150",
             "krm+40"
+        ],
+        "skills":[
+            {
+                "name":"Shaoshang",
+                "func":"dmg+40"
+            },
+            {
+                "name":"Ganshou Huoyan",
+                "func":"atk+10"
+            },
+            {
+                "name":"Yi... Zai... Qi",
+                "func":"dmg+60"
+            }
         ]
     },
     {
@@ -57,6 +99,16 @@
             "exp+1500",
             "cns+150",
             "krm+40"
+        ],
+        "skills":[
+            {
+                "name":"Phurteela",
+                "func":"agl+15"
+            },
+            {
+                "name":"Bhookamp",
+                "func":"dmg+60"
+            }
         ]
     },
     {
@@ -72,6 +124,16 @@
             "exp+1500",
             "cns+150",
             "krm+40"
+        ],
+        "skills":[
+            {
+                "name":"Roufichtra",
+                "func":"dmg+50"
+            },
+            {
+                "name":"Therapeftiko Nero",
+                "func":"hp+50"
+            }
         ]
     }
 ]

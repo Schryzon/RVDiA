@@ -12,6 +12,24 @@
             "exp+5000",
             "cns+700",
             "krm+150"
+        ],
+        "skills":[
+            {
+                "name":"Power of Conflict",
+                "func":"dmg+70"
+            },
+            {
+                "name":"Ultimate Entity",
+                "func":"def+10"
+            },
+            {
+                "name":"Face the Reality",
+                "func":"atk+20"
+            },
+            {
+                "name":"It's Over",
+                "func":"hp+500"
+            }
         ]
     },
     {
@@ -27,6 +45,20 @@
             "exp+4999",
             "cns+699",
             "krm+149"
+        ],
+        "skills":[
+            {
+                "name":"Beloved Princess",
+                "func":"def+12"
+            },
+            {
+                "name":"No Holding Back",
+                "func":"atk+8"
+            },
+            {
+                "name":"Merciless Attack",
+                "func":"dmg+40"
+            }
         ]
     },
     {
@@ -42,6 +74,20 @@
             "exp+1500",
             "cns+150",
             "krm+40"
+        ],
+        "skills":[
+            {
+                "name":"Burst Slash",
+                "func":"dmg+30"
+            },
+            {
+                "name":"I'm Just Toying With You",
+                "func":"def+15"
+            },
+            {
+                "name":"Let's Get Serious",
+                "func":"agl+10"
+            }
         ]
     },
     {
@@ -57,6 +103,16 @@
             "exp+5000",
             "cns+700",
             "krm+150"
+        ],
+        "skills":[
+            {
+                "name":"Death",
+                "func":"dmg+80"
+            },
+            {
+                "name":"Speed Upgrade",
+                "func":"agl+17"
+            }
         ]
     },
     {
@@ -72,6 +128,20 @@
             "exp+5000",
             "cns+700",
             "krm+150"
+        ],
+        "skills":[
+            {
+                "name":"Lagtanis Karvista",
+                "func":"dmg+25"
+            },
+            {
+                "name":"Lagtanis Hasten",
+                "func":"atk+7"
+            },
+            {
+                "name":"Lagtanis Zakitus",
+                "func":"def+10"
+            }
         ]
     },
     {
@@ -84,9 +154,19 @@
         "def":43,
         "agl":67,
         "reward":[
-            "exp+1500",
-            "cns+150",
-            "krm+40"
+            "exp+2000",
+            "cns+500",
+            "krm+75"
+        ],
+        "skills":[
+            {
+                "name":"Judgement",
+                "func":"dmg+65"
+            },
+            {
+                "name":"Brotherly Power",
+                "func":"def+8"
+            }
         ]
     }
 ]

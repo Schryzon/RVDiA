@@ -12,6 +12,12 @@
             "exp+50",
             "cns+25",
             "krm+9"
+        ],
+        "skills":[
+            {
+                "name":"Wake Up",
+                "func":"agl+15"
+            }
         ]
     },
     {
@@ -27,6 +33,16 @@
             "exp+47",
             "cns+28",
             "krm+6"
+        ],
+        "skills":[
+            {
+                "name":"Mag Dump",
+                "func":"dmg+30"
+            },
+            {
+                "name":"Gigantoka Spirit",
+                "func":"atk+10"
+            }
         ]
     },
     {
@@ -42,6 +58,16 @@
             "exp+58",
             "cns+40",
             "krm+13"
+        ],
+        "skills":[
+            {
+                "name":"Revenge",
+                "func":"atk+15"
+            },
+            {
+                "name":"Focus",
+                "func":"agl+10"
+            }
         ]
     },
     {
@@ -56,6 +82,16 @@
         "reward":[
             "exp+50",
             "cns+35"
+        ],
+        "skills":[
+            {
+                "name":"Fearless Princess",
+                "func":"def+14"
+            },
+            {
+                "name":"Black Magic",
+                "func":"dmg+30"
+            }
         ]
     }
 ]

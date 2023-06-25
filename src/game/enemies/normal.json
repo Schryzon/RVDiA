@@ -16,12 +16,10 @@
         "skills":[
             {
                 "name":"Flash Punch",
-                "desc":"Pukulan cepat",
                 "func":"dmg+10"
             },
             {
                 "name":"Flash Heal",
-                "desc":"Pemulihan cepat",
                 "func":"hp+15"
             }
         ]
@@ -43,12 +41,10 @@
         "skills":[
             {
                 "name":"GSB",
-                "desc":"Guided Smart Bombs",
                 "func":"dmg+15"
             },
             {
                 "name":"PLHS",
-                "desc":"Pulse Laser Healing System",
                 "func":"hp+10"
             }
         ]
@@ -70,8 +66,11 @@
         "skills":[
             {
                 "name":"Maniac Slash",
-                "desc":"Tebasan dahysat",
                 "func":"dmg+20"
+            },
+            {
+                "name":"Evil Smile",
+                "func":"def+12"
             }
         ]
     },
@@ -92,8 +91,11 @@
         "skills":[
             {
                 "name":"Anti-Hero Slam",
-                "desc":"Bantingan kuat",
                 "func":"dmg+25"
+            },
+            {
+                "name":"Mighty Stare",
+                "func":"agl+5"
             }
         ]
     },
@@ -114,8 +116,11 @@
         "skills":[
             {
                 "name":"Undying Will",
-                "desc":"Semangat membara",
                 "func":"hp+20"
+            },
+            {
+                "name":"Keep Moving",
+                "func":"agl+9"
             }
         ]
     },
@@ -136,8 +141,11 @@
         "skills":[
             {
                 "name":"Lianmeng Gongji",
-                "desc":"Serangan semua manusia hybrid",
                 "func":"dmg+30"
+            },
+            {
+                "name":"Zengjia Liliang",
+                "func":"atk+10"
             }
         ]
     }

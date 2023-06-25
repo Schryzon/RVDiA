@@ -75,6 +75,9 @@ class GameInstance():
         self.command_name = ctx.command.name
         self.user1_defend = False
         self.user2_defend = False
+        self.user1_stats = None
+        self.user2_stats = None
+        self.ai_skill_usage = 0
 
     async def gather_data(self):
         database = connectdb('Game')
@@ -188,12 +191,67 @@ class GameInstance():
                 else:
                     await self.ctx.channel.send(f"{user1['name']} memberikan `{func[1]}` Damage instan ke {user2.mention}!")
 
+            case 'ATK':
+                if user1 == self.user1:
+                    if not self.user1_stats[0] + int(func[1]) >= 100:
+                        self.user1_stats[0] += int(func[1])
+                    else:
+                        self.user1_stats[0] = 100
+
+                else:
+                    if not self.user2_stats[0] + int(func[1]) >= 100:
+                        self.user2_stats[0] += int(func[1])
+                    else:
+                        self.user2_stats[0] = 100
+                
+                if isinstance(user1, discord.Member):
+                    await self.ctx.channel.send(f'{user1.mention} menjadi lebih kuat!\n(+`{func[1]}` Attack)')
+                else:
+                    await self.ctx.channel.send(f'{user1["name"]} menjadi lebih kuat!\n(+`{func[1]}` Attack)')
+
+            case 'DEF':
+                if user1 == self.user1:
+                    if not self.user1_stats[1] + int(func[1]) >= 100:
+                        self.user1_stats[1] += int(func[1])
+                    else:
+                        self.user1_stats[1] = 100
+
+                else:
+                    if not self.user2_stats[1] + int(func[1]) >= 100:
+                        self.user2_stats[1] += int(func[1])
+                    else:
+                        self.user2_stats[1] = 100
+                
+                if isinstance(user1, discord.Member):
+                    await self.ctx.channel.send(f'{user1.mention} menjadi lebih kuat!\n(+`{func[1]}` Defense)')
+                else:
+                    await self.ctx.channel.send(f'{user1["name"]} menjadi lebih kuat!\n(+`{func[1]}` Defense)')
+
+            case 'AGL':
+                if user1 == self.user1:
+                    if not self.user1_stats[2] + int(func[1]) >= 100:
+                        self.user1_stats[2] += int(func[1])
+                    else:
+                        self.user1_stats[2] = 100
+
+                else:
+                    if not self.user2_stats[2] + int(func[1]) >= 100:
+                        self.user2_stats[2] += int(func[1])
+                    else:
+                        self.user2_stats[2] = 100
+                
+                if isinstance(user1, discord.Member):
+                    await self.ctx.channel.send(f'{user1.mention} menjadi lebih kuat!\n(+`{func[1]}` Agility)')
+                else:
+                    await self.ctx.channel.send(f'{user1["name"]} menjadi lebih kuat!\n(+`{func[1]}` Agility)')
+
     async def ai_choose_skill(self, skill_set:list, ai, player):
         skill = random.choice(skill_set)
         skill_func = skill['func'].upper()
-        await self.ctx.channel.send(f"{self.user2['name']} menggunakan skill:\n**`{skill['name']}`**\n({skill['desc']})")
+        await self.ctx.channel.send(f"{self.user2['name']} menggunakan skill:\n## {skill['name']}!")
         await asyncio.sleep(1)
         await self.func_converter(skill_func, ai, player)
+        self.ai_skill_usage += 1
 
 
     async def start(self):
@@ -201,6 +259,8 @@ class GameInstance():
         # How do I check if other game instances are runnin tho
         self.running = True
         datas = await self.gather_data()
+        self.user1_stats = datas[0]['stats']
+        self.user2_stats = datas[1]['stats']
         if isinstance(self.user2, discord.Member):
             await self.ctx.reply(f'⚔️ Perang dimulai!\nLawan: {self.user2.mention}') # I'll just use this for now
         else:
@@ -220,7 +280,7 @@ class GameInstance():
 
             match res_1.content:
                 case "Opsi terpilih: 💥Serang":
-                    damage = await self.attack(datas[0]['stats'], datas[1]['stats'], self.user1.id, self.user2_defend)
+                    damage = await self.attack(self.user1_stats, self.user2_stats, self.user1.id, self.user2_defend)
                     embed = discord.Embed(title=f'💥{self.user1.display_name} Menyerang!', color=self.user1.color)
                     if isinstance(self.user2, discord.Member):
                         embed.description = f"**`{damage}` Damage!**\nHP <@{self.user2.id}> tersisa `{self.user2_hp}` HP!"
@@ -246,8 +306,8 @@ class GameInstance():
                         await self.ctx.channel.send(f"{self.user1.mention}, giliranmu diskip karena tidak menggunakan item!")
 
                 case "Opsi terpilih: ❔Musuh":
+                    stats = self.user2_stats
                     if isinstance(self.user2, discord.Member):
-                        stats = datas[1]['stats']
                         embed = discord.Embed(title=self.user2.display_name, color=self.user2.color)
                         embed.set_thumbnail(url=self.user2.display_avatar.url)
                         embed.description = f"HP: `{self.user2_hp}`/`100`\nBertahan? `{'TIDAK' if self.user2_defend is False else 'YA'}`"
@@ -259,7 +319,6 @@ class GameInstance():
                         embed.set_author(name='Info Lawan:')
                     
                     else:
-                        stats = datas[1]['stats']
                         embed = discord.Embed(title=self.user2['name'], color=0xff0000)
                         embed.description = f"\"{self.user2['desc']}\"\nHP: `{self.user2_hp}`/`{datas[1]['hp']}`\nBertahan? `{'TIDAK' if self.user2_defend is False else 'YA'}`"
                         embed.add_field(
@@ -314,7 +373,7 @@ class GameInstance():
                         await self.ctx.channel.send(embed=embed)
 
                     case "Opsi terpilih: ❔Musuh":
-                        stats = datas[0]['stats']
+                        stats = self.user1_stats
                         embed = discord.Embed(title=self.user1.display_name, color=self.user1.color)
                         embed.set_thumbnail(url=self.user1.display_avatar.url)
                         embed.description = f"HP: `{self.user1_hp}`/`100`\nBertahan? `{'TIDAK' if self.user1_defend is False else 'YA'}`"
@@ -347,7 +406,7 @@ class GameInstance():
                 choice = await ai.decide()
                 match choice:
                     case "attack":
-                        damage = await self.attack(datas[1]['stats'], datas[0]['stats'], 1, self.user1_defend)
+                        damage = await self.attack(self.user2_stats, self.user1_stats, 1, self.user1_defend)
                         embed = discord.Embed(title=f'💥{self.user2["name"]} Menyerang!', color=0xff0000)
                         embed.description = f"**`{damage}` Damage!**\nHP <@{self.user1.id}> tersisa `{self.user1_hp}` HP!"
                         try:
@@ -459,7 +518,10 @@ class AI():
         self.escape_mood = 0
         self.skill_mood = 0
         self.turns = turns
-        self.traits = [self.attack_mood, self.defend_mood, self.escape_mood]
+        self.user1_stats = instance.user1_stats
+        self.user2_stats = instance.user2_stats
+        self.ai_skill_usage = instance.ai_skill_usage
+        self.traits = [self.attack_mood, self.defend_mood, self.skill_mood, self.escape_mood]
         self.actions = ["attack", "defend"]
         if self.turns > 3:
             try:
@@ -473,9 +535,8 @@ class AI():
             self.actions.append("run")
     
     async def decide(self):
-        datas = await self.instance.gather_data()
-        user1_stats = datas[0]['stats']
-        user2_stats = datas[1]['stats']
+        user1_stats = self.user1_stats
+        user2_stats = self.user2_stats
         user_1_atk, user_1_def, user_1_agl = user1_stats[0], user1_stats[1], user1_stats[2]
         user_2_atk, user_2_def, user_2_agl = user2_stats[0], user2_stats[1], user2_stats[2]
 
@@ -524,16 +585,47 @@ class AI():
         match tier:
             case "SUPER BOSS":
                 self.escape_mood = 0
+
             case "BOSS":
                 self.escape_mood = 0
+
             case "SUPER ELITE":
                 self.escape_mood = 1
+
             case "ELITE":
                 self.escape_mood = 2
+
             case "SUPER HIGH":
                 self.escape_mood = 4
+                if self.ai_skill_usage >= 3:
+                    self.actions.remove("skill")
+                    self.traits.remove(self.skill_mood)
+
             case "HIGH":
                 self.escape_mood = 5
+                if self.ai_skill_usage >= 2:
+                    self.actions.remove("skill")
+                    self.traits.remove(self.skill_mood)
+
+            case "SUPER NORMAL":
+                if self.ai_skill_usage >= 3:
+                    self.actions.remove("skill")
+                    self.traits.remove(self.skill_mood)
+
+            case "NORMAL":
+                if self.ai_skill_usage >= 2:
+                    self.actions.remove("skill")
+                    self.traits.remove(self.skill_mood)
+
+            case "SUPER LOW":
+                if self.ai_skill_usage >= 2:
+                    self.actions.remove("skill")
+                    self.traits.remove(self.skill_mood)
+
+            case "LOW":
+                if self.ai_skill_usage >= 1:
+                    self.actions.remove("skill")
+                    self.traits.remove(self.skill_mood)
 
         sorted_traits = sorted(self.traits, reverse=True)
         if random.randint(0, 100) < 20:
