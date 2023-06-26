@@ -909,13 +909,13 @@ class ShopView(View):
     Currently not up to write DRY code
     """
     def __init__(self, ctx, items, data):
+        self.current_page = 1
         super().__init__(timeout=20)
         self.ctx = ctx
-        self.page = 1
         self.items = items
         self.data = data
         self.owned = []
-        self.add_item(ShopDropdown(self.page))
+        self.add_item(ShopDropdown(self.current_page))
         
     def get_owned_count(self, item_id):
         try:
@@ -933,7 +933,7 @@ class ShopView(View):
         embed.set_thumbnail(url=getenv('xaneria'))
 
         self.owned.clear()
-        start_index = (self.page - 1) * 5
+        start_index = (self.current_page - 1) * 5
         end_index = start_index + 5
         print("Start index:", start_index)
         print("End index:", end_index)
@@ -962,10 +962,10 @@ class ShopView(View):
     @discord.ui.button(label='◀', custom_id='back', style=discord.ButtonStyle.blurple)
     async def back(self, interaction: discord.Interaction, button:Button):
         max_page = (len(self.owned) - 1) // 5 + 1
-        print("self.page value = ", self.page)
-        self.page = self.page - 1 if self.page > 1 else max_page
+        print("self.current_page value = ", self.current_page)
+        self.current_page = self.current_page - 1 if self.current_page > 1 else max_page
         embed=await self.update_embed()
-        print("self.page value = ", self.page)
+        print("self.current_page value = ", self.current_page)
         await interaction.response.edit_message(embed=embed, view=self)
 
     @discord.ui.button(label='✖', style=discord.ButtonStyle.danger, custom_id='delete')
@@ -975,10 +975,10 @@ class ShopView(View):
     @discord.ui.button(label='▶', custom_id='next', style=discord.ButtonStyle.blurple)
     async def next(self, interaction: discord.Interaction, button:Button):
         max_page = (len(self.owned) - 1) // 5 + 1
-        print("self.page value = ", self.page)
-        self.page = self.page + 1 if self.page < max_page else 1
-        embed = await self.update_embed()
-        print("self.page value = ", self.page)
+        print("self.current_page value = ", self.current_page)
+        self.current_page = self.current_page + 1 if self.current_page < max_page else 1
+        embed = await self.update_embed(self.current_page + 1)
+        print("self.current_page value = ", self.current_page)
         await interaction.response.edit_message(embed=embed, view=self)
 
 class Game(commands.GroupCog, group_name = 'game'):
