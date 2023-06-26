@@ -948,7 +948,7 @@ class ShopView(View):
             self.owned.append(owned_count)
             generate_embed_field(index, item, owned_count)
 
-        self.remove_item(ShopDropdown(last_page))
+        self.clear_items() # Fuck this
         self.add_item(ShopDropdown(self.current_page)) # Dear god hope this works
 
         return embed
