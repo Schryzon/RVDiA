@@ -968,7 +968,7 @@ class ShopView(View):
 
 
     @discord.ui.button(label='◀', custom_id='back', style=discord.ButtonStyle.blurple)
-    async def back(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def back(self, interaction: discord.Interaction, button:Button):
         try:
             max_page = (len(self.owned) - 1) // self.options_per_page + 1
             if self.page > 1:
@@ -984,11 +984,11 @@ class ShopView(View):
             print(e)
 
     @discord.ui.button(label='✖', style=discord.ButtonStyle.danger, custom_id='delete')
-    async def _delete(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def _delete(self, interaction: discord.Interaction, button:Button):
         await interaction.message.delete()
 
     @discord.ui.button(label='▶', custom_id='next', style=discord.ButtonStyle.blurple)
-    async def next(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def next(self, interaction: discord.Interaction, button:Button):
         try:
             max_page = (len(self.owned) - 1) // self.options_per_page + 1
             if self.page < max_page:
