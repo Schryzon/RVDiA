@@ -920,37 +920,42 @@ class ShopView(View):
         self.add_item(ShopDropdown(self.page))
 
     async def update_embed(self):
-        if self.items is None:
-            with open('./src/game/shop.json') as file:
-                content = file.read()
-                self.items = json.loads(content)
+        try:
+            if self.items is None:
+                with open('./src/game/shop.json') as file:
+                    content = file.read()
+                    self.items = json.loads(content)
 
-        if self.data is None:
-            database = connectdb('Game')
-            self.data = database.find_one({'_id': self.ctx.author.id})
+            if self.data is None:
+                database = connectdb('Game')
+                self.data = database.find_one({'_id': self.ctx.author.id})
 
-        embed = discord.Embed(title='Toko Xaneria', color=0xFFFF00)
-        embed.description = '"Hey, hey! Selamat datang. Silahkan, mau beli apa?"'
-        embed.set_footer(text='Untuk membeli sebuah item, klik di bawah ini! v')
-        embed.set_thumbnail(url=getenv('xaneria'))
+            embed = discord.Embed(title='Toko Xaneria', color=0xFFFF00)
+            embed.description = '"Hey, hey! Selamat datang. Silahkan, mau beli apa?"'
+            embed.set_footer(text='Untuk membeli sebuah item, klik di bawah ini! v')
+            embed.set_thumbnail(url=getenv('xaneria'))
 
-        self.owned.clear()
-        start_index = (self.page - 1) * self.options_per_page
-        end_index = start_index + self.options_per_page
+            self.owned.clear()
+            start_index = (self.page - 1) * self.options_per_page
+            end_index = start_index + self.options_per_page
 
-        def generate_embed_field(index, item, owned_count):
-            embed.add_field(
-                name=f"{index}. {item['name']}",
-                value=f"**`{item['desc']}`**\n({item['func']})\n**Tipe:** {item['type']}\n**Harga:** {item['cost']} {item['paywith']}\n**Dimiliki:** {owned_count}",
-                inline=False
-            )
+            def generate_embed_field(index, item, owned_count):
+                embed.add_field(
+                    name=f"{index}. {item['name']}",
+                    value=f"**`{item['desc']}`**\n({item['func']})\n**Tipe:** {item['type']}\n**Harga:** {item['cost']} {item['paywith']}\n**Dimiliki:** {owned_count}",
+                    inline=False
+                )
+            
+            for index, item in enumerate(self.items[start_index:end_index], start=start_index + 1):
+                owned_count = self.get_owned_count(item['_id'])
+                self.owned.append(owned_count)
+                generate_embed_field(index, item, owned_count)
+
+            return embed
         
-        for index, item in enumerate(self.items[start_index:end_index], start=start_index + 1):
-            owned_count = self.get_owned_count(item['_id'])
-            self.owned.append(owned_count)
-            generate_embed_field(index, item, owned_count)
-
-        return embed
+        except Exception as e:
+            await self.ctx.channel.send("Error detected! Sent to command line!")
+            print(e)
 
     def get_owned_count(self, item_id):
         try:
@@ -964,15 +969,19 @@ class ShopView(View):
 
     @discord.ui.button(label='◀', custom_id='back', style=discord.ButtonStyle.blurple)
     async def back(self, button: discord.ui.Button, interaction: discord.Interaction):
-        max_page = (len(self.owned) - 1) // self.options_per_page + 1
-        if self.page > 1:
-            self.page -= 1
-            embed = await self.update_embed()
-            await interaction.response.edit_message(embed=embed)
-        else:
-            self.page = max_page
-            embed=await self.update_embed()
-            await interaction.response.send_message(embed=embed)
+        try:
+            max_page = (len(self.owned) - 1) // self.options_per_page + 1
+            if self.page > 1:
+                self.page -= 1
+                embed = await self.update_embed()
+                await interaction.response.edit_message(embed=embed)
+            else:
+                self.page = max_page
+                embed=await self.update_embed()
+                await interaction.response.send_message(embed=embed)
+        except Exception as e:
+            await interaction.response.send_message("Error detected! Sent to command line!")
+            print(e)
 
     @discord.ui.button(label='✖', style=discord.ButtonStyle.danger, custom_id='delete')
     async def _delete(self, button: discord.ui.Button, interaction: discord.Interaction):
@@ -980,15 +989,19 @@ class ShopView(View):
 
     @discord.ui.button(label='▶', custom_id='next', style=discord.ButtonStyle.blurple)
     async def next(self, button: discord.ui.Button, interaction: discord.Interaction):
-        max_page = (len(self.owned) - 1) // self.options_per_page + 1
-        if self.page < max_page:
-            self.page += 1
-            embed = await self.update_embed()
-            await interaction.response.edit_message(embed=embed)
-        else:
-            self.page = 1
-            embed = await self.update_embed()
-            await interaction.response.edit_message(embed=embed)
+        try:
+            max_page = (len(self.owned) - 1) // self.options_per_page + 1
+            if self.page < max_page:
+                self.page += 1
+                embed = await self.update_embed()
+                await interaction.response.edit_message(embed=embed)
+            else:
+                self.page = 1
+                embed = await self.update_embed()
+                await interaction.response.edit_message(embed=embed)
+        except Exception as e:
+            await interaction.response.send_message("Error detected! Sent to command line!")
+            print(e)
 
 class Game(commands.GroupCog, group_name = 'game'):
     """
