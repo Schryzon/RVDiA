@@ -28,6 +28,7 @@ class FightView(View):
             return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
         await interaction.response.send_message("Opsi terpilih: 💥Serang")
         await asyncio.sleep(0.5)
+        await interaction.message.delete()
 
     @button(label='Tahan', custom_id='defend', style=discord.ButtonStyle.blurple, emoji='🛡️')
     async def defend(self, interaction:discord.Interaction, button:Button):
@@ -35,6 +36,7 @@ class FightView(View):
             return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
         await interaction.response.send_message("Opsi terpilih: 🛡️Tahan")
         await asyncio.sleep(0.5)
+        await interaction.message.delete()
 
     @button(label='Barang', custom_id='item', style=discord.ButtonStyle.green, emoji='👜')
     async def item(self, interaction:discord.Interaction, button:Button):
@@ -42,6 +44,7 @@ class FightView(View):
             return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
         await interaction.response.send_message("Opsi terpilih: 👜Barang")
         await asyncio.sleep(0.5)
+        await interaction.message.delete()
 
     @button(label='Musuh', custom_id='check', style=discord.ButtonStyle.gray, emoji='❔')
     async def check(self, interaction:discord.Interaction, button:Button):
@@ -49,6 +52,7 @@ class FightView(View):
             return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
         await interaction.response.send_message("Opsi terpilih: ❔Musuh")
         await asyncio.sleep(0.5)
+        await interaction.message.delete()
 
     @button(label='Kabur', custom_id='end', style=discord.ButtonStyle.gray, emoji='🏃')
     async def flee(self, interaction:discord.Interaction, button:Button):
@@ -56,6 +60,7 @@ class FightView(View):
             return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
         await interaction.response.send_message("Opsi terpilih: 🏃Kabur")
         await asyncio.sleep(0.5)
+        await interaction.message.delete()
 
 class GameInstance():
     def __init__(self, ctx:commands.Context, user1:discord.Member, user2, bot):
@@ -123,7 +128,13 @@ class GameInstance():
         if is_defending:
             user_2_def += random.randint(8, 15)
         if dealer_id != 1 and self.ctx.command.name == "battle":
-            damage = round(max(0, user_1_atk*(random.randint(80, 100) - user_2_def)/user_2_max_hp))
+            if user_2_max_hp > 500:
+                scaling = user_2_max_hp/100
+            elif user_2_max_hp > 100:
+                scaling = user_2_max_hp/10
+            else:
+                scaling = user_2_max_hp
+            damage = round(max(0, user_1_atk*(random.randint(80, 100) - user_2_def)/scaling))
         else:
             damage = round(max(0, user_1_atk*(random.randint(80, 100) - user_2_def)/100))
         miss_chance = (user_2_agl - user_1_agl)*2 + 5
@@ -248,7 +259,7 @@ class GameInstance():
     async def ai_choose_skill(self, skill_set:list, ai, player):
         skill = random.choice(skill_set)
         skill_func = skill['func'].upper()
-        await self.ctx.channel.send(f"{self.user2['name']} menggunakan skill:\n## {skill['name']}!")
+        await self.ctx.channel.send(f"{self.user2['name']} menggunakan skill:\n# {skill['name']}!")
         await asyncio.sleep(1)
         await self.func_converter(skill_func, ai, player)
         self.ai_skill_usage += 1
@@ -273,7 +284,7 @@ class GameInstance():
             await self.ctx.channel.send(f'<@{self.user1.id}> Giliranmu!', view=fight_view1)
 
             try:
-                res_1 = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and r.content.startswith('Opsi terpilih: '), timeout = 25.0) # Detect a message from RVDiA
+                res_1:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and r.content.startswith('Opsi terpilih: '), timeout = 25.0) # Detect a message from RVDiA
 
             except asyncio.TimeoutError:
                 return await self.ctx.channel.send(f"🏃{self.user1.mention} kabur dari perang!")
