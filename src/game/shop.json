@@ -78,5 +78,25 @@
         "func":"hp+100",
         "cost":19,
         "paywith":"Karma"
+    },
+    {
+        "name":"Flash Potion",
+        "_id":"0-flpoti",
+        "usefor":"battle",
+        "desc":"Membuatmu semakin lebih cepat!",
+        "type":"Consumable",
+        "func":"agl+10",
+        "cost":20,
+        "paywith":"Koin"
+    },
+    {
+        "name":"Guard Potion",
+        "_id":"0-gdpoti",
+        "usefor":"battle",
+        "desc":"Membuatmu semakin lebih kebal!",
+        "type":"Consumable",
+        "func":"def+10",
+        "cost":20,
+        "paywith":"Koin"
     }
 ]

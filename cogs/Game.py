@@ -940,6 +940,9 @@ class ShopView(View):
         print("End index:", end_index)
 
         def generate_embed_field(index, item, owned_count):
+            print("Index:", index)
+            print("Item:", item)
+            print("Owned count:", owned_count)
             embed.add_field(
                 name=f"{index}. {item['name']}",
                 value=f"**`{item['desc']}`**\n({item['func']})\n**Tipe:** {item['type']}\n**Harga:** {item['cost']} {item['paywith']}\n**Dimiliki:** {owned_count}",
@@ -957,18 +960,15 @@ class ShopView(View):
         return embed
 
 
-
     @discord.ui.button(label='◀', custom_id='back', style=discord.ButtonStyle.blurple)
     async def back(self, interaction: discord.Interaction, button:Button):
         max_page = (len(self.owned) - 1) // self.options_per_page + 1
         if self.page > 1:
             self.page -= 1
-            embed = await self.update_embed()
-            await interaction.response.edit_message(embed=embed)
         else:
             self.page = max_page
-            embed=await self.update_embed()
-            await interaction.response.edit_message(embed=embed)
+        embed=await self.update_embed()
+        await interaction.response.edit_message(embed=embed, view=self)
 
     @discord.ui.button(label='✖', style=discord.ButtonStyle.danger, custom_id='delete')
     async def _delete(self, interaction: discord.Interaction, button:Button):
@@ -979,12 +979,10 @@ class ShopView(View):
         max_page = (len(self.owned) - 1) // self.options_per_page + 1
         if self.page < max_page:
             self.page += 1
-            embed = await self.update_embed()
-            await interaction.response.edit_message(embed=embed)
         else:
             self.page = 1
-            embed = await self.update_embed()
-            await interaction.response.edit_message(embed=embed)
+        embed = await self.update_embed()
+        await interaction.response.edit_message(embed=embed, view=self)
 
 class Game(commands.GroupCog, group_name = 'game'):
     """
