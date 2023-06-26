@@ -909,8 +909,8 @@ class ShopView(View):
     Currently not up to write DRY code
     """
     def __init__(self, ctx, items, data):
-        self.ctx = ctx
         super().__init__(timeout=20)
+        self.ctx = ctx
         self.page = 1
         self.options_per_page = 5
         self.items = items
@@ -963,11 +963,10 @@ class ShopView(View):
     @discord.ui.button(label='◀', custom_id='back', style=discord.ButtonStyle.blurple)
     async def back(self, interaction: discord.Interaction, button:Button):
         max_page = (len(self.owned) - 1) // self.options_per_page + 1
-        if self.page > 1:
-            self.page -= 1
-        else:
-            self.page = max_page
+        print("self.page value = ", self.page)
+        self.page = self.page - 1 if self.page < max_page else max_page
         embed=await self.update_embed()
+        print("self.page value = ", self.page)
         await interaction.response.edit_message(embed=embed, view=self)
 
     @discord.ui.button(label='✖', style=discord.ButtonStyle.danger, custom_id='delete')
@@ -977,11 +976,10 @@ class ShopView(View):
     @discord.ui.button(label='▶', custom_id='next', style=discord.ButtonStyle.blurple)
     async def next(self, interaction: discord.Interaction, button:Button):
         max_page = (len(self.owned) - 1) // self.options_per_page + 1
-        if self.page < max_page:
-            self.page += 1
-        else:
-            self.page = 1
+        print("self.page value = ", self.page)
+        self.page = self.page + 1 if self.page < max_page else 1
         embed = await self.update_embed()
+        print("self.page value = ", self.page)
         await interaction.response.edit_message(embed=embed, view=self)
 
 class Game(commands.GroupCog, group_name = 'game'):
