@@ -926,7 +926,7 @@ class ShopView(View):
             pass
         return 0
 
-    async def update_embed(self):
+    async def update_embed(self, last_page):
         embed = discord.Embed(title='Toko Xaneria', color=0xFFFF00)
         embed.description = '"Hey, hey! Selamat datang. Silahkan, mau beli apa?"'
         embed.set_footer(text='Untuk membeli sebuah item, klik di bawah ini! v')
@@ -948,7 +948,7 @@ class ShopView(View):
             self.owned.append(owned_count)
             generate_embed_field(index, item, owned_count)
 
-        self.remove_item(ShopDropdown)
+        self.remove_item(ShopDropdown(last_page))
         self.add_item(ShopDropdown(self.current_page)) # Dear god hope this works
 
         return embed
@@ -957,8 +957,9 @@ class ShopView(View):
     @discord.ui.button(label='◀', custom_id='back', style=discord.ButtonStyle.blurple)
     async def back(self, interaction: discord.Interaction, button:Button):
         max_page = (len(self.items) - 1) // 5 + 1
+        last_page = self.current_page
         self.current_page = self.current_page - 1 if self.current_page > 1 else max_page
-        embed=await self.update_embed()
+        embed=await self.update_embed(last_page)
         await interaction.response.edit_message(embed=embed, view=self)
 
     @discord.ui.button(label='✖', style=discord.ButtonStyle.danger, custom_id='delete')
@@ -968,8 +969,9 @@ class ShopView(View):
     @discord.ui.button(label='▶', custom_id='next', style=discord.ButtonStyle.blurple)
     async def next(self, interaction: discord.Interaction, button:Button):
         max_page = (len(self.items) - 1) // 5 + 1
+        last_page = self.current_page
         self.current_page = self.current_page + 1 if self.current_page < max_page else 1
-        embed = await self.update_embed()
+        embed = await self.update_embed(last_page)
         await interaction.response.edit_message(embed=embed, view=self)
 
 class Game(commands.GroupCog, group_name = 'game'):
