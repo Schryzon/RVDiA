@@ -311,7 +311,7 @@ class GameInstance():
                     await self.use(self.user1)
                     try:
                         res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and " menggunakan " in r.content, timeout = 10)
-                        func = res_use.content.split('\n')[1] # Dear god hope this works
+                        func = res_use.content.split('\n')[2] # Dear god hope this works
                         await self.func_converter(func, self.user1, self.user2)
                     except asyncio.TimeoutError:
                         await self.ctx.channel.send(f"{self.user1.mention}, giliranmu diskip karena tidak menggunakan item!")
@@ -400,7 +400,7 @@ class GameInstance():
                         await self.use(self.user2)
                         try:
                             res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and " menggunakan " in r.content, timeout = 10)
-                            func = res_use.content.split('\n')[1] # Dear god hope this works
+                            func = res_use.content.split('\n')[2] # Dear god hope this works
                             await asyncio.sleep(1.2)
                             await self.func_converter(func, self.user2, self.user1)
                         except asyncio.TimeoutError:
@@ -690,7 +690,7 @@ class ItemDropdown(discord.ui.Select):
 
         if used_item is None:
             raise Exception("The Item Dropdown callback is behaving wierdly!")
-        await interaction.response.send_message(f"{interaction.user.mention} menggunakan item:\n# {used_item[0]}!")
+        await interaction.response.send_message(f"{interaction.user.mention} menggunakan item:\n# {used_item[0]}!\n({used_item[1].upper()})")
 
 
 class ItemView(View):
