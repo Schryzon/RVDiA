@@ -912,7 +912,6 @@ class ShopView(View):
         super().__init__(timeout=20)
         self.ctx = ctx
         self.page = 1
-        self.options_per_page = 5
         self.items = items
         self.data = data
         self.owned = []
@@ -934,8 +933,8 @@ class ShopView(View):
         embed.set_thumbnail(url=getenv('xaneria'))
 
         self.owned.clear()
-        start_index = (self.page - 1) * self.options_per_page
-        end_index = start_index + self.options_per_page
+        start_index = (self.page - 1) * 5
+        end_index = start_index + 5
         print("Start index:", start_index)
         print("End index:", end_index)
 
@@ -962,9 +961,9 @@ class ShopView(View):
 
     @discord.ui.button(label='◀', custom_id='back', style=discord.ButtonStyle.blurple)
     async def back(self, interaction: discord.Interaction, button:Button):
-        max_page = (len(self.owned) - 1) // self.options_per_page + 1
+        max_page = (len(self.owned) - 1) // 5 + 1
         print("self.page value = ", self.page)
-        self.page = self.page - 1 if self.page < max_page else max_page
+        self.page = self.page - 1 if self.page > 1 else max_page
         embed=await self.update_embed()
         print("self.page value = ", self.page)
         await interaction.response.edit_message(embed=embed, view=self)
@@ -975,7 +974,7 @@ class ShopView(View):
 
     @discord.ui.button(label='▶', custom_id='next', style=discord.ButtonStyle.blurple)
     async def next(self, interaction: discord.Interaction, button:Button):
-        max_page = (len(self.owned) - 1) // self.options_per_page + 1
+        max_page = (len(self.owned) - 1) // 5 + 1
         print("self.page value = ", self.page)
         self.page = self.page + 1 if self.page < max_page else 1
         embed = await self.update_embed()
