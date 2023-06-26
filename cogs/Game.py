@@ -961,7 +961,7 @@ class ShopView(View):
 
     @discord.ui.button(label='◀', custom_id='back', style=discord.ButtonStyle.blurple)
     async def back(self, interaction: discord.Interaction, button:Button):
-        max_page = (len(self.owned) - 1) // 5 + 1
+        max_page = (len(self.items) - 1) // 5 + 1
         print("self.current_page value = ", self.current_page)
         self.current_page = self.current_page - 1 if self.current_page > 1 else max_page
         embed=await self.update_embed()
@@ -974,10 +974,10 @@ class ShopView(View):
 
     @discord.ui.button(label='▶', custom_id='next', style=discord.ButtonStyle.blurple)
     async def next(self, interaction: discord.Interaction, button:Button):
-        max_page = (len(self.owned) - 1) // 5 + 1
+        max_page = (len(self.items) - 1) // 5 + 1
         print("self.current_page value = ", self.current_page)
         self.current_page = self.current_page + 1 if self.current_page < max_page else 1
-        embed = await self.update_embed(self.current_page + 1)
+        embed = await self.update_embed()
         print("self.current_page value = ", self.current_page)
         await interaction.response.edit_message(embed=embed, view=self)
 
