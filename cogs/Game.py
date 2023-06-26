@@ -36,7 +36,7 @@ class FightView(View):
             return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
         await interaction.response.send_message("Opsi terpilih: 🛡️Tahan")
         await asyncio.sleep(0.5)
-        await interaction.message.delete()
+        await interaction.message.delete(delay=1)
 
     @button(label='Barang', custom_id='item', style=discord.ButtonStyle.green, emoji='👜')
     async def item(self, interaction:discord.Interaction, button:Button):
@@ -44,7 +44,7 @@ class FightView(View):
             return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
         await interaction.response.send_message("Opsi terpilih: 👜Barang")
         await asyncio.sleep(0.5)
-        await interaction.message.delete()
+        await interaction.message.delete(delay=1)
 
     @button(label='Musuh', custom_id='check', style=discord.ButtonStyle.gray, emoji='❔')
     async def check(self, interaction:discord.Interaction, button:Button):
@@ -52,7 +52,7 @@ class FightView(View):
             return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
         await interaction.response.send_message("Opsi terpilih: ❔Musuh")
         await asyncio.sleep(0.5)
-        await interaction.message.delete()
+        await interaction.message.delete(delay=1)
 
     @button(label='Kabur', custom_id='end', style=discord.ButtonStyle.gray, emoji='🏃')
     async def flee(self, interaction:discord.Interaction, button:Button):
@@ -60,7 +60,7 @@ class FightView(View):
             return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
         await interaction.response.send_message("Opsi terpilih: 🏃Kabur")
         await asyncio.sleep(0.5)
-        await interaction.message.delete()
+        await interaction.message.delete(delay=1)
 
 class GameInstance():
     def __init__(self, ctx:commands.Context, user1:discord.Member, user2, bot):
@@ -401,6 +401,7 @@ class GameInstance():
                         try:
                             res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and " menggunakan " in r.content, timeout = 10)
                             func = res_use.content.split('\n')[1] # Dear god hope this works
+                            await asyncio.sleep(1.2)
                             await self.func_converter(func, self.user2, self.user1)
                         except asyncio.TimeoutError:
                             await self.ctx.channel.send(f"{self.user2.mention}, giliranmu diskip karena tidak menggunakan item!")
@@ -689,7 +690,7 @@ class ItemDropdown(discord.ui.Select):
 
         if used_item is None:
             raise Exception("The Item Dropdown callback is behaving wierdly!")
-        await interaction.response.send_message(f"{interaction.user.mention} menggunakan {used_item[0]}\n({used_item[1].upper()})")
+        await interaction.response.send_message(f"{interaction.user.mention} menggunakan item:\n# {used_item[0]}!")
 
 
 class ItemView(View):
@@ -848,7 +849,7 @@ class ShopDropdown(discord.ui.Select):
         matched_dict = db_dict[item_id]
         current_money = data['coins'] if matched_dict['paywith'] == "Koin" else data['karma']
         if current_money < matched_dict['cost']:
-            return await interaction.response.send_message(f"Waduh!\n{matched_dict['paywith']}mu tidak cukup untuk membeli barang ini!")
+            return await interaction.response.send_message(f"Waduh!\n{matched_dict['paywith']}mu tidak cukup untuk membeli barang ini!", ephemeral=True)
 
         if item_id in db_dict and item_id in mongo_dict: # User already bought this item in the past
 
