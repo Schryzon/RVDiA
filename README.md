@@ -1,7 +1,7 @@
 # RVDiA
 ## "Revolusioner, Virtual, Independen."
 <p align="center">
-  <img src="https://cdn.discordapp.com/avatars/957471338577166417/5da744aa5b337103e84f2788e0e90c06.png?size=512" alt="RVDiA's Profile Picture">
+  <img src="https://cdn.discordapp.com/attachments/978258193710985246/1123190763442929835/RVDiA-Profile-Pic.png" alt="RVDiA's Profile Picture">
 </p>
 
 <p align="center">
@@ -16,7 +16,7 @@
   </a>
 </p>
 
-Revolutionary Virtual Discord Assistant (RVDiA) adalah sebuah **Indonesian-oriented Multipurpose Discord Bot** (Robot Discord Multifungsi berbahasa Indonesia) yang terinspirasi dari karakter "Haruna Sakurai" dari game Ongeki!
+Revolutionary Virtual Discord Assistant (RVDiA) adalah sebuah **Indonesian-oriented Multipurpose Discord Bot** (Robot Discord Multifungsi berbahasa Indonesia).
 
 ## Apa yang Spesial dari Bot ini?
 Bot ini menggunakan Bahasa Indonesia dan memiliki command khusus untuk anggota-anggota club G-Tech Re'sman, serta memiliki fitur utilitas yang melimpah dan sistem game RPG (roleplay game) tersendiri dengan event-event menarik.
@@ -40,8 +40,6 @@ Join [CyroN Central server](https://discord.gg/QqWCnk6zxw) di Discord dan hubung
 
 ### Credits
 Terima kasih terutama untuk Riverdia (atas inspirasi nama bot), iMaze, Mouchi, Dez, Zenchew, Ismita, Pockii, Kyuu, Kazama, Bcntt, Nateflakes, nathawiguna, opensourze, Shiruto, Satya Yoga dan masih banyak lagi karena telah membantu saya pada proyek-proyek sebelumnya!
-
-Note: I do not own the rights to the arts of RVDiA (Haruna Sakurai). Though, I will change them once requested by the owner(s).
 
 **Made with ❤️ and dedication, Jayananda**
 

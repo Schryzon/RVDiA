@@ -2,7 +2,6 @@
 Schryzon/Jayananda (11)
 G-Tech Re'sman Programming Division
 RVDiA (Revolutionary Virtual Discord Assistant)
-Inspired by Haruna Sakurai from Ongeki!
 Feel free to edit, recreate, publish, and do other stuff.
 Contributions are welcome.
 Licensed under the MIT LICENSE.
@@ -104,9 +103,9 @@ async def change_status():
   for guilds in rvdia.guilds:
     users += guilds.member_count -1
   user_count_status = f'{users} users'
-  all_status=['in my room', 'in G-Tech Server', '"How to be a cutie"', 'you', 'G-Tech members',
+  all_status=['in my room', 'in G-Tech Server', '"How to be cute"', 'you', 'G-Tech members',
                   'Ephotech 2023', user_count_status, 'with Schryzon', f'{rvdia.__version__}',
-                  '/help', 'What should I do today?', 'Add me!', is_event, 'Ongeki!bright Memory', '~♪',
+                  '/help', 'What should I do today?', 'Add me!', is_event, '~♪',
                   'Re:Volution'
                 ]
   status = rand(all_status)
