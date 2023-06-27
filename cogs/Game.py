@@ -1039,10 +1039,10 @@ class UseDropdown(discord.ui.Select):
                         func[0] = 'defense'
                     case "agl":
                         func[0] = 'agility'
-                database.update_one({'_id':interaction.user.id}, {'$push':{'equipments':item}})
-                database.update_one({'_id':interaction.user.id}, {'$pull':{'items':item}})
+                database.update_one({'_id':interaction.user.id}, {'$push':{'equipments':matching[0]}})
+                database.update_one({'_id':interaction.user.id}, {'$pull':{'items':matching[0]}})
                 database.update_one({'_id':interaction.user.id}, {'$inc':{func[0]:int(func[1])}})
-                await interaction.response.send_message(f"Kamu telah menggunakan `{item['name']}`!")
+                await interaction.response.send_message(f"Kamu telah menggunakan `{matching[0]['name']}`!")
 
         else:
             item = database.find_one({'_id':interaction.user.id, 'items._id':item})
@@ -1057,7 +1057,7 @@ class UseDropdown(discord.ui.Select):
                     func[0] = 'agility'
             database.update_one({'_id':interaction.user.id, 'items._id':self.values[0]}, {'$inc':{'items.$.owned':-1}})
             database.update_one({'_id':interaction.user.id}, {'$inc':{func[0]:int(func[1])}})
-            await interaction.response.send_message(f"Kamu telah menggunakan `{item['name']}`!")
+            await interaction.response.send_message(f"Kamu telah menggunakan `{matching[0]['name']}`!")
             await asyncio.sleep(1)
             if level_up(self.ctx):
                 await send_level_up_msg(self.ctx)
