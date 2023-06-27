@@ -230,7 +230,7 @@ class GameInstance():
                 if isinstance(user1, discord.Member):
                     await self.ctx.channel.send(f'{user1.mention} memberikan `{func[1]}` Damage instan ke {user2.mention}!')
                 else:
-                    await self.ctx.channel.send(f"{user1['name']} memberikan `{func[1]}` Damage instan ke {user2['name']}!")
+                    await self.ctx.channel.send(f"{user1['name']} memberikan `{func[1]}` Damage instan ke {user2.mention}!")
 
             case 'ATK':
                 if user1 == self.user1:
