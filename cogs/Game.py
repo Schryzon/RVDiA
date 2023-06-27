@@ -134,6 +134,8 @@ class GameInstance():
                 scaling = user_2_max_hp/10
             else:
                 scaling = user_2_max_hp
+
+            scaling = max(user_2_max_hp/100, user_2_max_hp/10, 1)
             damage = round(max(0, user_1_atk*(random.randint(80, 100) - user_2_def)/scaling))
         else:
             damage = round(max(0, user_1_atk*(random.randint(80, 100) - user_2_def)/100))
@@ -852,7 +854,8 @@ class ShopDropdown(discord.ui.Select):
             return await interaction.response.send_message(f"Waduh!\n{matched_dict['paywith']}mu tidak cukup untuk membeli barang ini!", ephemeral=True)
 
         if item_id in db_dict and item_id in mongo_dict: # User already bought this item in the past
-
+            if '1-' in item_id:
+                return await interaction.response.send_message("Kamu hanya bisa membeli equipment sekali saja!")
             filter_ = {'_id': interaction.user.id, 'items._id': item_id}
             update_ = {'$inc': {'items.$.owned': 1}}
             database.update_one(filter=filter_, update=update_)
@@ -988,6 +991,81 @@ class ShopView(View):
         self.current_page = self.current_page + 1 if self.current_page < max_page else 1
         embed = await self.update_embed(last_page)
         await interaction.response.edit_message(embed=embed, view=self)
+
+class UseDropdown(discord.ui.Select):
+    def __init__(self, items:list, ctx:commands.Context) -> None:
+        self.items = items
+        self.ctx = ctx
+        self.placeholder = "Pilihlah perlengkapan perang yang ingin kamu pakai!" if '1-' in items[0]['_id'] else "Pilihlah barang yang ingin kamu pakai!"
+        options = []
+        for index, item in enumerate(items, start=1):
+            options.append(discord.SelectOption(
+                label=f"{index}. {item['name']} ({item['usefor']})",
+                description=f"{item['func'].upper()}",
+                value = item['_id']
+            ))
+        super().__init__(custom_id="usedrop", placeholder=self.placeholder, min_values=1, max_values=1, options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+        # Click -> Check item_id and owned -> Add stats accordingly
+        if interaction.message.mentions[0] != interaction.user:
+            return await interaction.response.send_message("Kamu tidak diizinkan untuk menggunakan dropdown ini!")
+        database = connectdb('Game')
+        data = database.find_one({'_id':interaction.user.id})
+        item = self.values[0]
+        if '1-' in item:
+            matching = [x for x in data['equipments'] if x['_id'] == item]
+            if matching: # Uneqip
+                func = matching[0]['func'].split('+')
+                match func[0]:
+                    case "atk":
+                        func[0] = 'attack'
+                    case "def":
+                        func[0] = 'defense'
+                    case "agl":
+                        func[0] = 'agility'
+                database.update_one({'_id':interaction.user.id}, {'$pull':{'equipments':{'_id':item}}})
+                database.update_one({'_id':interaction.user.id}, {'$push':{'items':matching[0]}})
+                database.update_one({'_id':interaction.user.id}, {'$inc':{func[0]:int(func[1])*-1}})
+                await interaction.response.send_message(f"Kamu telah melepas `{matching[0]['name']}`!")
+            
+            else:
+                item = database.find_one({'_id':interaction.user.id, 'items._id':item})
+                func = item['func'].split('+')
+                match func[0]:
+                    case "atk":
+                        func[0] = 'attack'
+                    case "def":
+                        func[0] = 'defense'
+                    case "agl":
+                        func[0] = 'agility'
+                database.update_one({'_id':interaction.user.id}, {'$push':{'equipments':item}})
+                database.update_one({'_id':interaction.user.id}, {'$pull':{'items':item}})
+                database.update_one({'_id':interaction.user.id}, {'$inc':{func[0]:int(func[1])}})
+                await interaction.response.send_message(f"Kamu telah menggunakan `{item['name']}`!")
+
+        else:
+            item = database.find_one({'_id':interaction.user.id, 'items._id':item})
+            func = item['func'].split('+')
+            match func[0]:
+                case "atk":
+                    func[0] = 'attack'
+                case "def":
+                    func[0] = 'defense'
+                case "agl":
+                    func[0] = 'agility'
+            database.update_one({'_id':interaction.user.id, 'items._id':self.values[0]}, {'$inc':{'items.$.owned':-1}})
+            database.update_one({'_id':interaction.user.id}, {'$inc':{func[0]:int(func[1])}})
+            await interaction.response.send_message(f"Kamu telah menggunakan `{item['name']}`!")
+            await asyncio.sleep(1)
+            if level_up(self.ctx):
+                await send_level_up_msg(self.ctx)
+
+    
+class UseView(View):
+    def __init__(self, items:list, ctx:commands.Context):
+        super().__init__(timeout=30)
+        self.add_item(UseDropdown(items, ctx))
 
 class Game(commands.GroupCog, group_name = 'game'):
     """
@@ -1316,6 +1394,35 @@ class Game(commands.GroupCog, group_name = 'game'):
         """
         game_instance = GuessGame(ctx, level.value)
         await game_instance.start()
+
+    @commands.hybrid_command(description = "Gunakan barang atau perlengkapan perang!")
+    @app_commands.describe(type = 'Jenis barang yang ingin digunakan?')
+    @app_commands.choices(type=[
+        app_commands.Choice(name='Barang (Consumable)', value='item'),
+        app_commands.Choice(name='Perlengkapan (Equipment)', value='equipment')
+    ])
+    @app_commands.rename(type = 'jenis')
+    @has_registered()
+    @check_blacklist()
+    async def use(self, ctx:commands.Context, type:app_commands.Choice[str]):
+        """
+        Gunakan barang atau perlengkapan perang!
+        """
+        # Choose type -> Dropdown class
+        database = connectdb('Game')
+        data = database.find_one({'_id':ctx.author.id})
+        match type.value:
+            case "item":
+                things = [item for item in data['items'] if "0-" in item['_id'] and item['usefor'] == "free"]
+            
+            case "equipment":
+                things = [item for item in data['items'] if "1-" in item['_id']]
+
+            case _:
+                return await ctx.reply("Hey! Pilihlah salah satu dari opsi tersedia!", ephemeral=True)
+            
+        view = UseView(things, ctx)
+        await ctx.reply(f'{ctx.author.mention}', view=view)
 
 async def setup(bot):
     await bot.add_cog(Game(bot))
