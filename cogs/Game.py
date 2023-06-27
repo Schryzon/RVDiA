@@ -72,7 +72,7 @@ class FightView(View):
         await interaction.message.delete(delay=5)
 
     @button(label='Lewati', custom_id='skip', style=discord.ButtonStyle.gray, emoji='⌚', row=1)
-    async def check(self, interaction:discord.Interaction, button:Button):
+    async def skip(self, interaction:discord.Interaction, button:Button):
         if interaction.message.mentions[0] != interaction.user:
             return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
         await interaction.response.send_message("Opsi terpilih: ⌚Lewati")
@@ -161,7 +161,6 @@ class GameInstance():
             else:
                 scaling = user_2_max_hp
 
-            scaling = max(user_2_max_hp/100, user_2_max_hp/10, 1)
             damage = round(max(0, user_1_atk*(random.randint(80, 100) - user_2_def)/scaling))
         else:
             damage = round(max(0, user_1_atk*(random.randint(80, 100) - user_2_def)/100))
