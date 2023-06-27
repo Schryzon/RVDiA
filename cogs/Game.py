@@ -11,6 +11,7 @@ import datetime
 import time
 import random
 import json
+import math
 from os import getenv, listdir, path
 from discord.ui import View, Button, button
 from discord import app_commands
@@ -28,7 +29,7 @@ class FightView(View):
             return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
         await interaction.response.send_message("Opsi terpilih: 💥Serang")
         await asyncio.sleep(0.5)
-        await interaction.message.delete()
+        await interaction.message.delete(delay = 5)
 
     @button(label='Tahan', custom_id='defend', style=discord.ButtonStyle.blurple, emoji='🛡️')
     async def defend(self, interaction:discord.Interaction, button:Button):
@@ -36,7 +37,7 @@ class FightView(View):
             return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
         await interaction.response.send_message("Opsi terpilih: 🛡️Tahan")
         await asyncio.sleep(0.5)
-        await interaction.message.delete(delay=1)
+        await interaction.message.delete(delay=5)
 
     @button(label='Barang', custom_id='item', style=discord.ButtonStyle.green, emoji='👜')
     async def item(self, interaction:discord.Interaction, button:Button):
@@ -44,15 +45,15 @@ class FightView(View):
             return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
         await interaction.response.send_message("Opsi terpilih: 👜Barang")
         await asyncio.sleep(0.5)
-        await interaction.message.delete(delay=1)
+        await interaction.message.delete(delay=5)
 
-    @button(label='Musuh', custom_id='check', style=discord.ButtonStyle.gray, emoji='❔')
-    async def check(self, interaction:discord.Interaction, button:Button):
+    @button(label='Skill', custom_id='skill', style=discord.ButtonStyle.green, emoji='🔮')
+    async def item(self, interaction:discord.Interaction, button:Button):
         if interaction.message.mentions[0] != interaction.user:
             return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
-        await interaction.response.send_message("Opsi terpilih: ❔Musuh")
+        await interaction.response.send_message("Opsi terpilih: 🔮Skill")
         await asyncio.sleep(0.5)
-        await interaction.message.delete(delay=1)
+        await interaction.message.delete(delay=5)
 
     @button(label='Kabur', custom_id='end', style=discord.ButtonStyle.gray, emoji='🏃')
     async def flee(self, interaction:discord.Interaction, button:Button):
@@ -60,7 +61,23 @@ class FightView(View):
             return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
         await interaction.response.send_message("Opsi terpilih: 🏃Kabur")
         await asyncio.sleep(0.5)
-        await interaction.message.delete(delay=1)
+        await interaction.message.delete(delay=5)
+
+    @button(label='Musuh', custom_id='check', style=discord.ButtonStyle.gray, emoji='❔', row=1)
+    async def check(self, interaction:discord.Interaction, button:Button):
+        if interaction.message.mentions[0] != interaction.user:
+            return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
+        await interaction.response.send_message("Opsi terpilih: ❔Musuh")
+        await asyncio.sleep(0.5)
+        await interaction.message.delete(delay=5)
+
+    @button(label='Lewati', custom_id='skip', style=discord.ButtonStyle.gray, emoji='⌚', row=1)
+    async def check(self, interaction:discord.Interaction, button:Button):
+        if interaction.message.mentions[0] != interaction.user:
+            return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
+        await interaction.response.send_message("Opsi terpilih: ⌚Lewati")
+        await asyncio.sleep(0.5)
+        await interaction.message.delete(delay=5)
 
 class GameInstance():
     def __init__(self, ctx:commands.Context, user1:discord.Member, user2, bot):
@@ -83,8 +100,15 @@ class GameInstance():
         self.user1_stats = None
         self.user2_stats = None
         self.ai_skill_usage = 0
+        self.p1_skill_limit = 0
+        self.p2_skill_limit = 0
 
     async def gather_data(self):
+        def calc_skill_limit(level:int):
+            if level < 10:
+                return 3
+            return 3*(math.floor(level/10))
+        
         database = connectdb('Game')
         user1_data = database.find_one({'_id':self.user1.id})
         user1_stats = [user1_data['attack'], user1_data['defense'], user1_data['agility']]
@@ -92,6 +116,7 @@ class GameInstance():
             'stats': user1_stats,
             'hp': self.user1_hp
         }
+        self.p1_skill_limit = calc_skill_limit(user1_data['level'])
 
         if self.command_name == "fight":
             # Fight = PvP
@@ -105,6 +130,7 @@ class GameInstance():
                 'stats': user2_stats,
                 'hp': self.user2_hp
             }
+            self.p2_skill_limit = calc_skill_limit(user2_data['level'])
 
         else:
             user2_stats = [self.user2['atk'], self.user2['def'], self.user2['agl']]
@@ -130,7 +156,7 @@ class GameInstance():
         if dealer_id != 1 and self.ctx.command.name == "battle":
             if user_2_max_hp > 500:
                 scaling = user_2_max_hp/100
-            elif user_2_max_hp > 100:
+            elif user_2_max_hp > 200:
                 scaling = user_2_max_hp/10
             else:
                 scaling = user_2_max_hp
@@ -170,12 +196,15 @@ class GameInstance():
         else:
             self.user2_defend = True
     
-    async def use(self, user1):
+    async def use(self, user1, type):
         database = connectdb('Game')
         user1_data = database.find_one({'_id':user1.id})
         items = user1_data['items']
-        view = ItemView(items, user1)
-        await self.ctx.channel.send(f"{user1.mention}, 10 detik untuk memilih item.", view=view)
+        view = ItemView(items, user1, type)
+        if type == 'item':
+            await self.ctx.channel.send(f"{user1.mention}, 10 detik untuk memilih item.", view=view)
+        else:
+            await self.ctx.channel.send(f"{user1.mention}, 10 detik untuk menggunakan skill.", view=view)
 
     async def func_converter(self, func:str, user1, user2):
         func = re.sub(r'\(|\)', '', func)
@@ -274,6 +303,8 @@ class GameInstance():
         datas = await self.gather_data()
         self.user1_stats = datas[0]['stats']
         self.user2_stats = datas[1]['stats']
+        p1_skills_used = 0
+        p2_skills_used = 0
         if isinstance(self.user2, discord.Member):
             await self.ctx.reply(f'⚔️ Perang dimulai!\nLawan: {self.user2.mention}') # I'll just use this for now
         else:
@@ -310,13 +341,26 @@ class GameInstance():
                     await self.ctx.channel.send(embed=embed)
 
                 case "Opsi terpilih: 👜Barang":
-                    await self.use(self.user1)
+                    await self.use(self.user1, 'item')
                     try:
                         res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and " menggunakan " in r.content, timeout = 10)
                         func = res_use.content.split('\n')[2] # Dear god hope this works
                         await self.func_converter(func, self.user1, self.user2)
                     except asyncio.TimeoutError:
                         await self.ctx.channel.send(f"{self.user1.mention}, giliranmu diskip karena tidak menggunakan item!")
+
+                case "Opsi terpilih: 🔮Skill":
+                    if p1_skills_used >= self.p1_skill_limit:
+                        await self.ctx.channel.send(f"{self.user1.mention}, kamu terbatas **`{self.p1_skill_limit}`** kali menggunakan skill untuk levelmu saat ini!")
+                    else:
+                        await self.use(self.user1, 'skill')
+                        try:
+                            res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and " menggunakan " in r.content, timeout = 10)
+                            func = res_use.content.split('\n')[2] # Dear god hope this works
+                            await self.func_converter(func, self.user1, self.user2)
+                            p1_skills_used += 1
+                        except asyncio.TimeoutError:
+                            await self.ctx.channel.send(f"{self.user1.mention}, giliranmu diskip karena tidak menggunakan skill!")
 
                 case "Opsi terpilih: ❔Musuh":
                     stats = self.user2_stats
@@ -350,6 +394,9 @@ class GameInstance():
                 case "Opsi terpilih: 🏃Kabur":
                     await self.ctx.channel.send(f'⛔ <@{self.user1.id}>  mengakhiri perang.')
                     return
+                
+                case "Opsi terpilih: ⌚Lewati":
+                    await self.ctx.channel.send(f'{self.user1.mention} melewati gilirannya!')
 
                 case _:
                     await self.ctx.channel.send("Opsi tidak valid, giliran dilewatkan.") # This was actually possible, now it's an easter egg!
@@ -399,7 +446,7 @@ class GameInstance():
                         await self.ctx.channel.send(embed = embed)
 
                     case "Opsi terpilih: 👜Barang":
-                        await self.use(self.user2)
+                        await self.use(self.user2, 'item')
                         try:
                             res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and " menggunakan " in r.content, timeout = 10)
                             func = res_use.content.split('\n')[2] # Dear god hope this works
@@ -408,9 +455,26 @@ class GameInstance():
                         except asyncio.TimeoutError:
                             await self.ctx.channel.send(f"{self.user2.mention}, giliranmu diskip karena tidak menggunakan item!")
 
+                    case "Opsi terpilih: 🔮Skill":
+                        if p2_skills_used > self.p2_skill_limit:
+                            await self.ctx.channel.send(f"{self.user2.mention}, kamu terbatas **`{self.p2_skill_limit}`** kali menggunakan skill untuk levelmu saat ini!")
+                        else:
+                            await self.use(self.user2, 'skill')
+                            try:
+                                res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and " menggunakan " in r.content, timeout = 10)
+                                func = res_use.content.split('\n')[2] # Dear god hope this works
+                                await asyncio.sleep(1.2)
+                                await self.func_converter(func, self.user2, self.user1)
+                                p2_skills_used += 1
+                            except asyncio.TimeoutError:
+                                await self.ctx.channel.send(f"{self.user2.mention}, giliranmu diskip karena tidak menggunakan skill!")
+
                     case "Opsi terpilih: 🏃Kabur":
                         await self.ctx.channel.send(f'⛔ <@{self.user2.id}>  mengakhiri perang.')
                         return
+                    
+                    case "Opsi terpilih: ⌚Lewati":
+                        await self.ctx.channel.send(f'{self.user2.mention} melewati gilirannya!')
 
                     case _:
                         await self.ctx.channel.send("Opsi tidak valid, giliran dilewatkan.")
@@ -650,13 +714,16 @@ class AI():
         return action
     
 class ItemDropdown(discord.ui.Select):
-    def __init__(self, items:list, user1) -> None:
-        self.user1 = user1
-        self.items = items
+    def __init__(self, items:list, user1, type) -> None:
         options = []
-        for index, item in enumerate(items):
-            index += 1
-            if '0-' in item['_id'] and item['usefor'] == 'battle' and not item['owned'] <= 0:
+        for index, item in enumerate(items, start=1):
+            if '0-' in item['_id'] and item['usefor'] == 'battle' and not item['owned'] <= 0 and type == 'item':
+                options.append(discord.SelectOption(
+                    label=f"{index}. {item['name']}",
+                    value=item['_id'],
+                    description=f"{item['desc']} ({item['func'].upper()})"
+                ))
+            elif '2-' in item['_id'] and item['usefor'] == 'battle' and not item['owned'] <= 0 and type == 'skill':
                 options.append(discord.SelectOption(
                     label=f"{index}. {item['name']}",
                     value=item['_id'],
@@ -664,18 +731,24 @@ class ItemDropdown(discord.ui.Select):
                 ))
         if options == [] or options == None:
             options.append(discord.SelectOption(
-                    label=f"Tidak ada item!",
+                    label=f"Tidak ada item/skill!",
                     value="none",
                     description=f"Kamu harus membelinya dulu di /game shop!"
                 )
             )
-        super().__init__(custom_id="itemdrop", placeholder='Pilih item yang ingin kamu pakai!', min_values=1, max_values=1, options=options)
+        super().__init__(custom_id="itemdrop", placeholder='Pilih yang ingin kamu gunakan!', min_values=1, max_values=1, options=options)
+        self.user1 = user1
+        self.items = items
+        self.types = type
 
     async def callback(self, interaction:discord.Interaction):
         if interaction.message.mentions[0].id != interaction.user.id:
             return await interaction.response.send_message(f"Hey! Kamu tidak diizinkan untuk memilih!", ephemeral=True) #Does this even work
-        if self.values[0] == 'none':
+        if self.values[0] == 'none' and self.type == 'item':
             return await interaction.response.send_message("Kamu tidak memiliki item apapun!", ephemeral=True)
+        elif self.values[0] == 'none' and self.type == 'skill':
+            return await interaction.response.send_message("Kamu tidak memiliki skill apapun!", ephemeral=True)
+        
         database = connectdb('Game')
         data = database.find_one({'_id':self.user1.id})
         db_items = data['items']
@@ -692,13 +765,16 @@ class ItemDropdown(discord.ui.Select):
 
         if used_item is None:
             raise Exception("The Item Dropdown callback is behaving wierdly!")
-        await interaction.response.send_message(f"{interaction.user.mention} menggunakan item:\n# {used_item[0]}!\n({used_item[1].upper()})")
+        if self.type == 'skill':
+            await interaction.response.send_message(f"{interaction.user.mention} menggunakan item:\n# {used_item[0]}!\n({used_item[1].upper()})")
+        else:
+            await interaction.response.send_message(f"{interaction.user.mention} menggunakan skill:\n# {used_item[0]}!\n({used_item[1].upper()})")
 
 
 class ItemView(View):
-    def __init__(self, items:list, user1):
+    def __init__(self, items:list, user1, type):
         super().__init__(timeout=20)
-        self.add_item(ItemDropdown(items, user1))
+        self.add_item(ItemDropdown(items, user1, type))
     
 def guess_level_convert(level:str):
     """
@@ -1001,6 +1077,13 @@ class UseDropdown(discord.ui.Select):
                 description=f"{item['func'].upper()}",
                 value = item['_id']
             ))
+        if options == [] or options == None:
+            options.append(discord.SelectOption(
+                    label=f"Tidak ada apapun!",
+                    value="none",
+                    description=f"Kamu harus membelinya dulu di /game shop!"
+                )
+            )
         super().__init__(custom_id="usedrop", placeholder="Pilihlah barang yang ingin kamu pakai!", min_values=1, max_values=1, options=options)
         self.items = items
         self.ctx = ctx
@@ -1009,6 +1092,8 @@ class UseDropdown(discord.ui.Select):
         # Click -> Check item_id and owned -> Add stats accordingly
         if interaction.message.mentions[0] != interaction.user:
             return await interaction.response.send_message("Kamu tidak diizinkan untuk menggunakan dropdown ini!")
+        if self.values[0] == 'none':
+            return await interaction.response.send_message("Kamu tidak memiliki apapun!\nKamu harus membeli barang/skill di `/game shop`!", ephemeral=True)
         database = connectdb('Game')
         data = database.find_one({'_id':interaction.user.id})
         item = self.values[0]
@@ -1398,7 +1483,8 @@ class Game(commands.GroupCog, group_name = 'game'):
     @app_commands.describe(type = 'Jenis barang yang ingin digunakan?')
     @app_commands.choices(type=[
         app_commands.Choice(name='Barang (Consumable)', value='item'),
-        app_commands.Choice(name='Perlengkapan (Equipment)', value='equipment')
+        app_commands.Choice(name='Perlengkapan (Equipment)', value='equipment'),
+        app_commands.Choice(name='Kemampuan (Skill)', value='skill')
     ])
     @app_commands.rename(type = 'jenis')
     @has_registered()
@@ -1416,6 +1502,9 @@ class Game(commands.GroupCog, group_name = 'game'):
             
             case "equipment":
                 things = [item for item in data['items'] if "1-" in item['_id']]
+
+            case "skill":
+                things = [item for item in data['items'] if "2-" in item['_id'] and item['usefor'] == "free"]
 
             case _:
                 return await ctx.reply("Hey! Pilihlah salah satu dari opsi tersedia!", ephemeral=True)

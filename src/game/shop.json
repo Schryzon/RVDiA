@@ -98,5 +98,55 @@
         "func":"def+10",
         "cost":20,
         "paywith":"Koin"
+    },
+    {
+        "name":"Focus",
+        "_id":"2-focus",
+        "usefor":"battle",
+        "desc":"Memfokuskan pikiranmu kehadapan musuh.",
+        "type":"Skill",
+        "func":"agl+10",
+        "cost":5,
+        "paywith":"Karma"
+    },
+    {
+        "name":"Hailstorm Spike",
+        "_id":"2-hlstorm",
+        "usefor":"battle",
+        "desc":"Menjatuhkan berribu-ribu duri es ke musuh.",
+        "type":"Skill",
+        "func":"dmg+25",
+        "cost":7,
+        "paywith":"Karma"
+    },
+    {
+        "name":"Enraged Soul",
+        "_id":"2-enrsoul",
+        "usefor":"battle",
+        "desc":"Meningkatkan semangat bertarungmu.",
+        "type":"Skill",
+        "func":"atk+15",
+        "cost":6,
+        "paywith":"Karma"
+    },
+    {
+        "name":"Superior Body",
+        "_id":"2-supbody",
+        "usefor":"battle",
+        "desc":"Meningkatkan pertahanan terhadap serangan.",
+        "type":"Skill",
+        "func":"def+10",
+        "cost":5,
+        "paywith":"Karma"
+    },
+    {
+        "name":"Regeneration",
+        "_id":"2-regen",
+        "usefor":"battle",
+        "desc":"Menyembuhkan sebagian lukamu.",
+        "type":"Skill",
+        "func":"hp+30",
+        "cost":8,
+        "paywith":"Karma"
     }
 ]
