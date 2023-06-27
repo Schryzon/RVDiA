@@ -48,7 +48,7 @@ class FightView(View):
         await interaction.message.delete(delay=5)
 
     @button(label='Skill', custom_id='skill', style=discord.ButtonStyle.green, emoji='🔮')
-    async def item(self, interaction:discord.Interaction, button:Button):
+    async def skill(self, interaction:discord.Interaction, button:Button):
         if interaction.message.mentions[0] != interaction.user:
             return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
         await interaction.response.send_message("Opsi terpilih: 🔮Skill")
@@ -231,7 +231,7 @@ class GameInstance():
                 if isinstance(user1, discord.Member):
                     await self.ctx.channel.send(f'{user1.mention} memberikan `{func[1]}` Damage instan ke {user2.mention}!')
                 else:
-                    await self.ctx.channel.send(f"{user1['name']} memberikan `{func[1]}` Damage instan ke {user2.mention}!")
+                    await self.ctx.channel.send(f"{user1['name']} memberikan `{func[1]}` Damage instan ke {user2['name']}!")
 
             case 'ATK':
                 if user1 == self.user1:
