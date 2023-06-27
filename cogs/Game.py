@@ -994,9 +994,6 @@ class ShopView(View):
 
 class UseDropdown(discord.ui.Select):
     def __init__(self, items:list, ctx:commands.Context) -> None:
-        self.items = items
-        self.ctx = ctx
-        self.placeholder = "Pilihlah perlengkapan perang yang ingin kamu pakai!" if '1-' in items[0]['_id'] else "Pilihlah barang yang ingin kamu pakai!"
         options = []
         for index, item in enumerate(items, start=1):
             options.append(discord.SelectOption(
@@ -1004,7 +1001,9 @@ class UseDropdown(discord.ui.Select):
                 description=f"{item['func'].upper()}",
                 value = item['_id']
             ))
-        super().__init__(custom_id="usedrop", placeholder=self.placeholder, min_values=1, max_values=1, options=options)
+        super().__init__(custom_id="usedrop", placeholder="Pilihlah barang yang ingin kamu pakai!", min_values=1, max_values=1, options=options)
+        self.items = items
+        self.ctx = ctx
 
     async def callback(self, interaction: discord.Interaction):
         # Click -> Check item_id and owned -> Add stats accordingly
