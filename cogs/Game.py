@@ -1030,8 +1030,8 @@ class UseDropdown(discord.ui.Select):
             
             else:
                 item = database.find_one({'_id':interaction.user.id, 'items._id':item})
-                print(item)
-                func = item['func'].split('+')
+                matching = [x for x in item['items'] if x['_id'] == self.values[0]]
+                func = matching['func'].split('+')
                 match func[0]:
                     case "atk":
                         func[0] = 'attack'
@@ -1046,7 +1046,8 @@ class UseDropdown(discord.ui.Select):
 
         else:
             item = database.find_one({'_id':interaction.user.id, 'items._id':item})
-            func = item['func'].split('+')
+            matching = [x for x in item['items'] if x['_id'] == self.values[0]]
+            func = matching['func'].split('+')
             match func[0]:
                 case "atk":
                     func[0] = 'attack'
