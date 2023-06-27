@@ -1030,6 +1030,7 @@ class UseDropdown(discord.ui.Select):
             
             else:
                 item = database.find_one({'_id':interaction.user.id, 'items._id':item})
+                print(item)
                 func = item['func'].split('+')
                 match func[0]:
                     case "atk":
