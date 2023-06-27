@@ -581,7 +581,6 @@ class AI():
     Using mood system cause it's the best one I could think of
     So yeah, like, share, and subscribe
     """
-    # TO DO: HANDLE SPELLS & ITEMS
     def __init__(self, instance:GameInstance, turns:int) -> None:
         self.instance = instance
         self.user1 = instance.user1
@@ -674,38 +673,38 @@ class AI():
 
             case "SUPER HIGH":
                 self.escape_mood = 4
-                if self.ai_skill_usage >= 3:
+                if self.ai_skill_usage >= 3 and 'skill' in self.actions:
                     self.actions.remove("skill")
                     self.traits.remove(self.skill_mood)
 
             case "HIGH":
                 self.escape_mood = 5
-                if self.ai_skill_usage >= 2:
+                if self.ai_skill_usage >= 2 and 'skill' in self.actions:
                     self.actions.remove("skill")
                     self.traits.remove(self.skill_mood)
 
             case "SUPER NORMAL":
-                if self.ai_skill_usage >= 3:
+                if self.ai_skill_usage >= 3 and 'skill' in self.actions:
                     self.actions.remove("skill")
                     self.traits.remove(self.skill_mood)
 
             case "NORMAL":
-                if self.ai_skill_usage >= 2:
+                if self.ai_skill_usage >= 2 and 'skill' in self.actions:
                     self.actions.remove("skill")
                     self.traits.remove(self.skill_mood)
 
             case "SUPER LOW":
-                if self.ai_skill_usage >= 2:
+                if self.ai_skill_usage >= 2 and 'skill' in self.actions:
                     self.actions.remove("skill")
                     self.traits.remove(self.skill_mood)
 
             case "LOW":
-                if self.ai_skill_usage >= 1:
+                if self.ai_skill_usage >= 1 and 'skill' in self.actions:
                     self.actions.remove("skill")
                     self.traits.remove(self.skill_mood)
 
         sorted_traits = sorted(self.traits, reverse=True)
-        if random.randint(0, 100) < 20:
+        if random.randint(0, 100) < 15:
             action = random.choice(self.actions)
         else:
             action = random.choice([action for trait, action in zip(self.traits, self.actions) if trait == sorted_traits[0]])
