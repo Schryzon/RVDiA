@@ -15,7 +15,7 @@
         "desc":"Pedang yang cocok bagi pemula.",
         "type":"Equipment",
         "usefor":"Senjata",
-        "func":"atk+20",
+        "func":"atk+4",
         "cost":10,
         "paywith":"Karma"
     },
@@ -25,7 +25,7 @@
         "desc":"Armor metal yang hanya melindungi bagian depan.",
         "type":"Consumable",
         "usefor":"Armor",
-        "func":"def+10",
+        "func":"def+3",
         "cost":20,
         "paywith":"Koin"
     },
@@ -35,18 +35,18 @@
         "desc":"Sepatu untuk menghindari serangan.",
         "type":"Equipment",
         "usefor":"Kaki",
-        "func":"agl+15",
+        "func":"agl+5",
         "cost":8,
         "paywith":"Karma"
     },
     {
         "name":"Healing Light",
-        "_id":"0-heallight",
+        "_id":"2-heallight",
         "usefor":"battle",
         "desc":"Cahaya yang mampu menyembuhkan lukamu.",
-        "type":"Consumable",
+        "type":"Skill",
         "func":"hp+30",
-        "cost":7,
+        "cost":8,
         "paywith":"Karma"
     },
     {
@@ -137,16 +137,6 @@
         "type":"Skill",
         "func":"def+10",
         "cost":5,
-        "paywith":"Karma"
-    },
-    {
-        "name":"Regeneration",
-        "_id":"2-regen",
-        "usefor":"battle",
-        "desc":"Menyembuhkan sebagian lukamu.",
-        "type":"Skill",
-        "func":"hp+30",
-        "cost":8,
         "paywith":"Karma"
     }
 ]

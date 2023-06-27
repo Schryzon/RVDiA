@@ -75,8 +75,7 @@
         ],
         "skills":[
             {
-                "name":"Weak Healing Light",
-                "desc":"Cahaya pemulih luka",
+                "name":"Healing Light",
                 "func":"hp+15"
             }
         ]

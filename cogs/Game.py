@@ -716,16 +716,16 @@ class AI():
 class ItemDropdown(discord.ui.Select):
     def __init__(self, items:list, user1, type) -> None:
         options = []
-        for index, item in enumerate(items, start=1):
+        for item in items:
             if '0-' in item['_id'] and item['usefor'] == 'battle' and not item['owned'] <= 0 and type == 'item':
                 options.append(discord.SelectOption(
-                    label=f"{index}. {item['name']}",
+                    label=f"{item['name']}",
                     value=item['_id'],
                     description=f"{item['desc']} ({item['func'].upper()})"
                 ))
             elif '2-' in item['_id'] and item['usefor'] == 'battle' and not item['owned'] <= 0 and type == 'skill':
                 options.append(discord.SelectOption(
-                    label=f"{index}. {item['name']}",
+                    label=f"{item['name']}",
                     value=item['_id'],
                     description=f"{item['desc']} ({item['func'].upper()})"
                 ))
@@ -755,7 +755,7 @@ class ItemDropdown(discord.ui.Select):
         used_item = None
         if db_items == self.items:
             for item in self.items:
-                if item['_id'] == self.values[0] and not item['owned'] <= 0:
+                if item['_id'] == self.values[0] and not item['owned'] <= 0 and self.types == 'item':
                     database.find_one_and_update(
                         {'_id':self.user1.id, 'items._id':self.values[0]},
                         {'$inc':{'items.$.owned':-1}}
@@ -763,9 +763,13 @@ class ItemDropdown(discord.ui.Select):
                     used_item = [item['name'], item['func']]
                     break
 
+                elif item['_id'] == self.values[0] and not item['owned'] <= 0 and self.types == 'skill':
+                    used_item = [item['name'], item['func']]
+                    break
+
         if used_item is None:
             raise Exception("The Item Dropdown callback is behaving wierdly!")
-        if self.type == 'skill':
+        if self.type == 'item':
             await interaction.response.send_message(f"{interaction.user.mention} menggunakan item:\n# {used_item[0]}!\n({used_item[1].upper()})")
         else:
             await interaction.response.send_message(f"{interaction.user.mention} menggunakan skill:\n# {used_item[0]}!\n({used_item[1].upper()})")
@@ -891,7 +895,6 @@ class ResignButton(View):
 class ShopDropdown(discord.ui.Select):
     """
     Buy feature
-    TO DO: TREAT BUYING ITEMS DIFFERENT FROM EQUIPMENTS
     """
     def __init__(self, page:int):
         self.page = page
@@ -931,7 +934,9 @@ class ShopDropdown(discord.ui.Select):
 
         if item_id in db_dict and item_id in mongo_dict: # User already bought this item in the past
             if '1-' in item_id:
-                return await interaction.response.send_message("Kamu hanya bisa membeli equipment sekali saja!")
+                return await interaction.response.send_message("Kamu hanya bisa membeli equipment sekali saja!", ephemeral=True)
+            if '2-' in item_id:
+                return await interaction.response.send_message("Kamu hanya bisa memelajari skill sekali saja!", ephemeral=True)
             filter_ = {'_id': interaction.user.id, 'items._id': item_id}
             update_ = {'$inc': {'items.$.owned': 1}}
             database.update_one(filter=filter_, update=update_)
@@ -992,7 +997,7 @@ class EnemyDropdown(discord.ui.Select):
 
 class EnemyView(View):
     def __init__(self):
-        super().__init__(timeout=30)
+        super().__init__(timeout=120)
         self.add_item(EnemyDropdown())
         
 class ShopView(View):
@@ -1293,12 +1298,6 @@ class Game(commands.GroupCog, group_name = 'game'):
             inline=False
             )
         
-        embed.add_field(
-            name='Skill Spesial',
-            value=', '.join(special_skills) if not special_skills == [] else "Belum ada dikuasai.",
-            inline=False
-        )
-        
         embed.set_footer(text='Login harian terakhir ')
         await ctx.reply(embed = embed)
 
@@ -1483,8 +1482,7 @@ class Game(commands.GroupCog, group_name = 'game'):
     @app_commands.describe(type = 'Jenis barang yang ingin digunakan?')
     @app_commands.choices(type=[
         app_commands.Choice(name='Barang (Consumable)', value='item'),
-        app_commands.Choice(name='Perlengkapan (Equipment)', value='equipment'),
-        app_commands.Choice(name='Kemampuan (Skill)', value='skill')
+        app_commands.Choice(name='Perlengkapan (Equipment)', value='equipment')
     ])
     @app_commands.rename(type = 'jenis')
     @has_registered()
@@ -1502,9 +1500,6 @@ class Game(commands.GroupCog, group_name = 'game'):
             
             case "equipment":
                 things = [item for item in data['items'] if "1-" in item['_id']]
-
-            case "skill":
-                things = [item for item in data['items'] if "2-" in item['_id'] and item['usefor'] == "free"]
 
             case _:
                 return await ctx.reply("Hey! Pilihlah salah satu dari opsi tersedia!", ephemeral=True)
