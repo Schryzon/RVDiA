@@ -14,7 +14,7 @@
         "_id":"1-dwsls",
         "desc":"Pedang yang cocok bagi pemula.",
         "type":"Equipment",
-        "usefor":"weapon",
+        "usefor":"Senjata",
         "func":"atk+20",
         "cost":10,
         "paywith":"Karma"
@@ -24,7 +24,7 @@
         "_id":"1-fsgrd",
         "desc":"Armor metal yang hanya melindungi bagian depan.",
         "type":"Consumable",
-        "usefor":"armor",
+        "usefor":"Armor",
         "func":"def+10",
         "cost":20,
         "paywith":"Koin"
@@ -34,7 +34,7 @@
         "_id":"1-swift",
         "desc":"Sepatu untuk menghindari serangan.",
         "type":"Equipment",
-        "usefor":"feet",
+        "usefor":"Kaki",
         "func":"agl+15",
         "cost":8,
         "paywith":"Karma"
@@ -64,7 +64,7 @@
         "_id":"1-sonar",
         "desc":"Melindungi kepalamu dari serangan.",
         "type":"Equipment",
-        "usefor":"head",
+        "usefor":"Kepala",
         "func":"def+5",
         "cost":10,
         "paywith":"Koin"

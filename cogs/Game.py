@@ -1024,7 +1024,6 @@ class UseDropdown(discord.ui.Select):
                     case "agl":
                         func[0] = 'agility'
                 database.update_one({'_id':interaction.user.id}, {'$pull':{'equipments':{'_id':item}}})
-                database.update_one({'_id':interaction.user.id}, {'$push':{'items':matching[0]}})
                 database.update_one({'_id':interaction.user.id}, {'$inc':{func[0]:int(func[1])*-1}})
                 await interaction.response.send_message(f"Kamu telah melepas `{matching[0]['name']}`!")
             
@@ -1040,7 +1039,6 @@ class UseDropdown(discord.ui.Select):
                     case "agl":
                         func[0] = 'agility'
                 database.update_one({'_id':interaction.user.id}, {'$push':{'equipments':matching[0]}})
-                database.update_one({'_id':interaction.user.id}, {'$pull':{'items':matching[0]}})
                 database.update_one({'_id':interaction.user.id}, {'$inc':{func[0]:int(func[1])}})
                 await interaction.response.send_message(f"Kamu telah menggunakan `{matching[0]['name']}`!")
 
