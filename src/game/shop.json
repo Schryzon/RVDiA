@@ -10,14 +10,14 @@
         "paywith":"Koin"
     },
     {
-        "name":"Dawn Slasher",
+        "name":"Sword of Dawn",
         "_id":"1-dwsls",
         "desc":"Pedang yang cocok bagi pemula.",
         "type":"Equipment",
         "usefor":"Senjata",
         "func":"atk+4",
-        "cost":10,
-        "paywith":"Karma"
+        "cost":20,
+        "paywith":"Koin"
     },
     {
         "name":"Frontside Guard",
@@ -30,9 +30,9 @@
         "paywith":"Koin"
     },
     {
-        "name":"Swifters",
+        "name":"Old Boots",
         "_id":"1-swift",
-        "desc":"Sepatu untuk menghindari serangan.",
+        "desc":"Sepatu bekas dari seorang veteran.",
         "type":"Equipment",
         "usefor":"Kaki",
         "func":"agl+5",
@@ -167,6 +167,66 @@
         "type":"Skill",
         "func":"dmg+50",
         "cost":14,
+        "paywith":"Karma"
+    },
+    {
+        "name":"Titani Helmet",
+        "_id":"1-titahelm",
+        "usefor":"Kepala",
+        "desc":"Helm kuat terbuat dari titanium.",
+        "type":"Equipment",
+        "func":"def+15",
+        "cost":50,
+        "paywith":"Koin"
+    },
+    {
+        "name":"Devils' Claws",
+        "_id":"1-devclaws",
+        "usefor":"Senjata",
+        "desc":"Senjata cakar para iblis.",
+        "type":"Equipment",
+        "func":"atk+20",
+        "cost":17,
+        "paywith":"Karma"
+    },
+    {
+        "name":"Heavenly Robe",
+        "_id":"1-heavrobe",
+        "usefor":"Armor",
+        "desc":"Jubah ajaib dari malaikat.",
+        "type":"Equipment",
+        "func":"def+20",
+        "cost":17,
+        "paywith":"Karma"
+    },
+    {
+        "name":"Warrior Boots",
+        "_id":"1-warboots",
+        "usefor":"Kaki",
+        "desc":"Sepatu untuk para ksatria hebat.",
+        "type":"Equipment",
+        "func":"agl+10",
+        "cost":35,
+        "paywith":"Koin"
+    },
+    {
+        "name":"Daiki's Grace",
+        "_id":"2-daigrace",
+        "usefor":"battle",
+        "desc":"Memberikanmu kelincahan luar biasa.",
+        "type":"Skill",
+        "func":"agl+30",
+        "cost":25,
+        "paywith":"Karma"
+    },
+    {
+        "name":"Lagta's Strength",
+        "_id":"2-lagstre",
+        "usefor":"battle",
+        "desc":"Memberikanmu kekuatan luar biasa.",
+        "type":"Skill",
+        "func":"atk+35",
+        "cost":30,
         "paywith":"Karma"
     }
 ]

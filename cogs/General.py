@@ -96,7 +96,7 @@ class General(commands.Cog):
         m = 0
         for k in self.bot.guilds:
             m += k.member_count -1
-        embed = discord.Embed(title="Tentang RVDIA", color=0xff4df0)
+        embed = discord.Embed(title="Tentang RVDIA", color=self.bot.color)
         embed.set_thumbnail(url=self.bot.user.avatar.url)
         embed.set_image(url=getenv('banner') if not self.bot.event_mode else getenv('bannerevent'))
         embed.add_field(name = "Versi", value = f"{self.bot.__version__}", inline=False)
@@ -126,7 +126,7 @@ class General(commands.Cog):
         else:
             mongoping = 'ERROR - STATUS CODE 0'
             
-        embed= discord.Embed(title= "Ping--Pong!", color=0x964b00, timestamp=ctx.message.created_at)
+        embed= discord.Embed(title= "Ping--Pong!", color=self.bot.color, timestamp=ctx.message.created_at)
         embed.description = f"**Discord API:** `{round(self.bot.latency*1000)} ms`\n**MongoDB:** `{mongoping}`"
         await ctx.reply(embed=embed)
 

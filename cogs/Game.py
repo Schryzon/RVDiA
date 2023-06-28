@@ -344,7 +344,7 @@ class GameInstance():
                     elif not isinstance(user1, discord.Member) and isinstance(user2, discord.Member):
                         await self.ctx.channel.send(f'{user1["name"]} melemahkan pertahanan dari {user2.mention}!\n(-`{func[1]}` Defense)')
                     else:
-                        await self.ctx.channel.send(f'{user1.mention} melemahkan pertahanan dari {user2["name"]}!\n(-`{func[1]}` Defense')
+                        await self.ctx.channel.send(f'{user1.mention} melemahkan pertahanan dari {user2["name"]}!\n(-`{func[1]}` Defense)')
 
                 case 'AGL':
                     if user1 == self.user1:
@@ -364,7 +364,7 @@ class GameInstance():
                     elif not isinstance(user1, discord.Member) and isinstance(user2, discord.Member):
                         await self.ctx.channel.send(f'{user1["name"]} mengurangi kelincahan dari {user2.mention}!\n(-`{func[1]}` Agility)')
                     else:
-                        await self.ctx.channel.send(f'{user1.mention} mengurangi kelincahan dari {user2["name"]}!\n(-`{func[1]}` Agility')
+                        await self.ctx.channel.send(f'{user1.mention} mengurangi kelincahan dari {user2["name"]}!\n(-`{func[1]}` Agility)')
 
     async def ai_choose_skill(self, skill_set:list, ai, player):
         skill = random.choice(skill_set)
@@ -816,9 +816,9 @@ class ItemDropdown(discord.ui.Select):
     async def callback(self, interaction:discord.Interaction):
         if interaction.message.mentions[0].id != interaction.user.id:
             return await interaction.response.send_message(f"Hey! Kamu tidak diizinkan untuk memilih!", ephemeral=True) #Does this even work
-        if self.values[0] == 'none' and self.type == 'item':
+        if self.values[0] == 'none' and self.types == 'item':
             return await interaction.response.send_message("Kamu tidak memiliki item apapun!", ephemeral=True)
-        elif self.values[0] == 'none' and self.type == 'skill':
+        elif self.values[0] == 'none' and self.types == 'skill':
             return await interaction.response.send_message("Kamu tidak memiliki skill apapun!", ephemeral=True)
         
         database = connectdb('Game')
@@ -841,7 +841,7 @@ class ItemDropdown(discord.ui.Select):
 
         if used_item is None:
             raise Exception("The Item Dropdown callback is behaving wierdly!")
-        if self.type == 'item':
+        if self.types == 'item':
             await interaction.response.send_message(f"{interaction.user.mention} menggunakan item:\n# {used_item[0]}!\n({used_item[1].upper()})")
         else:
             await interaction.response.send_message(f"{interaction.user.mention} menggunakan skill:\n# {used_item[0]}!\n({used_item[1].upper()})")
@@ -1153,6 +1153,16 @@ class ShopView(View):
         embed = await self.update_embed(last_page)
         await interaction.response.edit_message(embed=embed, view=self)
 
+def convert_to_db_stat(func:list):
+    match func[0]:
+        case "atk":
+            func[0] = 'attack'
+        case "def":
+            func[0] = 'defense'
+        case "agl":
+            func[0] = 'agility'
+    return func
+
 class UseDropdown(discord.ui.Select):
     def __init__(self, items:list, ctx:commands.Context) -> None:
         options = []
@@ -1186,13 +1196,7 @@ class UseDropdown(discord.ui.Select):
             matching = [x for x in data['equipments'] if x['_id'] == item]
             if matching: # Uneqip
                 func = matching[0]['func'].split('+')
-                match func[0]:
-                    case "atk":
-                        func[0] = 'attack'
-                    case "def":
-                        func[0] = 'defense'
-                    case "agl":
-                        func[0] = 'agility'
+                func = convert_to_db_stat(func)
                 database.update_one({'_id':interaction.user.id}, {'$pull':{'equipments':{'_id':item}}})
                 database.update_one({'_id':interaction.user.id}, {'$inc':{func[0]:int(func[1])*-1}})
                 await interaction.response.send_message(f"Kamu telah melepas `{matching[0]['name']}`!")
@@ -1201,13 +1205,15 @@ class UseDropdown(discord.ui.Select):
                 item = database.find_one({'_id':interaction.user.id, 'items._id':item})
                 matching = [x for x in item['items'] if x['_id'] == self.values[0]]
                 func = matching[0]['func'].split('+')
-                match func[0]:
-                    case "atk":
-                        func[0] = 'attack'
-                    case "def":
-                        func[0] = 'defense'
-                    case "agl":
-                        func[0] = 'agility'
+                func = convert_to_db_stat(func)
+
+                same_type = [x for x in data['equipments'] if x['usefor'] == matching[0]['usefor']]
+                func_2 = same_type[0]['func'].split('+')
+                func_2 = convert_to_db_stat(func_2)
+                if same_type:
+                    database.update_one({'_id':interaction.user.id}, {'$pull':{'equipments':{'_id':same_type[0]['_id']}}})
+                    database.update_one({'_id':interaction.user.id}, {'$inc':{func_2[0]:int(func_2[1])*-1}})
+
                 database.update_one({'_id':interaction.user.id}, {'$push':{'equipments':matching[0]}})
                 database.update_one({'_id':interaction.user.id}, {'$inc':{func[0]:int(func[1])}})
                 await interaction.response.send_message(f"Kamu telah menggunakan `{matching[0]['name']}`!")
@@ -1216,13 +1222,7 @@ class UseDropdown(discord.ui.Select):
             item = database.find_one({'_id':interaction.user.id, 'items._id':item})
             matching = [x for x in item['items'] if x['_id'] == self.values[0]]
             func = matching[0]['func'].split('+')
-            match func[0]:
-                case "atk":
-                    func[0] = 'attack'
-                case "def":
-                    func[0] = 'defense'
-                case "agl":
-                    func[0] = 'agility'
+            func = convert_to_db_stat(func)
             database.update_one({'_id':interaction.user.id, 'items._id':self.values[0]}, {'$inc':{'items.$.owned':-1}})
             database.update_one({'_id':interaction.user.id}, {'$inc':{func[0]:int(func[1])}})
             await interaction.response.send_message(f"Kamu telah menggunakan `{matching[0]['name']}`!")
