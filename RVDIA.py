@@ -104,13 +104,13 @@ async def change_status():
     users += guilds.member_count -1
   user_count_status = f'{users} users'
   all_status=['in my room', 'in G-Tech Server', '"How to be cute"', 'you', 'G-Tech members',
-                  'Ephotech 2023', user_count_status, 'with Schryzon', f'{rvdia.__version__}',
-                  '/help', 'What should I do today?', 'Add me!', is_event, '~♪',
+                  'Ephotech 2023', user_count_status, f'{rvdia.__version__}',
+                  '/help', 'in my dream world', 'Add me!', is_event, '~♪',
                   'Re:Volution'
                 ]
   status = rand(all_status)
   # Just count, I'm trying to save space!
-  if status == all_status[2] or status == all_status[5] or status == user_count_status:
+  if status == all_status[2] or status == all_status[4] or status == user_count_status:
     type = discord.Activity(type=discord.ActivityType.watching, name=status)
   elif status == all_status[3]:
     type = discord.Activity(type=discord.ActivityType.listening, name=status)
