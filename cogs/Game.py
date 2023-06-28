@@ -228,7 +228,7 @@ class GameInstance():
                     else:
                         self.user1_hp -= int(func[1])
                     
-                    if isinstance(user1, discord.Member):
+                    if isinstance(user1, discord.Member) and isinstance(user2, discord.Member):
                         await self.ctx.channel.send(f'{user1.mention} memberikan `{func[1]}` Damage instan ke {user2.mention}!')
                     elif not isinstance(user1, discord.Member) and isinstance(user2, discord.Member):
                         await self.ctx.channel.send(f"{user1['name']} memberikan `{func[1]}` Damage instan ke {user2.mention}!")
