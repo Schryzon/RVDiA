@@ -230,8 +230,10 @@ class GameInstance():
                     
                     if isinstance(user1, discord.Member):
                         await self.ctx.channel.send(f'{user1.mention} memberikan `{func[1]}` Damage instan ke {user2.mention}!')
-                    else:
+                    elif not isinstance(user1, discord.Member) and isinstance(user2, discord.Member):
                         await self.ctx.channel.send(f"{user1['name']} memberikan `{func[1]}` Damage instan ke {user2.mention}!")
+                    else:
+                        await self.ctx.channel.send(f"{user1.mention} memberikan `{func[1]}` Damage instan ke {user2['name']}!")
 
                 case 'ATK':
                     if user1 == self.user1:
@@ -283,9 +285,9 @@ class GameInstance():
                             self.user2_stats[2] = 100
                     
                     if isinstance(user1, discord.Member):
-                        await self.ctx.channel.send(f'{user1.mention} menjadi lebih kuat!\n(+`{func[1]}` Agility)')
+                        await self.ctx.channel.send(f'{user1.mention} menjadi lebih lincah!\n(+`{func[1]}` Agility)')
                     else:
-                        await self.ctx.channel.send(f'{user1["name"]} menjadi lebih kuat!\n(+`{func[1]}` Agility)')
+                        await self.ctx.channel.send(f'{user1["name"]} menjadi lebih lincah!\n(+`{func[1]}` Agility)')
         else:
             func = func.split('-')
             match func[0]:
