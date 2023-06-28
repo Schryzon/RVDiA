@@ -753,33 +753,27 @@ class AI():
                 self.escape_mood = 4
                 if self.ai_skill_usage >= 3 and 'skill' in self.actions:
                     self.actions.remove("skill")
-                    self.traits.remove(self.skill_mood)
 
             case "HIGH":
                 self.escape_mood = 5
                 if self.ai_skill_usage >= 2 and 'skill' in self.actions:
                     self.actions.remove("skill")
-                    self.traits.remove(self.skill_mood)
 
             case "SUPER NORMAL":
                 if self.ai_skill_usage >= 3 and 'skill' in self.actions:
                     self.actions.remove("skill")
-                    self.traits.remove(self.skill_mood)
 
             case "NORMAL":
                 if self.ai_skill_usage >= 2 and 'skill' in self.actions:
                     self.actions.remove("skill")
-                    self.traits.remove(self.skill_mood)
 
             case "SUPER LOW":
                 if self.ai_skill_usage >= 2 and 'skill' in self.actions:
                     self.actions.remove("skill")
-                    self.traits.remove(self.skill_mood)
 
             case "LOW":
                 if self.ai_skill_usage >= 1 and 'skill' in self.actions:
                     self.actions.remove("skill")
-                    self.traits.remove(self.skill_mood)
 
         sorted_traits = sorted(self.traits, reverse=True)
         if random.randint(0, 100) < 15:
