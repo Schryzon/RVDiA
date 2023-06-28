@@ -21,6 +21,10 @@
             {
                 "name":"Flash Heal",
                 "func":"hp+15"
+            },
+            {
+                "name":"Slowmotion",
+                "func":"agl-7"
             }
         ]
     },
@@ -40,12 +44,20 @@
         ],
         "skills":[
             {
-                "name":"GSB",
+                "name":"G.S.B",
                 "func":"dmg+15"
             },
             {
-                "name":"PLHS",
+                "name":"P.L.H.S",
                 "func":"hp+10"
+            },
+            {
+                "name":"L.N.S",
+                "func":"hp-15"
+            },
+            {
+                "name":"F.A.V",
+                "func":"agl+4"
             }
         ]
     },
@@ -71,6 +83,10 @@
             {
                 "name":"Evil Smile",
                 "func":"def+12"
+            },
+            {
+                "name":"Evil Laugh",
+                "func":"def-5"
             }
         ]
     },
@@ -95,7 +111,11 @@
             },
             {
                 "name":"Mighty Stare",
-                "func":"agl+5"
+                "func":"agl-5"
+            },
+            {
+                "name":"Crushing Uppercut",
+                "func":"dmg+15"
             }
         ]
     },

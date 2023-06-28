@@ -17,6 +17,14 @@
             {
                 "name":"Wake Up",
                 "func":"agl+15"
+            },
+            {
+                "name":"Knightly Stare",
+                "func":"agl-10"
+            },
+            {
+                "name":"Knightly Strength",
+                "func":"atk+7"
             }
         ]
     },
@@ -42,6 +50,10 @@
             {
                 "name":"Gigantoka Spirit",
                 "func":"atk+10"
+            },
+            {
+                "name":"Mentality Crusher",
+                "func":"def-8"
             }
         ]
     },
@@ -67,6 +79,10 @@
             {
                 "name":"Focus",
                 "func":"agl+10"
+            },
+            {
+                "name":"Lifesteal",
+                "func":"hp-40"
             }
         ]
     },
@@ -91,6 +107,10 @@
             {
                 "name":"Black Magic",
                 "func":"dmg+30"
+            },
+            {
+                "name":"Lifesteal",
+                "func":"hp-30"
             }
         ]
     }

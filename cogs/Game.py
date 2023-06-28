@@ -207,84 +207,162 @@ class GameInstance():
 
     async def func_converter(self, func:str, user1, user2):
         func = re.sub(r'\(|\)', '', func)
-        func = func.split('+')
-        match func[0]:
-            case 'HP':
-                if user1 == self.user1:
-                    self.user1_hp += int(func[1])
+        if '+' in func:
+            func = func.split('+')
+            match func[0]:
+                case 'HP':
+                    if user1 == self.user1:
+                        self.user1_hp += int(func[1])
 
-                else:
-                    self.user2_hp += int(func[1])
-                if isinstance(user1, discord.Member):
-                    await self.ctx.channel.send(f'{user1.mention} memulihkan `{func[1]}` HP!')
-                else:
-                    await self.ctx.channel.send(f"{user1['name']} memulihkan `{func[1]}` HP!")
-
-            case 'DMG':
-                if user1 == self.user1:
-                    self.user2_hp -= int(func[1])
-
-                else:
-                    self.user1_hp -= int(func[1])
-                
-                if isinstance(user1, discord.Member):
-                    await self.ctx.channel.send(f'{user1.mention} memberikan `{func[1]}` Damage instan ke {user2.mention}!')
-                else:
-                    await self.ctx.channel.send(f"{user1['name']} memberikan `{func[1]}` Damage instan ke {user2.mention}!")
-
-            case 'ATK':
-                if user1 == self.user1:
-                    if not self.user1_stats[0] + int(func[1]) >= 100:
-                        self.user1_stats[0] += int(func[1])
                     else:
-                        self.user1_stats[0] = 100
-
-                else:
-                    if not self.user2_stats[0] + int(func[1]) >= 100:
-                        self.user2_stats[0] += int(func[1])
+                        self.user2_hp += int(func[1])
+                    if isinstance(user1, discord.Member):
+                        await self.ctx.channel.send(f'{user1.mention} memulihkan `{func[1]}` HP!')
                     else:
-                        self.user2_stats[0] = 100
-                
-                if isinstance(user1, discord.Member):
-                    await self.ctx.channel.send(f'{user1.mention} menjadi lebih kuat!\n(+`{func[1]}` Attack)')
-                else:
-                    await self.ctx.channel.send(f'{user1["name"]} menjadi lebih kuat!\n(+`{func[1]}` Attack)')
+                        await self.ctx.channel.send(f"{user1['name']} memulihkan `{func[1]}` HP!")
 
-            case 'DEF':
-                if user1 == self.user1:
-                    if not self.user1_stats[1] + int(func[1]) >= 100:
-                        self.user1_stats[1] += int(func[1])
-                    else:
-                        self.user1_stats[1] = 100
+                case 'DMG':
+                    if user1 == self.user1:
+                        self.user2_hp -= int(func[1])
 
-                else:
-                    if not self.user2_stats[1] + int(func[1]) >= 100:
-                        self.user2_stats[1] += int(func[1])
                     else:
-                        self.user2_stats[1] = 100
-                
-                if isinstance(user1, discord.Member):
-                    await self.ctx.channel.send(f'{user1.mention} menjadi lebih kuat!\n(+`{func[1]}` Defense)')
-                else:
-                    await self.ctx.channel.send(f'{user1["name"]} menjadi lebih kuat!\n(+`{func[1]}` Defense)')
+                        self.user1_hp -= int(func[1])
+                    
+                    if isinstance(user1, discord.Member):
+                        await self.ctx.channel.send(f'{user1.mention} memberikan `{func[1]}` Damage instan ke {user2.mention}!')
+                    else:
+                        await self.ctx.channel.send(f"{user1['name']} memberikan `{func[1]}` Damage instan ke {user2.mention}!")
 
-            case 'AGL':
-                if user1 == self.user1:
-                    if not self.user1_stats[2] + int(func[1]) >= 100:
-                        self.user1_stats[2] += int(func[1])
-                    else:
-                        self.user1_stats[2] = 100
+                case 'ATK':
+                    if user1 == self.user1:
+                        if not self.user1_stats[0] + int(func[1]) >= 100:
+                            self.user1_stats[0] += int(func[1])
+                        else:
+                            self.user1_stats[0] = 100
 
-                else:
-                    if not self.user2_stats[2] + int(func[1]) >= 100:
-                        self.user2_stats[2] += int(func[1])
                     else:
-                        self.user2_stats[2] = 100
-                
-                if isinstance(user1, discord.Member):
-                    await self.ctx.channel.send(f'{user1.mention} menjadi lebih kuat!\n(+`{func[1]}` Agility)')
-                else:
-                    await self.ctx.channel.send(f'{user1["name"]} menjadi lebih kuat!\n(+`{func[1]}` Agility)')
+                        if not self.user2_stats[0] + int(func[1]) >= 100:
+                            self.user2_stats[0] += int(func[1])
+                        else:
+                            self.user2_stats[0] = 100
+                    
+                    if isinstance(user1, discord.Member):
+                        await self.ctx.channel.send(f'{user1.mention} menjadi lebih kuat!\n(+`{func[1]}` Attack)')
+                    else:
+                        await self.ctx.channel.send(f'{user1["name"]} menjadi lebih kuat!\n(+`{func[1]}` Attack)')
+
+                case 'DEF':
+                    if user1 == self.user1:
+                        if not self.user1_stats[1] + int(func[1]) >= 100:
+                            self.user1_stats[1] += int(func[1])
+                        else:
+                            self.user1_stats[1] = 100
+
+                    else:
+                        if not self.user2_stats[1] + int(func[1]) >= 100:
+                            self.user2_stats[1] += int(func[1])
+                        else:
+                            self.user2_stats[1] = 100
+                    
+                    if isinstance(user1, discord.Member):
+                        await self.ctx.channel.send(f'{user1.mention} menjadi lebih kuat!\n(+`{func[1]}` Defense)')
+                    else:
+                        await self.ctx.channel.send(f'{user1["name"]} menjadi lebih kuat!\n(+`{func[1]}` Defense)')
+
+                case 'AGL':
+                    if user1 == self.user1:
+                        if not self.user1_stats[2] + int(func[1]) >= 100:
+                            self.user1_stats[2] += int(func[1])
+                        else:
+                            self.user1_stats[2] = 100
+
+                    else:
+                        if not self.user2_stats[2] + int(func[1]) >= 100:
+                            self.user2_stats[2] += int(func[1])
+                        else:
+                            self.user2_stats[2] = 100
+                    
+                    if isinstance(user1, discord.Member):
+                        await self.ctx.channel.send(f'{user1.mention} menjadi lebih kuat!\n(+`{func[1]}` Agility)')
+                    else:
+                        await self.ctx.channel.send(f'{user1["name"]} menjadi lebih kuat!\n(+`{func[1]}` Agility)')
+        else:
+            func = func.split('-')
+            match func[0]:
+                case 'HP':
+                    if user1 == self.user1:
+                        self.user2_hp -= int(func[1])
+                        self.user1_hp += int(func[1])
+
+                    else:
+                        self.user1_hp -= int(func[1])
+                        self.user2_hp += int(func[1])
+                    if isinstance(user1, discord.Member) and isinstance(user2, discord.Member):
+                        await self.ctx.channel.send(f'{user1.mention} mengambil `{func[1]}` HP dari {user2.mention}!')
+                    elif not isinstance(user1, discord.Member) and isinstance(user2, discord.Member):
+                        await self.ctx.channel.send(f"{user1['name']} mengambil `{func[1]}` HP dari {user2.mention}!")
+                    else:
+                        await self.ctx.channel.send(f"{user1.mention} mengambil `{func[1]}` HP dari {user2['name']}!")
+
+                case 'ATK':
+                    if user1 == self.user1:
+                        if not self.user2_stats[0] - int(func[1]) <= 1:
+                            self.user2_stats[0] -= int(func[1])
+                        else:
+                            self.user2_stats[0] = 1
+
+                    else:
+                        if not self.user1_stats[0] - int(func[1]) <= 1:
+                            self.user1_stats[0] -= int(func[1])
+                        else:
+                            self.user1_stats[0] = 1
+                    
+                    if isinstance(user1, discord.Member) and isinstance(user2, discord.Member):
+                        await self.ctx.channel.send(f'{user1.mention} melemahkan serangan dari {user2.mention}!\n(-`{func[1]}` Attack)')
+                    elif not isinstance(user1, discord.Member) and isinstance(user2, discord.Member):
+                        await self.ctx.channel.send(f'{user1["name"]} melemahkan serangan dari {user2.mention}!\n(-`{func[1]}` Attack)')
+                    else:
+                        await self.ctx.channel.send(f'{user1.mention} melemahkan serangan dari {user2["name"]}!\n(-`{func[1]}` Attack)')
+
+                case 'DEF':
+                    if user1 == self.user1:
+                        if not self.user2_stats[1] - int(func[1]) <= 1:
+                            self.user2_stats[1] -= int(func[1])
+                        else:
+                            self.user2_stats[1] = 1
+
+                    else:
+                        if not self.user1_stats[1] - int(func[1]) <= 1:
+                            self.user1_stats[1] -= int(func[1])
+                        else:
+                            self.user1_stats[1] = 1
+                    
+                    if isinstance(user1, discord.Member) and isinstance(user2, discord.Member):
+                        await self.ctx.channel.send(f'{user1.mention} melemahkan pertahanan dari {user2.mention}!\n(-`{func[1]}` Defense)')
+                    elif not isinstance(user1, discord.Member) and isinstance(user2, discord.Member):
+                        await self.ctx.channel.send(f'{user1["name"]} melemahkan pertahanan dari {user2.mention}!\n(-`{func[1]}` Defense)')
+                    else:
+                        await self.ctx.channel.send(f'{user1.mention} melemahkan pertahanan dari {user2["name"]}!\n(-`{func[1]}` Defense')
+
+                case 'AGL':
+                    if user1 == self.user1:
+                        if not self.user2_stats[2] - int(func[1]) <= 1:
+                            self.user2_stats[2] -= int(func[1])
+                        else:
+                            self.user2_stats[2] = 1
+
+                    else:
+                        if not self.user1_stats[2] - int(func[1]) <= 1:
+                            self.user1_stats[2] -= int(func[1])
+                        else:
+                            self.user1_stats[2] = 1
+                    
+                    if isinstance(user1, discord.Member) and isinstance(user2, discord.Member):
+                        await self.ctx.channel.send(f'{user1.mention} mengurangi kelincahan dari {user2.mention}!\n(-`{func[1]}` Agility)')
+                    elif not isinstance(user1, discord.Member) and isinstance(user2, discord.Member):
+                        await self.ctx.channel.send(f'{user1["name"]} mengurangi kelincahan dari {user2.mention}!\n(-`{func[1]}` Agility)')
+                    else:
+                        await self.ctx.channel.send(f'{user1.mention} mengurangi kelincahan dari {user2["name"]}!\n(-`{func[1]}` Agility')
 
     async def ai_choose_skill(self, skill_set:list, ai, player):
         skill = random.choice(skill_set)
@@ -962,15 +1040,23 @@ class ShopDropdown(discord.ui.Select):
 class EnemyDropdown(discord.ui.Select):
     def __init__(self):
         options = []
-        json_files = [file for file in listdir('./src/game/enemies') if file.endswith('.json')]
-        json_files.remove('low.json')
-        for file in json_files:
-            name = path.splitext(file)[0]
-            options.append(discord.SelectOption(
-                label=name.title(),
-                value=name
+        # Using this cause for loops randomizes the texts
+        options.append(discord.SelectOption(
+                label='Boss',
+                value='boss'
             ))
-        # Too much kelazzz, the jsons are stored alphabetically
+        options.append(discord.SelectOption(
+                label='Elite',
+                value='elite'
+            ))
+        options.append(discord.SelectOption(
+                label='High',
+                value='high'
+            ))
+        options.append(discord.SelectOption(
+                label='Normal',
+                value='normal'
+            ))
         options.append(discord.SelectOption(
                 label='Low',
                 value='low'
@@ -1004,7 +1090,7 @@ class ShopView(View):
     """
     def __init__(self, ctx, items, data):
         self.current_page = 1
-        super().__init__(timeout=20)
+        super().__init__(timeout=40)
         self.ctx = ctx
         self.items = items
         self.data = data
@@ -1076,7 +1162,7 @@ class UseDropdown(discord.ui.Select):
         options = []
         for index, item in enumerate(items, start=1):
             options.append(discord.SelectOption(
-                label=f"{index}. {item['name']} ({item['usefor']})",
+                label=f"{index}. {item['name']} ({item['usefor']})" if not item['usefor'] == 'free' else f"{index}. {item['name']}",
                 description=f"{item['func'].upper()}",
                 value = item['_id']
             ))

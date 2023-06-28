@@ -30,9 +30,9 @@ class RVDIA(commands.AutoShardedBot):
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "EVO v1.1.0"
+    self.__version__ = "EVO v1.1.1"
     self.event_mode = True
-    self.color = 0xff4df0
+    self.color = 0x86273d
     self.runtime = time() # UNIX float
     self.coin_emoji = "<:rvdia_coin:1121004598962954300>"
     self.coin_emoji_anim = "<a:rvdia_coin_anim:1121004592033955860>"
@@ -189,7 +189,7 @@ async def refresh(ctx):
 # This allows me to decide when to bail out of a server when it reaches 100 servers
 @rvdia.command(hidden = True)
 @commands.is_owner()
-async def serverlist(ctx):
+async def serverlist(ctx:commands.Context):
     with suppress(discord.Forbidden):
        guild_name = [guild.name for guild in rvdia.guilds]
        guild_members = [guild.member_count for guild in rvdia.guilds]
@@ -197,7 +197,8 @@ async def serverlist(ctx):
        list = []
        for name, member, gid in zip(guild_name, guild_members, guild_id):
           list.append(f"`{name}` | `{member}` members | ID: `{gid}`")
-       await ctx.send("\n\n".join(list))
+       print("\n\n".join(list))
+       await ctx.reply('Check the terminal!')
 
 @rvdia.command(hidden = True)
 @commands.is_owner()
@@ -291,8 +292,6 @@ async def on_message(msg:discord.Message):
               author = message_embed.author.name
               openai.api_key = os.getenv('openaikey')
               message = msg.content
-              if len(message) > 256:
-                return await msg.channel.send('Pesanmu terlalu panjang untuk aku cerna, aku hanya bisa membaca maksimal 256 huruf dari pesanmu!')
               result = await openai.ChatCompletion.acreate(
                   model="gpt-3.5-turbo",
                   temperature=1.2,

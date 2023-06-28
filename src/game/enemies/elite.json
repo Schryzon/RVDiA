@@ -25,6 +25,10 @@
             {
                 "name":"Zakitus",
                 "func":"def+5"
+            },
+            {
+                "name":"Raykaris",
+                "func":"def-15"
             }
         ]
     },
@@ -54,6 +58,10 @@
             {
                 "name":"Bougyo Shinjite",
                 "func":"def+10"
+            },
+            {
+                "name":"Kanashiina Sekai",
+                "func":"hp-30"
             }
         ]
     },

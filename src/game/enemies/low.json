@@ -16,7 +16,15 @@
         "skills":[
             {
                 "name":"Slime Headbutt",
-                "func":"dmg+5"
+                "func":"dmg+10"
+            },
+            {
+                "name":"Slime Shoot",
+                "func":"dmg+20"
+            },
+            {
+                "name":"Reshape",
+                "func":"hp+15"
             }
         ]
     },
@@ -28,7 +36,7 @@
         "hp":50,
         "atk":7,
         "def":5,
-        "agl":8,
+        "agl":10,
         "reward":[
             "exp+12",
             "cns+7"
@@ -37,6 +45,14 @@
             {
                 "name":"Arrow Shot",
                 "func":"dmg+7"
+            },
+            {
+                "name":"First Aid",
+                "func":"hp+20"
+            },
+            {
+                "name":"Hunter Instinct",
+                "func":"agl+5"
             }
         ]
     },
@@ -47,7 +63,7 @@
         "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122156472860680252/20230624_201345.png",
         "hp":65,
         "atk":8,
-        "def":2,
+        "def":6,
         "agl":7,
         "reward":[
             "exp+15",
@@ -57,18 +73,22 @@
             {
                 "name":"United Strike",
                 "func":"dmg+13"
+            },
+            {
+                "name":"Strong Roar",
+                "func":"atk+10"
             }
         ]
     },
     {
         "name":"New Hero",
         "desc":"Petualang baru di Re:Volution.",
-        "tier":"LOW",
+        "tier":"SUPER LOW",
         "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122156473674367057/20230624_201513.png",
-        "hp":50,
-        "atk":7,
-        "def":1,
-        "agl":5,
+        "hp":70,
+        "atk":10,
+        "def":9,
+        "agl":6,
         "reward":[
             "exp+11",
             "cns+8"
@@ -76,7 +96,11 @@
         "skills":[
             {
                 "name":"Healing Light",
-                "func":"hp+15"
+                "func":"hp+30"
+            },
+            {
+                "name":"Focus",
+                "func":"agl+10"
             }
         ]
     }

@@ -3,9 +3,9 @@
         "name":"Beginner's Experience",
         "_id":"0-bgexp",
         "usefor":"free",
-        "desc":"Memberikanmu 50 EXP.",
+        "desc":"Memberikanmu 10 EXP.",
         "type":"Consumable",
-        "func":"exp+50",
+        "func":"exp+10",
         "cost":50,
         "paywith":"Koin"
     },
@@ -113,7 +113,7 @@
         "name":"Hailstorm Spike",
         "_id":"2-hlstorm",
         "usefor":"battle",
-        "desc":"Menjatuhkan berribu-ribu duri es ke musuh.",
+        "desc":"Menjatuhkan ratusan duri es ke musuh.",
         "type":"Skill",
         "func":"dmg+25",
         "cost":7,
@@ -137,6 +137,36 @@
         "type":"Skill",
         "func":"def+10",
         "cost":5,
+        "paywith":"Karma"
+    },
+    {
+        "name":"Entity Illusion",
+        "_id":"2-entillus",
+        "usefor":"battle",
+        "desc":"Menurunkan fokus lawan dengan ilusi.",
+        "type":"Skill",
+        "func":"agl-10",
+        "cost":5,
+        "paywith":"Karma"
+    },
+    {
+        "name":"Lifesteal",
+        "_id":"2-lifesteal",
+        "usefor":"battle",
+        "desc":"Mengambil sebagian HP lawan.",
+        "type":"Skill",
+        "func":"hp-30",
+        "cost":8,
+        "paywith":"Karma"
+    },
+    {
+        "name":"Light Beam",
+        "_id":"2-lightbeam",
+        "usefor":"battle",
+        "desc":"Memancarkan sinar cahaya kuat ke lawan.",
+        "type":"Skill",
+        "func":"dmg+50",
+        "cost":14,
         "paywith":"Karma"
     }
 ]

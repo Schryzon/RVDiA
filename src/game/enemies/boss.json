@@ -7,7 +7,7 @@
         "hp":1000,
         "atk":80,
         "def":60,
-        "agl":87,
+        "agl":78,
         "reward":[
             "exp+5000",
             "cns+700",
@@ -28,7 +28,11 @@
             },
             {
                 "name":"It's Over",
-                "func":"hp+500"
+                "func":"hp+300"
+            },
+            {
+                "name":"Your Life is Mine",
+                "func":"hp-60"
             }
         ]
     },
@@ -40,7 +44,7 @@
         "hp":999,
         "atk":77,
         "def":56,
-        "agl":80,
+        "agl":70,
         "reward":[
             "exp+4999",
             "cns+699",
@@ -56,8 +60,12 @@
                 "func":"atk+8"
             },
             {
-                "name":"Merciless Attack",
+                "name":"Revolutionary Attack",
                 "func":"dmg+40"
+            },
+            {
+                "name":"Slowmotion",
+                "func":"agl-10"
             }
         ]
     },
@@ -82,11 +90,15 @@
             },
             {
                 "name":"I'm Just Toying With You",
-                "func":"def+15"
+                "func":"def-15"
             },
             {
                 "name":"Let's Get Serious",
                 "func":"agl+10"
+            },
+            {
+                "name":"Step it Up, Will You?",
+                "func":"agl-10"
             }
         ]
     },
@@ -141,6 +153,10 @@
             {
                 "name":"Lagtanis Zakitus",
                 "func":"def+10"
+            },
+            {
+                "name":"Lagtanis Raykaris",
+                "func":"def-20"
             }
         ]
     },
@@ -166,6 +182,10 @@
             {
                 "name":"Brotherly Power",
                 "func":"def+8"
+            },
+            {
+                "name":"Share a Life",
+                "func":"hp-50"
             }
         ]
     }
