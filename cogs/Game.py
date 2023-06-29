@@ -1208,9 +1208,9 @@ class UseDropdown(discord.ui.Select):
                 func = convert_to_db_stat(func)
 
                 same_type = [x for x in data['equipments'] if x['usefor'] == matching[0]['usefor']]
-                func_2 = same_type[0]['func'].split('+')
-                func_2 = convert_to_db_stat(func_2)
                 if same_type:
+                    func_2 = same_type[0]['func'].split('+')
+                    func_2 = convert_to_db_stat(func_2)
                     database.update_one({'_id':interaction.user.id}, {'$pull':{'equipments':{'_id':same_type[0]['_id']}}})
                     database.update_one({'_id':interaction.user.id}, {'$inc':{func_2[0]:int(func_2[1])*-1}})
 
