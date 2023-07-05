@@ -6,7 +6,7 @@ I don't think this will hold up
 
 import discord
 from discord import app_commands
-from scripts.main import check_blacklist, connectdb
+from scripts.main import connectdb, check_blacklist
 from os import getenv
 from discord.ext import commands
 
@@ -33,25 +33,18 @@ class Moderation(commands.Cog):
         """
         Lihat info server ini!
         """
-        owner = await self.bot.fetch_user(ctx.guild.owner_id)
-        guild_icon = ctx.guild.icon.url if not ctx.guild.icon is None else getenv('normalpfp')
-        """roles = [role.mention for role in ctx.guild.roles][::-1][:-1] or ['None']
-        if roles[0] == "None":
-            role_length = 0
-        else:
-            role_length = len(roles)
-        desc = ctx.guild.description
-        if desc == None:
-            desc = "No description was made for this server."""
-        embed = discord.Embed(title=f'{ctx.guild.name}', color=ctx.author.colour, timestamp = ctx.message.created_at)
-        embed.set_thumbnail(url=guild_icon)
-        embed.set_author(name = "Server Info:")
-        embed.add_field(name="Pemilik", value=f"{owner.mention} ({owner})", inline = False)
-        embed.add_field(name="Tanggal Dibuat", value=f'{ctx.guild.created_at.strftime("%a, %d %B %Y")}', inline = False)
-        embed.add_field(name="Jumlah Pengguna", value=f"{ctx.guild.member_count} members", inline = False)
-        embed.set_footer(text=f"ID: {ctx.guild.id}", icon_url=guild_icon)
-        #embed.set_image(url = ctx.guild.banner.url)
-        await ctx.reply(embed=embed)
+        async with ctx.typing():
+            owner = await self.bot.fetch_user(ctx.guild.owner_id)
+            guild_icon = ctx.guild.icon.url if not ctx.guild.icon is None else getenv('normalpfp')
+            embed = discord.Embed(title=f'{ctx.guild.name}', color=ctx.author.colour, timestamp = ctx.message.created_at)
+            embed.set_thumbnail(url=guild_icon)
+            embed.set_author(name = "Server Info:")
+            embed.add_field(name="Pemilik", value=f"{owner.mention} ({owner})", inline = False)
+            embed.add_field(name="Tanggal Dibuat", value=f'{ctx.guild.created_at.strftime("%a, %d %B %Y")}', inline = False)
+            embed.add_field(name="Jumlah Pengguna", value=f"{ctx.guild.member_count} members", inline = False)
+            embed.set_footer(text=f"ID: {ctx.guild.id}", icon_url=guild_icon)
+            #embed.set_image(url = ctx.guild.banner.url)
+            await ctx.reply(embed=embed)
 
     # Basically, avatar command
     @server.command(description="Memperlihatkan gambar icon server ini.")
@@ -60,26 +53,27 @@ class Moderation(commands.Cog):
         """
         Memperlihatkan gambar icon server ini.
         """
-        guild = ctx.guild
+        async with ctx.typing():
+            guild = ctx.guild
 
-        if guild.icon is None:
-            return await ctx.reply(f'Server ini tidak memiliki icon!')
-        png = guild.icon.with_format("png").url
-        jpg = guild.icon.with_format("jpg").url
-        webp = guild.icon.with_format("webp").url
+            if guild.icon is None:
+                return await ctx.reply(f'Server ini tidak memiliki icon!')
+            png = guild.icon.with_format("png").url
+            jpg = guild.icon.with_format("jpg").url
+            webp = guild.icon.with_format("webp").url
 
-        embed=discord.Embed(title=f"Icon {guild.name}", url = guild.icon.with_format("png").url, color=self.bot.color)
+            embed=discord.Embed(title=f"Icon {guild.name}", url = guild.icon.with_format("png").url, color=self.bot.color)
 
-        if guild.icon.is_animated():
-            gif = guild.icon.with_format("gif").url
-            embed.set_image(url = guild.icon.with_format("gif").url)
-            embed.description = f"[png]({png}) | [jpg]({jpg}) | [webp]({webp}) | [gif]({gif})"
+            if guild.icon.is_animated():
+                gif = guild.icon.with_format("gif").url
+                embed.set_image(url = guild.icon.with_format("gif").url)
+                embed.description = f"[png]({png}) | [jpg]({jpg}) | [webp]({webp}) | [gif]({gif})"
 
-        else:
-            embed.description = f"[png]({png}) | [jpg]({jpg}) | [webp]({webp})"
-            embed.set_image(url = guild.icon.with_format("png").url)
-        embed.set_footer(text=f"{ctx.author}", icon_url=ctx.author.display_avatar.url)
-        await ctx.reply(embed=embed)
+            else:
+                embed.description = f"[png]({png}) | [jpg]({jpg}) | [webp]({webp})"
+                embed.set_image(url = guild.icon.with_format("png").url)
+            embed.set_footer(text=f"{ctx.author}", icon_url=ctx.author.display_avatar.url)
+            await ctx.reply(embed=embed)
 
     @commands.hybrid_group(name='invite')
     @commands.bot_has_permissions(manage_guild=True)
@@ -171,15 +165,15 @@ class Moderation(commands.Cog):
             return await ctx.reply("Kamu tidak bisa memberikan pelanggaran kepada dirimu!", ephemeral=True)
         if member.bot:
             return await ctx.reply("Uh... sepertinya memberikan pelanggaran kepada bot itu kurang berguna.", ephemeral=True)
-        db = connectdb("Warns")
+        db = await connectdb("Warns")
         reason = reason or "Tidak ada alasan dispesifikasi."
-        warns = db.find_one({"_id":member.id, "guild_id":ctx.guild.id})
+        warns = await db.find_one({"_id":member.id, "guild_id":ctx.guild.id})
         warnqty = 0 #Gee
         if warns is None:
-            db.insert_one({"_id":member.id, "guild_id":ctx.guild.id, "warns":1, "reason":[reason]})
+            await db.insert_one({"_id":member.id, "guild_id":ctx.guild.id, "warns":1, "reason":[reason]})
             warnqty = 1
         else:
-            db.update_one({"_id":member.id, 'guild_id':ctx.guild.id}, {'$inc':{"warns":1}, '$push':{"reason":reason}})
+            await db.update_one({"_id":member.id, 'guild_id':ctx.guild.id}, {'$inc':{"warns":1}, '$push':{"reason":reason}})
             warnqty = warns['warns']+1
         em = discord.Embed(title=f"Pelanggaran Diberikan❗", description = f"{member.mention} telah diberikan pelanggaran.\nDia sekarang telah diberikan **`{warnqty}`** pelanggaran.",
         color = member.colour
@@ -202,8 +196,8 @@ class Moderation(commands.Cog):
     async def warnhistory(self, ctx:commands.Context, member:discord.Member):
             """Lihat riwayat pelanggaran pengguna."""
             member = member or ctx.author
-            db = connectdb("Warns")
-            doc = db.find_one({'_id':member.id, "guild_id":ctx.guild.id})
+            db = await connectdb("Warns")
+            doc = await db.find_one({'_id':member.id, "guild_id":ctx.guild.id})
             if doc is None:
                 return await ctx.reply(f"**`{member}`** saat ini belum memiliki pelanggaran.")
             reasons = doc['reason']
@@ -229,21 +223,22 @@ class Moderation(commands.Cog):
         """
         Menghilangkan segala data pelanggaran pengguna.
         """
-        db = connectdb("Warns")
-        doc = db.find_one({"_id":member.id, "guild_id":ctx.guild.id})
+        db = await connectdb("Warns")
+        doc = await db.find_one({"_id":member.id, "guild_id":ctx.guild.id})
         if doc is None:
             return await ctx.reply(f"`{member}` belum pernah diberikan pelanggaran!")
-        db.find_one_and_delete({"_id":member.id, 'guild_id':ctx.guild.id})
+        await db.find_one_and_delete({"_id":member.id, 'guild_id':ctx.guild.id})
         await ctx.reply(f"Semua pelanggaran untuk {member.mention} di server ini telah dihapus.")
 
     @warn.command(name='list', description = 'Memperlihatkan semua pengguna yang memiliki pelanggaran di server ini.')
     @commands.has_permissions(manage_messages=True)
+    @check_blacklist()
     async def warnlist(self, ctx:commands.Context):
         """
         Memperlihatkan semua pengguna yang memiliki pelanggaran di server ini.
         """
-        db = connectdb('Warns')
-        docs = db.find({'guild_id':ctx.guild.id})
+        db = await connectdb('Warns')
+        docs = await db.find({'guild_id':ctx.guild.id})
         if docs == [] or docs is None:
             return await ctx.reply(f'Belum ada orang yang diberikan pelanggaran di server ini!')
         
@@ -296,13 +291,14 @@ class Moderation(commands.Cog):
         """
         Unban pengguna yang telah diban.
         """
-        try:
-            await ctx.guild.unban(user)
-            await ctx.send(f"{user} telah diunban.")
-            return
-        except:
-            await ctx.send(f"Aku tidak bisa menemukan {user} di ban list!")
-            return
+        async with ctx.typing():
+            try:
+                await ctx.guild.unban(user)
+                await ctx.send(f"{user} telah diunban.")
+                return
+            except:
+                await ctx.send(f"Aku tidak bisa menemukan {user} di ban list!")
+                return
 
     @commands.hybrid_command(aliases = ['clean', 'purge', 'delete', 'hapus'], 
                       description="Menghilangkan pesan berdasarkan jumlah yang diinginkan.")

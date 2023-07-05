@@ -2,6 +2,7 @@ import os
 import pymongo
 import discord
 import aiohttp
+from motor.motor_asyncio import AsyncIOMotorClient
 from discord.ui import View, Button
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -9,7 +10,6 @@ from cogs.Handler import NotInGTechServer, NotGTechMember, NotGTechAdmin, NoProf
 from cogs.Handler import NoGameAccount
 load_dotenv('./.gitignore/secrets.env')
 
-client = pymongo.MongoClient(os.getenv('mongodburl'))
 
 class Url_Buttons(View):
   def __init__(self):
@@ -39,20 +39,21 @@ class Url_Buttons(View):
     self.add_item(github_repo)
     self.add_item(support_server)
 
-def connectdb(collection:str):
+async def connectdb(collection:str):
     """
     Returns data gained from database collection.
     Format: Main.<collection>
     !!WARNING!! RVDIA runs on Heroku, so an East US server is recommended for fast connection.
     """
+    client = AsyncIOMotorClient(os.getenv('mongodburl'))
     db = client.Main
     coll = db[collection]
     return coll
 
 def check_blacklist():
     async def predicate(ctx):
-        blacklisted = connectdb('Blacklist')
-        check_blacklist = blacklisted.find_one({'_id':ctx.author.id})
+        blacklisted = await connectdb('Blacklist')
+        check_blacklist = await blacklisted.find_one({'_id':ctx.author.id})
         if check_blacklist:
             raise Blacklisted('User is blacklisted!')
         return True
@@ -73,9 +74,9 @@ def event_available():
     return commands.check(predicate)
 
 def is_member_check():
-    db = connectdb("Gtech")
     async def predicate(ctx):
-        data = db.find_one({'_id':ctx.author.id})
+        db = await connectdb("Gtech")
+        data = await db.find_one({'_id':ctx.author.id})
         if data is None:
             raise NotGTechMember('Not a G-Tech member!')
         return True
@@ -114,9 +115,9 @@ def has_voted():
     return commands.check(predicate)
 
 def has_registered():
-    database=connectdb('Game')
     async def predicate(ctx):
-        data=database.find_one({'_id':ctx.author.id})
+        database=await connectdb('Game')
+        data=await database.find_one({'_id':ctx.author.id})
         if not data:
             raise NoGameAccount('User has no game account!')
         return True

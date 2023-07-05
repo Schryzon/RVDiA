@@ -13,7 +13,7 @@ from scripts.main import heading, Url_Buttons, has_pfp
 from discord import app_commands
 from discord.ext import commands
 from discord.ui import View, Button
-from scripts.main import client, check_blacklist, event_available, titlecase
+from scripts.main import event_available, titlecase, check_blacklist
 from time import time
 from PIL import Image
 from io import BytesIO
@@ -74,18 +74,19 @@ class General(commands.Cog):
         """
         Mengulangi apapun yang kamu katakan!
         """
-        if attachment:
-            await attachment.save(attachment.filename)
-            file = discord.File(attachment.filename)
-            if teks:
-                await ctx.send(teks, file=file)
-            else:
-                await ctx.send(file=file)
+        async with ctx.typing():
+            if attachment:
+                await attachment.save(attachment.filename)
+                file = discord.File(attachment.filename)
+                if teks:
+                    await ctx.send(teks, file=file)
+                else:
+                    await ctx.send(file=file)
+                
+                os.remove(attachment.filename) # Haiyaa
             
-            os.remove(attachment.filename) # Haiyaa
-        
-        else:
-            await ctx.send(teks) if teks else await ctx.send("Aku gak tau harus berkata apa ¯\_(ツ)_/¯")
+            else:
+                await ctx.send(teks) if teks else await ctx.send("Aku gak tau harus berkata apa ¯\_(ツ)_/¯")
 
     @rvdia_command.command(name="about", aliases=['intro', 'bot', 'botinfo'])
     @check_blacklist()
@@ -93,52 +94,40 @@ class General(commands.Cog):
         """
         Memperlihatkan segalanya tentang aku!
         """
-        m = 0
-        for k in self.bot.guilds:
-            m += k.member_count -1
-        embed = discord.Embed(title="Tentang RVDIA", color=self.bot.color)
-        embed.set_thumbnail(url=self.bot.user.avatar.url)
-        embed.set_image(url=getenv('banner') if not self.bot.event_mode else getenv('bannerevent'))
-        embed.add_field(name = "Versi", value = f"{self.bot.__version__}", inline=False)
-        embed.add_field(name = "Mode", value = f"Event Mode" if self.bot.event_mode else "Standard Mode", inline=False)
-        embed.add_field(name = "Pencipta", value = f"<@877008612021661726> (Jayananda)", inline=False)
-        embed.add_field(name = "Prefix", value = '@RVDIA | / (slash)')
-        embed.add_field(name = "Bahasa Pemrograman", value=f"Python ({pyver[:6]})\ndiscord.py ({discord.__version__})", inline=False)
-        embed.add_field(name = "Nyala Sejak", value = f"<t:{round(self.bot.runtime)}>\n(<t:{round(self.bot.runtime)}:R>)", inline = False)
-        embed.add_field(name = "Jumlah Server", value = f"{len(self.bot.guilds)} Server")
-        embed.add_field(name = "Jumlah Pengguna", value = f"{m} Pengguna")
-        embed.add_field(name = "Jumlah Command", value = f"Semua: `{len(self.bot.commands)}`\nGlobal: `{self.bot.synced[1]}`", inline=False)
-        embed.set_footer(text="Jangan lupa tambahkan aku ke servermu! ❤️")
-        await ctx.send(embed=embed, view=Url_Buttons())
+        async with ctx.typing():
+            m = 0
+            for k in self.bot.guilds:
+                m += k.member_count -1
+            embed = discord.Embed(title="Tentang RVDIA", color=self.bot.color)
+            embed.set_thumbnail(url=self.bot.user.avatar.url)
+            embed.set_image(url=getenv('banner') if not self.bot.event_mode else getenv('bannerevent'))
+            embed.add_field(name = "Versi", value = f"{self.bot.__version__}", inline=False)
+            embed.add_field(name = "Mode", value = f"Event Mode" if self.bot.event_mode else "Standard Mode", inline=False)
+            embed.add_field(name = "Pencipta", value = f"<@877008612021661726> (Jayananda)", inline=False)
+            embed.add_field(name = "Prefix", value = '@RVDIA | / (slash)')
+            embed.add_field(name = "Bahasa Pemrograman", value=f"Python ({pyver[:6]})\ndiscord.py ({discord.__version__})", inline=False)
+            embed.add_field(name = "Nyala Sejak", value = f"<t:{round(self.bot.runtime)}>\n(<t:{round(self.bot.runtime)}:R>)", inline = False)
+            embed.add_field(name = "Jumlah Server", value = f"{len(self.bot.guilds)} Server")
+            embed.add_field(name = "Jumlah Pengguna", value = f"{m} Pengguna")
+            embed.add_field(name = "Jumlah Command", value = f"Semua: `{len(self.bot.commands)}`\nGlobal: `{self.bot.synced[1]}`", inline=False)
+            embed.set_footer(text="Jangan lupa tambahkan aku ke servermu! ❤️")
+            await ctx.send(embed=embed, view=Url_Buttons())
     
     @rvdia_command.command(name="ping",
-        description = "Menampilkan latency ke Discord API dan MongoDB Atlas."
+        description = "Menampilkan latency ke Discord API."
         )
     @check_blacklist()
     async def ping(self, ctx:commands.Context) -> None:
         """
-        Menampilkan latency ke Discord API dan MongoDB Atlas.
+        Menampilkan latency ke Discord API
         """
-        mongoping = client.admin.command('ping')
-        if mongoping['ok'] == 1:
-            mongoping = 'GOOD - STATUS CODE 1'
-
-        else:
-            mongoping = 'ERROR - STATUS CODE 0'
-            
+        start_typing = time()
+        await ctx.typing()
+        end_typing = time()
+        delta_typing = end_typing - start_typing
         embed= discord.Embed(title= "Ping--Pong!", color=self.bot.color, timestamp=ctx.message.created_at)
-        embed.description = f"**Discord API:** `{round(self.bot.latency*1000)} ms`\n**MongoDB:** `{mongoping}`"
+        embed.description = f"**Discord API:** `{round(self.bot.latency*1000)} ms`\n**Typing:** `{round(delta_typing/1000, 2)} ms`"
         await ctx.reply(embed=embed)
-
-    @rvdia_command.command(description = 'Memperlihatkan informasi event yang berlangsung.')
-    @check_blacklist()
-    @event_available()
-    async def event(self, ctx:commands.Context) -> None:
-        """
-        Memperlihatkan informasi event yang berlangsung.
-        """
-        event = Event(ctx.bot)
-        await event.info(ctx, ctx) # What the fuck???
 
     @user_command.command(description="Memperlihatkan avatar pengguna Discord.")
     @app_commands.rename(global_user='pengguna')
@@ -150,26 +139,27 @@ class General(commands.Cog):
         Memperlihatkan avatar pengguna Discord.
         Support: (ID, @Mention, username, name#tag)
         """
-        global_user = global_user or ctx.author
+        async with ctx.typing():
+            global_user = global_user or ctx.author
 
-        if global_user.avatar is None:
-            return await ctx.reply(f'{global_user} tidak memiliki foto profil!')
-        png = global_user.avatar.with_format("png").url
-        jpg = global_user.avatar.with_format("jpg").url
-        webp = global_user.avatar.with_format("webp").url
+            if global_user.avatar is None:
+                return await ctx.reply(f'{global_user} tidak memiliki foto profil!')
+            png = global_user.avatar.with_format("png").url
+            jpg = global_user.avatar.with_format("jpg").url
+            webp = global_user.avatar.with_format("webp").url
 
-        embed=discord.Embed(title=f"Avatar {global_user}", url = global_user.avatar.with_format("png").url, color= 0xff4df0)
+            embed=discord.Embed(title=f"Avatar {global_user}", url = global_user.avatar.with_format("png").url, color= 0xff4df0)
 
-        if global_user.avatar.is_animated():
-            gif = global_user.avatar.with_format("gif").url
-            embed.set_image(url = global_user.avatar.with_format("gif").url)
-            embed.description = f"[png]({png}) | [jpg]({jpg}) | [webp]({webp}) | [gif]({gif})"
+            if global_user.avatar.is_animated():
+                gif = global_user.avatar.with_format("gif").url
+                embed.set_image(url = global_user.avatar.with_format("gif").url)
+                embed.description = f"[png]({png}) | [jpg]({jpg}) | [webp]({webp}) | [gif]({gif})"
 
-        else:
-            embed.description = f"[png]({png}) | [jpg]({jpg}) | [webp]({webp})"
-            embed.set_image(url = global_user.avatar.with_format("png").url)
-        embed.set_footer(text=f"{ctx.author}", icon_url=ctx.author.avatar.url)
-        await ctx.reply(embed=embed)
+            else:
+                embed.description = f"[png]({png}) | [jpg]({jpg}) | [webp]({webp})"
+                embed.set_image(url = global_user.avatar.with_format("png").url)
+            embed.set_footer(text=f"{ctx.author}", icon_url=ctx.author.avatar.url)
+            await ctx.reply(embed=embed)
 
     @user_command.command(name='info', aliases = ['whois'], description="Lihat info tentang seseorang di server ini.")
     @app_commands.rename(member='pengguna')
@@ -177,64 +167,65 @@ class General(commands.Cog):
         member = 'Siapa yang ingin diketahui infonya?'
     )
     @check_blacklist()
-    async def userinfo(self, ctx, *, member:discord.Member = None):
+    async def userinfo(self, ctx:commands.Context, *, member:discord.Member = None):
         """
         Lihat info tentang seseorang di server ini.
         Support: (ID, @Mention, username, name#tag)
         """
-        member = member or ctx.author
-        avatar_url = member.display_avatar.url # Avoids returning None
-        bot = member.bot
+        async with ctx.typing():
+            member = member or ctx.author
+            avatar_url = member.display_avatar.url # Avoids returning None
+            bot = member.bot
 
-        if bot == True:
-            avatar_url = "https://emoji.gg/assets/emoji/bottag.png"
-        roles = [role.mention for role in member.roles][::-1][:-1] or ["None"]
-        if roles[0] == "None":
-            role_length = 0
-        else:
-            role_length = len(roles)
-        nick = member.display_name
-        if nick == member.name:
-            nick = "None"
-
-        perm_list = [perm[0] for perm in member.guild_permissions if perm[1]]
-        perm_len = len(perm_list)
-        lel = [kol.replace('_', ' ') for kol in perm_list]
-        lol = [what.title() for what in lel]
-
-        embed=discord.Embed(title=member, color=member.colour, timestamp=ctx.message.created_at)
-        embed.set_author(name="User Info:")
-        embed.set_thumbnail(url=avatar_url)
-        embed.add_field(name="Nama Panggilan", value=nick, inline=False)
-        embed.add_field(name="Akun Dibuat", value=member.created_at.strftime("%a, %d %B %Y"))
-        embed.add_field(name="Bergabung Pada", value=member.joined_at.strftime("%a, %d %B %Y"))
-        embed.add_field(name="Role tertinggi", value=member.top_role.mention, inline=False)
-        if role_length > 10:
-            embed.add_field(name=f"Roles [{str(role_length)}]", value=" ".join(roles[:10]) + "\n(__10 role pertama__)", inline=False)
-        else:
-            embed.add_field(name=f"Roles [{str(role_length)}]", value=" ".join(roles), inline=False)
-        embed.add_field(name=f"Permissions [{str(perm_len)}]", value="`"+", ".join(lol)+"`", inline=False)
-        owner = await self.bot.fetch_user(ctx.guild.owner_id)
-        ack = None
-        match member.id: # First use of match case wowwwww
-            case self.bot.owner_id:
-                ack = "Pencipta Bot"
-            case self.bot.user.id:
-                ack = "The One True Love"
-
-        if ack == None:
-            if member.bot == True:
-                ack = "Server Bot"
-            elif owner.id == member.id:
-                ack = "Pemilik Server"
-            elif member.guild_permissions.administrator == True:
-                ack = "Server Admin"
+            if bot == True:
+                avatar_url = "https://emoji.gg/assets/emoji/bottag.png"
+            roles = [role.mention for role in member.roles][::-1][:-1] or ["None"]
+            if roles[0] == "None":
+                role_length = 0
             else:
-                ack = "Anggota Server"
+                role_length = len(roles)
+            nick = member.display_name
+            if nick == member.name:
+                nick = "None"
 
-        embed.add_field(name = "Dikenal Sebagai", value = ack)
-        embed.set_footer(text=f"ID: {member.id}", icon_url=avatar_url)
-        await ctx.reply(embed=embed)
+            perm_list = [perm[0] for perm in member.guild_permissions if perm[1]]
+            perm_len = len(perm_list)
+            lel = [kol.replace('_', ' ') for kol in perm_list]
+            lol = [what.title() for what in lel]
+
+            embed=discord.Embed(title=member, color=member.colour, timestamp=ctx.message.created_at)
+            embed.set_author(name="User Info:")
+            embed.set_thumbnail(url=avatar_url)
+            embed.add_field(name="Nama Panggilan", value=nick, inline=False)
+            embed.add_field(name="Akun Dibuat", value=member.created_at.strftime("%a, %d %B %Y"))
+            embed.add_field(name="Bergabung Pada", value=member.joined_at.strftime("%a, %d %B %Y"))
+            embed.add_field(name="Role tertinggi", value=member.top_role.mention, inline=False)
+            if role_length > 10:
+                embed.add_field(name=f"Roles [{str(role_length)}]", value=" ".join(roles[:10]) + "\n(__10 role pertama__)", inline=False)
+            else:
+                embed.add_field(name=f"Roles [{str(role_length)}]", value=" ".join(roles), inline=False)
+            embed.add_field(name=f"Permissions [{str(perm_len)}]", value="`"+", ".join(lol)+"`", inline=False)
+            owner = await self.bot.fetch_user(ctx.guild.owner_id)
+            ack = None
+            match member.id: # First use of match case wowwwww
+                case self.bot.owner_id:
+                    ack = "Pencipta Bot"
+                case self.bot.user.id:
+                    ack = "The One True Love"
+
+            if ack == None:
+                if member.bot == True:
+                    ack = "Server Bot"
+                elif owner.id == member.id:
+                    ack = "Pemilik Server"
+                elif member.guild_permissions.administrator == True:
+                    ack = "Server Admin"
+                else:
+                    ack = "Anggota Server"
+
+            embed.add_field(name = "Dikenal Sebagai", value = ack)
+            embed.set_footer(text=f"ID: {member.id}", icon_url=avatar_url)
+            await ctx.reply(embed=embed)
 
 
     @avatar_command.command(aliases=['grayscale'], description="Ubah foto profil menjadi grayscale (hitam putih).")
@@ -315,82 +306,84 @@ class Utilities(commands.Cog):
         """
         Lihat info tentang keadaan cuaca di suatu kota atau daerah!
         """
-        try:
-            # Need to decode geocode consisting of latitude and longitude
-            data = requests.get(f'http://api.openweathermap.org/geo/1.0/direct?q={location}&limit=1&appid={getenv("openweatherkey")}').json()
-            geocode = [data[0]['lat'], data[0]['lon']]
-            result = requests.get(f"https://api.openweathermap.org/data/2.5/weather?lat={geocode[0]}&lon={geocode[1]}&lang=id&units=metric&appid={getenv('openweatherkey')}").json()
-            icon = f"http://openweathermap.org/img/wn/{result['weather'][0]['icon']}@4x.png"
-            embed = discord.Embed(title=f"Cuaca di {result['name']}", description=f"__{result['weather'][0]['description'].title()}__")
-            embed.color = 0x00ffff
-            embed.set_thumbnail(url=icon)
-            temp = result['main']
-            embed.add_field(
-                    name=f"Suhu ({temp['temp']}°C)",
-                    value = 
-                    f"**Terasa seperti:** ``{temp['feels_like']}°C``\n**Minimum:** ``{temp['temp_min']}°C``\n**Maksimum:** ``{temp['temp_max']}°C``\n"+
-                    f"**Tekanan Atmosfir:** ``{temp['pressure']} hPa``\n**Kelembaban:** ``{temp['humidity']}%``\n**Persentase Awan:** ``{result['clouds']['all']}%``",
-                    inline=False
-                    )
-            wind = result['wind']
-            embed.add_field(
-                name = "Angin",
-                value = f"""**Kecepatan:** ``{wind['speed']} m/s``\n**Arah:** ``{wind['deg']}° ({heading(wind['deg'])})``
-                """, inline=False
-            )
-            embed.add_field(
-                name="Sunrise",
-                value=f"<t:{result['sys']['sunrise']}:R>", inline=False
-            )
-            embed.add_field(
-                name="Sunset",
-                value=f"<t:{result['sys']['sunset']}:R>"
-            )
-            embed.set_footer(text=f"{ctx.author}", icon_url=ctx.author.avatar.url)
-            await ctx.send(embed=embed)
+        async with ctx.typing():
+            try:
+                # Need to decode geocode consisting of latitude and longitude
+                data = requests.get(f'http://api.openweathermap.org/geo/1.0/direct?q={location}&limit=1&appid={getenv("openweatherkey")}').json()
+                geocode = [data[0]['lat'], data[0]['lon']]
+                result = requests.get(f"https://api.openweathermap.org/data/2.5/weather?lat={geocode[0]}&lon={geocode[1]}&lang=id&units=metric&appid={getenv('openweatherkey')}").json()
+                icon = f"http://openweathermap.org/img/wn/{result['weather'][0]['icon']}@4x.png"
+                embed = discord.Embed(title=f"Cuaca di {result['name']}", description=f"__{result['weather'][0]['description'].title()}__")
+                embed.color = 0x00ffff
+                embed.set_thumbnail(url=icon)
+                temp = result['main']
+                embed.add_field(
+                        name=f"Suhu ({temp['temp']}°C)",
+                        value = 
+                        f"**Terasa seperti:** ``{temp['feels_like']}°C``\n**Minimum:** ``{temp['temp_min']}°C``\n**Maksimum:** ``{temp['temp_max']}°C``\n"+
+                        f"**Tekanan Atmosfir:** ``{temp['pressure']} hPa``\n**Kelembaban:** ``{temp['humidity']}%``\n**Persentase Awan:** ``{result['clouds']['all']}%``",
+                        inline=False
+                        )
+                wind = result['wind']
+                embed.add_field(
+                    name = "Angin",
+                    value = f"""**Kecepatan:** ``{wind['speed']} m/s``\n**Arah:** ``{wind['deg']}° ({heading(wind['deg'])})``
+                    """, inline=False
+                )
+                embed.add_field(
+                    name="Sunrise",
+                    value=f"<t:{result['sys']['sunrise']}:R>", inline=False
+                )
+                embed.add_field(
+                    name="Sunset",
+                    value=f"<t:{result['sys']['sunset']}:R>"
+                )
+                embed.set_footer(text=f"{ctx.author}", icon_url=ctx.author.avatar.url)
+                await ctx.send(embed=embed)
 
-        except(IndexError):
-            await ctx.send('Aku tidak bisa menemukan lokasi itu!')
+            except(IndexError):
+                await ctx.send('Aku tidak bisa menemukan lokasi itu!')
 
     @commands.hybrid_command(description="Lihat info tentang waktu di suatu kota atau daerah!")
     @app_commands.describe(location='Daerah mana yang ingin kamu ketahui?')
     @app_commands.rename(location='lokasi')
     @check_blacklist()
-    async def time(self, ctx:commands.Context, *, location:str):
+    async def time(self, ctx:commands.Context, *, location:str): # Does not conflict with the package "time"
         """
         Lihat info tentang waktu di suatu kota atau daerah!
         """
-        check_timezone = requests.get(f'http://worldtimeapi.org/api/timezone').json()
-        area = []
-        for elements in check_timezone:
-            match = elements.split("/") # Split karena formatnya Continent/Area
-            if location.title() in match:
-                area = match
+        async with ctx.typing():
+            check_timezone = requests.get(f'http://worldtimeapi.org/api/timezone').json()
+            area = []
+            for elements in check_timezone:
+                match = elements.split("/") # Split karena formatnya Continent/Area
+                if location.title() in match:
+                    area = match
 
-        if area == []:
-            return await ctx.send('Aku tidak bisa menemukan daerah itu!\nLihat list daerah yang ada [click disini!](http://www.worldtimeapi.org/api/timezone)\nContoh: `r-time Makassar`')
-        
-        req_data = "/".join(area)
-        data = requests.get(f'http://worldtimeapi.org/api/timezone/{req_data}').json()
-        day = str(data['day_of_week'])
-        day = day_of_week[day]
+            if area == []:
+                return await ctx.send('Aku tidak bisa menemukan daerah itu!\nLihat list daerah yang ada [click disini!](http://www.worldtimeapi.org/api/timezone)\nContoh: `r-time Makassar`')
+            
+            req_data = "/".join(area)
+            data = requests.get(f'http://worldtimeapi.org/api/timezone/{req_data}').json()
+            day = str(data['day_of_week'])
+            day = day_of_week[day]
 
-        local_datetimestr = data['datetime']
-        utc_datetimestr = data['utc_datetime']
-        local_datetimeobj = datetime.fromisoformat(local_datetimestr)
-        utc_datetimeobj = datetime.fromisoformat(utc_datetimestr)
+            local_datetimestr = data['datetime']
+            utc_datetimestr = data['utc_datetime']
+            local_datetimeobj = datetime.fromisoformat(local_datetimestr)
+            utc_datetimeobj = datetime.fromisoformat(utc_datetimestr)
 
-        local_time = local_datetimeobj.strftime('%H:%M:%S')
-        utc_time = utc_datetimeobj.strftime('%H:%M:%S')
+            local_time = local_datetimeobj.strftime('%H:%M:%S')
+            utc_time = utc_datetimeobj.strftime('%H:%M:%S')
 
-        embed = discord.Embed(title=f"Waktu di {area[1]}", description=f"UTC{data['utc_offset']}", color=0x00ffff)
-        embed.add_field(name="Akronim Timezone", value=data['abbreviation'], inline=False)
-        embed.add_field(name="Perbandingan Waktu:",
-                        value=f"Waktu Lokal: {local_time}\nWaktu UTC: {utc_time}\nWaktu Anda: <t:{ctx.message.created_at}:T>",
-                        inline=False
-                        )
-        embed.add_field(name="Hari di Lokasi", value=f"{day} (Hari ke-{data['day_of_year']})", inline=False)
-        await ctx.send(embed=embed)
+            embed = discord.Embed(title=f"Waktu di {area[1]}", description=f"UTC{data['utc_offset']}", color=0x00ffff)
+            embed.add_field(name="Akronim Timezone", value=data['abbreviation'], inline=False)
+            embed.add_field(name="Perbandingan Waktu:",
+                            value=f"Waktu Lokal: {local_time}\nWaktu UTC: {utc_time}\nWaktu Anda: <t:{ctx.message.created_at}:T>",
+                            inline=False
+                            )
+            embed.add_field(name="Hari di Lokasi", value=f"{day} (Hari ke-{data['day_of_year']})", inline=False)
+            await ctx.send(embed=embed)
 
     @commands.hybrid_command(
             aliases = ['ask', 'chatbot', 'tanya'],
@@ -404,16 +397,16 @@ class Utilities(commands.Cog):
         """
         Tanyakan atau perhintahkan aku untuk melakukan sesuatu!
         """
-        if ctx.message.reference:
-            fetch_message = await ctx.channel.fetch_message(ctx.message.reference.message_id)
-            try:
-                if fetch_message.embeds[0].footer.text == 'Jika ada yang ingin ditanyakan, bisa langsung direply!':
-                    return  # If the reply feature is used whilst running this one, it'll cancel.
-                            # This is so that it doesn't execute 2 requests to OpenAI at once, lowering usage.
-            except:
-                pass
-        
         async with ctx.typing():
+            if ctx.message.reference:
+                fetch_message = await ctx.channel.fetch_message(ctx.message.reference.message_id)
+                try:
+                    if fetch_message.embeds[0].footer.text == 'Jika ada yang ingin ditanyakan, bisa langsung direply!':
+                        return  # If the reply feature is used whilst running this one, it'll cancel.
+                                # This is so that it doesn't execute 2 requests to OpenAI at once, lowering usage.
+                except:
+                    pass
+        
             openai.api_key = os.getenv('openaikey')
             result = await openai.ChatCompletion.acreate(
                 model="gpt-3.5-turbo",
@@ -436,7 +429,7 @@ class Utilities(commands.Cog):
             embed.description = result['choices'][0]['message']['content'] # Might improve for >4096 chrs
             embed.set_author(name=ctx.author)
             embed.set_footer(text='Jika ada yang ingin ditanyakan, bisa langsung direply!')
-        await ctx.reply(embed=embed)
+            await ctx.reply(embed=embed)
 
     @commands.hybrid_command(
             aliases = ['image', 'create'],
@@ -499,19 +492,19 @@ class Utilities(commands.Cog):
         """
         Ciptakan variasi dari gambar yang diberikan!
         """
-        attachment = attachment or ctx.message.attachments[0]
-        
-        await attachment.save(attachment.filename)
-        self.crop_to_square(f'./{attachment.filename}')
-        selected_image=attachment.filename
-
-        special_supported = ['.jpg', '.JPEG', '.jpeg']
-        if any(attachment.filename.endswith(suffix) for suffix in special_supported):
-            image = Image.open(attachment.filename)
-            image.save(f'{attachment.filename[:-3]}.png' if attachment.filename.endswith('.jpg') else f'{attachment.filename[:-4]}.png')
-            selected_image = f'{attachment.filename[:-3]}.png' if attachment.filename.endswith('.jpg') else f'{attachment.filename[:-4]}.png'
-
         async with ctx.typing():
+            attachment = attachment or ctx.message.attachments[0]
+            
+            await attachment.save(attachment.filename)
+            self.crop_to_square(f'./{attachment.filename}')
+            selected_image=attachment.filename
+
+            special_supported = ['.jpg', '.JPEG', '.jpeg']
+            if any(attachment.filename.endswith(suffix) for suffix in special_supported):
+                image = Image.open(attachment.filename)
+                image.save(f'{attachment.filename[:-3]}.png' if attachment.filename.endswith('.jpg') else f'{attachment.filename[:-4]}.png')
+                selected_image = f'{attachment.filename[:-3]}.png' if attachment.filename.endswith('.jpg') else f'{attachment.filename[:-4]}.png'
+
             start=time()
             openai.api_key = os.getenv('openaikey')
             result = await openai.Image.acreate_variation(
@@ -617,7 +610,6 @@ class Support(commands.GroupCog, group_name='support'):
             self.add_item(donate)
 
     @app_commands.command(description = 'Mengirimkan link untuk server supportku!')
-    @check_blacklist()
     async def guild(self, interaction:discord.Interaction):
         """
         Mengirimkan link untuk server supportku!
@@ -625,7 +617,6 @@ class Support(commands.GroupCog, group_name='support'):
         await interaction.response.send_message(f"Untuk join serverku agar dapat mengetahui lebih banyak tentang RVDiA, silahkan tekan link di bawah!\nhttps://discord.gg/QqWCnk6zxw\nAtau tekan tombol abu-abu di bawah ini.", view=self.Support_Button())
 
     @app_commands.command(description = 'Dukung RVDiA melalui Saweria!')
-    @check_blacklist()
     async def donate(self, interaction:discord.Interaction):
         """
         Dukung RVDiA melalui Saweria!
@@ -637,7 +628,6 @@ class Support(commands.GroupCog, group_name='support'):
     @app_commands.rename(attachment='lampiran')
     @app_commands.describe(text='Apa yang ingin kamu sampaikan?')
     @app_commands.describe(attachment='Apakah ada contoh gambarnya? (Opsional)')
-    @check_blacklist()
     async def suggest(self, interaction:discord.Interaction, text:str, attachment:discord.Attachment = None):
         """
         Berikan aku saran untuk perbaikan atau penambahan fitur!

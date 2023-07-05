@@ -32,7 +32,7 @@ Bot ini menggunakan Bahasa Indonesia dan memiliki command khusus untuk anggota-a
 ## Informasi Tambahan
 Proyek ini __hanya untuk sekedar hobi__ dan untuk meningkatkan kemampuan programming saya dalam hal virtual bots.
 
-Saat ini RVDiA, dihost dengan menggunakan Heroku. Jadi, jika kalian ingin menjalankan botnya saya sarankan untuk menggunakan service Heroku. Tetapi, jika kalian hanya ingin sekedar menggunakan botnya secara lokal melalui komputer pribadi juga tidak masalah.
+Saat ini RVDiA, dihost dengan menggunakan Heroku. Jadi, jika kalian ingin menjalankan botnya saya sarankan untuk menggunakan service DigitalOcean. Tetapi, jika kalian hanya ingin sekedar menggunakan botnya secara lokal melalui komputer pribadi juga tidak masalah.
 
 `python RVDIA.py` untuk menjalankan botnya.
 

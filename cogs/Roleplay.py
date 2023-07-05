@@ -7,7 +7,7 @@ import discord
 from aiohttp import ClientSession
 from discord import app_commands
 from discord.ext import commands
-from scripts.main import check_blacklist, has_voted
+from scripts.main import has_voted, check_blacklist
 
 class Roleplay(commands.GroupCog, group_name = 'roleplay'):
     """
@@ -38,19 +38,20 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         """
         Lazy me lol
         """
+        await interaction.response.defer()
         if not user:
             embed = discord.Embed(title=f'{interaction.user.display_name} {action}!', color=interaction.user.color)
         else:
             embed = discord.Embed(title=f'{interaction.user.display_name} {action} {user.display_name}!', color=interaction.user.color)
         embed.set_image(url=url)
         embed.set_footer(text=f'Source: {source}')
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
 
     @app_commands.command(description='Peluk seseorang!')
     @app_commands.describe(user='Siapa yang ingin kamu peluk?')
     @app_commands.rename(user='pengguna')
-    @check_blacklist()
     @has_voted()
+    @check_blacklist()
     async def hug(self, interaction:discord.Interaction, *, user:discord.Member):
         """
         Peluk seseorang!
@@ -63,8 +64,8 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
     @app_commands.command(description='Cium seseorang!')
     @app_commands.describe(user='Siapa yang ingin kamu cium?')
     @app_commands.rename(user='pengguna')
-    @check_blacklist()
     @has_voted()
+    @check_blacklist()
     async def kiss(self, interaction:discord.Interaction, *, user:discord.Member):
         """
         Cium seseorang!
@@ -77,8 +78,8 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
     @app_commands.command(description='Tampar seseorang!')
     @app_commands.describe(user='Siapa yang ingin kamu tampar?')
     @app_commands.rename(user='pengguna')
-    @check_blacklist()
     @has_voted()
+    @check_blacklist()
     async def slap(self, interaction:discord.Interaction, *, user:discord.Member):
         """
         Tampar seseorang!
@@ -89,8 +90,8 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Menampar', user)
     
     @app_commands.command(description='Ungkapkan ekspresi tertawamu!')
-    @check_blacklist()
     @has_voted()
+    @check_blacklist()
     async def laugh(self, interaction:discord.Interaction):
         """
         Ungkapkan ekspresi tertawamu!
@@ -101,8 +102,8 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Tertawa')
     
     @app_commands.command(description='Ungkapkan ekspresi bahagiamu!')
-    @check_blacklist()
     @has_voted()
+    @check_blacklist()
     async def happy(self, interaction:discord.Interaction):
         """
         Ungkapkan ekspresi bahagiamu!
@@ -113,8 +114,8 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Merasa Bahagia')
     
     @app_commands.command(description='Ungkapkan ekspresi berpikirmu!')
-    @check_blacklist()
     @has_voted()
+    @check_blacklist()
     async def think(self, interaction:discord.Interaction):
         """
         Ungkapkan ekspresi berpikirmu!
@@ -125,8 +126,8 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Sedang Berpikir')
     
     @app_commands.command(description='Ungkapkan ekspresi malumu!')
-    @check_blacklist()
     @has_voted()
+    @check_blacklist()
     async def blush(self, interaction:discord.Interaction):
         """
         Ungkapkan ekspresi malumu!
@@ -137,8 +138,8 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Merasa Malu')
     
     @app_commands.command(description='Ungkapkan ekspresi sedihmu!')
-    @check_blacklist()
     @has_voted()
+    @check_blacklist()
     async def cry(self, interaction:discord.Interaction):
         """
         Ungkapkan ekspresi sedihmu!
@@ -149,8 +150,8 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Menangis')
 
     @app_commands.command(description='Ungkapkan ekspresi setujumu!')
-    @check_blacklist()
     @has_voted()
+    @check_blacklist()
     async def agree(self, interaction:discord.Interaction):
         """
         Ungkapkan ekspresi setujumu!
@@ -163,8 +164,8 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
     @app_commands.command(description='Elus kepala seseorang!')
     @app_commands.describe(user='Siapa yang ingin kamu elus kepalanya?')
     @app_commands.rename(user='pengguna')
-    @check_blacklist()
     @has_voted()
+    @check_blacklist()
     async def pat(self, interaction:discord.Interaction, *, user:discord.Member):
         """
         Tampar seseorang!
@@ -175,8 +176,8 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Mengelus Kepala', user)
     
     @app_commands.command(description='Ungkapkan ekspresi kebosananmu!')
-    @check_blacklist()
     @has_voted()
+    @check_blacklist()
     async def bored(self, interaction:discord.Interaction):
         """
         Ungkapkan ekspresi kebosananmu!

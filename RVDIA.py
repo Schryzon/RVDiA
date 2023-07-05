@@ -30,8 +30,8 @@ class RVDIA(commands.AutoShardedBot):
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "EVO v1.1.1"
-    self.event_mode = True
+    self.__version__ = "EVO v1.1.3"
+    self.event_mode = False
     self.color = 0x86273d
     self.runtime = time() # UNIX float
     self.coin_emoji = "<:rvdia_coin:1121004598962954300>"
@@ -91,7 +91,8 @@ async def on_ready():
 
     update_guild_status.start()
 
-    print("RVDIA is ready.")
+    print("RVDiA is ready.")
+
 
 @tasks.loop(minutes=5)
 async def change_status():
@@ -120,6 +121,7 @@ async def change_status():
     type = discord.Game(status)
   await rvdia.change_presence(status = discord.Status.idle, activity=type)
 
+
 @tasks.loop(hours=1)
 async def update_guild_status():
     """
@@ -140,6 +142,9 @@ async def update_guild_status():
 @rvdia.command(aliases = ['on', 'enable'], hidden=True)
 @commands.is_owner()
 async def load(ctx, ext):
+  """
+  Manually load cogs
+  """
   if ext == "__init__":
     await ctx.send(f"Stupid.")
     return
@@ -151,9 +156,13 @@ async def load(ctx, ext):
   except commands.ExtensionNotFound:
     await ctx.send(f"Cog `{ext}.py` tidak ditemukan!")
 
+
 @rvdia.command(aliases = ['off', 'disable'], hidden=True)
 @commands.is_owner()
 async def unload(ctx, ext):
+  """
+  Manually unload cogs
+  """
   if ext == "__init__":
     await ctx.send(f"Stupid.")
     return
@@ -168,6 +177,9 @@ async def unload(ctx, ext):
 @rvdia.command(hidden = True)
 @commands.is_owner()
 async def cogs(ctx):
+    """
+    Cogs list
+    """
     embed = discord.Embed(title = "RVDIA Cog List", description = "\n".join(cogs_list), color = ctx.author.colour)
     embed.set_thumbnail(url = rvdia.user.avatar)
     embed.set_footer(text = "Cogs were taken from \".RVDIA/cogs\"")
@@ -186,7 +198,7 @@ async def refresh(ctx):
           await rvdia.load_extension(cog)
   await ctx.reply('Cogs refreshed.')
 
-# This allows me to decide when to bail out of a server when it reaches 100 servers
+# This allows me to decide when to bail out of a certain server when it reaches 100 servers
 @rvdia.command(hidden = True)
 @commands.is_owner()
 async def serverlist(ctx:commands.Context):
@@ -238,10 +250,10 @@ async def blacklist(ctx:commands.Context, user:discord.User, *, reason:str=None)
       case _:
          pass
       
-   blacklisted = connectdb('Blacklist')
-   check_blacklist = blacklisted.find_one({'_id':user.id})
+   blacklisted = await connectdb('Blacklist')
+   check_blacklist = await blacklisted.find_one({'_id':user.id})
    if not check_blacklist:
-      blacklisted.insert_one({'_id':user.id, 'reason':reason})
+      await blacklisted.insert_one({'_id':user.id, 'reason':reason})
       embed = discord.Embed(title='‼️ BLACKLISTED ‼️', timestamp=ctx.message.created_at, color=0xff0000)
       embed.description = f'**`{user}`** telah diblacklist dari menggunakan RVDIA!'
       embed.set_thumbnail(url=user.avatar.url if not user.avatar is None else os.getenv('normalpfp'))
@@ -253,20 +265,26 @@ async def blacklist(ctx:commands.Context, user:discord.User, *, reason:str=None)
 @rvdia.command(hidden=True)
 @commands.is_owner()
 async def whitelist(ctx:commands.Context, user:discord.User):
-   blacklisted = connectdb('Blacklist')
-   check_blacklist = blacklisted.find_one({'_id':user.id})
+   blacklisted = await connectdb('Blacklist')
+   check_blacklist = await blacklisted.find_one({'_id':user.id})
    if not check_blacklist:
       return await ctx.reply(f'**`{user}`** tidak diblacklist dari menggunakan RVDIA!')
    
-   blacklisted.find_one_and_delete({'_id':user.id})
+   await blacklisted.find_one_and_delete({'_id':user.id})
    await ctx.reply(f'`{user}` telah diwhitelist!')
 
 @rvdia.event
 async def on_message(msg:discord.Message):
+    """
+    Replacing the available on_message event from Discord
+    TO DO: Create check_blacklist() and only run it here.
+    Configure RVDiA's class
+    """
+
     if not msg.guild:
         return
     
-    await rvdia.process_commands(msg)
+    await rvdia.process_commands(msg) # Execute commands from here
 
     if msg.author.bot == True:
         return
@@ -326,9 +344,9 @@ async def on_message(msg:discord.Message):
             new_acc_id = int(new_acc_string[2].strip())
             user = await rvdia.fetch_user(new_acc_id)
 
-            database = connectdb('Game')
+            database = await connectdb('Game')
             if msg.content.lower() == "approve" or msg.content.lower() == "accept":
-                old_data = database.find_one({'_id':old_acc_id})
+                old_data = await database.find_one({'_id':old_acc_id})
                 keep = {
                     'level':old_data['level'],
                     'exp':old_data['exp'],
@@ -344,8 +362,8 @@ async def on_message(msg:discord.Message):
                     'equipments':old_data['equipments']
                 }
 
-                database.find_one_and_update({'_id':new_acc_id}, {'$set':keep})
-                database.delete_one({'_id':old_acc_id})
+                await database.find_one_and_update({'_id':new_acc_id}, {'$set':keep})
+                await database.delete_one({'_id':old_acc_id})
                 await msg.channel.send(f'✅ Transfer akun untuk {user} selesai!')
                 try:
                    await user.send(f"✅ Request transfer akun Re:Volution-mu telah selesai!\nApproved by: `{msg.author}`")

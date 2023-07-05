@@ -16,7 +16,7 @@ from os import getenv, listdir, path
 from discord.ui import View, Button, button
 from discord import app_commands
 from discord.ext import commands
-from scripts.main import connectdb, check_blacklist, has_registered
+from scripts.main import connectdb, has_registered, check_blacklist
 from scripts.game import level_up, send_level_up_msg, split_reward_string, give_rewards
 
 class FightView(View):
@@ -109,8 +109,8 @@ class GameInstance():
                 return 3
             return 3*(math.floor(level/10))
         
-        database = connectdb('Game')
-        user1_data = database.find_one({'_id':self.user1.id})
+        database = await connectdb('Game')
+        user1_data = await database.find_one({'_id':self.user1.id})
         user1_stats = [user1_data['attack'], user1_data['defense'], user1_data['agility']]
         comp_data1 = {
             'stats': user1_stats,
@@ -120,7 +120,7 @@ class GameInstance():
 
         if self.command_name == "fight":
             # Fight = PvP
-            user2_data = database.find_one({'_id':self.user2.id})
+            user2_data = await database.find_one({'_id':self.user2.id})
             if user2_data is None:
                 await self.ctx.reply(f'Waduh! Sepertinya <@{self.user2.id}> belum membuat akun Re:Volution!')
                 raise Exception('Rival has no account!')
@@ -196,14 +196,14 @@ class GameInstance():
             self.user2_defend = True
     
     async def use(self, user1, type):
-        database = connectdb('Game')
-        user1_data = database.find_one({'_id':user1.id})
+        database = await connectdb('Game')
+        user1_data = await database.find_one({'_id':user1.id})
         items = user1_data['items']
         view = ItemView(items, user1, type)
         if type == 'item':
-            await self.ctx.channel.send(f"{user1.mention}, 10 detik untuk memilih item.", view=view)
+            await self.ctx.channel.send(f"{user1.mention}, 10 detik untuk memilih item.", view=view, delete_after=15)
         else:
-            await self.ctx.channel.send(f"{user1.mention}, 10 detik untuk menggunakan skill.", view=view)
+            await self.ctx.channel.send(f"{user1.mention}, 10 detik untuk menggunakan skill.", view=view, delete_after=15)
 
     async def func_converter(self, func:str, user1, user2):
         func = re.sub(r'\(|\)', '', func)
@@ -821,14 +821,14 @@ class ItemDropdown(discord.ui.Select):
         elif self.values[0] == 'none' and self.types == 'skill':
             return await interaction.response.send_message("Kamu tidak memiliki skill apapun!", ephemeral=True)
         
-        database = connectdb('Game')
-        data = database.find_one({'_id':self.user1.id})
+        database = await connectdb('Game')
+        data = await database.find_one({'_id':self.user1.id})
         db_items = data['items']
         used_item = None
         if db_items == self.items:
             for item in self.items:
                 if item['_id'] == self.values[0] and not item['owned'] <= 0 and self.types == 'item':
-                    database.find_one_and_update(
+                    await database.find_one_and_update(
                         {'_id':self.user1.id, 'items._id':self.values[0]},
                         {'$inc':{'items.$.owned':-1}}
                         )
@@ -948,9 +948,9 @@ class ResignButton(View):
         if interaction.user != self.ctx.author:
             await interaction.response.send_message("Kamu tidak diperbolehkan berinteraksi dengan tombol ini!", ephemeral=True)
             return
-        database = connectdb('Game')
-        data = database.find_one({'_id':interaction.user.id})
-        database.find_one_and_delete({'_id':interaction.user.id})
+        database = await connectdb('Game')
+        data = await database.find_one({'_id':interaction.user.id})
+        await database.find_one_and_delete({'_id':interaction.user.id})
         await interaction.response.send_message(f'Aku telah menghapus akunmu.\nSampai jumpa, `{data["name"]}`, di Re:Volution!')
         self.value = True
         self.stop()
@@ -994,8 +994,8 @@ class ShopDropdown(discord.ui.Select):
             items = json.loads(content)
 
         item_id = self.values[0]
-        database = connectdb('Game')
-        data = database.find_one({'_id':interaction.user.id})
+        database = await connectdb('Game')
+        data = await database.find_one({'_id':interaction.user.id})
         db_dict = {item['_id']: item for item in items}
         mongo_dict = {item['_id']: item for item in data['items']}
 
@@ -1011,12 +1011,12 @@ class ShopDropdown(discord.ui.Select):
                 return await interaction.response.send_message("Kamu hanya bisa memelajari skill sekali saja!", ephemeral=True)
             filter_ = {'_id': interaction.user.id, 'items._id': item_id}
             update_ = {'$inc': {'items.$.owned': 1}}
-            database.update_one(filter=filter_, update=update_)
+            await database.update_one(filter=filter_, update=update_)
 
             currency = 'coins' if matched_dict['paywith'] == "Koin" else 'karma'
             cost = matched_dict['cost']
             update_ = {'$inc': {currency: cost*-1}}
-            database.update_one(filter=filter_, update=update_)
+            await database.update_one(filter=filter_, update=update_)
 
             await interaction.response.send_message(f"Pembelian berhasil!\nKamu telah membeli `{matched_dict['name']}`", ephemeral=True)
 
@@ -1026,10 +1026,10 @@ class ShopDropdown(discord.ui.Select):
             del matched_dict['cost']
             del matched_dict['paywith']
             matched_dict['owned'] = 1
-            database.update_one({'_id': interaction.user.id},
+            await database.update_one({'_id': interaction.user.id},
                                 {'$push':{'items':matched_dict}})
             
-            database.update_one({'_id': interaction.user.id}, {'$inc':{currency: cost*-1}}) # Second update, avoiding conflict
+            await database.update_one({'_id': interaction.user.id}, {'$inc':{currency: cost*-1}}) # Second update, avoiding conflict
 
             await interaction.response.send_message(f"Pembelian berhasil!\nKamu telah membeli `{matched_dict['name']}`", ephemeral=True)
 
@@ -1189,20 +1189,20 @@ class UseDropdown(discord.ui.Select):
             return await interaction.response.send_message("Kamu tidak diizinkan untuk menggunakan dropdown ini!")
         if self.values[0] == 'none':
             return await interaction.response.send_message("Kamu tidak memiliki apapun!\nKamu harus membeli barang/skill di `/game shop`!", ephemeral=True)
-        database = connectdb('Game')
-        data = database.find_one({'_id':interaction.user.id})
+        database = await connectdb('Game')
+        data = await database.find_one({'_id':interaction.user.id})
         item = self.values[0]
         if '1-' in item:
             matching = [x for x in data['equipments'] if x['_id'] == item]
             if matching: # Uneqip
                 func = matching[0]['func'].split('+')
                 func = convert_to_db_stat(func)
-                database.update_one({'_id':interaction.user.id}, {'$pull':{'equipments':{'_id':item}}})
-                database.update_one({'_id':interaction.user.id}, {'$inc':{func[0]:int(func[1])*-1}})
+                await database.update_one({'_id':interaction.user.id}, {'$pull':{'equipments':{'_id':item}}})
+                await database.update_one({'_id':interaction.user.id}, {'$inc':{func[0]:int(func[1])*-1}})
                 await interaction.response.send_message(f"Kamu telah melepas `{matching[0]['name']}`!")
             
             else:
-                item = database.find_one({'_id':interaction.user.id, 'items._id':item})
+                item = await database.find_one({'_id':interaction.user.id, 'items._id':item})
                 matching = [x for x in item['items'] if x['_id'] == self.values[0]]
                 func = matching[0]['func'].split('+')
                 func = convert_to_db_stat(func)
@@ -1211,23 +1211,24 @@ class UseDropdown(discord.ui.Select):
                 if same_type:
                     func_2 = same_type[0]['func'].split('+')
                     func_2 = convert_to_db_stat(func_2)
-                    database.update_one({'_id':interaction.user.id}, {'$pull':{'equipments':{'_id':same_type[0]['_id']}}})
-                    database.update_one({'_id':interaction.user.id}, {'$inc':{func_2[0]:int(func_2[1])*-1}})
+                    await database.update_one({'_id':interaction.user.id}, {'$pull':{'equipments':{'_id':same_type[0]['_id']}}})
+                    await database.update_one({'_id':interaction.user.id}, {'$inc':{func_2[0]:int(func_2[1])*-1}})
 
-                database.update_one({'_id':interaction.user.id}, {'$push':{'equipments':matching[0]}})
-                database.update_one({'_id':interaction.user.id}, {'$inc':{func[0]:int(func[1])}})
+                await database.update_one({'_id':interaction.user.id}, {'$push':{'equipments':matching[0]}})
+                await database.update_one({'_id':interaction.user.id}, {'$inc':{func[0]:int(func[1])}})
                 await interaction.response.send_message(f"Kamu telah menggunakan `{matching[0]['name']}`!")
 
         else:
-            item = database.find_one({'_id':interaction.user.id, 'items._id':item})
+            item = await database.find_one({'_id':interaction.user.id, 'items._id':item})
             matching = [x for x in item['items'] if x['_id'] == self.values[0]]
             func = matching[0]['func'].split('+')
             func = convert_to_db_stat(func)
-            database.update_one({'_id':interaction.user.id, 'items._id':self.values[0]}, {'$inc':{'items.$.owned':-1}})
-            database.update_one({'_id':interaction.user.id}, {'$inc':{func[0]:int(func[1])}})
+            await database.update_one({'_id':interaction.user.id, 'items._id':self.values[0]}, {'$inc':{'items.$.owned':-1}})
+            await database.update_one({'_id':interaction.user.id}, {'$inc':{func[0]:int(func[1])}})
             await interaction.response.send_message(f"Kamu telah menggunakan `{matching[0]['name']}`!")
             await asyncio.sleep(1)
-            if level_up(self.ctx):
+            level_uped = await level_up(self.ctx)
+            if level_uped:
                 await send_level_up_msg(self.ctx)
 
     
@@ -1236,14 +1237,23 @@ class UseView(View):
         super().__init__(timeout=30)
         self.add_item(UseDropdown(items, ctx))
 
-class Game(commands.GroupCog, group_name = 'game'):
+class Game(commands.Cog):
     """
     Kumpulan command game RPG RVDIA (Re:Volution).
     """
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.hybrid_command(aliases=['reg'], description='Daftarkan akunmu ke Re:Volution!')
+    @commands.hybrid_group(name='game')
+    @check_blacklist()
+    async def game(self, ctx:commands.Context) -> None:
+        """
+        Kumpulan command khusus untuk RVDIA. [GROUP]
+        """
+        await self.account(ctx)
+        pass
+
+    @game.command(aliases=['reg'], description='Daftarkan akunmu ke Re:Volution!')
     @app_commands.describe(name='Nama apa yang ingin kamu pakai di dalam gamenya?')
     @check_blacklist()
     async def register(self, ctx:commands.Context, *, name:str=None):
@@ -1251,10 +1261,10 @@ class Game(commands.GroupCog, group_name = 'game'):
         Daftarkan akunmu ke Re:Volution!
         """
         name=name or ctx.author.name
-        database = connectdb('Game')
-        data = database.find_one({'_id':ctx.author.id})
+        database = await connectdb('Game')
+        data = await database.find_one({'_id':ctx.author.id})
         if data: return await ctx.reply('Kamu sudah memiliki akun game!')
-        database.insert_one({
+        await database.insert_one({
             '_id':ctx.author.id,
             'name':name,
             'level':1,
@@ -1266,7 +1276,6 @@ class Game(commands.GroupCog, group_name = 'game'):
             'attack':10,
             'defense':7,
             'agility':8,
-            'special_skills':[],    # Push JSON to here
             'items':[],
             'equipments':[]         # Push it to here also
         })
@@ -1274,7 +1283,7 @@ class Game(commands.GroupCog, group_name = 'game'):
         await asyncio.sleep(0.7)
         await self.account(ctx)
     
-    @commands.hybrid_command(description='Menghapuskan akunmu dari Re:Volution.')
+    @game.command(description='Menghapuskan akunmu dari Re:Volution.')
     @has_registered()
     @check_blacklist()
     async def resign(self, ctx:commands.Context):
@@ -1287,15 +1296,15 @@ class Game(commands.GroupCog, group_name = 'game'):
         if view.value is None:
             await ctx.channel.send('Waktu habis, penghapusan akun dibatalkan.')
 
-    @commands.hybrid_command(aliases=['login'], description='Dapatkan bonus login harian!')
+    @game.command(aliases=['login'], description='Dapatkan bonus login harian!')
     @has_registered()
     @check_blacklist()
     async def daily(self, ctx:commands.Context):
         """
         Dapatkan bonus login harian!
         """
-        database = connectdb('Game')
-        data = database.find_one({'_id':ctx.author.id})
+        database = await connectdb('Game')
+        data = await database.find_one({'_id':ctx.author.id})
         last_login = data['last_login']
         current_time = datetime.datetime.now()
         delta_time = current_time - last_login
@@ -1310,7 +1319,7 @@ class Game(commands.GroupCog, group_name = 'game'):
             new_coins = random.randint(15, 25)
             new_karma = random.randint(1, 5)
             new_exp = random.randint(10, 20)
-            database.find_one_and_update(
+            await database.find_one_and_update(
                 {'_id':ctx.author.id},
                 {'$inc':{'coins':new_coins, 'karma':new_karma, 'exp':new_exp}, '$set':{'last_login':datetime.datetime.now()}}
             )
@@ -1323,11 +1332,11 @@ class Game(commands.GroupCog, group_name = 'game'):
             )
             embed.set_footer(text='Bonus selanjutnya pada ')
             await ctx.reply(embed=embed)
-
-            if level_up(ctx):
+            level_uped = await level_up(ctx)
+            if level_uped:
                 return await send_level_up_msg(ctx)
             
-    @commands.hybrid_command(description='Lihat profil pengguna di Re:Volution!')
+    @game.command(description='Lihat profil pengguna di Re:Volution!')
     @app_commands.describe(user='Pengguna mana yang ingin dilihat akunnya?')
     @app_commands.rename(user='pengguna')
     @has_registered()
@@ -1338,8 +1347,8 @@ class Game(commands.GroupCog, group_name = 'game'):
         """
         # Plans: PIL profile pic, equipment & items should be seperate commands
         user = user or ctx.author
-        database = connectdb('Game')
-        data = database.find_one({'_id':user.id})
+        database = await connectdb('Game')
+        data = await database.find_one({'_id':user.id})
 
         # General data
         player_name = data['name']
@@ -1353,7 +1362,13 @@ class Game(commands.GroupCog, group_name = 'game'):
 
         # Battle stats
         attack, defense, agility = data['attack'], data['defense'], data['agility']
-        special_skills = data['special_skills']
+        items = [x for x in data['items'] if x['owned'] > 0 and x['type'] != 'Skill']
+        skills = [x for x in data['items'] if x['owned'] > 0 and x['type'] == 'Skill']
+        equipments = [x['name'] for x in data['equipments']]
+        equipment_string = '\n'.join(equipments)
+        if equipment_string == '' or equipment_string == '\n':
+            equipment_string = 'Tidak menggunakan equipment apapun.'
+
 
         embed = discord.Embed(title=player_name, timestamp=last_login, color=ctx.author.color)
         embed.set_author(name='Info Akun Re:Volution:')
@@ -1378,10 +1393,22 @@ class Game(commands.GroupCog, group_name = 'game'):
             inline=False
             )
         
+        embed.add_field(
+            name=f'Barang & Skill', 
+            value=f'👜 Barang: `{len(items)}`\n🔮 Skill: `{len(skills)}`', 
+            inline=False
+            )
+        
+        embed.add_field(
+            name=f'Equipment Terpakai', 
+            value=f'**`{equipment_string}`**', 
+            inline=False
+            )
+        
         embed.set_footer(text='Login harian terakhir ')
         await ctx.reply(embed = embed)
 
-    @commands.hybrid_command(description="Beli item atau perlengkapan perang!")
+    @game.command(description="Beli item atau perlengkapan perang!")
     @has_registered()
     @check_blacklist()
     async def shop(self, ctx:commands.Context):
@@ -1389,8 +1416,8 @@ class Game(commands.GroupCog, group_name = 'game'):
         Beli item atau perlengkapan perang!
         """
         # Plans: show details and make a paginator or something
-        database = connectdb('Game')
-        data = database.find_one({'_id':ctx.author.id})
+        database = await connectdb('Game')
+        data = await database.find_one({'_id':ctx.author.id})
         with open('./src/game/shop.json') as file:
             content = file.read()
             items = json.loads(content)
@@ -1429,7 +1456,7 @@ class Game(commands.GroupCog, group_name = 'game'):
         view = ShopView(ctx, items, data)
         await ctx.reply(embed = embed, view=view)
 
-    @commands.hybrid_command(description='Tantang seseorang ke sebuah duel!')
+    @game.command(description='Tantang seseorang ke sebuah duel!')
     @app_commands.describe(member='Siapa yang ingin kamu lawan?')
     @app_commands.rename(member='pengguna')
     @has_registered()
@@ -1444,7 +1471,7 @@ class Game(commands.GroupCog, group_name = 'game'):
         await game.start()
 
 
-    @commands.hybrid_command(description='Lawan musuh-musuh yang ada di Re:Volution!')
+    @game.command(description='Lawan musuh-musuh yang ada di Re:Volution!')
     @app_commands.describe(enemy_tier='Musuh level berapa yang ingin kamu lawan?')
     @app_commands.rename(enemy_tier='level')
     @app_commands.describe(enemy_name='Nama musuh yang ingin kamu lawan?')
@@ -1483,9 +1510,8 @@ class Game(commands.GroupCog, group_name = 'game'):
         await game.start()
 
 
-    @commands.hybrid_command(description='Lihat daftar musuh yang muncul di Re:Volution!', aliases=['enemy'])
+    @game.command(description='Lihat daftar musuh yang muncul di Re:Volution!', aliases=['enemy'])
     @has_registered()
-    @check_blacklist()
     async def enemies(self, ctx:commands.Context):
         """
         Lihat daftar musuh yang muncul di Re:Volution!
@@ -1495,7 +1521,7 @@ class Game(commands.GroupCog, group_name = 'game'):
             await ctx.reply(f"Untuk melihat daftar musuh, silahkan tekan di bawah ini ↓", view=view)
 
 
-    @commands.hybrid_command(description='Request untuk pemindahan data akun.')
+    @game.command(description='Request untuk pemindahan data akun.')
     @app_commands.describe(old_acc = "Akun Discord lamamu atau ID akun Discord lamamu.")
     @app_commands.describe(reason = "Alasan request pemindahan data akun.")
     @app_commands.rename(reason = "alasan")
@@ -1506,9 +1532,9 @@ class Game(commands.GroupCog, group_name = 'game'):
         """
         Request untuk pemindahan data akun.
         """
-        database = connectdb('Game')
-        current_acc_data = database.find_one({'_id':ctx.author.id})
-        old_acc_data = database.find_one({'_id':old_acc.id})
+        database = await connectdb('Game')
+        current_acc_data = await database.find_one({'_id':ctx.author.id})
+        old_acc_data = await database.find_one({'_id':old_acc.id})
         if not old_acc_data:
             return await ctx.reply("Akun Re:Volution tidak ditemukan!\nJika tidak yakin dengan ID akun Discord lamamu, silahkan hubungi langsung Schryzon!", ephemeral=True)
         
@@ -1541,7 +1567,7 @@ class Game(commands.GroupCog, group_name = 'game'):
         await ctx.send("Aku telah mengirimkan request transfer data akun ke developer!\nMohon ditunggu persetujuannya ya!\nJangan lupa untuk mengaktifkan pesan DM dari aku karena nanti akan diberikan info apabila disetujui/ditolak.")
 
 
-    @commands.hybrid_command(description='Ayo main tebak angka bersamaku!')
+    @game.command(description='Ayo main tebak angka bersamaku!')
     @app_commands.describe(level='Tingkat kesulitan mana yang akan kamu pilih?')
     @app_commands.choices(level=[
         app_commands.Choice(name='SUPER', value='SUPER'),
@@ -1558,7 +1584,7 @@ class Game(commands.GroupCog, group_name = 'game'):
         game_instance = GuessGame(ctx, level.value)
         await game_instance.start()
 
-    @commands.hybrid_command(description = "Gunakan barang atau perlengkapan perang!")
+    @game.command(description = "Gunakan barang atau perlengkapan perang!")
     @app_commands.describe(type = 'Jenis barang yang ingin digunakan?')
     @app_commands.choices(type=[
         app_commands.Choice(name='Barang (Consumable)', value='item'),
@@ -1572,8 +1598,8 @@ class Game(commands.GroupCog, group_name = 'game'):
         Gunakan barang atau perlengkapan perang!
         """
         # Choose type -> Dropdown class
-        database = connectdb('Game')
-        data = database.find_one({'_id':ctx.author.id})
+        database = await connectdb('Game')
+        data = await database.find_one({'_id':ctx.author.id})
         match type.value:
             case "item":
                 things = [item for item in data['items'] if "0-" in item['_id'] and item['usefor'] == "free"]
