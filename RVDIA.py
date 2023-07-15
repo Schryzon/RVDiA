@@ -30,7 +30,7 @@ class RVDIA(commands.AutoShardedBot):
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "EVO v1.1.3"
+    self.__version__ = "EVO v1.1.4"
     self.event_mode = False
     self.color = 0x86273d
     self.runtime = time() # UNIX float
@@ -202,15 +202,22 @@ async def refresh(ctx):
 @rvdia.command(hidden = True)
 @commands.is_owner()
 async def serverlist(ctx:commands.Context):
-    with suppress(discord.Forbidden):
-       guild_name = [guild.name for guild in rvdia.guilds]
-       guild_members = [guild.member_count for guild in rvdia.guilds]
-       guild_id = [guild.id for guild in rvdia.guilds]
-       list = []
-       for name, member, gid in zip(guild_name, guild_members, guild_id):
-          list.append(f"`{name}` | `{member}` members | ID: `{gid}`")
-       print("\n\n".join(list))
-       await ctx.reply('Check the terminal!')
+    async with ctx.typing():
+      await ctx.reply('Processing owner IDs...')
+      with suppress(discord.Forbidden):
+        guild_name = [guild.name for guild in rvdia.guilds]
+        guild_members = [guild.member_count for guild in rvdia.guilds]
+        guild_id = [guild.id for guild in rvdia.guilds]
+        guild_owner_id = [guild.owner_id for guild in rvdia.guilds]
+        guild_owners = []
+        for ids in guild_owner_id:
+            guild_owner = await rvdia.fetch_user(ids)
+            guild_owners.append(guild_owner)
+        list = []
+        for name, member, gid, owner in zip(guild_name, guild_members, guild_id, guild_owners):
+            list.append(f"{name} | {member} members | ID: {gid} | Owner: {owner}")
+        print("\n".join(list))
+        await ctx.send(f"<@{rvdia.owner_id}>, processing completed for {len(guild_name)} servers. Check the terminal!")
 
 @rvdia.command(hidden = True)
 @commands.is_owner()
@@ -381,7 +388,11 @@ async def on_message(msg:discord.Message):
         except Exception as e:
            if "currently overloaded with other requests." in str(e):
               return await msg.channel.send('Maaf, fitur ini sedang dalam gangguan. Mohon dicoba nanti!')
-           elif "unknown message" in str(e).lower() or 'message_id: Value "None" is not snowflake.' in str(e):
+           elif "overloaded or not ready" in str(e) or "Bad gateway." in str(e):
+              return await msg.channel.send("Sepertinya ada yang bermasalah dengan otakku tadi.\nTolong coba ulangi pertanyaanmu lagi!")
+           elif "rate limit reached" in str(e).lower():
+              return await msg.channel.send("Aduh, maaf, otakku sedang kepanasan.\nTolong tanyakan lagi setelah 20 detik!")
+           elif "unknown message" in str(e).lower() or 'message_id: Value "None" is not snowflake.' in str(e) or "404 not found" in str(e).lower() or "Invalid Form Body In message_reference: Unknown message" in str(e):
               return await msg.channel.send("Hah?!\nSepertinya aku sedang mengalami masalah menemukan pesan yang kamu reply!")
            elif "403 Forbidden" in str(e) or "Missing Access" in str(e):
               try:

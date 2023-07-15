@@ -426,7 +426,7 @@ class GameInstance():
                         func = res_use.content.split('\n')[2] # Dear god hope this works
                         await self.func_converter(func, self.user1, self.user2)
                     except asyncio.TimeoutError:
-                        await self.ctx.channel.send(f"{self.user1.mention}, giliranmu diskip karena tidak menggunakan item!")
+                        await self.ctx.channel.send(f"{self.user1.mention}, giliranmu dilewatkan karena tidak menggunakan item!")
 
                 case "Opsi terpilih: 🔮Skill":
                     if p1_skills_used >= self.p1_skill_limit:
@@ -439,7 +439,7 @@ class GameInstance():
                             await self.func_converter(func, self.user1, self.user2)
                             p1_skills_used += 1
                         except asyncio.TimeoutError:
-                            await self.ctx.channel.send(f"{self.user1.mention}, giliranmu diskip karena tidak menggunakan skill!")
+                            await self.ctx.channel.send(f"{self.user1.mention}, giliranmu dilewatkan karena tidak menggunakan skill!")
 
                 case "Opsi terpilih: ❔Musuh":
                     stats = self.user2_stats
@@ -532,7 +532,7 @@ class GameInstance():
                             await asyncio.sleep(1.2)
                             await self.func_converter(func, self.user2, self.user1)
                         except asyncio.TimeoutError:
-                            await self.ctx.channel.send(f"{self.user2.mention}, giliranmu diskip karena tidak menggunakan item!")
+                            await self.ctx.channel.send(f"{self.user2.mention}, giliranmu dilewatkan karena tidak menggunakan item!")
 
                     case "Opsi terpilih: 🔮Skill":
                         if p2_skills_used > self.p2_skill_limit:
@@ -546,7 +546,7 @@ class GameInstance():
                                 await self.func_converter(func, self.user2, self.user1)
                                 p2_skills_used += 1
                             except asyncio.TimeoutError:
-                                await self.ctx.channel.send(f"{self.user2.mention}, giliranmu diskip karena tidak menggunakan skill!")
+                                await self.ctx.channel.send(f"{self.user2.mention}, giliranmu dilewatkan karena tidak menggunakan skill!")
 
                     case "Opsi terpilih: 🏃Kabur":
                         await self.ctx.channel.send(f'⛔ <@{self.user2.id}>  mengakhiri perang.')

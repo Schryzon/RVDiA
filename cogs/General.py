@@ -628,6 +628,7 @@ class Support(commands.GroupCog, group_name='support'):
     @app_commands.rename(attachment='lampiran')
     @app_commands.describe(text='Apa yang ingin kamu sampaikan?')
     @app_commands.describe(attachment='Apakah ada contoh gambarnya? (Opsional)')
+    @check_blacklist()
     async def suggest(self, interaction:discord.Interaction, text:str, attachment:discord.Attachment = None):
         """
         Berikan aku saran untuk perbaikan atau penambahan fitur!

@@ -16,6 +16,8 @@ class Events(commands.Cog):
         embed.add_field(name='Name', value=guild.name, inline=False)
         embed.add_field(name='Members', value=guild.member_count, inline=False)
         embed.add_field(name='ID', value=guild.id, inline=False)
+        owner = await self.bot.fetch_user(guild.owner_id)
+        embed.add_field(name='Owner', value=owner, inline=False)
         await channel.send(embed=embed)
 
     @commands.Cog.listener()
@@ -25,6 +27,8 @@ class Events(commands.Cog):
         embed.add_field(name='Name', value=guild.name, inline=False)
         embed.add_field(name='Members', value=guild.member_count, inline=False)
         embed.add_field(name='ID', value=guild.id, inline=False)
+        owner = await self.bot.fetch_user(guild.owner_id)
+        embed.add_field(name='Owner', value=owner, inline=False)
         await channel.send(embed=embed)
 
     

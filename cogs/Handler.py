@@ -163,7 +163,7 @@ class Error(commands.Cog):
       await ctx.reply('Maaf, saat ini fitur tersebut sedang dalam gangguan. Mohon dicoba lagi nanti!')
 
     elif "Rate limit reached for" in str(error):
-      await ctx.reply("Maaf, command ini sedang dalam *forced-cooldown*\nSilahkan coba lagi setelah 20 detik.")
+      await ctx.reply("Aduh, maaf, otakku sedang kepanasan.\nTolong jalankan command lagi setelah 20 detik!")
 
     elif 'User has not voted yet!' in str(error):
       # Man why doesnt it work tho
@@ -192,6 +192,9 @@ class Error(commands.Cog):
 
     elif "Rival has no account!" in str(error):
       return
+    
+    elif "The server is overloaded or not ready yet." in str(error) or "Bad gateway." in str(error):
+      await ctx.reply("Sepertinya ada yang bermasalah dengan otakku tadi.\nTolong coba jalankan ulang command ini lagi!")
 
     # If all else fails (get it?)
     else:
