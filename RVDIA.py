@@ -2,9 +2,11 @@
 Schryzon/Jayananda (11)
 G-Tech Re'sman Programming Division
 RVDiA (Revolutionary Virtual Discord Assistant)
-Feel free to edit, recreate, publish, and do other stuff.
+Feel free to modify and do other stuff.
 Contributions are welcome.
 Licensed under the MIT LICENSE.
+* Note: Now that RVDiA is verified, I own the rights to the name.
+        Making public clones of her under the same name is a big no no, okay sweetie?
 """
 
 import asyncio
@@ -30,8 +32,8 @@ class RVDIA(commands.AutoShardedBot):
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "EVO v1.1.4"
-    self.event_mode = False
+    self.__version__ = "EVO v1.1.5"
+    self.event_mode = True
     self.color = 0x86273d
     self.runtime = time() # UNIX float
     self.coin_emoji = "<:rvdia_coin:1121004598962954300>"
@@ -197,33 +199,6 @@ async def refresh(ctx):
           await rvdia.unload_extension(cog)
           await rvdia.load_extension(cog)
   await ctx.reply('Cogs refreshed.')
-
-# This allows me to decide when to bail out of a certain server when it reaches 100 servers
-@rvdia.command(hidden = True)
-@commands.is_owner()
-async def serverlist(ctx:commands.Context):
-    async with ctx.typing():
-      await ctx.reply('Processing owner IDs...')
-      with suppress(discord.Forbidden):
-        guild_name = [guild.name for guild in rvdia.guilds]
-        guild_members = [guild.member_count for guild in rvdia.guilds]
-        guild_id = [guild.id for guild in rvdia.guilds]
-        guild_owner_id = [guild.owner_id for guild in rvdia.guilds]
-        guild_owners = []
-        for ids in guild_owner_id:
-            guild_owner = await rvdia.fetch_user(ids)
-            guild_owners.append(guild_owner)
-        list = []
-        for name, member, gid, owner in zip(guild_name, guild_members, guild_id, guild_owners):
-            list.append(f"{name} | {member} members | ID: {gid} | Owner: {owner}")
-        print("\n".join(list))
-        await ctx.send(f"<@{rvdia.owner_id}>, processing completed for {len(guild_name)} servers. Check the terminal!")
-
-@rvdia.command(hidden = True)
-@commands.is_owner()
-async def leave(ctx:commands.Context, guild_id:discord.Guild):
-   await guild_id.leave()
-   await ctx.send(f'Left `{guild_id.name}` that has `{guild_id.member_count}` members!')
 
 @rvdia.command(hidden=True)
 @commands.is_owner()

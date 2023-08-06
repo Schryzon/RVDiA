@@ -26,12 +26,12 @@ class Event(commands.GroupCog, group_name = 'event'):
         """
         Lihat info event yang sedang berlangsung!
         """
-        embed = discord.Embed(title="RVDiA Rebrand", color=0xff4df0, url='https://drive.google.com/file/d/1EssMN38BXaA31O51mjr2vI4g20_cN3Kb/view?usp=drive_link')
+        embed = discord.Embed(title="Verified Bot", color=0xff4df0)
         embed.set_author(name='Event Berlangsung:')
         embed.set_thumbnail(url=self.bot.user.avatar.url)
-        embed.description = "Bot yang sebelumnya bernama RVDIA (Revolutionary Virtual Independent Discord Application), telah mengalami perubahan agar namanya lebih simpel dan mudah diingat oleh pengguna.\n\nMulai dari hari ini (<t:1685350330:D>), RVDiA (Revolutionary Virtual Discord Assistant) akan membantumu dalam menyelesaikan segala permasalahan, kecuali yang sangat pribadi yah.\n\nUntuk informasi mengenai fitur Game, akan saya coba implementasikan sebisa mungkin, berhubung jadwal saya yang cukup padat. Saya akan terus mencoba untuk memenuhi tujuan dari Project RVDiA, kebahagiaan, kemampuan, dan pengetahuan.\n\n-Schryzon"
+        embed.description = os.getenv('eventnews')
         embed.set_image(url=os.getenv('bannerevent'))
-        embed.set_footer(text='Revolusioner, Virtual, Independen; Aktif, Ceria, Menggemaskan.')
+        embed.set_footer(text='Revolusioner, Virtual, Independen.')
         await interaction.response.send_message(embed=embed)
 
 async def setup(bot):
