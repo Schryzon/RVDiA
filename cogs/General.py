@@ -1,6 +1,7 @@
 import base64
 import re
 import os
+from typing import Optional
 import discord
 import openai
 import requests
@@ -12,7 +13,7 @@ from cogs.Event import Event
 from scripts.main import heading, Url_Buttons, has_pfp
 from discord import app_commands
 from discord.ext import commands
-from discord.ui import View, Button
+from discord.ui import View, Button, button
 from scripts.main import event_available, titlecase, check_blacklist
 from time import time
 from PIL import Image
@@ -27,6 +28,43 @@ day_of_week = {
     '6':"Sabtu",
     '0':"Minggu"
 }
+
+class Regenerate_Answer_Button(View):
+    def __init__(self, last_question:str):
+        super().__init__(timeout=180)
+        self.last_question = last_question
+
+    @button(label="Jawab Ulang", custom_id='regenerate', style=discord.ButtonStyle.blurple, emoji='🔁')
+    async def regenerate(self, interaction:discord.Interaction, button:Button):
+        await interaction.response.defer()
+        await interaction.channel.typing()
+        message = self.last_question
+        currentTime = datetime.now()
+        date = currentTime.strftime("%d/%m/%Y")
+        hour = currentTime.strftime("%H:%M:%S")
+        openai.api_key = os.getenv('openaikey')
+        result = await openai.ChatCompletion.acreate(
+            model="gpt-3.5-turbo",
+            temperature=1.2,
+            messages=[
+            {"role":'system', 'content':getenv('rolesys')+f' You are currently talking to {interaction.user}'},
+            {"role":'assistant', 'content':f"The current date is {date} at {hour} UTC+8"},
+            {"role": "user", "content": message}
+            ]
+        )
+        
+        if len(message) > 256:
+            message = message[:253] + '...' #Adding ... from 253rd character, ignoring other characters.
+
+        embed = discord.Embed(
+            title=' '.join((titlecase(word) for word in message.split(' '))), 
+            color=interaction.user.color, 
+            timestamp=interaction.message.created_at
+            )
+        embed.description = result['choices'][0]['message']['content'] # Might improve for >4096 chrs
+        embed.set_author(name=interaction.user)
+        embed.set_footer(text='Jika ada yang ingin ditanyakan, bisa langsung direply!')
+        return await interaction.message.edit(embed=embed, view=self)
 
 class General(commands.Cog):
     """
@@ -397,14 +435,17 @@ class Utilities(commands.Cog):
         """
         Tanyakan atau perhintahkan aku untuk melakukan sesuatu!
         """
-        async with ctx.typing():        
+        async with ctx.typing():
+            currentTime = datetime.now()
+            date = currentTime.strftime("%d/%m/%Y")
+            hour = currentTime.strftime("%H:%M:%S")
             openai.api_key = os.getenv('openaikey')
             result = await openai.ChatCompletion.acreate(
                 model="gpt-3.5-turbo",
                 temperature=1.2,
                 messages=[
                 {"role":'system', 'content':getenv('rolesys')+f' You are currently talking to {ctx.author}'},
-                {"role":'assistant', 'content':f"You are currently talking to {ctx.author}"},
+                {"role":'assistant', 'content':f"The current date is {date} at {hour} UTC+8"},
                 {"role": "user", "content": message}
                 ]
             )
@@ -420,7 +461,8 @@ class Utilities(commands.Cog):
             embed.description = result['choices'][0]['message']['content'] # Might improve for >4096 chrs
             embed.set_author(name=ctx.author)
             embed.set_footer(text='Jika ada yang ingin ditanyakan, bisa langsung direply!')
-            await ctx.reply(embed=embed)
+            regenerate_button = Regenerate_Answer_Button(message)
+            await ctx.reply(embed=embed, view=regenerate_button)
 
     @commands.hybrid_command(
             aliases = ['image', 'create'],

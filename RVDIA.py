@@ -18,9 +18,11 @@ from time import time
 from dotenv import load_dotenv
 from pkgutil import iter_modules
 from scripts.help_menu.help import Help
+from cogs.General import Regenerate_Answer_Button
 from discord.ext import commands, tasks
 from random import choice as rand
 from contextlib import suppress
+from datetime import datetime
 from scripts.main import connectdb, titlecase
 load_dotenv('./secrets.env') # Loads the .env file from python-dotenv pack
 
@@ -32,7 +34,7 @@ class RVDIA(commands.AutoShardedBot):
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "EVO v1.1.5"
+    self.__version__ = "Late v1.1.5"
     self.event_mode = True
     self.color = 0x86273d
     self.runtime = time() # UNIX float
@@ -292,12 +294,15 @@ async def on_message(msg:discord.Message):
               author = message_embed.author.name
               openai.api_key = os.getenv('openaikey')
               message = msg.content
+              currentTime = datetime.now()
+              date = currentTime.strftime("%d/%m/%Y")
+              hour = currentTime.strftime("%H:%M:%S")
               result = await openai.ChatCompletion.acreate(
                   model="gpt-3.5-turbo",
                   temperature=1.2,
                   messages=[
                   {"role":'system', 'content':os.getenv('rolesys')+f' You are currently talking to {msg.author}'},
-                  {"role":"assistant", 'content':f'{author} said: {embed_title} | Your response was: {embed_desc}'},
+                  {"role":"assistant", 'content':f'The current date is {date} at {hour} UTC+8 | {author} said: {embed_title} | Your response was: {embed_desc}'},
                   {"role": "user", "content": message}
                   ]
               )
@@ -313,7 +318,8 @@ async def on_message(msg:discord.Message):
               embed.description = result['choices'][0]['message']['content']
               embed.set_author(name=msg.author)
               embed.set_footer(text='Jika ada yang ingin ditanyakan, bisa langsung direply!')
-            await msg.channel.send(embed=embed)
+              regenerate_button = Regenerate_Answer_Button(message)
+            await msg.channel.send(embed=embed, view=regenerate_button)
             return
           
           elif message_embed.footer.text == 'Reply \"Approve\" jika disetujui\nReply \"Decline\" jika tidak disetujui':
