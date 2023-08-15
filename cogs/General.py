@@ -1,7 +1,6 @@
 import base64
 import re
 import os
-from typing import Optional
 import discord
 import openai
 import requests
@@ -14,7 +13,7 @@ from scripts.main import heading, Url_Buttons, has_pfp
 from discord import app_commands
 from discord.ext import commands
 from discord.ui import View, Button, button
-from scripts.main import event_available, titlecase, check_blacklist
+from scripts.main import event_available, titlecase, check_blacklist, check_vote
 from time import time
 from PIL import Image
 from io import BytesIO
@@ -33,6 +32,13 @@ class Regenerate_Answer_Button(View):
     def __init__(self, last_question:str):
         super().__init__(timeout=180)
         self.last_question = last_question
+        vote_me = Button(
+            label='Suka RVDiA? Vote!', 
+            emoji='<:rvdia:1140812479883128862>',
+            style=discord.ButtonStyle.green, 
+            url='https://top.gg/bot/957471338577166417/vote'
+            )
+        self.add_item(vote_me)
 
     @button(label="Jawab Ulang", custom_id='regenerate', style=discord.ButtonStyle.blurple, emoji='🔁')
     async def regenerate(self, interaction:discord.Interaction, button:Button):
@@ -462,7 +468,7 @@ class Utilities(commands.Cog):
             embed.set_author(name=ctx.author)
             embed.set_footer(text='Jika ada yang ingin ditanyakan, bisa langsung direply!')
             regenerate_button = Regenerate_Answer_Button(message)
-            await ctx.reply(embed=embed, view=regenerate_button)
+            return await ctx.reply(embed=embed, view=regenerate_button)
 
     @commands.hybrid_command(
             aliases = ['image', 'create'],

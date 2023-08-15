@@ -17,7 +17,7 @@ class Url_Buttons(View):
 
     add_me = Button(
             label='Tambahkan Aku!', 
-            emoji='<:rvdia:1082789733001875518>',
+            emoji='<:rvdia:1140812479883128862>',
             style=discord.ButtonStyle.green, 
             url=os.getenv('oauthlink')
             )
@@ -113,6 +113,16 @@ def has_voted():
                 raise NotVoted('User has not voted yet!')
         
     return commands.check(predicate)
+
+async def check_vote(user_id:int):
+    headers = {'Authorization': os.getenv('topggtoken')}
+    async with aiohttp.ClientSession(headers=headers) as session:
+        response = await session.get(f'https://top.gg/api/bots/957471338577166417/check?userId={user_id}')
+        data = await response.json()
+        if data['voted'] == 1:
+            return True
+        else:
+            return False
 
 def has_registered():
     async def predicate(ctx):

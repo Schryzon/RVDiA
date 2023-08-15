@@ -23,7 +23,7 @@ from discord.ext import commands, tasks
 from random import choice as rand
 from contextlib import suppress
 from datetime import datetime
-from scripts.main import connectdb, titlecase
+from scripts.main import connectdb, titlecase, check_vote
 load_dotenv('./secrets.env') # Loads the .env file from python-dotenv pack
 
 class RVDIA(commands.AutoShardedBot):
@@ -40,7 +40,7 @@ class RVDIA(commands.AutoShardedBot):
     self.runtime = time() # UNIX float
     self.coin_emoji = "<:rvdia_coin:1121004598962954300>"
     self.coin_emoji_anim = "<a:rvdia_coin_anim:1121004592033955860>"
-    self.rvdia_emoji = '<:rvdia:1082789733001875518>'
+    self.rvdia_emoji = '<:rvdia:1140812479883128862>'
     self.rvdia_emoji_happy = '<:rvdia_happy:1121412270220660803>'
     self.cyron_emoji = '<:cyron:1082789553263349851>' # Join up!!!
 
@@ -319,7 +319,7 @@ async def on_message(msg:discord.Message):
               embed.set_author(name=msg.author)
               embed.set_footer(text='Jika ada yang ingin ditanyakan, bisa langsung direply!')
               regenerate_button = Regenerate_Answer_Button(message)
-            await msg.channel.send(embed=embed, view=regenerate_button)
+              await msg.channel.send(embed=embed, view=regenerate_button)
             return
           
           elif message_embed.footer.text == 'Reply \"Approve\" jika disetujui\nReply \"Decline\" jika tidak disetujui':
