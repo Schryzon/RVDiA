@@ -103,5 +103,143 @@
                 "func":"agl+10"
             }
         ]
-    }
+    },
+    {
+        "name": "Mudling",
+        "desc": "Makhluk lumpur yang bergerak lamban namun kuat.",
+        "tier": "SUPER LOW",
+        "avatar": "",
+        "hp": 75,
+        "atk": 9,
+        "def": 12,
+        "agl": 3,
+        "reward": [
+            "exp+18",
+            "cns+12"
+        ],
+        "skills": [
+            {
+                "name": "Mud Splash",
+                "func": "dmg+12"
+            },
+            {
+                "name": "Earthen Shield",
+                "func": "def+15"
+            }
+        ]
+    },
+    {
+        "name": "Blossomling",
+        "desc": "Makhluk berbentuk bunga dengan serangan penuh racun.",
+        "tier": "SUPER LOW",
+        "avatar": "",
+        "hp": 60,
+        "atk": 11,
+        "def": 5,
+        "agl": 8,
+        "reward": [
+            "exp+14",
+            "cns+9"
+        ],
+        "skills": [
+            {
+                "name": "Toxic Bloom",
+                "func": "dmg+14"
+            },
+            {
+                "name": "Petal Shield",
+                "func": "def+10"
+            },
+            {
+                "name": "Photosynthesis",
+                "func": "hp+20"
+            }
+        ]
+    },
+    {
+        "name": "Nature Seeker",
+        "desc": "Penjelajah alam yang mencari rahasia kehidupan.",
+        "tier": "SUPER LOW",
+        "avatar": "",
+        "hp": 75,
+        "atk": 12,
+        "def": 7,
+        "agl": 5,
+        "reward": [
+            "exp+14",
+            "cns+9"
+        ],
+        "skills": [
+            {
+                "name": "Floral Strike",
+                "func": "dmg+14"
+            },
+            {
+                "name": "Natural Insight",
+                "func": "agl+6"
+            },
+            {
+                "name": "Plant Regrowth",
+                "func": "hp+25"
+            }
+        ]
+    },
+    {
+        "name": "Bubbling Ooze",
+        "desc": "Makhluk kental yang mengancam, mengeluarkan gelembung berbahaya.",
+        "tier": "SUPER LOW",
+        "avatar": "",
+        "hp": 75,
+        "atk": 12,
+        "def": 8,
+        "agl": 5,
+        "reward": [
+            "exp+18",
+            "cns+12",
+            "krm+2"
+        ],
+        "skills": [
+            {
+                "name": "Toxic Burst",
+                "func": "dmg+15"
+            },
+            {
+                "name": "Acidic Spray",
+                "func": "dmg+10"
+            },
+            {
+                "name": "Viscous Form",
+                "func": "def+12"
+            }
+        ]
+    },
+    {
+        "name": "Grove Prowler",
+        "desc": "Hewan pemangsa dari hutan yang licin dan lincah.",
+        "tier": "SUPER LOW",
+        "avatar": "",
+        "hp": 60,
+        "atk": 15,
+        "def": 6,
+        "agl": 12,
+        "reward": [
+            "exp+20",
+            "cns+14",
+            "krm+3"
+        ],
+        "skills": [
+            {
+                "name": "Claw Swipe",
+                "func": "dmg+12"
+            },
+            {
+                "name": "Fleet-footed",
+                "func": "agl+15"
+            },
+            {
+                "name": "Predatory Instinct",
+                "func": "atk+8"
+            }
+        ]
+    }       
 ]

@@ -27,8 +27,8 @@
                 "func":"atk+20"
             },
             {
-                "name":"It's Over",
-                "func":"hp+300"
+                "name":"Heal me, World",
+                "func":"hp+450"
             },
             {
                 "name":"Your Life is Mine",
@@ -38,7 +38,7 @@
     },
     {
         "name":"RVDiA",
-        "desc":"Revolusioner, Virtual, Independen.",
+        "desc":"Revolution ~ My Dream World",
         "tier":"SUPER BOSS",
         "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1123190763442929835/RVDiA-Profile-Pic.png",
         "hp":999,
@@ -60,7 +60,7 @@
                 "func":"atk+8"
             },
             {
-                "name":"Revolutionary Attack",
+                "name":"Revolution",
                 "func":"dmg+40"
             },
             {
@@ -157,6 +157,10 @@
             {
                 "name":"Lagtanis Raykaris",
                 "func":"def-20"
+            },
+            {
+                "name":"Lagtanis Fulguros",
+                "func":"hp-40"
             }
         ]
     },
@@ -186,6 +190,43 @@
             {
                 "name":"Share a Life",
                 "func":"hp-50"
+            }
+        ]
+    },
+    {
+        "name": "VeRiTAS",
+        "desc": "Galaxy Whirlpool MK.3 (The Pure)",
+        "tier": "SUPER BOSS",
+        "avatar": "",
+        "hp": 970,
+        "atk": 72,
+        "def": 75,
+        "agl": 68,
+        "reward": [
+            "exp+3000",
+            "cns+300",
+            "krm+30"
+        ],
+        "skills": [
+            {
+                "name": "Vortex Slash III",
+                "func": "dmg+66"
+            },
+            {
+                "name": "Gravity Pull III",
+                "func": "agl-27"
+            },
+            {
+                "name": "Hydro Healing III",
+                "func": "hp-53"
+            },
+            {
+                "name": "Flames of VORTeX",
+                "func": "agl+3"
+            },
+            {
+                "name": "Endless Revolution",
+                "func": "def-10"
             }
         ]
     }

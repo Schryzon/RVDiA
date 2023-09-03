@@ -228,5 +228,15 @@
         "func":"atk+35",
         "cost":30,
         "paywith":"Karma"
+    },
+    {
+        "name":"Rahjda's Endurance",
+        "_id":"2-rahjendu",
+        "usefor":"battle",
+        "desc":"Memberikanmu pertahanan luar biasa.",
+        "type":"Skill",
+        "func":"def+30",
+        "cost":25,
+        "paywith":"Karma"
     }
 ]

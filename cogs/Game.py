@@ -778,7 +778,7 @@ class AI():
                     self.actions.remove("skill")
 
         sorted_traits = sorted(self.traits, reverse=True)
-        if random.randint(0, 100) < 15:
+        if random.randint(0, 100) < 10:
             action = random.choice(self.actions)
         else:
             action = random.choice([action for trait, action in zip(self.traits, self.actions) if trait == sorted_traits[0]])
@@ -943,6 +943,11 @@ class ResignButton(View):
         self.ctx = ctx
         self.value = None
 
+    async def on_timeout(self) -> None:
+        for item in self.children:
+            item.disabled = True
+        await self.message.edit(view=self)
+
     @button(label='Hapus Akun', style=discord.ButtonStyle.danger, custom_id='delacc')
     async def delete_account(self, interaction: discord.Interaction, button: Button):
         if interaction.user != self.ctx.author:
@@ -1092,6 +1097,11 @@ class ShopView(View):
         self.data = data
         self.owned = []
         self.add_item(ShopDropdown(self.current_page))
+
+    async def on_timeout(self) -> None:
+        for item in self.children:
+            item.disabled = True
+        await self.message.edit(view=self)
         
     def get_owned_count(self, item_id):
         try:
@@ -1239,7 +1249,7 @@ class UseView(View):
 
 class Game(commands.Cog):
     """
-    Kumpulan command game RPG RVDIA (Re:Volution).
+    Kumpulan command game RPG RVDiA (Re:Volution).
     """
     def __init__(self, bot):
         self.bot = bot
@@ -1258,7 +1268,7 @@ class Game(commands.Cog):
     @check_blacklist()
     async def register(self, ctx:commands.Context, *, name:str=None):
         """
-        Daftarkan akunmu ke Re:Volution!
+        Daftarkan akunmu ke Re:Volution ~ The Dream World!
         """
         name=name or ctx.author.name
         database = await connectdb('Game')
@@ -1288,7 +1298,7 @@ class Game(commands.Cog):
     @check_blacklist()
     async def resign(self, ctx:commands.Context):
         """
-        Menghapuskan akunmu dari Re:Volution.
+        Menghapuskan akunmu dari Re:Volution ~ The Dream World.
         """
         view = ResignButton(ctx)
         await ctx.reply('Apakah kamu yakin akan menghapus akunmu?\nKamu punya 20 detik untuk menentukan keputusanmu.', view=view)
@@ -1343,7 +1353,7 @@ class Game(commands.Cog):
     @check_blacklist()
     async def account(self, ctx:commands.Context, *, user:discord.User=None):
         """
-        Lihat profil pengguna di Re:Volution!
+        Lihat profil pengguna di Re:Volution ~ The Dream World!
         """
         # Plans: PIL profile pic, equipment & items should be seperate commands
         user = user or ctx.author
@@ -1371,7 +1381,7 @@ class Game(commands.Cog):
 
 
         embed = discord.Embed(title=player_name, timestamp=last_login, color=ctx.author.color)
-        embed.set_author(name='Info Akun Re:Volution:')
+        embed.set_author(name='Info Akun Re:Volution ~ The Dream World')
         embed.description = f'Alias: {user}'
         embed.set_thumbnail(url=user.display_avatar.url)
 
@@ -1487,7 +1497,7 @@ class Game(commands.Cog):
     @check_blacklist()
     async def battle(self, ctx:commands.Context, enemy_tier:app_commands.Choice[str], enemy_name:str=None): # Choice[value_type]
         """
-        Lawan musuh-musuh yang ada di Re:Volution!
+        Lawan musuh-musuh yang ada di Re:Volution ~ The Dream World!
         """
         with open(f'./src/game/enemies/{enemy_tier.value}.json') as file:
             content = file.read()
@@ -1514,7 +1524,7 @@ class Game(commands.Cog):
     @has_registered()
     async def enemies(self, ctx:commands.Context):
         """
-        Lihat daftar musuh yang muncul di Re:Volution!
+        Lihat daftar musuh yang muncul di Re:Volution ~ The Dream World!
         """
         view = EnemyView()
         async with ctx.typing():

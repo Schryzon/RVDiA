@@ -29,6 +29,10 @@
             {
                 "name":"Raykaris",
                 "func":"def-15"
+            },
+            {
+                "name":"Fulguros",
+                "func":"hp-20"
             }
         ]
     },
@@ -48,12 +52,12 @@
         ],
         "skills":[
             {
-                "name":"Kaze no Kokoro",
-                "func":"hp+30"
+                "name":"Fuujin no Ikari",
+                "func":"hp+150"
             },
             {
                 "name":"Yasashisa Kougeki",
-                "func":"dmg+15"
+                "func":"dmg+7"
             },
             {
                 "name":"Bougyo Shinjite",
@@ -62,6 +66,10 @@
             {
                 "name":"Kanashiina Sekai",
                 "func":"hp-30"
+            },
+            {
+                "name":"Ryuukufu",
+                "func":"def-8"
             }
         ]
     },
@@ -91,6 +99,10 @@
             {
                 "name":"Yi... Zai... Qi",
                 "func":"dmg+60"
+            },
+            {
+                "name":"Yuanyuan Lingqi",
+                "func":"hp+230"
             }
         ]
     },
@@ -116,6 +128,14 @@
             {
                 "name":"Bhookamp",
                 "func":"dmg+60"
+            },
+            {
+                "name":"Kshiti Vikaas",
+                "func":"hp+170"
+            },
+            {
+                "name":"Dharati Ka Gussa",
+                "func":"atk+14"
             }
         ]
     },
@@ -140,7 +160,48 @@
             },
             {
                 "name":"Therapeftiko Nero",
-                "func":"hp+50"
+                "func":"hp+300"
+            },
+            {
+                "name":"Aigida Anavalosi",
+                "func":"def+10"
+            },
+            {
+                "name":"Hydrokroustas",
+                "func":"dmg+25"
+            }
+        ]
+    },
+    {
+        "name": "ViRTUE",
+        "desc": "Galaxy Whirlpool MK.2 (The Flame)",
+        "tier": "SUPER ELITE",
+        "avatar": "",
+        "hp": 920,
+        "atk": 68,
+        "def": 40,
+        "agl": 32,
+        "reward": [
+            "exp+1500",
+            "cns+150",
+            "krm+40"
+        ],
+        "skills": [
+            {
+                "name": "Vortex Slash II",
+                "func": "dmg+60"
+            },
+            {
+                "name": "Gravity Pull II",
+                "func": "agl-25"
+            },
+            {
+                "name": "Hydro Healing II",
+                "func": "hp-50"
+            },
+            {
+                "name": "Flames of VORTeX",
+                "func": "agl+12"
             }
         ]
     }

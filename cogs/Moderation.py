@@ -333,14 +333,13 @@ class Moderation(commands.Cog):
         """
         Menghilangkan pesan berdasarkan jumlah yang diinginkan.
         """
-        if ctx.interaction:
-            await ctx.defer()
 
         channel = channel or ctx.channel
         if amount <= 0:
             return await ctx.reply("Aku tidak bisa menghapus `0` pesan!")
-        amount = amount or 5
-        await channel.purge(limit = amount+1 if channel == ctx.channel else amount)
+        await ctx.reply(f"Menghapus **`{amount}`** pesan...")
+        async with ctx.typing:
+            await channel.purge(limit = amount+1 if channel == ctx.channel else amount)
         return await ctx.channel.send(f"Aku telah menghapus {amount} pesan dari {channel.mention}.", delete_after = 5.0)
 
 async def setup(bot):

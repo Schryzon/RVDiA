@@ -113,5 +113,121 @@
                 "func":"hp-30"
             }
         ]
+    },
+    {
+        "name": "JIN-SUCHI",
+        "desc": "Manusia hybrid - Keahlian.",
+        "tier": "HIGH",
+        "avatar": "",
+        "hp": 150,
+        "atk": 40,
+        "def": 20,
+        "agl": 25,
+        "reward": [
+            "exp+60",
+            "cns+25",
+            "krm+10"
+        ],
+        "skills": [
+            {
+                "name": "Precision Shot",
+                "func": "dmg+25"
+            },
+            {
+                "name": "Sniper's Focus",
+                "func": "agl+15"
+            },
+            {
+                "name": "Evasive Maneuver",
+                "func": "agl+10"
+            }
+        ]
+    },
+    {
+        "name": "HIRO-KAZE",
+        "desc": "Manusia hybrid - Keseimbangan.",
+        "tier": "HIGH",
+        "avatar": "",
+        "hp": 120,
+        "atk": 35,
+        "def": 15,
+        "agl": 40,
+        "reward": [
+            "exp+55",
+            "cns+20",
+            "krm+8"
+        ],
+        "skills": [
+            {
+                "name": "Gale Strike",
+                "func": "dmg+30"
+            },
+            {
+                "name": "Windwalk",
+                "func": "agl+20"
+            },
+            {
+                "name": "Tempest Rage",
+                "func": "atk+15"
+            }
+        ]
+    },
+    {
+        "name": "MIKA-DARYA",
+        "desc": "Manusia hybrid - Manipulasi.",
+        "tier": "SUPER HIGH",
+        "avatar": "",
+        "hp": 180,
+        "atk": 50,
+        "def": 25,
+        "agl": 30,
+        "reward": [
+            "exp+70",
+            "cns+30",
+            "krm+12"
+        ],
+        "skills": [
+            {
+                "name": "Umbral Slash",
+                "func": "dmg+40"
+            },
+            {
+                "name": "Dark Shroud",
+                "func": "def+20"
+            },
+            {
+                "name": "Shadowmeld",
+                "func": "agl+10"
+            }
+        ]
+    },
+    {
+        "name": "VORTeX",
+        "desc": "Galaxy Whirlpool MK.1 (The Blue)",
+        "tier": "SUPER HIGH",
+        "avatar": "",
+        "hp": 190,
+        "atk": 50,
+        "def": 30,
+        "agl": 21,
+        "reward": [
+            "exp+70",
+            "cns+30",
+            "krm+12"
+        ],
+        "skills": [
+            {
+                "name": "Vortex Slash I",
+                "func": "dmg+40"
+            },
+            {
+                "name": "Gravity Pull I",
+                "func": "agl-15"
+            },
+            {
+                "name": "Hydro Healing I",
+                "func": "hp-30"
+            }
+        ]
     }
 ]

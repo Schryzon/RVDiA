@@ -168,5 +168,37 @@
                 "func":"atk+10"
             }
         ]
+    },
+    {
+        "name":"LRSF",
+        "desc":"Land of Revolution Special Forces.",
+        "tier":"NORMAL",
+        "avatar":"",
+        "hp":100,
+        "atk":30,
+        "def":17,
+        "agl":23,
+        "reward":[
+            "exp+31",
+            "cns+27"
+        ],
+        "skills":[
+            {
+                "name":"Holographic Barrier",
+                "func":"def+5"
+            },
+            {
+                "name":"Grenade",
+                "func":"dmg+26"
+            },
+            {
+                "name":"Los, Los, Los",
+                "func":"agl+5"
+            },
+            {
+                "name":"Snipe 'em",
+                "func":"dmg+40"
+            }
+        ]
     }
 ]

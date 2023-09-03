@@ -34,8 +34,8 @@ class RVDIA(commands.AutoShardedBot):
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "Late v1.1.5"
-    self.event_mode = True
+    self.__version__ = "v1.1.6"
+    self.event_mode = False
     self.color = 0x86273d
     self.runtime = time() # UNIX float
     self.coin_emoji = "<:rvdia_coin:1121004598962954300>"

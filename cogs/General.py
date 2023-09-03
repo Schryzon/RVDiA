@@ -30,7 +30,7 @@ day_of_week = {
 
 class Regenerate_Answer_Button(View):
     def __init__(self, last_question:str):
-        super().__init__(timeout=180)
+        super().__init__(timeout=None)
         self.last_question = last_question
         vote_me = Button(
             label='Suka RVDiA? Vote!', 
@@ -39,6 +39,11 @@ class Regenerate_Answer_Button(View):
             url='https://top.gg/bot/957471338577166417/vote'
             )
         self.add_item(vote_me)
+
+    async def on_timeout(self) -> None:
+        for item in self.children:
+            item.disabled = True
+        await self.message.edit(view=self)
 
     @button(label="Jawab Ulang", custom_id='regenerate', style=discord.ButtonStyle.blurple, emoji='🔁')
     async def regenerate(self, interaction:discord.Interaction, button:Button):
