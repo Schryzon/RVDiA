@@ -329,16 +329,24 @@ class Moderation(commands.Cog):
         amount = 'jumlah'
     )
     @check_blacklist()
-    async def clear(self, ctx:commands.Context, amount:int, channel:commands.TextChannelConverter = None):
+    async def clear(self, ctx:commands.Context, amount:int, channel:discord.TextChannel = None):
         """
         Menghilangkan pesan berdasarkan jumlah yang diinginkan.
         """
 
         channel = channel or ctx.channel
         if amount <= 0:
-            return await ctx.reply("Aku tidak bisa menghapus `0` pesan!")
-        await ctx.reply(f"Menghapus **`{amount}`** pesan...")
-        async with ctx.typing:
+            return await ctx.reply("Aku tidak bisa menghapus `0` pesan!", ephemeral=True)
+        elif amount >= 100:
+            return await ctx.reply("Aku mempunyai batas untuk menghapus `99` pesan!", ephemeral=True)
+        
+        match channel:
+            case ctx.channel:
+                await ctx.reply(f"Menghapus **`{amount}`** pesan...")
+            case _:
+                await ctx.reply(f"Menghapus **`{amount}`** pesan di {channel.mention}...", delete_after=10.0)
+
+        async with ctx.channel.typing():
             await channel.purge(limit = amount+1 if channel == ctx.channel else amount)
         return await ctx.channel.send(f"Aku telah menghapus {amount} pesan dari {channel.mention}.", delete_after = 5.0)
 
