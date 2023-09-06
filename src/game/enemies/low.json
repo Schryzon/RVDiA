@@ -106,9 +106,9 @@
     },
     {
         "name": "Mudling",
-        "desc": "Makhluk lumpur yang bergerak lamban namun kuat.",
+        "desc": "Makhluk lumpur yang menjelma menjadi manusia.",
         "tier": "SUPER LOW",
-        "avatar": "",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1148814704878297088/20230906_095158.png",
         "hp": 75,
         "atk": 9,
         "def": 12,
@@ -130,9 +130,9 @@
     },
     {
         "name": "Blossomling",
-        "desc": "Makhluk berbentuk bunga dengan serangan penuh racun.",
+        "desc": "Makhluk berbunga dengan serangan penuh racun.",
         "tier": "SUPER LOW",
-        "avatar": "",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1148814703326404748/20230906_095458.png",
         "hp": 60,
         "atk": 11,
         "def": 5,
@@ -151,7 +151,7 @@
                 "func": "def+10"
             },
             {
-                "name": "Photosynthesis",
+                "name": "Photosynthesa Melody",
                 "func": "hp+20"
             }
         ]
@@ -160,7 +160,7 @@
         "name": "Nature Seeker",
         "desc": "Penjelajah alam yang mencari rahasia kehidupan.",
         "tier": "SUPER LOW",
-        "avatar": "",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1148814704458879097/20230906_095251.png",
         "hp": 75,
         "atk": 12,
         "def": 7,
@@ -186,7 +186,7 @@
     },
     {
         "name": "Bubbling Ooze",
-        "desc": "Makhluk kental yang mengancam, mengeluarkan gelembung berbahaya.",
+        "desc": "Makhluk kental, bergelembung dan berbahaya.",
         "tier": "SUPER LOW",
         "avatar": "",
         "hp": 75,

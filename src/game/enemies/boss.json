@@ -1,9 +1,9 @@
 [
     {
         "name":"Schryzon",
-        "desc":"Info tidak tersedia.",
+        "desc":"Entitas tidak diketahui.",
         "tier":"SUPER BOSS",
-        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122069685626736640/20230624_154404.png",
+        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1148819154267287582/20230906.png",
         "hp":1000,
         "atk":80,
         "def":60,
@@ -38,7 +38,7 @@
     },
     {
         "name":"RVDiA",
-        "desc":"Revolution ~ My Dream World",
+        "desc":"Re:Volution ~ My Dream World.",
         "tier":"SUPER BOSS",
         "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1123190763442929835/RVDiA-Profile-Pic.png",
         "hp":999,
@@ -195,9 +195,9 @@
     },
     {
         "name": "VeRiTAS",
-        "desc": "Galaxy Whirlpool MK.3 (The Pure)",
+        "desc": "Galactic Soldier MK.3",
         "tier": "SUPER BOSS",
-        "avatar": "",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1148814706878980187/0-a655e4d6-922a-445e-9cb9-1ea7ae728d2e.png",
         "hp": 970,
         "atk": 72,
         "def": 75,
@@ -217,15 +217,15 @@
                 "func": "agl-27"
             },
             {
-                "name": "Hydro Healing III",
+                "name": "Leuko Healing",
                 "func": "hp-53"
             },
             {
-                "name": "Flames of VORTeX",
+                "name": "Light of ViRTUE",
                 "func": "agl+3"
             },
             {
-                "name": "Endless Revolution",
+                "name": "Endless Evolution",
                 "func": "def-10"
             }
         ]

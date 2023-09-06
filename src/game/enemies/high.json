@@ -203,9 +203,9 @@
     },
     {
         "name": "VORTeX",
-        "desc": "Galaxy Whirlpool MK.1 (The Blue)",
+        "desc": "Galactic Soldier MK.1",
         "tier": "SUPER HIGH",
-        "avatar": "",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1148814705687806032/20230906_095119.png",
         "hp": 190,
         "atk": 50,
         "def": 30,
@@ -225,7 +225,7 @@
                 "func": "agl-15"
             },
             {
-                "name": "Hydro Healing I",
+                "name": "Hydro Healing",
                 "func": "hp-30"
             }
         ]

@@ -174,9 +174,9 @@
     },
     {
         "name": "ViRTUE",
-        "desc": "Galaxy Whirlpool MK.2 (The Flame)",
+        "desc": "Galactic Soldier MK.2",
         "tier": "SUPER ELITE",
-        "avatar": "",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1148814706371481630/20230906_095029.png",
         "hp": 920,
         "atk": 68,
         "def": 40,
@@ -196,7 +196,7 @@
                 "func": "agl-25"
             },
             {
-                "name": "Hydro Healing II",
+                "name": "Pyro Healing",
                 "func": "hp-50"
             },
             {
