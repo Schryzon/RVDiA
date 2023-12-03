@@ -155,7 +155,7 @@ class GameInstance():
             user_2_def += random.randint(8, 15)
         if dealer_id != 1 and self.ctx.command.name == "battle":
             if user_2_max_hp > 500:
-                scaling = user_2_max_hp/100
+                scaling = user_2_max_hp/90
             elif user_2_max_hp > 200:
                 scaling = user_2_max_hp/10
             else:
@@ -1287,7 +1287,8 @@ class Game(commands.Cog):
             'defense':7,
             'agility':8,
             'items':[],
-            'equipments':[]         # Push it to here also
+            'equipments':[],        # Push it to here also
+            'guild':None
         })
         await ctx.reply(f'Akunmu sudah didaftarkan!\nSelamat datang di Re:Volution, **`{name}`**!')
         await asyncio.sleep(0.7)

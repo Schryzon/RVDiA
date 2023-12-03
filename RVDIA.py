@@ -9,6 +9,12 @@ Licensed under the MIT LICENSE.
         Making public clones of her under the same name is a big no no, okay sweetie?
 """
 
+"""
+TO DO:
+-Migrate to OpenAI v1.3.7
+-Add Guild system
+"""
+
 import asyncio
 import discord
 import os
@@ -34,7 +40,7 @@ class RVDIA(commands.AutoShardedBot):
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "v1.1.6"
+    self.__version__ = "Early v1.1.7"
     self.event_mode = False
     self.color = 0x86273d
     self.runtime = time() # UNIX float
