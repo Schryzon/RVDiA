@@ -29,7 +29,7 @@ from discord.ext import commands, tasks
 from random import choice as rand
 from contextlib import suppress
 from datetime import datetime
-from scripts.main import connectdb, titlecase, check_vote
+from scripts.main import connectdb, titlecase, check_vote, AIClient
 load_dotenv('./secrets.env') # Loads the .env file from python-dotenv pack
 
 class RVDIA(commands.AutoShardedBot):
@@ -298,12 +298,11 @@ async def on_message(msg:discord.Message):
               embed_desc = message_embed.description
               embed_title = message_embed.title
               author = message_embed.author.name
-              openai.api_key = os.getenv('openaikey')
               message = msg.content
               currentTime = datetime.now()
               date = currentTime.strftime("%d/%m/%Y")
               hour = currentTime.strftime("%H:%M:%S")
-              result = await openai.ChatCompletion.acreate(
+              result = await AIClient.chat.completions.create(
                   model="gpt-3.5-turbo",
                   temperature=1.2,
                   messages=[
@@ -321,7 +320,7 @@ async def on_message(msg:discord.Message):
                 color=msg.author.color, 
                 timestamp=msg.created_at
                 )
-              embed.description = result['choices'][0]['message']['content']
+              embed.description = result.choices[0].message.content
               embed.set_author(name=msg.author)
               embed.set_footer(text='Jika ada yang ingin ditanyakan, bisa langsung direply!')
               regenerate_button = Regenerate_Answer_Button(message)

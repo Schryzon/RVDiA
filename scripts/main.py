@@ -1,3 +1,8 @@
+"""
+A script file.
+Contains things that may be needed for multiple files.
+"""
+
 import os
 import pymongo
 import discord
@@ -8,8 +13,13 @@ from discord.ext import commands
 from dotenv import load_dotenv
 from cogs.Handler import NotInGTechServer, NotGTechMember, NotGTechAdmin, NoProfilePicture, Blacklisted, NoEventAvailable, NotVoted
 from cogs.Handler import NoGameAccount
-load_dotenv('./.gitignore/secrets.env')
+from openai import AsyncOpenAI
+load_dotenv('./secrets.env')
 
+# New in v1.x
+AIClient = AsyncOpenAI(
+   api_key=os.getenv('openaikey')
+)
 
 class Url_Buttons(View):
   def __init__(self):

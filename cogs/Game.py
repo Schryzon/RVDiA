@@ -102,6 +102,10 @@ class GameInstance():
         self.ai_skill_usage = 0
         self.p1_skill_limit = 0
         self.p2_skill_limit = 0
+        try:
+            self.enemy_avatar = self.user2['avatar'] or getenv('defaultenemy')
+        except:
+            pass
 
     async def gather_data(self):
         def calc_skill_limit(level:int):
@@ -464,7 +468,7 @@ class GameInstance():
                         )
                         embed.set_author(name='Info Musuh:')
                         try:
-                            embed.set_thumbnail(url = self.user2['avatar'])
+                            embed.set_thumbnail(url = self.enemy_avatar)
                         except:
                             pass
 
@@ -567,7 +571,7 @@ class GameInstance():
                         embed = discord.Embed(title=f'💥{self.user2["name"]} Menyerang!', color=0xff0000)
                         embed.description = f"**`{damage}` Damage!**\nHP <@{self.user1.id}> tersisa `{self.user1_hp}` HP!"
                         try:
-                            embed.set_thumbnail(url = self.user2['avatar'])
+                            embed.set_thumbnail(url = self.enemy_avatar)
                         except:
                             pass
                         await self.ctx.channel.send(embed=embed)
@@ -577,7 +581,7 @@ class GameInstance():
                         embed = discord.Embed(title=f'🛡️{self.user2["name"]} Melindungi Diri!', color=0xff0000)
                         embed.description = f"**Defense bertambah untuk serangan selanjutnya!**"
                         try:
-                            embed.set_thumbnail(url = self.user2['avatar'])
+                            embed.set_thumbnail(url = self.enemy_avatar)
                         except:
                             pass
                         await self.ctx.channel.send(embed=embed)
@@ -590,7 +594,7 @@ class GameInstance():
                         embed.description = f"**Sayang sekali!\nCoba lagi nanti!**"
                         embed.set_footer(text="Tidak ada hadiah ketika musuh kabur!")
                         try:
-                            embed.set_thumbnail(url = self.user2['avatar'])
+                            embed.set_thumbnail(url = self.enemy_avatar)
                         except:
                             pass
                         return await self.ctx.channel.send(embed=embed)
@@ -648,7 +652,7 @@ class GameInstance():
                 embed.description = f"{self.user2['name']} menang dengan `{self.user2_hp}` HP tersisa!"
                 embed.set_footer(text='Tip: Gunakan item dan skill spesial yang kamu miliki!')
                 try:
-                    embed.set_thumbnail(url = self.user2['avatar'])
+                    embed.set_thumbnail(url = self.enemy_avatar)
                 except:
                     pass
                 await self.ctx.channel.send(embed=embed)

@@ -9,14 +9,14 @@ from datetime import datetime
 from sys import version as pyver
 from os import getenv
 from cogs.Event import Event
-from scripts.main import heading, Url_Buttons, has_pfp
 from discord import app_commands
 from discord.ext import commands
-from discord.ui import View, Button, button
-from scripts.main import event_available, titlecase, check_blacklist, check_vote
 from time import time
 from PIL import Image
 from io import BytesIO
+from discord.ui import View, Button, button
+from scripts.main import heading, Url_Buttons, has_pfp, AIClient
+from scripts.main import event_available, titlecase, check_blacklist, check_vote
     
 day_of_week = {
     '1':"Senin",
@@ -450,8 +450,7 @@ class Utilities(commands.Cog):
             currentTime = datetime.now()
             date = currentTime.strftime("%d/%m/%Y")
             hour = currentTime.strftime("%H:%M:%S")
-            openai.api_key = os.getenv('openaikey')
-            result = await openai.ChatCompletion.acreate(
+            result = await AIClient.chat.completions.create(
                 model="gpt-3.5-turbo",
                 temperature=1.2,
                 messages=[
@@ -469,7 +468,7 @@ class Utilities(commands.Cog):
                 color=ctx.author.color, 
                 timestamp=ctx.message.created_at
                 )
-            embed.description = result['choices'][0]['message']['content'] # Might improve for >4096 chrs
+            embed.description = result.choices[0].message.content # Might improve for >4096 chrs
             embed.set_author(name=ctx.author)
             embed.set_footer(text='Jika ada yang ingin ditanyakan, bisa langsung direply!')
             regenerate_button = Regenerate_Answer_Button(message)
@@ -488,14 +487,14 @@ class Utilities(commands.Cog):
         """
         async with ctx.typing():
             start=time()
-            openai.api_key = os.getenv('openaikey')
-            result = await openai.Image.acreate(
+            result = await AIClient.images.generate(
+                model='dall-e-3',
                 prompt=prompt,
                 size='1024x1024',
                 response_format='b64_json',
                 n=1
             )
-            b64_data = result['data'][0]['b64_json']; end=time() # Finished generating and gained data
+            b64_data = result.data[0].b64_json; end=time() # Finished generating and gained data
             decoded_data = base64.b64decode(b64_data)
             image=open('generated.png', 'wb')
             image.write(decoded_data)
@@ -550,15 +549,15 @@ class Utilities(commands.Cog):
                 selected_image = f'{attachment.filename[:-3]}.png' if attachment.filename.endswith('.jpg') else f'{attachment.filename[:-4]}.png'
 
             start=time()
-            openai.api_key = os.getenv('openaikey')
-            result = await openai.Image.acreate_variation(
+            result = await AIClient.images.create_variation(
                 image = open(selected_image, 'rb'),
+                model='dall-e-2',
                 size='1024x1024',
                 response_format = 'b64_json',
                 n=1
             )
             os.remove(f'./{selected_image}') # No longer need file
-            b64_data = result['data'][0]['b64_json']; end=time()
+            b64_data = result.data[0].b64_json; end=time()
             decoded_data = base64.b64decode(b64_data)
             image=open('variation.png', 'wb')
             image.write(decoded_data)
