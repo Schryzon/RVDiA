@@ -54,7 +54,7 @@ class Regenerate_Answer_Button(View):
         date = currentTime.strftime("%d/%m/%Y")
         hour = currentTime.strftime("%H:%M:%S")
         openai.api_key = os.getenv('openaikey')
-        result = await openai.ChatCompletion.acreate(
+        result = await AIClient.chat.completions.create(
             model="gpt-3.5-turbo",
             temperature=1.2,
             messages=[
@@ -72,7 +72,7 @@ class Regenerate_Answer_Button(View):
             color=interaction.user.color, 
             timestamp=interaction.message.created_at
             )
-        embed.description = result['choices'][0]['message']['content'] # Might improve for >4096 chrs
+        embed.description = result.choices[0].message.content # Might improve for >4096 chrs
         embed.set_author(name=interaction.user)
         embed.set_footer(text='Jika ada yang ingin ditanyakan, bisa langsung direply!')
         return await interaction.message.edit(embed=embed, view=self)

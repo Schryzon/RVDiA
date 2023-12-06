@@ -158,7 +158,7 @@
     },
     {
         "name": "Nature Seeker",
-        "desc": "Penjelajah alam yang mencari rahasia kehidupan.",
+        "desc": "Penjelajah alam, pencari rahasia kehidupan.",
         "tier": "SUPER LOW",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1148814704458879097/20230906_095251.png",
         "hp": 75,
@@ -185,10 +185,10 @@
         ]
     },
     {
-        "name": "Bubbling Ooze",
-        "desc": "Makhluk kental, bergelembung dan berbahaya.",
+        "name": "Bubbles",
+        "desc": "Makhluk bergelembung dan berbahaya.",
         "tier": "SUPER LOW",
-        "avatar": null,
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1181926946981023804/0-7b4f479d-ad40-4e94-8e34-90710516db33.png",
         "hp": 75,
         "atk": 12,
         "def": 8,

@@ -33,6 +33,10 @@
             {
                 "name":"Your Life is Mine",
                 "func":"hp-60"
+            },
+            {
+                "name":"Die, Hero",
+                "func":"dmg+9999"
             }
         ]
     },
@@ -66,6 +70,10 @@
             {
                 "name":"Slowmotion",
                 "func":"agl-10"
+            },
+            {
+                "name":"I'm Sorry",
+                "func":"dmg+100"
             }
         ]
     },
@@ -124,6 +132,10 @@
             {
                 "name":"Speed Upgrade",
                 "func":"agl+17"
+            },
+            {
+                "name":"Pandora Paradox",
+                "func":"atk-20"
             }
         ]
     },

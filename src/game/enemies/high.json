@@ -118,7 +118,7 @@
         "name": "JIN-SUCHI",
         "desc": "Manusia hybrid - Keahlian.",
         "tier": "HIGH",
-        "avatar": null,
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1181926945219420261/0-2ec4abf1-da59-48ca-990b-b53d6713a23b.png",
         "hp": 150,
         "atk": 40,
         "def": 20,
@@ -134,11 +134,11 @@
                 "func": "dmg+25"
             },
             {
-                "name": "Sniper's Focus",
+                "name": "Mage's Focus",
                 "func": "agl+15"
             },
             {
-                "name": "Evasive Maneuver",
+                "name": "Evasion",
                 "func": "agl+10"
             }
         ]
@@ -147,7 +147,7 @@
         "name": "HIRO-KAZE",
         "desc": "Manusia hybrid - Keseimbangan.",
         "tier": "HIGH",
-        "avatar": null,
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1181926944527355986/0-c599fa60-70f1-42af-9aad-7667a4c38969.png",
         "hp": 120,
         "atk": 35,
         "def": 15,
@@ -176,7 +176,7 @@
         "name": "MIKA-DARYA",
         "desc": "Manusia hybrid - Manipulasi.",
         "tier": "SUPER HIGH",
-        "avatar": null,
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1181926945890521138/0-e92081e3-2efb-43b3-bdf0-b03b84a6e49a.png",
         "hp": 180,
         "atk": 50,
         "def": 25,

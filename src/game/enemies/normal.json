@@ -25,6 +25,10 @@
             {
                 "name":"Slowmotion",
                 "func":"agl-7"
+            },
+            {
+                "name":"Unwavering Speed",
+                "func":"agl+5"
             }
         ]
     },
@@ -58,6 +62,10 @@
             {
                 "name":"F.A.V",
                 "func":"agl+4"
+            },
+            {
+                "name":"I.C.B.M",
+                "func":"dmg+25"
             }
         ]
     },
@@ -87,6 +95,10 @@
             {
                 "name":"Evil Laugh",
                 "func":"def-5"
+            },
+            {
+                "name":"Maniac Stare",
+                "func":"agl-10"
             }
         ]
     },
@@ -141,6 +153,10 @@
             {
                 "name":"Keep Moving",
                 "func":"agl+9"
+            },
+            {
+                "name":"Relentless Punch",
+                "func":"dmg+30"
             }
         ]
     },
