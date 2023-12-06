@@ -1,7 +1,8 @@
 """
-The most STRESSFUL file I've ever made
-Like, what the hell have I typed all this time?!
-Do all of these even make sense???
+Commands and features for her game.
+Re:Volution ~ The Dream World.
+An unnecessarily large file.
+It doesn't need to be here, but it is.
 """
 
 import asyncio
@@ -17,7 +18,7 @@ from discord.ui import View, Button, button
 from discord import app_commands
 from discord.ext import commands
 from scripts.main import connectdb, has_registered, check_blacklist
-from scripts.game import level_up, send_level_up_msg, split_reward_string, give_rewards
+from scripts.game import level_up, send_level_up_msg, split_reward_string, give_rewards, default_data, check_compatible
 
 class FightView(View):
     def __init__(self):
@@ -1277,23 +1278,24 @@ class Game(commands.Cog):
         name=name or ctx.author.name
         database = await connectdb('Game')
         data = await database.find_one({'_id':ctx.author.id})
-        if data: return await ctx.reply('Kamu sudah memiliki akun game!')
-        await database.insert_one({
+        expected_fields = set(default_data.keys())
+        if data:
+            unexpected_fields = set(data.keys()) - expected_fields
+            for field in unexpected_fields:
+                del data[field] # Remove useless keys
+
+            for key, value in default_data.items():
+                data.setdefault(key, value)
+            await database.replace_one({'_id':ctx.author.id}, data)
+            return await ctx.reply('Akunmu sudah diperbarui!')
+        
+        new_data = {
             '_id':ctx.author.id,
             'name':name,
-            'level':1,
-            'exp':0,
-            'next_exp':50,
-            'last_login':datetime.datetime.now(),
-            'coins':100,
-            'karma':10,             # Luck points
-            'attack':10,
-            'defense':7,
-            'agility':8,
-            'items':[],
-            'equipments':[],        # Push it to here also
-            'guild':None
-        })
+            **default_data
+        }
+
+        await database.insert_one(new_data)
         await ctx.reply(f'Akunmu sudah didaftarkan!\nSelamat datang di Re:Volution, **`{name}`**!')
         await asyncio.sleep(0.7)
         await self.account(ctx)
@@ -1313,6 +1315,7 @@ class Game(commands.Cog):
 
     @game.command(aliases=['login'], description='Dapatkan bonus login harian!')
     @has_registered()
+    @check_compatible()
     @check_blacklist()
     async def daily(self, ctx:commands.Context):
         """
@@ -1355,6 +1358,7 @@ class Game(commands.Cog):
     @app_commands.describe(user='Pengguna mana yang ingin dilihat akunnya?')
     @app_commands.rename(user='pengguna')
     @has_registered()
+    @check_compatible()
     @check_blacklist()
     async def account(self, ctx:commands.Context, *, user:discord.User=None):
         """
@@ -1425,6 +1429,7 @@ class Game(commands.Cog):
 
     @game.command(description="Beli item atau perlengkapan perang!")
     @has_registered()
+    @check_compatible()
     @check_blacklist()
     async def shop(self, ctx:commands.Context):
         """
@@ -1475,6 +1480,7 @@ class Game(commands.Cog):
     @app_commands.describe(member='Siapa yang ingin kamu lawan?')
     @app_commands.rename(member='pengguna')
     @has_registered()
+    @check_compatible()
     @check_blacklist()
     async def fight(self, ctx:commands.Context, *, member:discord.Member):
         """
@@ -1499,6 +1505,7 @@ class Game(commands.Cog):
         app_commands.Choice(name='Low (Rendah)', value='low')
     ])
     @has_registered()
+    @check_compatible()
     @check_blacklist()
     async def battle(self, ctx:commands.Context, enemy_tier:app_commands.Choice[str], enemy_name:str=None): # Choice[value_type]
         """
@@ -1542,6 +1549,7 @@ class Game(commands.Cog):
     @app_commands.rename(reason = "alasan")
     @app_commands.rename(old_acc = "akun_lama")
     @has_registered()
+    @check_compatible()
     @check_blacklist()
     async def transfer(self, ctx:commands.Context, old_acc:discord.User, *, reason:str):
         """
@@ -1590,7 +1598,6 @@ class Game(commands.Cog):
         app_commands.Choice(name="NORMAL", value='NORMAL'),
         app_commands.Choice(name='EASY', value='EASY')
     ])
-    @has_registered()
     @check_blacklist()
     async def guess(self, ctx:commands.Context, level:app_commands.Choice[str]):
         """
@@ -1607,6 +1614,7 @@ class Game(commands.Cog):
     ])
     @app_commands.rename(type = 'jenis')
     @has_registered()
+    @check_compatible()
     @check_blacklist()
     async def use(self, ctx:commands.Context, type:app_commands.Choice[str]):
         """

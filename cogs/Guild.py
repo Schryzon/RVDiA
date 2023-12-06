@@ -21,6 +21,10 @@ class Guild(commands.Cog):
     async def guild(self, ctx:commands.Context) -> None:
         return
     
+    @guild.command()
+    @check_blacklist()
+    async def create(self, ctx:commands.Context):
+        pass
     
 
 async def setup(bot):

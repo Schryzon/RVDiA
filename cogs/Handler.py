@@ -40,6 +40,10 @@ class NoGameAccount(commands.CommandError):
   """Raised when user hasn't created a game account yet"""
   pass
 
+class AccountIncompatible(commands.CommandError):
+  """Raised when a Re:Volution account doesn't match the format"""
+  pass
+
 class Support_Button(View):
         def __init__(self):
             super().__init__(timeout=None)
@@ -195,6 +199,9 @@ class Error(commands.Cog):
     
     elif "The server is overloaded or not ready yet." in str(error) or "Bad gateway." in str(error):
       await ctx.reply("Sepertinya ada yang bermasalah dengan otakku tadi.\nTolong coba jalankan ulang command ini lagi!")
+
+    elif "User's account is incompatible!" in str(error):
+      await ctx.reply("Sepertinya akunmu tidak sesuai dengan versi terbaru Re:Volution!\nJalankan **`/game register`** untuk mengupdate akunmu!")
 
     # If all else fails (get it?)
     else:
