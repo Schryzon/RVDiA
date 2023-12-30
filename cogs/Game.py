@@ -1278,8 +1278,8 @@ class Game(commands.Cog):
         name=name or ctx.author.name
         database = await connectdb('Game')
         data = await database.find_one({'_id':ctx.author.id})
-        expected_fields = set(default_data.keys())
         if data:
+            expected_fields = set(default_data.keys())
             unexpected_fields = set(data.keys()) - expected_fields
             for field in unexpected_fields:
                 del data[field] # Remove useless keys
@@ -1290,9 +1290,9 @@ class Game(commands.Cog):
             return await ctx.reply('Akunmu sudah diperbarui!')
         
         new_data = {
+            **default_data,
             '_id':ctx.author.id,
-            'name':name,
-            **default_data
+            'name':name
         }
 
         await database.insert_one(new_data)
