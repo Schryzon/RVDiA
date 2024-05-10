@@ -7,7 +7,9 @@ Used to detect RVDIA's status
 import discord
 import random
 from os import getenv
+from dotenv import load_dotenv
 from discord.ext import commands
+load_dotenv('./secrets.env')
 
 xlv = commands.Bot(command_prefix="x-",
                    help_command=None,
@@ -70,4 +72,4 @@ async def on_member_remove(user:discord.Member):
     else: return
 
 
-xlv.run(getenv('xlvtoken'))
+xlv.run(token=str(getenv('xlvtoken')))
