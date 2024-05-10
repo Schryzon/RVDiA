@@ -351,7 +351,7 @@ class Utilities(commands.Cog):
         location = 'Lokasi mana yang ingin diketahui cuacanya?'
     )
     @check_blacklist()
-    async def weather(self, ctx, *, location:str):
+    async def weather(self, ctx:commands.Context, *, location:str):
         """
         Lihat info tentang keadaan cuaca di suatu kota atau daerah!
         """
@@ -387,7 +387,7 @@ class Utilities(commands.Cog):
                     name="Sunset",
                     value=f"<t:{result['sys']['sunset']}:R>"
                 )
-                embed.set_footer(text=f"{ctx.author}", icon_url=ctx.author.avatar.url)
+                embed.set_footer(text=f"{ctx.author}", icon_url=ctx.author.display_avatar.url)
                 await ctx.send(embed=embed)
 
             except(IndexError):
@@ -479,7 +479,7 @@ class Utilities(commands.Cog):
             description = 'Ciptakan sebuah karya seni!'
         )
     @app_commands.describe(prompt='Apa yang ingin diciptakan?')
-    @commands.cooldown(type=commands.BucketType.user, per=2, rate=1)
+    @commands.cooldown(type=commands.BucketType.default, per=60, rate=4)
     @check_blacklist()
     async def generate(self, ctx:commands.Context, *, prompt:str):
         """
@@ -529,7 +529,7 @@ class Utilities(commands.Cog):
         description='Ciptakan variasi dari gambar yang diberikan!'
         )
     @app_commands.describe(attachment='Lampirkan gambar!')
-    @commands.cooldown(type=commands.BucketType.user, per=2, rate=1)
+    @commands.cooldown(type=commands.BucketType.default, per=60, rate=4)
     @check_blacklist()
     async def variation(self, ctx:commands.Context, attachment:discord.Attachment):
         """

@@ -10,9 +10,7 @@ Licensed under the MIT LICENSE.
 """
 
 """
-TO DO:
--Migrate to OpenAI v1.3.7
--Add Guild system
+It's finished...?
 """
 
 import asyncio
@@ -40,7 +38,7 @@ class RVDIA(commands.AutoShardedBot):
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "Early v1.1.7"
+    self.__version__ = "Endless v1.1.7"
     self.event_mode = False
     self.color = 0x86273d
     self.runtime = time() # UNIX float
@@ -115,7 +113,7 @@ async def change_status():
     users += guilds.member_count -1
   user_count_status = f'{users} users'
   all_status=['in my room', 'in G-Tech Server', '"How to be cute"', 'you', 'G-Tech members',
-                  'Ephotech 2023', user_count_status, f'{rvdia.__version__}',
+                  'Ephotech 2024', user_count_status, f'{rvdia.__version__}',
                   '/help', 'in my dream world', 'Add me!', is_event, '~♪',
                   'Re:Volution'
                 ]
