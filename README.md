@@ -1,7 +1,7 @@
 # RVDiA
 ## "Revolusioner, Virtual, Independen."
 <div align="center">
-  <img src="https://repository-images.githubusercontent.com/610636239/51177a45-e951-42e4-bb6d-128c0bb39d5f" alt="RVDiA's Banner">
+  <img src="https://repository-images.githubusercontent.com/610636239/51177a45-e951-42e4-bb6d-128c0bb39d5f" alt="RVDiA's Banner" width="65%" height="65%">
 </div>
 
 <p align="center">
