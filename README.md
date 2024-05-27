@@ -1,8 +1,8 @@
 # RVDiA
 ## "Revolusioner, Virtual, Independen."
-<p align="center">
-  <img src="https://cdn.discordapp.com/attachments/978258193710985246/1123190763442929835/RVDiA-Profile-Pic.png" alt="RVDiA's Profile Picture">
-</p>
+<div align="center">
+  <img src="https://repository-images.githubusercontent.com/610636239/51177a45-e951-42e4-bb6d-128c0bb39d5f" alt="RVDiA's Banner">
+</div>
 
 <p align="center">
   <a href="https://discord.com/api/oauth2/authorize?client_id=957471338577166417&permissions=1514446056561&scope=bot%20applications.commands">
