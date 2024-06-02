@@ -18,6 +18,7 @@ import discord
 import os
 import openai
 import aiohttp
+import logging
 from time import time
 from dotenv import load_dotenv
 from pkgutil import iter_modules
@@ -73,7 +74,7 @@ cogs_list = [cogs.name for cogs in iter_modules(['cogs'], prefix='cogs.')] # ite
 
 @rvdia.event
 async def on_connect():
-    print("RVDiA has connected.")
+    logging.warning("RVDiA has connected.")
 
 @rvdia.event
 async def on_ready():
@@ -84,22 +85,22 @@ async def on_ready():
     for cog in cogs_list:
       if not cog == 'cogs.__init__':
           await rvdia.load_extension(cog)
-    print('Internal cogs loaded!')
+    logging.info('Internal cogs loaded!')
     
     if not rvdia.synced:
       synced_commands = await rvdia.tree.sync() # Global slash commands sync, also returns a list of commands.
       await asyncio.sleep(1.5) # Avoid rate limit
       await rvdia.tree.sync(guild=discord.Object(997500206511833128)) # Wonder if it fixes with this??
       rvdia.synced = [True, len(synced_commands)]
-      print('Slash Commands up for syncing!')
+      logging.info('Slash Commands synced to global!')
 
     if not change_status.is_running():
       change_status.start()
-      print('Change status starting!')
+      logging.info('change_status() starting!')
 
     update_guild_status.start()
 
-    print("RVDiA is ready.")
+    logging.warning("RVDiA is ready.")
 
 
 @tasks.loop(minutes=5)
@@ -115,7 +116,7 @@ async def change_status():
   all_status=['in my room', 'in G-Tech Server', '"How to be cute"', 'you', 'G-Tech members',
                   'Ephotech 2024', user_count_status, f'{rvdia.__version__}',
                   '/help', 'in my dream world', 'Add me!', is_event, '~♪',
-                  'Re:Volution'
+                  'Re:Volution', 'Now on WhatsApp!'
                 ]
   status = rand(all_status)
   # Just count, I'm trying to save space!
@@ -142,10 +143,10 @@ async def update_guild_status():
               'server_count':len(rvdia.guilds),
               'shard_count':rvdia.shard_count
           })
-          print(f'Posted server updates to Top.gg!')
+          logging.info(f'Posted server updates to Top.gg!')
 
     except Exception as error:
-       print(f'Error sending server count update!\n{error.__class__.__name__}: {error}')
+       logging.warning(f'Error sending server count update!\n{error.__class__.__name__}: {error}')
 
 @rvdia.command(aliases = ['on', 'enable'], hidden=True)
 @commands.is_owner()
@@ -215,7 +216,7 @@ async def restart(ctx:commands.Context): # In case for timeout
    await asyncio.sleep(2)
    rvdia.run(token=os.getenv('token'))
    await rvdia.wait_until_ready()
-   await ctx.channel.send('RVDIA has restarted!')
+   logging.warning('RVDIA has been remotely restarted!')
 
 @rvdia.command(hidden=True)
 @commands.is_owner()

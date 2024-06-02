@@ -370,7 +370,7 @@ class Utilities(commands.Cog):
                         name=f"Suhu ({temp['temp']}°C)",
                         value = 
                         f"**Terasa seperti:** ``{temp['feels_like']}°C``\n**Minimum:** ``{temp['temp_min']}°C``\n**Maksimum:** ``{temp['temp_max']}°C``\n"+
-                        f"**Tekanan Atmosfir:** ``{temp['pressure']} hPa``\n**Kelembaban:** ``{temp['humidity']}%``\n**Persentase Awan:** ``{result['clouds']['all']}%``",
+                        f"**Tekanan Atmosfer:** ``{temp['pressure']} hPa``\n**Kelembaban:** ``{temp['humidity']}%``\n**Persentase Awan:** ``{result['clouds']['all']}%``",
                         inline=False
                         )
                 wind = result['wind']
@@ -488,7 +488,7 @@ class Utilities(commands.Cog):
         async with ctx.typing():
             start=time()
             result = await AIClient.images.generate(
-                model='dall-e-3',
+                model='dall-e-2',
                 prompt=prompt,
                 size='1024x1024',
                 response_format='b64_json',
@@ -590,14 +590,14 @@ class Utilities(commands.Cog):
         try:
             await validate_hex(hex)
         except: # Malas
-            return await ctx.reply(f"`{hex}` bukan merupakan kode hexadecimal yang valid!", ephemeral=True)
+            return await ctx.reply(f"`{hex}` bukan merupakan kode heksadesimal yang valid!", ephemeral=True)
         
         hex_code = int(hex, 16)
         red = (hex_code >> 16) & 0xff # Bitwise right shift
         green = (hex_code >> 8) & 0xff
         blue = hex_code & 0xff
         async with aiohttp.ClientSession() as session:
-            async with session.get(f'https://some-random-api.com/canvas/misc/colorviewer?hex={hex}') as data:
+            async with session.get(f'https://singlecolorimage.com/get/{hex}/500x500') as data:
                 image = BytesIO(await data.read())
                 await session.close()
                 await ctx.reply(content=f"Hex: #{hex.upper()}\nRGB: ({red}, {green}, {blue})", file=discord.File(image, f'{hex.upper()}.png'))
@@ -615,11 +615,8 @@ class Utilities(commands.Cog):
         rgb = [red, green, blue]
         if any(color > 255 for color in rgb):
             return await ctx.reply("Salah satu nilai dari warna RGB melebihi 255!\nPastikan nilai RGB valid!", ephemeral=True)
-        async with aiohttp.ClientSession() as session:
-            initial_connection = await session.get(f'https://some-random-api.com/canvas/misc/hex?rgb={red},{green},{blue}')
-            data = await initial_connection.json()
-            hex_string = data['hex'].split('#')[1]
-        await self.hex(ctx, hex_string) # Cheat
+        hex_value = '{:02x}{:02x}{:02x}'.format(red, green, blue)
+        await self.hex(ctx, hex_value) # Cheat
 
 class Support(commands.GroupCog, group_name='support'):
     """

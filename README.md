@@ -1,5 +1,3 @@
-# RVDiA
-## "Revolusioner, Virtual, Independen."
 <div align="center">
   <img src="https://repository-images.githubusercontent.com/610636239/51177a45-e951-42e4-bb6d-128c0bb39d5f" alt="RVDiA's Banner" width="65%" height="65%">
 </div>
@@ -16,32 +14,38 @@
   </a>
 </p>
 
-Revolutionary Virtual Discord Assistant (RVDiA) adalah sebuah **Indonesian-oriented Multipurpose Discord Bot** (Robot Discord Multifungsi berbahasa Indonesia).
+# RVDiA
+## "Revolusioner, Virtual, Independen."
+Revolutionary Virtual Discord Assistant (RVDiA) is an **Indonesian-oriented Multipurpose Discord Bot**.
 
-## Apa yang Spesial dari Bot ini?
-Bot ini menggunakan Bahasa Indonesia dan memiliki command khusus untuk anggota-anggota club G-Tech Re'sman, serta memiliki fitur utilitas yang melimpah dan sistem game RPG (roleplay game) tersendiri dengan event-event menarik.
+## What's Special About This Bot?
+This bot is in Indonesian and has special commands for members of the G-Tech Re'sman club. It also offers a variety of utilities and its own RPG (role-playing game) system with exciting events.
 
-## Mau Coba Utak-atik Sendiri?
-1. Clone repo ini atau download release terbaru dari tags;
-2. Dapatkan token Discord bot & Top.gg;
-3. Dapatkan MongoDB URI;
-4. Dapatkan OpenWeather API key dan OpenAI key
+## Want to Tinker with It Yourself?
+1. Clone this repo or download the latest release from tags;
+2. Get a Discord bot token & Top.gg token;
+3. Get a MongoDB URI;
+4. Get an OpenWeather API key and an OpenAI key.
+* There might be more necessities.
 
-(Untuk format `.env`, bisa dilihat di `secrets.env.example` ya! Jangan lupa untuk selalu menjaga keamanan bot kalian!)
+(For the `.env` format, check out `secrets.env.example`. Remember to keep your bot secure!)
 
-## Informasi Tambahan
-Proyek ini __hanya untuk sekedar hobi__ dan untuk meningkatkan kemampuan programming saya dalam hal virtual bots.
+## Additional Information
+This project is __just for fun__ and to improve my programming skills regarding virtual bots and web apps.
 
-Saat ini RVDiA, dihost dengan menggunakan DigitalOcean. Jadi, jika kalian ingin menjalankan botnya saya sarankan untuk menggunakan service DigitalOcean. Tetapi, jika kalian hanya ingin sekedar menggunakan botnya secara lokal melalui komputer pribadi juga tidak masalah.
+Currently, RVDiA is hosted using DigitalOcean. So, if you want to run bot, I recommend using DigitalOcean's services. But, if you just want to run the bot locally on your personal computer, that's no problem.
 
-`python RVDIA.py` untuk menjalankan botnya.
+Run `python RVDIA.py` to start the bot.
 
-Join [CyroN Central server](https://discord.gg/QqWCnk6zxw) di Discord dan hubungi saya (Schryzon) jika ada masalah, pertanyaan, atau ingin berkolaborasi dalam pengembangan RVDiA.
+If you want, you can also run `python Xelvie.py`to scout for status changes on the bot.
+
+Join the [CyroN Central server](https://discord.gg/QqWCnk6zxw) on Discord and contact me (Schryzon) if you have any issues, questions, or want to collaborate on RVDiA's development.
 
 ### Credits
-Terima kasih terutama untuk Riverdia (atas inspirasi nama bot), iMaze, Mouchi, Dez, Zenchew, Ismita, Pockii, Kyuu, Kazama, Bcntt, Nateflakes, nathawiguna, opensourze, Shiruto, Satya Yoga dan masih banyak lagi karena telah membantu saya pada proyek-proyek sebelumnya!
+Special thanks to Riverdia (for inspiring the bot's name), iMaze, Mouchi, Dez, Zenchew, Ismita, Pockii, Kyuu, Kazama, Bcntt, Nateflakes, nathawiguna, opensourze, Shiruto, Satya Yoga, and many more for helping me with previous projects!
 
 **Made with ❤️ and dedication, Jayananda**
 
 Farewell, Yuyuko, Pandora, and Historia. You will be missed.
+
 `Verified: 01/08/2023`
