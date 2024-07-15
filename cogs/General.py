@@ -5,6 +5,7 @@ import discord
 import openai
 import requests
 import aiohttp
+import google.generativeai as genai
 from datetime import datetime
 from sys import version as pyver
 from os import getenv
@@ -53,16 +54,16 @@ class Regenerate_Answer_Button(View):
         currentTime = datetime.now()
         date = currentTime.strftime("%d/%m/%Y")
         hour = currentTime.strftime("%H:%M:%S")
-        openai.api_key = os.getenv('openaikey')
-        result = await AIClient.chat.completions.create(
-            model="gpt-3.5-turbo",
-            temperature=1.2,
-            messages=[
-            {"role":'system', 'content':getenv('rolesys')+f' You are currently talking to {interaction.user}'},
-            {"role":'assistant', 'content':f"The current date is {date} at {hour} UTC+8"},
-            {"role": "user", "content": message}
-            ]
+        genai.configure(api_key=os.getenv("googlekey"))
+        model1 = genai.GenerativeModel(
+            'gemini-1.5-flash',
+            system_instruction=getenv('rolesys') + f"Currently chatting with {interaction.user}" + f"The current date is {date} at {hour} UTC+8."
         )
+
+        result = await model1.generate_content_async(
+            message
+        )
+        AI_response = result.text
         
         if len(message) > 256:
             message = message[:253] + '...' #Adding ... from 253rd character, ignoring other characters.
@@ -72,7 +73,7 @@ class Regenerate_Answer_Button(View):
             color=interaction.user.color, 
             timestamp=interaction.message.created_at
             )
-        embed.description = result.choices[0].message.content # Might improve for >4096 chrs
+        embed.description = AI_response # Might improve for >4096 chrs
         embed.set_author(name=interaction.user)
         embed.set_footer(text='Jika ada yang ingin ditanyakan, bisa langsung direply!')
         return await interaction.message.edit(embed=embed, view=self)
@@ -147,7 +148,7 @@ class General(commands.Cog):
             m = 0
             for k in self.bot.guilds:
                 m += k.member_count -1
-            embed = discord.Embed(title="Tentang RVDIA", color=self.bot.color)
+            embed = discord.Embed(title="Tentang RVDiA", color=self.bot.color)
             embed.set_thumbnail(url=self.bot.user.avatar.url)
             embed.set_image(url=getenv('banner') if not self.bot.event_mode else getenv('bannerevent'))
             embed.add_field(name = "Versi", value = f"{self.bot.__version__}", inline=False)
@@ -239,8 +240,8 @@ class General(commands.Cog):
 
             perm_list = [perm[0] for perm in member.guild_permissions if perm[1]]
             perm_len = len(perm_list)
-            lel = [kol.replace('_', ' ') for kol in perm_list]
-            lol = [what.title() for what in lel]
+            change1 = [underscore.replace('_', ' ') for underscore in perm_list]
+            permissions_fixed = [permissions.title() for permissions in change1]
 
             embed=discord.Embed(title=member, color=member.colour, timestamp=ctx.message.created_at)
             embed.set_author(name="User Info:")
@@ -253,7 +254,7 @@ class General(commands.Cog):
                 embed.add_field(name=f"Roles [{str(role_length)}]", value=" ".join(roles[:10]) + "\n(__10 role pertama__)", inline=False)
             else:
                 embed.add_field(name=f"Roles [{str(role_length)}]", value=" ".join(roles), inline=False)
-            embed.add_field(name=f"Permissions [{str(perm_len)}]", value="`"+", ".join(lol)+"`", inline=False)
+            embed.add_field(name=f"Permissions [{str(perm_len)}]", value="`"+", ".join(permissions_fixed)+"`", inline=False)
             owner = await self.bot.fetch_user(ctx.guild.owner_id)
             ack = None
             match member.id: # First use of match case wowwwww
@@ -450,15 +451,16 @@ class Utilities(commands.Cog):
             currentTime = datetime.now()
             date = currentTime.strftime("%d/%m/%Y")
             hour = currentTime.strftime("%H:%M:%S")
-            result = await AIClient.chat.completions.create(
-                model="gpt-3.5-turbo",
-                temperature=1.2,
-                messages=[
-                {"role":'system', 'content':getenv('rolesys')+f' You are currently talking to {ctx.author}'},
-                {"role":'assistant', 'content':f"The current date is {date} at {hour} UTC+8"},
-                {"role": "user", "content": message}
-                ]
+            genai.configure(api_key=os.getenv("googlekey"))
+            model1 = genai.GenerativeModel(
+                'gemini-1.5-flash',
+                system_instruction=getenv('rolesys') + f"Currently chatting with {ctx.author}" + f"The current date is {date} at {hour} UTC+8."
             )
+
+            result = await model1.generate_content_async(
+                message
+            )
+            AI_response = result.text
             
             if len(message) > 256:
                message = message[:253] + '...' #Adding ... from 253rd character, ignoring other characters.
@@ -468,7 +470,7 @@ class Utilities(commands.Cog):
                 color=ctx.author.color, 
                 timestamp=ctx.message.created_at
                 )
-            embed.description = result.choices[0].message.content # Might improve for >4096 chrs
+            embed.description = AI_response # Might improve for >4096 chrs
             embed.set_author(name=ctx.author)
             embed.set_footer(text='Jika ada yang ingin ditanyakan, bisa langsung direply!')
             regenerate_button = Regenerate_Answer_Button(message)
@@ -485,6 +487,8 @@ class Utilities(commands.Cog):
         """
         Ciptakan sebuah karya seni dua dimensi dengan perintah!
         """
+        from scripts.main import disable_command
+        return await disable_command(ctx)
         async with ctx.typing():
             start=time()
             result = await AIClient.images.generate(
@@ -535,6 +539,8 @@ class Utilities(commands.Cog):
         """
         Ciptakan variasi dari gambar yang diberikan!
         """
+        from scripts.main import disable_command
+        return await disable_command(ctx)
         async with ctx.typing():
             attachment = attachment or ctx.message.attachments[0]
             

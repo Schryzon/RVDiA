@@ -3,6 +3,9 @@ import discord
 from discord.ui import View, Button
 from discord.ext import commands
 from pymongo.errors import ConnectionFailure
+import traceback
+import sys
+import logging
 
 """
 Error handlers, it's where the ifs and elifs go crazy!
@@ -65,6 +68,9 @@ class Error(commands.Cog):
 
   @commands.Cog.listener()
   async def on_command_error(self, ctx:commands.Context, error):
+    # For error handling
+    exc_info = sys.exc_info()
+
     try:
       if ctx.command.has_error_handler():
         return
@@ -72,6 +78,7 @@ class Error(commands.Cog):
       pass
 
     error = getattr(error, "original", error)
+
 
     if isinstance(error, commands.MissingRequiredArgument):
       await ctx.reply(f"Ada beberapa bagian yang belum kamu isi!\nDibutuhkan: **`{error.param}`**")
@@ -214,6 +221,7 @@ class Error(commands.Cog):
         em.add_field(name=f"Args",value=ctx.args,inline=False)
         em.add_field(name=f"Kwargs",value=ctx.kwargs,inline=False)
         em.add_field(name=f"Error Message",value=error,inline=False)
+        em.add_field(name=f"Error Details", value=str(traceback.print_exception(*exc_info)), inline=False)
 
       except AttributeError: # If not invoked within a cog
         em.add_field(name=f"Command Name",value=ctx.command,inline=False)
@@ -221,12 +229,14 @@ class Error(commands.Cog):
         em.add_field(name=f"Args",value=ctx.args,inline=False)
         em.add_field(name=f"Kwargs",value=ctx.kwargs,inline=False)
         em.add_field(name=f"Error Message",value=error,inline=False)
+        em.add_field(name=f"Error Details", value=str(traceback.print_exception(*exc_info)), inline=False)
 
       finally:
           em.set_footer(text = "Please fix the error immediately!", icon_url = self.historia.user.avatar.url)
           await channel.send(f"<@877008612021661726> **Error from console!**", embed = em)
           await ctx.reply("Ada yang bermasalah dengan command ini, aku sudah memberikan laporan ke developer!\nJoin support serverku untuk mendapat info lebih lanjut!", view=Support_Button(), ephemeral=True)
-          print(error)
+          logging.error(str(traceback.print_exception(*exc_info)))
+          del exc_info
 
 async def setup(pandora):
   await pandora.add_cog(Error(pandora))

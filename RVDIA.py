@@ -9,16 +9,14 @@ Licensed under the MIT LICENSE.
         Making public clones of her under the same name is a big no no, okay sweetie?
 """
 
-"""
-It's finished...?
-"""
-
 import asyncio
 import discord
 import os
 import openai
 import aiohttp
 import logging
+import google.generativeai as genai
+import traceback
 from time import time
 from dotenv import load_dotenv
 from pkgutil import iter_modules
@@ -28,7 +26,7 @@ from discord.ext import commands, tasks
 from random import choice as rand
 from contextlib import suppress
 from datetime import datetime
-from scripts.main import connectdb, titlecase, check_vote, AIClient
+from scripts.main import connectdb, titlecase, check_vote
 load_dotenv('./secrets.env') # Loads the .env file from python-dotenv pack
 
 class RVDIA(commands.AutoShardedBot):
@@ -39,7 +37,7 @@ class RVDIA(commands.AutoShardedBot):
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "Endless v1.1.7"
+    self.__version__ = "Endless v1.1.8"
     self.event_mode = False
     self.color = 0x86273d
     self.runtime = time() # UNIX float
@@ -211,12 +209,13 @@ async def refresh(ctx):
 @commands.is_owner()
 async def restart(ctx:commands.Context): # In case for timeout
    await ctx.send('Restarting...')
-   print('!!RESTART DETECTED!!')
+   channel = ctx.channel
    await rvdia.close()
    await asyncio.sleep(2)
    rvdia.run(token=os.getenv('token'))
    await rvdia.wait_until_ready()
    logging.warning('RVDIA has been remotely restarted!')
+   await channel.send("RVDiA telah direstart!")
 
 @rvdia.command(hidden=True)
 @commands.is_owner()
@@ -262,6 +261,55 @@ async def whitelist(ctx:commands.Context, user:discord.User):
    await blacklisted.find_one_and_delete({'_id':user.id})
    await ctx.reply(f'`{user}` telah diwhitelist!')
 
+async def send_reply_message(msg:discord.Message, message_embed:discord.Embed):
+  try:
+      async with msg.channel.typing():
+        embed_desc = message_embed.description
+        embed_title = message_embed.title
+        author = message_embed.author.name
+        message = msg.content
+        currentTime = datetime.now()
+        date = currentTime.strftime("%d/%m/%Y")
+        hour = currentTime.strftime("%H:%M:%S")
+        genai.configure(api_key=os.getenv("googlekey"))
+        model1 = genai.GenerativeModel(
+            'gemini-1.5-flash',
+            system_instruction=os.getenv('rolesys') + f"Currently chatting with {msg.author}" + f"The current date is {date} at {hour} UTC+8. | {author} said: {embed_title} | Your response was: {embed_desc}"
+        )
+
+        result = await model1.generate_content_async(
+            message
+        )
+        AI_response = result.text
+
+        if len(message) > 256:
+          message = message[:253] + '...' #Adding ... from 253rd character, ignoring other characters.
+
+        embed = discord.Embed(
+          title=' '.join((titlecase(word) for word in message.split(' '))), 
+          color=msg.author.color, 
+          timestamp=msg.created_at
+          )
+        embed.description = AI_response
+        embed.set_author(name=msg.author)
+        embed.set_footer(text='Jika ada yang ingin ditanyakan, bisa langsung direply!')
+        regenerate_button = Regenerate_Answer_Button(message)
+        await msg.channel.send(embed=embed, view=regenerate_button)
+
+  except Exception as e:
+    if "500" in str(e) or "503" in str(e):
+        retries = 0
+        delay = 1
+        max_retries = 5
+        while retries <= max_retries:
+            retries += 1
+            try:
+                return await send_reply_message(msg, message_embed)
+
+            except:
+                await asyncio.sleep(delay)
+        raise e
+
 @rvdia.event
 async def on_message(msg:discord.Message):
     """
@@ -292,39 +340,8 @@ async def on_message(msg:discord.Message):
           else:
               return
           
-          if message_embed.footer.text == 'Jika ada yang ingin ditanyakan, bisa langsung direply!':    
-            async with msg.channel.typing():
-              embed_desc = message_embed.description
-              embed_title = message_embed.title
-              author = message_embed.author.name
-              message = msg.content
-              currentTime = datetime.now()
-              date = currentTime.strftime("%d/%m/%Y")
-              hour = currentTime.strftime("%H:%M:%S")
-              result = await AIClient.chat.completions.create(
-                  model="gpt-3.5-turbo",
-                  temperature=1.2,
-                  messages=[
-                  {"role":'system', 'content':os.getenv('rolesys')+f' You are currently talking to {msg.author}'},
-                  {"role":"assistant", 'content':f'The current date is {date} at {hour} UTC+8 | {author} said: {embed_title} | Your response was: {embed_desc}'},
-                  {"role": "user", "content": message}
-                  ]
-              )
-
-              if len(message) > 256:
-                message = message[:253] + '...' #Adding ... from 253rd character, ignoring other characters.
-
-              embed = discord.Embed(
-                title=' '.join((titlecase(word) for word in message.split(' '))), 
-                color=msg.author.color, 
-                timestamp=msg.created_at
-                )
-              embed.description = result.choices[0].message.content
-              embed.set_author(name=msg.author)
-              embed.set_footer(text='Jika ada yang ingin ditanyakan, bisa langsung direply!')
-              regenerate_button = Regenerate_Answer_Button(message)
-              await msg.channel.send(embed=embed, view=regenerate_button)
-            return
+          if message_embed.footer.text == 'Jika ada yang ingin ditanyakan, bisa langsung direply!':
+            await send_reply_message(msg, message_embed)
           
           elif message_embed.footer.text == 'Reply \"Approve\" jika disetujui\nReply \"Decline\" jika tidak disetujui':
             old_acc_field = message_embed.fields[0].value
@@ -389,8 +406,8 @@ async def on_message(msg:discord.Message):
                     return
            await msg.channel.send('Ada yang bermasalah dengan fitur ini, aku sudah mengirimkan laporan ke developer!')
            channel = rvdia.get_channel(906123251997089792)
-           await channel.send(f'`{e}` Untuk fitur balasan GPT-3.5 Turbo!')
-           print(e)
+           await channel.send(f'`{e}` Untuk fitur balasan!\nDetail:\n```{traceback.print_exc()}```')
+           logging.error(str(traceback.print_exc()))
 
 # Didn't know I'd use this, but pretty coolio
 if __name__ == "__main__":

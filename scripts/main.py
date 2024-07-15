@@ -7,6 +7,7 @@ import os
 import pymongo
 import discord
 import aiohttp
+from discord.ext import commands
 from motor.motor_asyncio import AsyncIOMotorClient
 from discord.ui import View, Button
 from discord.ext import commands
@@ -167,3 +168,9 @@ def heading(direction:int):
                 result.append(i[2])
 
         return result[0]         
+
+async def disable_command(ctx:commands.Context):
+    """
+    Used for disabled commands.
+    """
+    await ctx.reply("Mohon maaf, command ini sedang dinonaktifkan!\nMohon sabar menunggu update terbaru, yah! ❤️")
