@@ -4,9 +4,9 @@ Contains things that may be needed for multiple files.
 """
 
 import os
-import pymongo
 import discord
 import aiohttp
+from openai import AsyncOpenAI
 from discord.ext import commands
 from motor.motor_asyncio import AsyncIOMotorClient
 from discord.ui import View, Button
@@ -14,7 +14,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 from cogs.Handler import NotInGTechServer, NotGTechMember, NotGTechAdmin, NoProfilePicture, Blacklisted, NoEventAvailable, NotVoted
 from cogs.Handler import NoGameAccount
-from openai import AsyncOpenAI
+#from openai import AsyncOpenAI
 load_dotenv('./secrets.env')
 
 # New in v1.x
@@ -72,7 +72,7 @@ def check_blacklist():
 
 def in_gtech_server():
     async def predicate(ctx):
-        if not ctx.guild.id == 997500206511833128:
+        if not ctx.guild.id == int(os.getenv('gtechguild')):
             raise NotInGTechServer('Not in the G-Tech server!')
         return True
     return commands.check(predicate)
@@ -96,7 +96,7 @@ def is_member_check():
 def is_perangkat():
     async def predicate(ctx):
         perangkat = [
-            893152351689527326, 919461305432305685, 877008612021661726, 632930926522925056,
+            893152351689527326, 919461305432305685, int(os.getenv('schryzonid')), 632930926522925056,
             745218212689477642, 892293912964767784, 866890432038567949
             # Ayuning, Nisa, Jayananda, Ditha, Cok Is, Nanda Maharani, Richonanta
         ]
@@ -128,7 +128,7 @@ def has_voted():
 async def check_vote(user_id:int):
     headers = {'Authorization': os.getenv('topggtoken')}
     async with aiohttp.ClientSession(headers=headers) as session:
-        response = await session.get(f'https://top.gg/api/bots/957471338577166417/check?userId={user_id}')
+        response = await session.get(f'https://top.gg/api/bots/{os.getenv("rvdiaid")}/check?userId={user_id}')
         data = await response.json()
         if data['voted'] == 1:
             return True

@@ -82,7 +82,7 @@ class General(commands.Cog):
     """
     Kumpulan command umum.
     """
-    def __init__(self, bot):
+    def __init__(self, bot:commands.AutoShardedBot):
         self.bot = bot
 
     @commands.hybrid_group(name='rvdia')
@@ -153,7 +153,7 @@ class General(commands.Cog):
             embed.set_image(url=getenv('banner') if not self.bot.event_mode else getenv('bannerevent'))
             embed.add_field(name = "Versi", value = f"{self.bot.__version__}", inline=False)
             embed.add_field(name = "Mode", value = f"Event Mode" if self.bot.event_mode else "Standard Mode", inline=False)
-            embed.add_field(name = "Pencipta", value = f"<@877008612021661726> (Jayananda)", inline=False)
+            embed.add_field(name = "Pencipta", value = f"<@{self.bot.owner_id}> (Jayananda)", inline=False)
             embed.add_field(name = "Prefix", value = '@RVDIA | / (slash)')
             embed.add_field(name = "Bahasa Pemrograman", value=f"Python ({pyver[:6]})\ndiscord.py ({discord.__version__})", inline=False)
             embed.add_field(name = "Nyala Sejak", value = f"<t:{round(self.bot.runtime)}>\n(<t:{round(self.bot.runtime)}:R>)", inline = False)
@@ -176,7 +176,7 @@ class General(commands.Cog):
         end_typing = time()
         delta_typing = end_typing - start_typing
         embed= discord.Embed(title= "Ping--Pong!", color=self.bot.color, timestamp=ctx.message.created_at)
-        embed.description = f"**Discord API:** `{round(self.bot.latency*1000)} ms`\n**Typing:** `{round(delta_typing/1000, 2)} ms`"
+        embed.description = f"**Discord API:** `{round(self.bot.latency*1000)} ms`\n**Typing:** `{round(delta_typing*1000, 2)} ms`"
         await ctx.reply(embed=embed)
 
     @user_command.command(description="Memperlihatkan avatar pengguna Discord.")
@@ -679,7 +679,7 @@ class Support(commands.GroupCog, group_name='support'):
         """
         Berikan aku saran untuk perbaikan atau penambahan fitur!
         """
-        channel = self.bot.get_channel(1118145279464570921)
+        channel = self.bot.get_channel(int(os.getenv('suggestionchannel')))
         embed = discord.Embed(title="Saran Baru!", color=interaction.user.color, timestamp=interaction.message.created_at)
         embed.set_author(name=f"Dari {interaction.user}")
         if attachment:

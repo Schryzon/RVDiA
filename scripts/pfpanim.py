@@ -5,6 +5,7 @@ import sys
 
 """
 Credits to nottherealtar on Github.
+Feel free to use this script!
 """
 
 def is_valid_token(token):

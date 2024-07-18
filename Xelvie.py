@@ -6,6 +6,7 @@ Used to detect RVDIA's status
 
 import discord
 import random
+import logging
 from os import getenv
 from dotenv import load_dotenv
 from discord.ext import commands
@@ -19,21 +20,21 @@ xlv = commands.Bot(command_prefix="x-",
 
 @xlv.event
 async def on_connect():
-  print('XLV connected!')
+  logging.info('XLV connected!')
 
 
 @xlv.event
 async def on_ready():
   await xlv.wait_until_ready()
-  print('XLV is ready!')
+  logging.info('XLV is ready!')
 
 
 @xlv.event
 async def on_presence_update(before, after):
-  if before.id == 957471338577166417 and after.id == 957471338577166417:
-    channel = xlv.get_channel(883188578245562378)
+  if before.id == int(getenv("rvdiaid")) and after.id == int(getenv("rvdiaid")):
+    channel = xlv.get_channel(int(getenv("statuschannel")))
     if str(after.status) == "offline" or str(after.status) == "invisible":
-      await channel.send("<@877008612021661726>\n⚪ RVDIA is now **`OFFLINE`**!")
+      await channel.send(f"<@{getenv('schryzonid')}>\n⚪ RVDIA is now **`OFFLINE`**!")
 
   return
 
@@ -43,7 +44,7 @@ async def on_message(message):
   return  # This bot doesn't need commands, just tell.
 
 greetings = ["Hello there,", "Greetings,", "Welcome to CyroN,", "Why hello there,", "Thanks for joining,", "Heya hee ho,", 
-    "Welcome,", "A new member joined,", "Yokoso,", "Hi~", "Konnichiwa,", "Heya,", "Ara~ara,"
+    "Welcome,", "A new member joined,", "Yokoso,", "Hi~", "Konnichiwa,", "Heya,", "Helloooo~,"
     ]
 ending = [". I hope you have a fantastic day at CyroN!", ". I sure hope you brought me some food... just kidding!",
     ". I hope you get along with the others!", ". Don't forget to read the rules, okay?", ". Enjoy your stay!",
@@ -58,16 +59,16 @@ left = ["Did they do something bad?", "Were you feeling uncomfortable? :(", "See
 @xlv.event
 async def on_member_join(user:discord.Member):
     if user.bot is True: return
-    if user.guild.id == 877009215271604275:
-        channel = user.guild.get_channel(882778878655991858) #hello-bye
+    if user.guild.id == int(getenv("cyronguild")):
+        channel = user.guild.get_channel(int(getenv("welcomechannel"))) #hello-bye
         await channel.send(f"{random.choice(greetings)} **`{user}`**{random.choice(ending)}")
     else: return
 
 @xlv.event
 async def on_member_remove(user:discord.Member):
     if user.bot is True: return
-    if user.guild.id == 877009215271604275:
-        channel = user.guild.get_channel(882778878655991858)
+    if user.guild.id == int(getenv("cyronguild")):
+        channel = user.guild.get_channel(int(getenv("welcomechannel")))
         await channel.send(f"**`{user}`** has left CyroN. {random.choice(left)}")
     else: return
 

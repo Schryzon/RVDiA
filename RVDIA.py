@@ -1,5 +1,5 @@
 """
-Schryzon/Jayananda (11)
+Schryzon (Widiyasa Jayananda)
 G-Tech Re'sman Programming Division
 RVDiA (Revolutionary Virtual Discord Assistant)
 Feel free to modify and do other stuff.
@@ -12,7 +12,7 @@ Licensed under the MIT LICENSE.
 import asyncio
 import discord
 import os
-import openai
+#import openai
 import aiohttp
 import logging
 import google.generativeai as genai
@@ -37,7 +37,7 @@ class RVDIA(commands.AutoShardedBot):
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "Endless v1.1.8"
+    self.__version__ = "Endless v1.1.9"
     self.event_mode = False
     self.color = 0x86273d
     self.runtime = time() # UNIX float
@@ -72,7 +72,7 @@ cogs_list = [cogs.name for cogs in iter_modules(['cogs'], prefix='cogs.')] # ite
 
 @rvdia.event
 async def on_connect():
-    logging.warning("RVDiA has connected.")
+    logging.info("RVDiA has connected.")
 
 @rvdia.event
 async def on_ready():
@@ -88,7 +88,7 @@ async def on_ready():
     if not rvdia.synced:
       synced_commands = await rvdia.tree.sync() # Global slash commands sync, also returns a list of commands.
       await asyncio.sleep(1.5) # Avoid rate limit
-      await rvdia.tree.sync(guild=discord.Object(997500206511833128)) # Wonder if it fixes with this??
+      await rvdia.tree.sync(guild=discord.Object(int(os.getenv("gtechguild")))) # Wonder if it fixes with this??
       rvdia.synced = [True, len(synced_commands)]
       logging.info('Slash Commands synced to global!')
 
@@ -98,13 +98,13 @@ async def on_ready():
 
     update_guild_status.start()
 
-    logging.warning("RVDiA is ready.")
+    logging.info("RVDiA is ready.")
 
 
-@tasks.loop(minutes=5)
+@tasks.loop(minutes=7)
 async def change_status():
   """
-  Looping status, rate = 5 minute
+  Looping status, rate = 7 minute
   """
   is_event = 'Event mode ON!' if rvdia.event_mode == True else 'Standard mode'
   users = 0
@@ -144,7 +144,7 @@ async def update_guild_status():
           logging.info(f'Posted server updates to Top.gg!')
 
     except Exception as error:
-       logging.warning(f'Error sending server count update!\n{error.__class__.__name__}: {error}')
+       logging.error(f'Error sending server count update!\n{error.__class__.__name__}: {error}')
 
 @rvdia.command(aliases = ['on', 'enable'], hidden=True)
 @commands.is_owner()
@@ -261,7 +261,13 @@ async def whitelist(ctx:commands.Context, user:discord.User):
    await blacklisted.find_one_and_delete({'_id':user.id})
    await ctx.reply(f'`{user}` telah diwhitelist!')
 
+# Handler variable
+fitur = "Unknown"
+
 async def send_reply_message(msg:discord.Message, message_embed:discord.Embed):
+  # Nyambung ke yg di atas
+  global fitur
+  fitur = "Balasan"
   try:
       async with msg.channel.typing():
         embed_desc = message_embed.description
@@ -297,7 +303,8 @@ async def send_reply_message(msg:discord.Message, message_embed:discord.Embed):
         await msg.channel.send(embed=embed, view=regenerate_button)
 
   except Exception as e:
-    if "500" in str(e) or "503" in str(e):
+    error_codes = ["500", "503", "104"]
+    if any(codes in str(e) for codes in error_codes):
         retries = 0
         delay = 1
         max_retries = 5
@@ -317,6 +324,7 @@ async def on_message(msg:discord.Message):
     TO DO: Create check_blacklist() and only run it here.
     Configure RVDiA's class
     """
+    global fitur
 
     if not msg.guild:
         return
@@ -344,6 +352,7 @@ async def on_message(msg:discord.Message):
             await send_reply_message(msg, message_embed)
           
           elif message_embed.footer.text == 'Reply \"Approve\" jika disetujui\nReply \"Decline\" jika tidak disetujui':
+            fitur = "Transfer akun"
             old_acc_field = message_embed.fields[0].value
             old_acc_string = old_acc_field.split(': ')
             old_acc_id = int(old_acc_string[2].strip())
@@ -388,26 +397,27 @@ async def on_message(msg:discord.Message):
                   return
         
         except Exception as e:
-           if "currently overloaded with other requests." in str(e):
-              return await msg.channel.send('Maaf, fitur ini sedang dalam gangguan. Mohon dicoba nanti!')
-           elif "overloaded or not ready" in str(e) or "Bad gateway." in str(e):
-              return await msg.channel.send("Sepertinya ada yang bermasalah dengan otakku tadi.\nTolong coba ulangi pertanyaanmu lagi!")
-           elif "rate limit reached" in str(e).lower():
-              return await msg.channel.send("Aduh, maaf, otakku sedang kepanasan.\nTolong tanyakan lagi setelah 20 detik!")
-           elif "unknown message" in str(e).lower() or 'message_id: Value "None" is not snowflake.' in str(e) or "404 not found" in str(e).lower() or "Invalid Form Body In message_reference: Unknown message" in str(e):
-              return await msg.channel.send("Hah?!\nSepertinya aku sedang mengalami masalah menemukan pesan yang kamu reply!")
-           elif "403 Forbidden" in str(e) or "Missing Access" in str(e):
-              try:
-                 return await msg.channel.send("Aku kekurangan `permission` untuk menjalankan fitur ini!\nPastikan aku bisa mengirim pesan dan embed di channel ini!")
-              except:
-                 try:
-                    return await msg.author.send("Aku kekurangan `permission` untuk menjalankan fitur ini!\nPastikan aku bisa mengirim pesan dan embed di channel itu!")
-                 except:
-                    return
-           await msg.channel.send('Ada yang bermasalah dengan fitur ini, aku sudah mengirimkan laporan ke developer!')
-           channel = rvdia.get_channel(906123251997089792)
-           await channel.send(f'`{e}` Untuk fitur balasan!\nDetail:\n```{traceback.print_exc()}```')
-           logging.error(str(traceback.print_exc()))
+          if "rate limit" in str(e).lower():
+            return await msg.channel.send("Aduh, maaf, otakku sedang kepanasan.\nTolong tanyakan lagi setelah 20 detik!")
+           
+          elif 'message_id: Value "None" is not snowflake.' in str(e) or "404 not found" in str(e).lower() or "Invalid Form Body In message_reference: Unknown message" in str(e):
+            # Very ambiguous error
+            logging.warning("Captured yet another Unknown Message error.")
+            return await msg.channel.send("Hmm, aku menerima error 404, apa aku sedang halusinasi ya...?", delete_after=3.0)
+           
+          elif "403 Forbidden" in str(e) or "Missing Access" in str(e):
+            try:
+                return await msg.channel.send("Aku kekurangan `permission` untuk menjalankan fitur ini!\nPastikan aku bisa mengirim pesan dan embed di channel ini!")
+            except:
+                try:
+                  return await msg.author.send("Aku kekurangan `permission` untuk menjalankan fitur ini!\nPastikan aku bisa mengirim pesan dan embed di channel itu!")
+                except:
+                  return
+                 
+          await msg.channel.send('Ada yang bermasalah dengan fitur ini, aku sudah mengirimkan laporan ke developer!')
+          channel = rvdia.get_channel(int(os.getenv("errorchannel")))
+          await channel.send(f'`{e}` Untuk fitur {fitur}!\nDetail:\n```{traceback.print_exc()}```')
+          logging.error(str(traceback.print_exc()))
 
 # Didn't know I'd use this, but pretty coolio
 if __name__ == "__main__":

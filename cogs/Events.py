@@ -1,4 +1,5 @@
 import discord
+from os import getenv
 from discord.ext import commands
 from datetime import datetime
 
@@ -11,7 +12,7 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild:discord.Guild):
-        channel = self.bot.get_channel(1094157780606267502) #join-logs
+        channel = self.bot.get_channel(int(getenv("joinlogs"))) #join-logs
         embed = discord.Embed(title='Joined a new Server!', color=0x03ac13, timestamp=datetime.now())
         embed.add_field(name='Name', value=guild.name, inline=False)
         embed.add_field(name='Members', value=guild.member_count, inline=False)
@@ -19,7 +20,7 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild:discord.Guild):
-        channel = self.bot.get_channel(1094157780606267502) #join-logs
+        channel = self.bot.get_channel(int(getenv("joinlogs"))) #join-logs
         embed = discord.Embed(title='Left a Server!', color=0xff0000, timestamp=datetime.now())
         embed.add_field(name='Name', value=guild.name, inline=False)
         embed.add_field(name='Members', value=guild.member_count, inline=False)

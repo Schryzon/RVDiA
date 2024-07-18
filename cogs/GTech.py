@@ -111,7 +111,7 @@ class GTech(commands.GroupCog, group_name='g-tech'):
         else:
             await db.find_one_and_replace({'_id':1}, {'author':data["nama"], 'kelas':data["kelas"], 'title':title, 'desc':content, 'attachments':attachment})
         await interaction.response.send_message('Berita baru telah diposting!', ephemeral=True)
-        await self.send_news(997749511432712263)
+        await self.send_news(int(getenv('gtechnews')))
 
     @app_commands.command(description="Lihat berita terbaru tentang G-Tech!")
     @in_gtech_server()
@@ -148,4 +148,4 @@ class GTech(commands.GroupCog, group_name='g-tech'):
         await interaction.response.send_message('Berita terakhir telah dihapus.', ephemeral=True)
 
 async def setup(bot:commands.Bot):
-    await bot.add_cog(GTech(bot), guild=discord.Object(997500206511833128))
+    await bot.add_cog(GTech(bot), guild=discord.Object(int(getenv('gtechguild'))))

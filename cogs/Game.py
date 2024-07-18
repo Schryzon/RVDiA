@@ -649,9 +649,16 @@ class GameInstance():
                 await self.ctx.channel.send(embed=embed)
 
             else:
+                tips = ['Gunakan item dan skill spesial yang kamu miliki!',
+                        'Jika terlalu susah, kembali ke yang lebih mudah!',
+                        'Skill musuh muncul setelah 3 giliran pertama!',
+                        'Kunjungi Xaneria untuk meningkatkan peralatan dan skillmu!',
+                        'Selalu ingat untuk memeriksa status musuhmu!'
+                        ]
+                tips = random.choice(tips)
                 embed = discord.Embed(title=f"Kamu Kalah!", color=0xff0000)
                 embed.description = f"{self.user2['name']} menang dengan `{self.user2_hp}` HP tersisa!"
-                embed.set_footer(text='Tip: Gunakan item dan skill spesial yang kamu miliki!')
+                embed.set_footer(text=f'Tip: {tips}')
                 try:
                     embed.set_thumbnail(url = self.enemy_avatar)
                 except:

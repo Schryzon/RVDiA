@@ -3,6 +3,7 @@ import discord
 from discord.ui import View, Button
 from discord.ext import commands
 from pymongo.errors import ConnectionFailure
+import os
 import traceback
 import sys
 import logging
@@ -63,7 +64,7 @@ class Error(commands.Cog):
   """
   An error handler class, what else do I have to say?
   """
-  def __init__ (self, historia):
+  def __init__ (self, historia:commands.AutoShardedBot):
     self.historia = historia
 
   @commands.Cog.listener()
@@ -79,11 +80,15 @@ class Error(commands.Cog):
 
     error = getattr(error, "original", error)
 
+    def format_permissions(error: commands.BotMissingPermissions):
+      permlist = [req_perms.replace('_', ' ') for req_perms in error.missing_permissions]
+      perms = [missing_perms.title() for missing_perms in permlist]
+      return perms
 
     if isinstance(error, commands.MissingRequiredArgument):
-      await ctx.reply(f"Ada beberapa bagian yang belum kamu isi!\nDibutuhkan: **`{error.param}`**")
+      await ctx.reply(f"Ada beberapa bagian yang belum kamu isi!\nDibutuhkan: \n**```{error.param}```**")
 
-  # Hack-ish, I'm still figuring out why it didnt work
+    # Hack-ish, I'm still figuring out why it didnt work
     elif 'Not a G-Tech member!' in str(error):
       await ctx.reply('Akun Discordmu harus didaftarkan dulu ke data G-Tech sebelum menjalankan command ini!')
 
@@ -133,17 +138,15 @@ class Error(commands.Cog):
       await ctx.reply('Kamu harus memasang foto profil untuk menjalankan command ini!') # Maybe add a note in github somewhere
 
     elif isinstance(error, commands.BotMissingPermissions):
-      permlist = [req_perms.replace('_', ' ') for req_perms in error.missing_permissions]
-      perms = [missing_perms.title() for missing_perms in permlist]
-      await ctx.reply("Saya kekurangan `permissions` untuk menjalankan command! (**"
+      perms = format_permissions(error)
+      await ctx.reply("Saya kekurangan `permissions` untuk menjalankan command! \n(**"
       + "`" + ",".join(perms) + "`**)"
       )
 
     elif isinstance(error, commands.MissingPermissions):
-      permlist = [req_perms.replace('_', ' ') for req_perms in error.missing_permissions]
-      perms = [missing_perms.title() for missing_perms in permlist]
-      await ctx.reply("Kamu kekurangan `permissions` untuk menjalankan command! (**"
-      + "`" + ",".join(perms) + "`**)"
+      perms = format_permissions(error)
+      await ctx.reply("Kamu kekurangan `permissions` untuk menjalankan command! \n(**"
+      + "```" + ",".join(perms) + "```**)"
       )
 
     elif "Forbidden" in str(error):
@@ -164,7 +167,7 @@ class Error(commands.Cog):
     elif "No event available!" in str(error):
       await ctx.reply('Maaf, saat ini tidak ada event yang berlangsung!')
 
-    elif "attachment is a required argument that is missing an attachment." in str(error):
+    elif "missing an attachment." in str(error):
       await ctx.reply('Kamu belum melampirkan gambar! Command ini memerlukan lampiran!')
 
     elif "Your input image may contain content that is not allowed by our safety system." in str(error):
@@ -202,17 +205,17 @@ class Error(commands.Cog):
       await ctx.reply("Hah?!\nSepertinya aku sedang mengalami masalah menemukan pesan yang kamu reply!")
 
     elif "Rival has no account!" in str(error):
-      return
+      await ctx.reply("Sepertinya lawanmu belum membuat akun Re:Volution! 😔")
     
-    elif "The server is overloaded or not ready yet." in str(error) or "Bad gateway." in str(error):
-      await ctx.reply("Sepertinya ada yang bermasalah dengan otakku tadi.\nTolong coba jalankan ulang command ini lagi!")
+      """elif "The server is overloaded or not ready yet." in str(error) or "Bad gateway." in str(error):
+      await ctx.reply("Sepertinya ada yang bermasalah dengan otakku tadi.\nTolong coba jalankan ulang command ini lagi!")"""
 
     elif "User's account is incompatible!" in str(error):
-      await ctx.reply("Sepertinya akunmu tidak sesuai dengan versi terbaru Re:Volution!\nJalankan **`/game register`** untuk mengupdate akunmu!")
+      await ctx.reply(f"Sepertinya akunmu tidak sesuai dengan versi terbaru Re:Volution!\nJalankan **`{ctx.clean_prefix}game register`** untuk mengupdate akunmu!")
 
     # If all else fails (get it?)
     else:
-      channel = self.historia.get_channel(906123251997089792)
+      channel = self.historia.get_channel(os.getenv("errorchannel"))
       em = discord.Embed(title = "An Error Occurred!", color = 0xff4df0, timestamp = ctx.message.created_at)
       try:
         em.add_field(name=f"Command Name",value=ctx.command,inline=False)
@@ -233,7 +236,7 @@ class Error(commands.Cog):
 
       finally:
           em.set_footer(text = "Please fix the error immediately!", icon_url = self.historia.user.avatar.url)
-          await channel.send(f"<@877008612021661726> **Error from console!**", embed = em)
+          await channel.send(f"<@{self.historia.owner_id}> **Error from console!**", embed = em)
           await ctx.reply("Ada yang bermasalah dengan command ini, aku sudah memberikan laporan ke developer!\nJoin support serverku untuk mendapat info lebih lanjut!", view=Support_Button(), ephemeral=True)
           logging.error(str(traceback.print_exception(*exc_info)))
           del exc_info
