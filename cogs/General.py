@@ -5,6 +5,7 @@ import discord
 import openai
 import requests
 import aiohttp
+import pytz
 import google.generativeai as genai
 from datetime import datetime
 from sys import version as pyver
@@ -51,13 +52,13 @@ class Regenerate_Answer_Button(View):
         await interaction.response.defer()
         await interaction.channel.typing()
         message = self.last_question
-        currentTime = datetime.now()
+        currentTime = datetime.now(pytz.utc).astimezone(pytz.timezone("Asia/Jakarta"))
         date = currentTime.strftime("%d/%m/%Y")
         hour = currentTime.strftime("%H:%M:%S")
         genai.configure(api_key=os.getenv("googlekey"))
         model1 = genai.GenerativeModel(
             'gemini-1.5-flash',
-            system_instruction=getenv('rolesys') + f"Currently chatting with {interaction.user}" + f"The current date is {date} at {hour} UTC+8."
+            system_instruction=getenv('rolesys') + f"Currently chatting with {interaction.user}" + f"The current date is {date} at {hour} WITA."
         )
 
         result = await model1.generate_content_async(
@@ -153,13 +154,13 @@ class General(commands.Cog):
             embed.set_image(url=getenv('banner') if not self.bot.event_mode else getenv('bannerevent'))
             embed.add_field(name = "Versi", value = f"{self.bot.__version__}", inline=False)
             embed.add_field(name = "Mode", value = f"Event Mode" if self.bot.event_mode else "Standard Mode", inline=False)
-            embed.add_field(name = "Pencipta", value = f"<@{self.bot.owner_id}> (Jayananda)", inline=False)
+            embed.add_field(name = "Pencipta", value = f"<@{getenv('schryzonid')}> (Jayananda)", inline=False) # self.bot.owner_id did nothing here.
             embed.add_field(name = "Prefix", value = '@RVDIA | / (slash)')
             embed.add_field(name = "Bahasa Pemrograman", value=f"Python ({pyver[:6]})\ndiscord.py ({discord.__version__})", inline=False)
             embed.add_field(name = "Nyala Sejak", value = f"<t:{round(self.bot.runtime)}>\n(<t:{round(self.bot.runtime)}:R>)", inline = False)
             embed.add_field(name = "Jumlah Server", value = f"{len(self.bot.guilds)} Server")
             embed.add_field(name = "Jumlah Pengguna", value = f"{m} Pengguna")
-            embed.add_field(name = "Jumlah Command", value = f"Semua: `{len(self.bot.commands)}`\nGlobal: `{self.bot.synced[1]}`", inline=False)
+            embed.add_field(name = "Jumlah Command Group", value = f"Semua: `{len(self.bot.commands)}`\nGlobal: `{self.bot.synced[1]}`", inline=False)
             embed.set_footer(text="Jangan lupa tambahkan aku ke servermu! ❤️")
             await ctx.send(embed=embed, view=Url_Buttons())
     
@@ -448,13 +449,13 @@ class Utilities(commands.Cog):
         Tanyakan atau perhintahkan aku untuk melakukan sesuatu!
         """
         async with ctx.typing():
-            currentTime = datetime.now()
+            currentTime = datetime.now(pytz.utc).astimezone(pytz.timezone("Asia/Jakarta"))
             date = currentTime.strftime("%d/%m/%Y")
             hour = currentTime.strftime("%H:%M:%S")
             genai.configure(api_key=os.getenv("googlekey"))
             model1 = genai.GenerativeModel(
                 'gemini-1.5-flash',
-                system_instruction=getenv('rolesys') + f"Currently chatting with {ctx.author}" + f"The current date is {date} at {hour} UTC+8."
+                system_instruction=getenv('rolesys') + f"Currently chatting with {ctx.author}" + f"The current date is {date} at {hour} WITA."
             )
 
             result = await model1.generate_content_async(

@@ -17,6 +17,7 @@ import aiohttp
 import logging
 import google.generativeai as genai
 import traceback
+import pytz
 from time import time
 from dotenv import load_dotenv
 from pkgutil import iter_modules
@@ -274,13 +275,13 @@ async def send_reply_message(msg:discord.Message, message_embed:discord.Embed):
         embed_title = message_embed.title
         author = message_embed.author.name
         message = msg.content
-        currentTime = datetime.now()
+        currentTime = datetime.now(pytz.utc).astimezone(pytz.timezone("Asia/Jakarta"))
         date = currentTime.strftime("%d/%m/%Y")
         hour = currentTime.strftime("%H:%M:%S")
         genai.configure(api_key=os.getenv("googlekey"))
         model1 = genai.GenerativeModel(
             'gemini-1.5-flash',
-            system_instruction=os.getenv('rolesys') + f"Currently chatting with {msg.author}" + f"The current date is {date} at {hour} UTC+8. | {author} said: {embed_title} | Your response was: {embed_desc}"
+            system_instruction=os.getenv('rolesys') + f"Currently chatting with {msg.author}" + f"The current date is {date} at {hour} WITA. | {author} said: {embed_title} | Your response was: {embed_desc}"
         )
 
         result = await model1.generate_content_async(
@@ -303,7 +304,7 @@ async def send_reply_message(msg:discord.Message, message_embed:discord.Embed):
         await msg.channel.send(embed=embed, view=regenerate_button)
 
   except Exception as e:
-    error_codes = ["500", "503", "104"]
+    error_codes = ["500", "503", "104", 'blocked']
     if any(codes in str(e) for codes in error_codes):
         retries = 0
         delay = 1

@@ -215,7 +215,7 @@ class Error(commands.Cog):
 
     # If all else fails (get it?)
     else:
-      channel = self.historia.get_channel(os.getenv("errorchannel"))
+      channel = self.historia.get_channel(int(os.getenv("errorchannel")))
       em = discord.Embed(title = "An Error Occurred!", color = 0xff4df0, timestamp = ctx.message.created_at)
       try:
         em.add_field(name=f"Command Name",value=ctx.command,inline=False)
