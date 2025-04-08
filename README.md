@@ -47,5 +47,7 @@ Special thanks to Riverdia (for inspiring the bot's name), iMaze, Mouchi, Dez, Z
 **Made with ❤️ and dedication, Jayananda**
 
 Farewell, Yuyuko, Pandora, and Historia. You will be missed.
+See you soon, RVDiA.
 
 `Verified: 01/08/2023`
+`End of Life: 08/04/2025`
