@@ -1,3 +1,26 @@
+# Python
+__pycache__/
+*/__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+
+# Environment
 .env
-/node_modules
-*/__pycache__
+secrets.env
+*.env
+
+# Prisma
+.prisma/
+schema.prisma.backup
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
