@@ -2,7 +2,6 @@
 import discord
 from discord.ui import View, Button
 from discord.ext import commands
-from pymongo.errors import ConnectionFailure
 import os
 import traceback
 import sys
@@ -198,7 +197,7 @@ class Error(commands.Cog):
     elif 'User has no game account!' in str(error):
       await ctx.reply(f'Kamu belum mendaftarkan akunmu ke Land of Revolution!\nDaftarkan akunmu dengan `{ctx.clean_prefix}game register`')
 
-    elif isinstance(error, ConnectionResetError) or isinstance(error, ConnectionFailure) or "reset by peer" in str(error):
+    elif isinstance(error, ConnectionResetError) or "reset by peer" in str(error) or "Can't reach database" in str(error):
       await ctx.reply("Wah, sepertinya aku ada gangguan nyambung ke database, mohon dicoba lagi sebentar.\nJika error terus muncul, silahkan laporkan ke Support Server!", view=Support_Button())
 
     elif "Invalid Form Body In message_reference: Unknown message" in str(error):
@@ -236,7 +235,8 @@ class Error(commands.Cog):
 
       finally:
           em.set_footer(text = "Please fix the error immediately!", icon_url = self.historia.user.avatar.url)
-          await channel.send(f"<@{self.historia.owner_id}> **Error from console!**", embed = em)
+          if channel:
+              await channel.send(f"<@{self.historia.owner_id}> **Error from console!**", embed = em)
           await ctx.reply("Ada yang bermasalah dengan command ini, aku sudah memberikan laporan ke developer!\nJoin support serverku untuk mendapat info lebih lanjut!", view=Support_Button(), ephemeral=True)
           logging.error(str(traceback.print_exception(*exc_info)))
           del exc_info
