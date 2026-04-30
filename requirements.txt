@@ -4,7 +4,7 @@ aiohttp
 prisma
 openai>=1.3.7
 google-generativeai
-Pillow~=9.4.0
+Pillow>=10.4.0
 aiofiles
 requests
 tqdm
