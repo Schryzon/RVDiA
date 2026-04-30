@@ -8,7 +8,8 @@ import discord
 import aiohttp
 from openai import AsyncOpenAI
 from discord.ext import commands
-from motor.motor_asyncio import AsyncIOMotorClient
+from prisma import Prisma
+
 from discord.ui import View, Button
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -50,21 +51,11 @@ class Url_Buttons(View):
     self.add_item(github_repo)
     self.add_item(support_server)
 
-async def connectdb(collection:str):
-    """
-    Returns data gained from database collection.
-    Format: Main.<collection>
-    !!WARNING!! RVDIA runs on Heroku, so an East US server is recommended for fast connection.
-    """
-    client = AsyncIOMotorClient(os.getenv('mongodburl'))
-    db = client.Main
-    coll = db[collection]
-    return coll
+db = Prisma()
 
 def check_blacklist():
     async def predicate(ctx):
-        blacklisted = await connectdb('Blacklist')
-        check_blacklist = await blacklisted.find_one({'_id':ctx.author.id})
+        check_blacklist = await db.blacklist.find_unique(where={'id': ctx.author.id})
         if check_blacklist:
             raise Blacklisted('User is blacklisted!')
         return True
@@ -86,8 +77,7 @@ def event_available():
 
 def is_member_check():
     async def predicate(ctx):
-        db = await connectdb("Gtech")
-        data = await db.find_one({'_id':ctx.author.id})
+        data = await db.gtechmember.find_unique(where={'id': ctx.author.id})
         if data is None:
             raise NotGTechMember('Not a G-Tech member!')
         return True
@@ -137,8 +127,7 @@ async def check_vote(user_id:int):
 
 def has_registered():
     async def predicate(ctx):
-        database=await connectdb('Game')
-        data=await database.find_one({'_id':ctx.author.id})
+        data = await db.user.find_unique(where={'id': ctx.author.id})
         if not data:
             raise NoGameAccount('User has no game account!')
         return True

@@ -1,12 +1,6 @@
-"""
-Somewhat unimportant
-Discord is developing their own features so...
-I don't think this will hold up
-"""
-
 import discord
 from discord import app_commands
-from scripts.main import connectdb, check_blacklist
+from scripts.main import db, check_blacklist
 from os import getenv
 from discord.ext import commands
 
@@ -43,10 +37,8 @@ class Moderation(commands.Cog):
             embed.add_field(name="Tanggal Dibuat", value=f'{ctx.guild.created_at.strftime("%a, %d %B %Y")}', inline = False)
             embed.add_field(name="Jumlah Pengguna", value=f"{ctx.guild.member_count} members", inline = False)
             embed.set_footer(text=f"ID: {ctx.guild.id}", icon_url=guild_icon)
-            #embed.set_image(url = ctx.guild.banner.url)
             await ctx.reply(embed=embed)
 
-    # Basically, avatar command
     @server.command(description="Memperlihatkan gambar icon server ini.")
     @check_blacklist()
     async def icon(self, ctx:commands.Context):
@@ -126,7 +118,7 @@ class Moderation(commands.Cog):
             embed = discord.Embed(title=f'Daftar Invite {ctx.guild.name}', color=ctx.author.color, timestamp=ctx.message.created_at)
             embed.set_thumbnail(url=ctx.guild.icon.url)
             embed.description = '\n'.join(invite_list)
-            if embed.description == '\n' or None:
+            if not embed.description or embed.description == '':
                 return await ctx.reply("Sepertinya server ini belum membuat invite apapun!")
             await ctx.reply(embed=embed)
 
@@ -141,7 +133,6 @@ class Moderation(commands.Cog):
         Kumpulan command berkaitan dengan pemberian pelanggaran. [GROUP]
         """
         await self.warn_add(ctx, member, reason=reason)
-        pass
         
     @warn.command(
         name = 'add',
@@ -161,31 +152,25 @@ class Moderation(commands.Cog):
         """
         Memberikan pelanggaran kepada pengguna.
         """
-        # Uses a guild-grouping mechanic that I thought was pretty neat
         if ctx.author == member:
             return await ctx.reply("Kamu tidak bisa memberikan pelanggaran kepada dirimu!", ephemeral=True)
         if member.bot:
             return await ctx.reply("Uh... sepertinya memberikan pelanggaran kepada bot itu kurang berguna.", ephemeral=True)
-        db = await connectdb("Warns")
+        
         reason = reason or "Tidak ada alasan dispesifikasi."
 
-        is_generated = await db.find_one({"_id":ctx.guild.id})
-        if is_generated:
-            # Don't do anything
-            pass
+        # Create warning record
+        await db.warning.create(data={
+            'guildId': ctx.guild.id,
+            'userId': member.id,
+            'reason': reason
+        })
 
-        else:
-            await db.insert_one({"_id":ctx.guild.id, "members":[]})
-
-        # Find matching user
-        warns = await db.find_one({"_id":ctx.guild.id, "members._id":member.id})
-        if warns is None:
-            await db.update_one({"_id":ctx.guild.id}, {"$push":{"members":{"_id":member.id, "warns":1, "reason":[reason]}}})
-            warnqty = 1
-        else:
-            await db.update_one({"_id":ctx.guild.id, "members._id":member.id}, {"$push":{"members.$.reason":reason}, "$inc":{"members.$.warns":1}})
-            warned_fella = next(m for m in warns['members'] if m['_id'] == member.id)
-            warnqty = warned_fella['warns']+1
+        # Count total warnings for this user in this guild
+        warnqty = await db.warning.count(where={
+            'guildId': ctx.guild.id,
+            'userId': member.id
+        })
 
         em = discord.Embed(title=f"Pelanggaran Diberikan❗", description = f"{member.mention} telah diberikan pelanggaran.\nDia sekarang telah diberikan **`{warnqty}`** pelanggaran.",
         color = member.colour
@@ -206,22 +191,27 @@ class Moderation(commands.Cog):
     @app_commands.rename(member = 'pengguna')
     @commands.has_permissions(manage_messages = True)
     @check_blacklist()
-    async def warnhistory(self, ctx:commands.Context, member:discord.Member):
+    async def warnhistory(self, ctx:commands.Context, member:discord.Member=None):
             """Lihat riwayat pelanggaran pengguna."""
             member = member or ctx.author
-            db = await connectdb("Warns")
-            doc = await db.find_one({'_id':ctx.guild.id, "members._id":member.id})
-            if doc is None:
+            warns = await db.warning.find_many(where={
+                'guildId': ctx.guild.id,
+                'userId': member.id
+            }, order={'createdAt': 'desc'})
+            
+            if not warns:
                 return await ctx.reply(f"**`{member}`** saat ini belum memiliki pelanggaran!", ephemeral=True)
             
-            warned_member = next(m for m in doc['members'] if m['_id'] == member.id)
-            reasons = warned_member['reason']
+            warn_count = len(warns)
+            reasons = [w.reason for w in warns]
             emb = discord.Embed(title = f"Riwayat pelanggaran {member}", color = member.colour)
-            emb.add_field(name= "Jumlah Pelanggaran", value=warned_member['warns'], inline=False)
-            if warned_member['warns'] > 1:
-                emb.add_field(name=f"Alasan (dari pelanggaran #1 sampai #{warned_member['warns']})", value="*"+"\n".join(reasons)+"*")
+            emb.add_field(name= "Jumlah Pelanggaran", value=str(warn_count), inline=False)
+            
+            reasons_text = "\n".join([f"{i+1}. {r}" for i, r in enumerate(reasons)])
+            if warn_count > 1:
+                emb.add_field(name=f"Alasan (dari terbaru)", value=f"*{reasons_text}*")
             else:
-                emb.add_field(name=f"Alasan", value="*"+"\n".join(reasons)+"*")
+                emb.add_field(name=f"Alasan", value=f"*{reasons_text}*")
             emb.set_thumbnail(url = member.display_avatar.url)
             await ctx.reply(embed = emb)
 
@@ -238,12 +228,14 @@ class Moderation(commands.Cog):
         """
         Menghilangkan segala data pelanggaran pengguna.
         """
-        db = await connectdb("Warns")
-        doc = await db.find_one({"_id":ctx.guild.id, "members._id":member.id})
-        if doc is None:
+        deleted = await db.warning.delete_many(where={
+            'guildId': ctx.guild.id,
+            'userId': member.id
+        })
+        
+        if deleted == 0:
             return await ctx.reply(f"`{member}` belum pernah diberikan pelanggaran!")
         
-        await db.update_one({"_id":ctx.guild.id, "members._id":member.id}, {"$pull": {"members": {"_id": member.id}}})
         await ctx.reply(f"Semua pelanggaran untuk {member.mention} di server ini telah dihapus.")
 
     @warn.command(name='list', description = 'Memperlihatkan semua pengguna yang memiliki pelanggaran di server ini.')
@@ -253,20 +245,28 @@ class Moderation(commands.Cog):
         """
         Memperlihatkan semua pengguna yang memiliki pelanggaran di server ini.
         """
-        db = await connectdb('Warns')
-        docs = await db.find_one({'_id':ctx.guild.id})
-        if docs is None:
+        # Get unique user IDs with warnings in this guild
+        # Prisma Python doesn't have groupBy yet in some versions, but we can use distinct if supported
+        # Or just get all and process in Python
+        warns = await db.warning.find_many(where={'guildId': ctx.guild.id})
+        if not warns:
             return await ctx.reply(f'Belum ada orang yang diberikan pelanggaran di server ini!')
         
-        members = docs['members']
+        user_warns = {}
+        for w in warns:
+            user_warns[w.userId] = user_warns.get(w.userId, 0) + 1
+            
         text = []
-        for data in members:
-            user = await self.bot.fetch_user(data['_id'])
-            text.append(f'**`{user}`** | Jumlah: `{data["warns"]}` pelanggaran')
+        for user_id, count in user_warns.items():
+            try:
+                user = await self.bot.fetch_user(user_id)
+                text.append(f'**`{user}`** | Jumlah: `{count}` pelanggaran')
+            except:
+                text.append(f'**`Unknown User ({user_id})`** | Jumlah: `{count}` pelanggaran')
         
         embed = discord.Embed(title=f'Daftar Pelanggaran di {ctx.guild.name}', color=ctx.author.color, timestamp=ctx.message.created_at)
         embed.description = '\n'.join(text)
-        embed.set_thumbnail(url=ctx.guild.icon.url if not ctx.guild.icon is None else getenv('normalpfp'))
+        embed.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else getenv('normalpfp'))
         await ctx.reply(embed=embed)
 
     @commands.hybrid_command(name='ultban', description="Ban pengguna dari server, walaupun dia di luar server ini.")
@@ -348,7 +348,7 @@ class Moderation(commands.Cog):
 
         async with ctx.channel.typing():
             await channel.purge(limit = amount+1 if channel == ctx.channel else amount)
-        return await ctx.channel.send(f"Aku telah menghapus {amount} pesan dari {channel.mention}.", delete_after = 5.0)
+        return await ctx.channel.send(f"Aku telah menghapus {amount} pesan from {channel.mention}.", delete_after = 5.0)
 
 async def setup(bot):
     await bot.add_cog(Moderation(bot))

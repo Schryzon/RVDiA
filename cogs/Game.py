@@ -17,7 +17,7 @@ from os import getenv, listdir, path
 from discord.ui import View, Button, button
 from discord import app_commands
 from discord.ext import commands
-from scripts.main import connectdb, has_registered, check_blacklist
+from scripts.main import db, has_registered, check_blacklist
 from scripts.game import level_up, send_level_up_msg, split_reward_string, give_rewards, default_data, check_compatible
 
 class FightView(View):
@@ -114,37 +114,47 @@ class GameInstance():
                 return 3
             return 3*(math.floor(level/10))
         
-        database = await connectdb('Game')
-        user1_data = await database.find_one({'_id':self.user1.id})
-        user1_stats = [user1_data['attack'], user1_data['defense'], user1_data['agility']]
+        user1_data = await db.user.find_unique(where={'id': self.user1.id})
+        stats1 = user1_data.data
+        self.user1_hp = user1_data.hp # Dynamic HP!
+        self.user1_max_hp = user1_data.max_hp
+        
+        user1_stats = [stats1['attack'], stats1['defense'], stats1['agility']]
         comp_data1 = {
             'stats': user1_stats,
-            'hp': self.user1_hp
+            'hp': self.user1_hp,
+            'max_hp': self.user1_max_hp
         }
-        self.p1_skill_limit = calc_skill_limit(user1_data['level'])
+        self.p1_skill_limit = calc_skill_limit(stats1['level'])
 
         if self.command_name == "fight":
             # Fight = PvP
-            user2_data = await database.find_one({'_id':self.user2.id})
+            user2_data = await db.user.find_unique(where={'id': self.user2.id})
             if user2_data is None:
                 await self.ctx.reply(f'Waduh! Sepertinya <@{self.user2.id}> belum membuat akun Re:Volution!')
                 raise Exception('Rival has no account!')
             
-            user2_stats = [user2_data['attack'], user2_data['defense'], user2_data['agility']]
+            stats2 = user2_data.data
+            self.user2_hp = user2_data.hp
+            self.user2_max_hp = user2_data.max_hp
+            
+            user2_stats = [stats2['attack'], stats2['defense'], stats2['agility']]
             comp_data2 = {
                 'stats': user2_stats,
-                'hp': self.user2_hp
+                'hp': self.user2_hp,
+                'max_hp': self.user2_max_hp
             }
-            self.p2_skill_limit = calc_skill_limit(user2_data['level'])
+            self.p2_skill_limit = calc_skill_limit(stats2['level'])
 
         else:
             user2_stats = [self.user2['atk'], self.user2['def'], self.user2['agl']]
             comp_data2 = {
                 'stats':user2_stats,
-                'hp':self.user2_hp
+                'hp':self.user2_hp,
+                'max_hp': self.user2_hp # PvE enemies might not have max_hp yet
             }
 
-        return [comp_data1, comp_data2] # List containing dict, feeling stressful
+        return [comp_data1, comp_data2]
 
 
     async def attack(self, dealer_stat:list, taker_stat:list, dealer_id:int, is_defending:bool):
@@ -201,9 +211,8 @@ class GameInstance():
             self.user2_defend = True
     
     async def use(self, user1, type):
-        database = await connectdb('Game')
-        user1_data = await database.find_one({'_id':user1.id})
-        items = user1_data['items']
+        inv_data = await db.inventory.find_unique(where={'userId': user1.id})
+        items = inv_data.items if type == 'item' else inv_data.skills
         view = ItemView(items, user1, type)
         if type == 'item':
             await self.ctx.channel.send(f"{user1.mention}, 10 detik untuk memilih item.", view=view, delete_after=15)
@@ -827,32 +836,43 @@ class ItemDropdown(discord.ui.Select):
 
     async def callback(self, interaction:discord.Interaction):
         if interaction.message.mentions[0].id != interaction.user.id:
-            return await interaction.response.send_message(f"Hey! Kamu tidak diizinkan untuk memilih!", ephemeral=True) #Does this even work
+            return await interaction.response.send_message(f"Hey! Kamu tidak diizinkan untuk memilih!", ephemeral=True)
         if self.values[0] == 'none' and self.types == 'item':
             return await interaction.response.send_message("Kamu tidak memiliki item apapun!", ephemeral=True)
         elif self.values[0] == 'none' and self.types == 'skill':
             return await interaction.response.send_message("Kamu tidak memiliki skill apapun!", ephemeral=True)
         
-        database = await connectdb('Game')
-        data = await database.find_one({'_id':self.user1.id})
-        db_items = data['items']
+        user_record = await db.user.find_unique(where={'id': self.user1.id}, include={'inventory': True})
+        if not user_record or not user_record.inventory:
+            return await interaction.response.send_message("Akun bermasalah!", ephemeral=True)
+            
+        inventory = user_record.inventory
+        user_items = inventory.items if isinstance(inventory.items, list) else []
         used_item = None
-        if db_items == self.items:
-            for item in self.items:
-                if item['_id'] == self.values[0] and not item['owned'] <= 0 and self.types == 'item':
-                    await database.find_one_and_update(
-                        {'_id':self.user1.id, 'items._id':self.values[0]},
-                        {'$inc':{'items.$.owned':-1}}
-                        )
+        
+        if self.types == 'item':
+            for item in user_items:
+                if item['_id'] == self.values[0] and item.get('owned', 0) > 0:
+                    item['owned'] -= 1
                     used_item = [item['name'], item['func']]
                     break
-
-                elif item['_id'] == self.values[0] and not item['owned'] <= 0 and self.types == 'skill':
+            
+            if used_item:
+                await db.inventory.update(
+                    where={'userId': self.user1.id},
+                    data={'items': user_items}
+                )
+        else:
+            # Skill usage (doesn't consume)
+            # Old code just checked if it exists and is owned
+            for item in user_items:
+                if item['_id'] == self.values[0] and item.get('owned', 0) > 0:
                     used_item = [item['name'], item['func']]
                     break
 
         if used_item is None:
-            raise Exception("The Item Dropdown callback is behaving wierdly!")
+            return await interaction.response.send_message("Item tidak ditemukan atau sudah habis!", ephemeral=True)
+            
         if self.types == 'item':
             await interaction.response.send_message(f"{interaction.user.mention} menggunakan item:\n# {used_item[0]}!\n({used_item[1].upper()})")
         else:
@@ -965,10 +985,11 @@ class ResignButton(View):
         if interaction.user != self.ctx.author:
             await interaction.response.send_message("Kamu tidak diperbolehkan berinteraksi dengan tombol ini!", ephemeral=True)
             return
-        database = await connectdb('Game')
-        data = await database.find_one({'_id':interaction.user.id})
-        await database.find_one_and_delete({'_id':interaction.user.id})
-        await interaction.response.send_message(f'Aku telah menghapus akunmu.\nSampai jumpa, `{data["name"]}`, di Re:Volution!')
+        
+        user_record = await db.user.find_unique(where={'id': interaction.user.id})
+        name = user_record.data['name'] if user_record else "Unknown"
+        await db.user.delete(where={'id': interaction.user.id})
+        await interaction.response.send_message(f'Aku telah menghapus akunmu.\nSampai jumpa, `{name}`, di Re:Volution!')
         self.value = True
         self.stop()
 
@@ -1011,44 +1032,60 @@ class ShopDropdown(discord.ui.Select):
             items = json.loads(content)
 
         item_id = self.values[0]
-        database = await connectdb('Game')
-        data = await database.find_one({'_id':interaction.user.id})
+        user_record = await db.user.find_unique(where={'id': interaction.user.id}, include={'inventory': True})
+        if not user_record or not user_record.inventory:
+            return await interaction.response.send_message("Akunmu bermasalah, silahkan hubungi developer.", ephemeral=True)
+            
+        data = user_record.data
+        inventory = user_record.inventory
         db_dict = {item['_id']: item for item in items}
-        mongo_dict = {item['_id']: item for item in data['items']}
+        
+        matched_item = db_dict[item_id]
+        currency_key = 'coins' if matched_item['paywith'] == "Koin" else 'karma'
+        current_money = data[currency_key]
+        
+        if current_money < matched_item['cost']:
+            return await interaction.response.send_message(f"Waduh!\n{matched_item['paywith']}mu tidak cukup untuk membeli barang ini!", ephemeral=True)
 
-        matched_dict = db_dict[item_id]
-        current_money = data['coins'] if matched_dict['paywith'] == "Koin" else data['karma']
-        if current_money < matched_dict['cost']:
-            return await interaction.response.send_message(f"Waduh!\n{matched_dict['paywith']}mu tidak cukup untuk membeli barang ini!", ephemeral=True)
-
-        if item_id in db_dict and item_id in mongo_dict: # User already bought this item in the past
+        # Handle items and skills
+        # Equipment (1-) and Skills (2-) are unique
+        user_items = inventory.items if isinstance(inventory.items, list) else []
+        mongo_dict = {item['_id']: item for item in user_items}
+        
+        if item_id in mongo_dict:
             if '1-' in item_id:
                 return await interaction.response.send_message("Kamu hanya bisa membeli equipment sekali saja!", ephemeral=True)
             if '2-' in item_id:
                 return await interaction.response.send_message("Kamu hanya bisa memelajari skill sekali saja!", ephemeral=True)
-            filter_ = {'_id': interaction.user.id, 'items._id': item_id}
-            update_ = {'$inc': {'items.$.owned': 1}}
-            await database.update_one(filter=filter_, update=update_)
-
-            currency = 'coins' if matched_dict['paywith'] == "Koin" else 'karma'
-            cost = matched_dict['cost']
-            update_ = {'$inc': {currency: cost*-1}}
-            await database.update_one(filter=filter_, update=update_)
-
-            await interaction.response.send_message(f"Pembelian berhasil!\nKamu telah membeli `{matched_dict['name']}`", ephemeral=True)
-
-        else:
-            currency = 'coins' if matched_dict['paywith'] == "Koin" else 'karma'
-            cost = matched_dict['cost']
-            del matched_dict['cost']
-            del matched_dict['paywith']
-            matched_dict['owned'] = 1
-            await database.update_one({'_id': interaction.user.id},
-                                {'$push':{'items':matched_dict}})
             
-            await database.update_one({'_id': interaction.user.id}, {'$inc':{currency: cost*-1}}) # Second update, avoiding conflict
+            # Increment owned count (if we care about it in JSONB)
+            for item in user_items:
+                if item['_id'] == item_id:
+                    item['owned'] = item.get('owned', 0) + 1
+                    break
+        else:
+            # Add new item
+            new_item = matched_item.copy()
+            cost = new_item.pop('cost')
+            new_item.pop('paywith')
+            new_item['owned'] = 1
+            user_items.append(new_item)
 
-            await interaction.response.send_message(f"Pembelian berhasil!\nKamu telah membeli `{matched_dict['name']}`", ephemeral=True)
+        # Deduct money
+        data[currency_key] -= matched_item['cost']
+        
+        # Update DB
+        await db.user.update(
+            where={'id': interaction.user.id},
+            data={
+                'data': data,
+                'inventory': {
+                    'update': {'items': user_items}
+                }
+            }
+        )
+
+        await interaction.response.send_message(f"Pembelian berhasil!\nKamu telah membeli `{matched_item['name']}`", ephemeral=True)
 
 class EnemyDropdown(discord.ui.Select):
     def __init__(self):
@@ -1194,7 +1231,7 @@ class UseDropdown(discord.ui.Select):
                 description=f"{item['func'].upper()}",
                 value = item['_id']
             ))
-        if options == [] or options == None:
+        if not options:
             options.append(discord.SelectOption(
                     label=f"Tidak ada apapun!",
                     value="none",
@@ -1208,50 +1245,100 @@ class UseDropdown(discord.ui.Select):
     async def callback(self, interaction: discord.Interaction):
         # Click -> Check item_id and owned -> Add stats accordingly
         if interaction.message.mentions[0] != interaction.user:
-            return await interaction.response.send_message("Kamu tidak diizinkan untuk menggunakan dropdown ini!")
+            return await interaction.response.send_message("Kamu tidak diizinkan untuk menggunakan dropdown ini!", ephemeral=True)
         if self.values[0] == 'none':
             return await interaction.response.send_message("Kamu tidak memiliki apapun!\nKamu harus membeli barang/skill di `/game shop`!", ephemeral=True)
-        database = await connectdb('Game')
-        data = await database.find_one({'_id':interaction.user.id})
-        item = self.values[0]
-        if '1-' in item:
-            matching = [x for x in data['equipments'] if x['_id'] == item]
-            if matching: # Uneqip
-                func = matching[0]['func'].split('+')
-                func = convert_to_db_stat(func)
-                await database.update_one({'_id':interaction.user.id}, {'$pull':{'equipments':{'_id':item}}})
-                await database.update_one({'_id':interaction.user.id}, {'$inc':{func[0]:int(func[1])*-1}})
-                await interaction.response.send_message(f"Kamu telah melepas `{matching[0]['name']}`!")
+        
+        user_record = await db.user.find_unique(where={'id': interaction.user.id}, include={'inventory': True})
+        if not user_record or not user_record.inventory:
+            return await interaction.response.send_message("Akunmu bermasalah, silahkan hubungi developer.", ephemeral=True)
             
-            else:
-                item = await database.find_one({'_id':interaction.user.id, 'items._id':item})
-                matching = [x for x in item['items'] if x['_id'] == self.values[0]]
-                func = matching[0]['func'].split('+')
-                func = convert_to_db_stat(func)
-
-                same_type = [x for x in data['equipments'] if x['usefor'] == matching[0]['usefor']]
+        data = user_record.data
+        inventory = user_record.inventory
+        item_id = self.values[0]
+        
+        # Check if it's an equipment (prefix '1-')
+        if '1-' in item_id:
+            equipments = inventory.equipments if isinstance(inventory.equipments, list) else []
+            matching = [x for x in equipments if x['_id'] == item_id]
+            
+            if matching: # Unequip
+                item_to_unequip = matching[0]
+                func = item_to_unequip['func'].split('+')
+                stat_key = self.convert_to_db_stat_key(func[0])
+                stat_value = int(func[1])
+                
+                new_equipments = [x for x in equipments if x['_id'] != item_id]
+                data[stat_key] -= stat_value
+                
+                await db.user.update(
+                    where={'id': interaction.user.id},
+                    data={
+                        'data': data,
+                        'inventory': {
+                            'update': {'equipments': new_equipments}
+                        }
+                    }
+                )
+                await interaction.response.send_message(f"Kamu telah melepas `{item_to_unequip['name']}`!")
+            
+            else: # Equip
+                all_items = inventory.items if isinstance(inventory.items, list) else []
+                item_match = [x for x in all_items if x['_id'] == item_id]
+                
+                if not item_match:
+                    return await interaction.response.send_message("Kamu tidak memiliki item tersebut!", ephemeral=True)
+                
+                item_to_equip = item_match[0]
+                func = item_to_equip['func'].split('+')
+                stat_key = self.convert_to_db_stat_key(func[0])
+                stat_value = int(func[1])
+                
+                same_type = [x for x in equipments if x.get('usefor') == item_to_equip.get('usefor')]
                 if same_type:
-                    func_2 = same_type[0]['func'].split('+')
-                    func_2 = convert_to_db_stat(func_2)
-                    await database.update_one({'_id':interaction.user.id}, {'$pull':{'equipments':{'_id':same_type[0]['_id']}}})
-                    await database.update_one({'_id':interaction.user.id}, {'$inc':{func_2[0]:int(func_2[1])*-1}})
-
-                await database.update_one({'_id':interaction.user.id}, {'$push':{'equipments':matching[0]}})
-                await database.update_one({'_id':interaction.user.id}, {'$inc':{func[0]:int(func[1])}})
-                await interaction.response.send_message(f"Kamu telah menggunakan `{matching[0]['name']}`!")
-
+                    old_item = same_type[0]
+                    old_func = old_item['func'].split('+')
+                    old_stat_key = self.convert_to_db_stat_key(old_func[0])
+                    data[old_stat_key] -= int(old_func[1])
+                    equipments = [x for x in equipments if x['_id'] != old_item['_id']]
+                
+                equipments.append(item_to_equip)
+                data[stat_key] += stat_value
+                
+                await db.user.update(
+                    where={'id': interaction.user.id},
+                    data={
+                        'data': data,
+                        'inventory': {
+                            'update': {'equipments': equipments}
+                        }
+                    }
+                )
+                await interaction.response.send_message(f"Kamu telah menggunakan `{item_to_equip['name']}`!")
+        
         else:
-            item = await database.find_one({'_id':interaction.user.id, 'items._id':item})
-            matching = [x for x in item['items'] if x['_id'] == self.values[0]]
-            func = matching[0]['func'].split('+')
-            func = convert_to_db_stat(func)
-            await database.update_one({'_id':interaction.user.id, 'items._id':self.values[0]}, {'$inc':{'items.$.owned':-1}})
-            await database.update_one({'_id':interaction.user.id}, {'$inc':{func[0]:int(func[1])}})
-            await interaction.response.send_message(f"Kamu telah menggunakan `{matching[0]['name']}`!")
+            # Consumable or Skill
+            all_items = inventory.items if isinstance(inventory.items, list) else []
+            item_match = [x for x in all_items if x['_id'] == item_id]
+            if not item_match:
+                return await interaction.response.send_message("Kamu tidak memiliki item/skill tersebut!", ephemeral=True)
+            
+            item_to_use = item_match[0]
+            await interaction.response.send_message(f"Kamu telah menggunakan `{item_to_use['name']}`!")
+            
+            game_inst = GameInstance(self.ctx, interaction.user, None, self.ctx.bot)
+            await game_inst.func_converter(item_to_use['func'], interaction.user, None)
             await asyncio.sleep(1)
-            level_uped = await level_up(self.ctx)
-            if level_uped:
-                await send_level_up_msg(self.ctx)
+            await level_up(self.ctx)
+
+    def convert_to_db_stat_key(self, short_stat):
+        mapping = {
+            'ATK': 'attack',
+            'DEF': 'defense',
+            'AGL': 'agility',
+            'HP': 'hp'
+        }
+        return mapping.get(short_stat.upper(), short_stat.lower())
 
     
 class UseView(View):
@@ -1282,27 +1369,28 @@ class Game(commands.Cog):
         """
         Daftarkan akunmu ke Re:Volution ~ The Dream World!
         """
-        name=name or ctx.author.name
-        database = await connectdb('Game')
-        data = await database.find_one({'_id':ctx.author.id})
-        if data:
-            expected_fields = set(default_data.keys())
-            unexpected_fields = set(data.keys()) - expected_fields
-            for field in unexpected_fields:
-                del data[field] # Remove useless keys
-
-            for key, value in default_data.items():
-                data.setdefault(key, value)
-            await database.replace_one({'_id':ctx.author.id}, data)
-            return await ctx.reply('Akunmu sudah diperbarui!')
+        name = name or ctx.author.name
+        user_data = await db.user.find_unique(where={'id': ctx.author.id})
+        if user_data:
+            return await ctx.reply('Kamu sudah terdaftar!')
+            
+        # Create User and Inventory together
+        data_to_save = {**default_data}
+        data_to_save['name'] = name
         
-        new_data = {
-            **default_data,
-            '_id':ctx.author.id,
-            'name':name
-        }
-
-        await database.insert_one(new_data)
+        await db.user.create(data={
+            'id': ctx.author.id,
+            'hp': 100,
+            'max_hp': 100,
+            'data': data_to_save,
+            'inventory': {
+                'create': {
+                    'items': {},
+                    'skills': []
+                }
+            }
+        })
+        
         await ctx.reply(f'Akunmu sudah didaftarkan!\nSelamat datang di Re:Volution, **`{name}`**!')
         await asyncio.sleep(0.7)
         await self.account(ctx)
@@ -1319,6 +1407,9 @@ class Game(commands.Cog):
         await view.wait()
         if view.value is None:
             await ctx.channel.send('Waktu habis, penghapusan akun dibatalkan.')
+        elif view.value:
+            await db.user.delete(where={'id': ctx.author.id})
+            await ctx.reply('Akunmu telah dihapus. Sampai jumpa lagi!')
 
     @game.command(aliases=['login'], description='Dapatkan bonus login harian!')
     @has_registered()
@@ -1328,9 +1419,15 @@ class Game(commands.Cog):
         """
         Dapatkan bonus login harian!
         """
-        database = await connectdb('Game')
-        data = await database.find_one({'_id':ctx.author.id})
-        last_login = data['last_login']
+        user_record = await db.user.find_unique(where={'id': ctx.author.id})
+        data = user_record.data
+        
+        last_login_raw = data.get('last_login')
+        if isinstance(last_login_raw, str):
+            last_login = datetime.datetime.fromisoformat(last_login_raw)
+        else:
+            last_login = last_login_raw # Fallback if it's already a datetime object
+            
         current_time = datetime.datetime.now()
         delta_time = current_time - last_login
 
@@ -1344,15 +1441,22 @@ class Game(commands.Cog):
             new_coins = random.randint(15, 25)
             new_karma = random.randint(1, 5)
             new_exp = random.randint(10, 20)
-            await database.find_one_and_update(
-                {'_id':ctx.author.id},
-                {'$inc':{'coins':new_coins, 'karma':new_karma, 'exp':new_exp}, '$set':{'last_login':datetime.datetime.now()}}
+            
+            data['coins'] += new_coins
+            data['karma'] += new_karma
+            data['exp'] += new_exp
+            data['last_login'] = current_time.isoformat()
+            
+            await db.user.update(
+                where={'id': ctx.author.id},
+                data={'data': data}
             )
+            
             embed = discord.Embed(title='Bonus Harianmu', color=0x00FF00, timestamp=next_login)
             embed.set_thumbnail(url=ctx.author.display_avatar.url)
             embed.add_field(
                 name="Kamu Memperoleh:",
-                value=f"{self.bot.coin_emoji_anim} `{new_coins}` Koin\n👹 `{new_karma}` Karma\n⬆️ `{new_exp}` EXP!'",
+                value=f"{self.bot.coin_emoji_anim} `{new_coins}` Koin\n👹 `{new_karma}` Karma\n⬆️ `{new_exp}` EXP!",
                 inline=False
             )
             embed.set_footer(text='Bonus selanjutnya pada ')
@@ -1369,70 +1473,29 @@ class Game(commands.Cog):
     @check_blacklist()
     async def account(self, ctx:commands.Context, *, user:discord.User=None):
         """
-        Lihat profil pengguna di Re:Volution ~ The Dream World!
+        Tampilkan informasi akun Re:Volution-mu!
         """
-        # Plans: PIL profile pic, equipment & items should be seperate commands
-        user = user or ctx.author
-        database = await connectdb('Game')
-        data = await database.find_one({'_id':user.id})
-
-        # General data
-        player_name = data['name']
-        level = data['level']
-        exp, next_exp = data['exp'], data['next_exp']
-        last_login = data['last_login']
-
-        # Stats & economy
-        coins = data['coins']
-        karma = data['karma']
-
-        # Battle stats
-        attack, defense, agility = data['attack'], data['defense'], data['agility']
-        items = [x for x in data['items'] if x['owned'] > 0 and x['type'] != 'Skill']
-        skills = [x for x in data['items'] if x['owned'] > 0 and x['type'] == 'Skill']
-        equipments = [x['name'] for x in data['equipments']]
-        equipment_string = '\n'.join(equipments)
-        if equipment_string == '' or equipment_string == '\n':
-            equipment_string = 'Tidak menggunakan equipment apapun.'
-
-
-        embed = discord.Embed(title=player_name, timestamp=last_login, color=ctx.author.color)
-        embed.set_author(name='Info Akun Re:Volution ~ The Dream World')
-        embed.description = f'Alias: {user}'
-        embed.set_thumbnail(url=user.display_avatar.url)
-
-        embed.add_field(
-            name=f'Level {level}', 
-            value=f'⬆️ EXP: `{exp}`/`{next_exp}`', 
-            inline=False
-            )
-
-        embed.add_field(
-            name=f'Status Keuangan',
-            value=f'{self.bot.coin_emoji} Koin: `{coins}`\n👹 Karma: `{karma}`', 
-            inline=False
-            )
-
-        embed.add_field(
-            name=f'Statistik Tempur', 
-            value=f'💥 Attack: `{attack}`\n🛡️ Defense: `{defense}`\n👟 Agility: `{agility}`', 
-            inline=False
-            )
+        target = user or ctx.author
+        user_record = await db.user.find_unique(where={'id': target.id})
         
-        embed.add_field(
-            name=f'Barang & Skill', 
-            value=f'👜 Barang: `{len(items)}`\n🔮 Skill: `{len(skills)}`', 
-            inline=False
-            )
+        if not user_record:
+            return await ctx.reply('Waduh! Akun tersebut belum terdaftar di Re:Volution!')
         
-        embed.add_field(
-            name=f'Equipment Terpakai', 
-            value=f'**`{equipment_string}`**', 
-            inline=False
-            )
+        data = user_record.data
+        embed = discord.Embed(title=f"Profil Re:Volution ~ {data['name']}", color=0x86273d)
+        embed.set_thumbnail(url=target.display_avatar.url)
         
-        embed.set_footer(text='Login harian terakhir ')
-        await ctx.reply(embed = embed)
+        # Display HP and Max HP
+        hp_str = f"❤️ `{user_record.hp}/{user_record.max_hp}` HP"
+        
+        embed.add_field(name='Level', value=f"🔰 `{data['level']}`", inline=True)
+        embed.add_field(name='EXP', value=f"⬆️ `{data['exp']}/{data['next_exp']}`", inline=True)
+        embed.add_field(name='Status', value=hp_str, inline=True)
+        
+        embed.add_field(name='Stats', value=f"⚔️ `{data['attack']}` Attack\n🛡️ `{data['defense']}` Defense\n💨 `{data['agility']}` Agility", inline=True)
+        embed.add_field(name='Harta', value=f"{self.bot.coin_emoji} `{data['coins']}` Koin\n👹 `{data['karma']}` Karma", inline=True)
+        
+        await ctx.reply(embed=embed)
 
     @game.command(description="Beli item atau perlengkapan perang!")
     @has_registered()
@@ -1442,46 +1505,53 @@ class Game(commands.Cog):
         """
         Beli item atau perlengkapan perang!
         """
-        # Plans: show details and make a paginator or something
-        database = await connectdb('Game')
-        data = await database.find_one({'_id':ctx.author.id})
+        user_record = await db.user.find_unique(where={'id': ctx.author.id}, include={'inventory': True})
+        if not user_record:
+            return await ctx.reply('Kamu belum terdaftar!')
+            
+        data = user_record.data
+        inventory = user_record.inventory
+        
         with open('./src/game/shop.json') as file:
-            content = file.read()
-            items = json.loads(content)
+            items = json.load(file)
 
         embed = discord.Embed(title = 'Toko Xaneria', color=0xFFFF00)
         embed.description='"Hey, hey! Selamat datang. Silahkan, mau beli apa?"'
         embed.set_footer(text='Untuk membeli sebuah item, klik di bawah ini! v')
         embed.set_thumbnail(url=getenv('xaneria'))
 
+        user_items = inventory.items if isinstance(inventory.items, list) else []
         def get_owned_count(item_id):
-            try:
-                for key in data.get('items', []):
-                    if key['_id'] == item_id:
-                        return key.get('owned', 0)
-            except:
-                pass
+            for item in user_items:
+                if item['_id'] == item_id:
+                    return item.get('owned', 0)
             return 0
 
-        def generate_embed_field(index, item, owned_count):
+        options_per_page = 5
+        for index, item in enumerate(items[:options_per_page], start=1):
+            owned_count = get_owned_count(item['_id'])
             embed.add_field(
                 name=f"{index}. {item['name']}",
                 value=f"**`{item['desc']}`**\n({item['func']})\n**Tipe:** {item['type']}\n**Harga:** {item['cost']} {item['paywith']}\n**Dimiliki:** {owned_count}",
                 inline=False
             )
 
-        options_per_page = 5
-        owned = []
-        for index, item in enumerate(items, start=1):
-            if index > options_per_page:
-                break
-
-            owned_count = get_owned_count(item['_id'])
-            owned.append(owned_count)
-            generate_embed_field(index, item, owned_count)
-
         view = ShopView(ctx, items, data)
         await ctx.reply(embed = embed, view=view)
+
+    @game.command(description='Bertualang di Re:Volution!')
+    @has_registered()
+    @check_compatible()
+    @check_blacklist()
+    async def adventure(self, ctx:commands.Context):
+        """
+        Bertualang di Re:Volution ~ The Dream World!
+        """
+        exp_gain = random.randint(10, 25)
+        coin_gain = random.randint(15, 35)
+        
+        await give_rewards(ctx, ctx.author, exp_gain, coin_gain)
+        await ctx.reply(f"Kamu bertualang di Dream World dan mendapatkan `{exp_gain}` EXP dan `{coin_gain}` Koin!")
 
     @game.command(description='Tantang seseorang ke sebuah duel!')
     @app_commands.describe(member='Siapa yang ingin kamu lawan?')
@@ -1562,25 +1632,25 @@ class Game(commands.Cog):
         """
         Request untuk pemindahan data akun.
         """
-        database = await connectdb('Game')
-        current_acc_data = await database.find_one({'_id':ctx.author.id})
-        old_acc_data = await database.find_one({'_id':old_acc.id})
-        if not old_acc_data:
+        current_acc_record = await db.user.find_unique(where={'id': ctx.author.id})
+        old_acc_record = await db.user.find_unique(where={'id': old_acc.id})
+        
+        if not old_acc_record:
             return await ctx.reply("Akun Re:Volution tidak ditemukan!\nJika tidak yakin dengan ID akun Discord lamamu, silahkan hubungi langsung Schryzon!", ephemeral=True)
         
-        if ctx.author.id == old_acc_data['_id']:
+        if ctx.author.id == old_acc.id:
             return await ctx.reply("Hey! Akun yang kamu cantumkan sama dengan akun Discordmu saat ini!", ephemeral=True)
         
         embed = discord.Embed(title="Request Transfer Data Akun", color=ctx.author.color, timestamp=ctx.message.created_at)
         embed.add_field(
             name="Akun Lama",
-            value=f"Nama: {old_acc_data['name']}\nID: {old_acc_data['_id']}",
+            value=f"Nama: {old_acc_record.data['name']}\nID: {old_acc_record.id}",
             inline=False
         )
 
         embed.add_field(
             name="Akun Baru",
-            value=f"Nama: {current_acc_data['name']}\nID: {current_acc_data['_id']}",
+            value=f"Nama: {current_acc_record.data['name']}\nID: {current_acc_record.id}",
             inline=False
         )
 
@@ -1628,14 +1698,19 @@ class Game(commands.Cog):
         Gunakan barang atau perlengkapan perang!
         """
         # Choose type -> Dropdown class
-        database = await connectdb('Game')
-        data = await database.find_one({'_id':ctx.author.id})
+        user_record = await db.user.find_unique(where={'id': ctx.author.id}, include={'inventory': True})
+        if not user_record or not user_record.inventory:
+            return await ctx.reply("Kamu belum terdaftar atau akunmu bermasalah!", ephemeral=True)
+            
+        inventory = user_record.inventory
+        user_items = inventory.items if isinstance(inventory.items, list) else []
+        
         match type.value:
             case "item":
-                things = [item for item in data['items'] if "0-" in item['_id'] and item['usefor'] == "free"]
+                things = [item for item in user_items if "0-" in item['_id'] and item.get('usefor') == "free"]
             
             case "equipment":
-                things = [item for item in data['items'] if "1-" in item['_id']]
+                things = [item for item in user_items if "1-" in item['_id']]
 
             case _:
                 return await ctx.reply("Hey! Pilihlah salah satu dari opsi tersedia!", ephemeral=True)

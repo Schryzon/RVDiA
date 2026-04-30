@@ -1,0 +1,63 @@
+generator client {
+  provider             = "prisma-client-py"
+  recursive_type_depth = 5
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        BigInt   @id // Discord User ID
+  hp        Int      @default(100)
+  max_hp    Int      @default(100)
+  data      Json     // Level, EXP, Coins, Karma, Stats (Attack, Defense, Agility)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  inventory Inventory?
+}
+
+model Inventory {
+  id         Int      @id @default(autoincrement())
+  userId     BigInt   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items      Json     // Mapping of item IDs/names to quantities
+  skills     Json     // Mapping of learned skills
+  equipments Json     // Currently equipped items
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+
+model Blacklist {
+  id     BigInt  @id
+  reason String?
+}
+
+model Warning {
+  id        Int      @id @default(autoincrement())
+  guildId   BigInt
+  userId    BigInt
+  reason    String
+  createdAt DateTime @default(now())
+}
+
+model GTechMember {
+  id     BigInt @id // userId
+  nama   String
+  kelas  String
+  divisi String
+}
+
+model GTechNews {
+  id          Int      @id @default(1)
+  author      String
+  kelas       String
+  title       String
+  desc        String
+  attachments String?
+  createdAt   DateTime @default(now())
+}
+

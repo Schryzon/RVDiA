@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.db
+.env
+secrets.env
+.git/
+.github/
+.vscode/
+venv/
+.venv/
+node_modules/
+.prisma/
+prisma/client/
+*.log
+.DS_Store

@@ -27,7 +27,7 @@ from discord.ext import commands, tasks
 from random import choice as rand
 from contextlib import suppress
 from datetime import datetime
-from scripts.main import connectdb, titlecase, check_vote
+from scripts.main import titlecase, check_vote, db
 load_dotenv('./secrets.env') # Loads the .env file from python-dotenv pack
 
 class RVDIA(commands.AutoShardedBot):
@@ -65,6 +65,12 @@ class RVDIA(commands.AutoShardedBot):
         ),
       **kwargs
     )
+
+  async def setup_hook(self):
+    from scripts.main import db
+    await db.connect()
+    logging.info("Prisma Database connected.")
+
 
 
 rvdia = RVDIA() # Must create instance
@@ -239,10 +245,9 @@ async def blacklist(ctx:commands.Context, user:discord.User, *, reason:str=None)
       case _:
          pass
       
-   blacklisted = await connectdb('Blacklist')
-   check_blacklist = await blacklisted.find_one({'_id':user.id})
+   check_blacklist = await db.blacklist.find_unique(where={'id': user.id})
    if not check_blacklist:
-      await blacklisted.insert_one({'_id':user.id, 'reason':reason})
+      await db.blacklist.create(data={'id': user.id, 'reason': reason})
       embed = discord.Embed(title='‼️ BLACKLISTED ‼️', timestamp=ctx.message.created_at, color=0xff0000)
       embed.description = f'**`{user}`** telah diblacklist dari menggunakan RVDIA!'
       embed.set_thumbnail(url=user.avatar.url if not user.avatar is None else os.getenv('normalpfp'))
@@ -254,12 +259,11 @@ async def blacklist(ctx:commands.Context, user:discord.User, *, reason:str=None)
 @rvdia.command(hidden=True)
 @commands.is_owner()
 async def whitelist(ctx:commands.Context, user:discord.User):
-   blacklisted = await connectdb('Blacklist')
-   check_blacklist = await blacklisted.find_one({'_id':user.id})
+   check_blacklist = await db.blacklist.find_unique(where={'id': user.id})
    if not check_blacklist:
       return await ctx.reply(f'**`{user}`** tidak diblacklist dari menggunakan RVDIA!')
    
-   await blacklisted.find_one_and_delete({'_id':user.id})
+   await db.blacklist.delete(where={'id': user.id})
    await ctx.reply(f'`{user}` telah diwhitelist!')
 
 # Handler variable
@@ -363,26 +367,34 @@ async def on_message(msg:discord.Message):
             new_acc_id = int(new_acc_string[2].strip())
             user = await rvdia.fetch_user(new_acc_id)
 
-            database = await connectdb('Game')
             if msg.content.lower() == "approve" or msg.content.lower() == "accept":
-                old_data = await database.find_one({'_id':old_acc_id})
-                keep = {
-                    'level':old_data['level'],
-                    'exp':old_data['exp'],
-                    'next_exp':old_data['next_exp'],
-                    'last_login':old_data['last_login'],
-                    'coins':old_data['coins'],
-                    'karma':old_data['karma'],             
-                    'attack':old_data['attack'],
-                    'defense':old_data['defense'],
-                    'agility':old_data['agility'],
-                    'special_skills':old_data['special_skills'],    
-                    'items':old_data['items'],
-                    'equipments':old_data['equipments']
-                }
-
-                await database.find_one_and_update({'_id':new_acc_id}, {'$set':keep})
-                await database.delete_one({'_id':old_acc_id})
+                old_data = await db.user.find_unique(where={'id': old_acc_id}, include={'inventory': True})
+                if not old_data:
+                    return await msg.channel.send("❌ Data lama tidak ditemukan!")
+                
+                # Merge data into the new account
+                # In Prisma, we use 'data' JSONB. 
+                await db.user.update(
+                    where={'id': new_acc_id},
+                    data={
+                        'data': old_data.data,
+                        'hp': old_data.hp,
+                        'max_hp': old_data.max_hp,
+                        'inventory': {
+                            'upsert': {
+                                'create': {
+                                    'items': old_data.inventory.items if old_data.inventory else {},
+                                    'skills': old_data.inventory.skills if old_data.inventory else {}
+                                },
+                                'update': {
+                                    'items': old_data.inventory.items if old_data.inventory else {},
+                                    'skills': old_data.inventory.skills if old_data.inventory else {}
+                                }
+                            }
+                        }
+                    }
+                )
+                await db.user.delete(where={'id': old_acc_id})
                 await msg.channel.send(f'✅ Transfer akun untuk {user} selesai!')
                 try:
                    await user.send(f"✅ Request transfer akun Re:Volution-mu telah selesai!\nApproved by: `{msg.author}`")

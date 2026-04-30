@@ -1,13 +1,8 @@
-"""
-Experimental Cog, for the future.
-(Currently fully functional)
-"""
-
 from os import getenv
 import discord
 from discord import app_commands
 from discord.ext import commands
-from scripts.main import connectdb, in_gtech_server, is_member_check, is_perangkat
+from scripts.main import db, in_gtech_server, is_member_check, is_perangkat
 
 class GTech(commands.GroupCog, group_name='g-tech'):
     """
@@ -18,21 +13,25 @@ class GTech(commands.GroupCog, group_name='g-tech'):
         super().__init__()
 
     async def is_member(self, id:int): #Used for gaining data only
-        db = await connectdb("Gtech")
-        data = await db.find_one({'_id':id})
+        data = await db.gtechmember.find_unique(where={'id': id})
         return data
 
     async def send_news(self, channel_id:int):
-        db = await connectdb("Technews")
-        news = await db.find_one({'_id':1})
+        news = await db.gtechnews.find_unique(where={'id': 1})
+        if not news:
+            return
+            
         channel = self.bot.get_channel(channel_id)
-        embed = discord.Embed(title=news['title'], color = 0xff0000)
+        if not channel:
+            return
+            
+        embed = discord.Embed(title=news.title, color = 0xff0000)
         embed.set_thumbnail(url = 'https://cdn.discordapp.com/attachments/872815705475666007/974638299081756702/Gtech.png')
-        embed.add_field(name = "Author:", value=f'{news["author"]} ({news["kelas"]})', inline=False)
-        embed.add_field(name = "Deskripsi:", value=news['desc'], inline=False)
+        embed.add_field(name = "Author:", value=f'{news.author} ({news.kelas})', inline=False)
+        embed.add_field(name = "Deskripsi:", value=news.desc, inline=False)
         embed.set_author(name = "Berita Terbaru G-Tech Re'sman")
-        if news['attachments'] is not None:
-            embed.set_image(url = news['attachments'])
+        if news.attachments:
+            embed.set_image(url = news.attachments)
         await channel.send("*Knock, knock!* Ada yang baru nih di G-Tech!", embed = embed)
 
     @app_commands.command(description="Tambahkan pengguna ke database.")
@@ -46,11 +45,16 @@ class GTech(commands.GroupCog, group_name='g-tech'):
         """
         Tambahkan pengguna ke database.
         """
-        db = await connectdb('Gtech')
-        data = await db.find_one({'_id':user.id})
-        if not data is None:
+        data = await db.gtechmember.find_unique(where={'id': user.id})
+        if data:
             return await interaction.response.send_message('Pengguna sudah ada di database!', ephemeral=True)
-        await db.insert_one({'_id':user.id, 'kelas':kelas, 'divisi':divisi, 'nama':nama})
+            
+        await db.gtechmember.create(data={
+            'id': user.id,
+            'kelas': kelas,
+            'divisi': divisi,
+            'nama': nama
+        })
         await interaction.response.send_message(f'`{user}` telah didaftarkan ke database G-Tech.')
 
     @app_commands.command(description="Lihat info anggota G-Tech dari database.")
@@ -62,11 +66,12 @@ class GTech(commands.GroupCog, group_name='g-tech'):
         Lihat info anggota G-Tech dari database.
         """
         data = await self.is_member(user.id)
-        if data is None:
+        if not data:
             return await interaction.response.send_message(f'{user} belum ada di database!', ephemeral=True)
-        nama = data['nama']
-        kelas = data['kelas']
-        divisi = data['divisi']
+            
+        nama = data.nama
+        kelas = data.kelas
+        divisi = data.divisi
         e = discord.Embed(title="Info Anggota G-Tech", color=user.colour)
         e.set_thumbnail(url=user.display_avatar.url)
         e.description = f"**Nama:** {nama}\n**Kelas:** {kelas}\n**Divisi:** {divisi}"
@@ -80,11 +85,11 @@ class GTech(commands.GroupCog, group_name='g-tech'):
         """
         Hapus data anggota dari database.
         """
-        db = await connectdb('Gtech')
-        data = await db.find_one({'_id':user.id})
-        if data is None:
+        data = await db.gtechmember.find_unique(where={'id': user.id})
+        if not data:
             return await interaction.response.send_message('Pengguna belum ada di database!', ephemeral=True)
-        await db.find_one_and_delete({'_id':user.id})
+            
+        await db.gtechmember.delete(where={'id': user.id})
         await interaction.response.send_message(f'{user} telah dihapus dari database G-Tech.')
 
 
@@ -101,15 +106,35 @@ class GTech(commands.GroupCog, group_name='g-tech'):
         """
         Post sesuatu yang menarik ke channel pengumuman!
         """
-        db = await connectdb('Technews')
-        oldnews = await db.find_one({'_id':1})
-        if attachment is not None:
-            attachment = attachment.url
-        data = await self.is_member(interaction.user.id)
-        if oldnews is None:
-            await db.insert_one({'_id':1, 'author':data["nama"], 'kelas':data["kelas"], 'title':title, 'desc':content, 'attachments':attachment})
+        if attachment:
+            attachment_url = attachment.url
         else:
-            await db.find_one_and_replace({'_id':1}, {'author':data["nama"], 'kelas':data["kelas"], 'title':title, 'desc':content, 'attachments':attachment})
+            attachment_url = None
+            
+        member_data = await self.is_member(interaction.user.id)
+        if not member_data:
+            return await interaction.response.send_message('Tolong daftarkan akun Discordmu ke database terlebih dahulu!', ephemeral=True)
+
+        await db.gtechnews.upsert(
+            where={'id': 1},
+            data={
+                'create': {
+                    'id': 1,
+                    'author': member_data.nama,
+                    'kelas': member_data.kelas,
+                    'title': title,
+                    'desc': content,
+                    'attachments': attachment_url
+                },
+                'update': {
+                    'author': member_data.nama,
+                    'kelas': member_data.kelas,
+                    'title': title,
+                    'desc': content,
+                    'attachments': attachment_url
+                }
+            }
+        )
         await interaction.response.send_message('Berita baru telah diposting!', ephemeral=True)
         await self.send_news(int(getenv('gtechnews')))
 
@@ -120,17 +145,17 @@ class GTech(commands.GroupCog, group_name='g-tech'):
         """
         Lihat berita terbaru tentang G-Tech!
         """
-        db = await connectdb('Technews')
-        news = await db.find_one({'_id':1})
-        if news is None:
+        news = await db.gtechnews.find_unique(where={'id': 1})
+        if not news:
             return await interaction.response.send_message('Saat ini belum ada berita baru untuk G-Tech Re\'sman, stay tuned!', ephemeral=True)
-        embed = discord.Embed(title=news['title'], color = 0xff0000)
+            
+        embed = discord.Embed(title=news.title, color = 0xff0000)
         embed.set_thumbnail(url = getenv('gtechlogo'))
-        embed.add_field(name = "Author:", value=f'{news["author"]} ({news["kelas"]})', inline=False)
-        embed.add_field(name = "Deskripsi:", value=news['desc'], inline=False)
+        embed.add_field(name = "Author:", value=f'{news.author} ({news.kelas})', inline=False)
+        embed.add_field(name = "Deskripsi:", value=news.desc, inline=False)
         embed.set_author(name = "Berita Terbaru G-Tech Re'sman")
-        if news['attachments'] is not None:
-            embed.set_image(url = news['attachments'])
+        if news.attachments:
+            embed.set_image(url = news.attachments)
         await interaction.response.send_message(embed = embed)
 
     @app_commands.command(description="Hapus berita terbaru dari database.")
@@ -140,11 +165,11 @@ class GTech(commands.GroupCog, group_name='g-tech'):
         """
         Hapus berita terbaru dari database.
         """
-        db = await connectdb('Technews')
         data = await self.is_member(interaction.user.id)
-        if data is None:
-            return await interaction.response.send_message('Tolong daftarkan akun Discordmu ke database terlebih dahulu!')
-        await db.find_one_and_delete({'_id':1})
+        if not data:
+            return await interaction.response.send_message('Tolong daftarkan akun Discordmu ke database terlebih dahulu!', ephemeral=True)
+            
+        await db.gtechnews.delete(where={'id': 1})
         await interaction.response.send_message('Berita terakhir telah dihapus.', ephemeral=True)
 
 async def setup(bot:commands.Bot):
