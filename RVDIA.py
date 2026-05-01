@@ -293,7 +293,7 @@ async def send_reply_message(msg:discord.Message, message_embed:discord.Embed):
         sys_inst = os.getenv('rolesys') + f"Currently chatting with {msg.author}" + f"The current date is {date} at {hour} WITA. | {author} said: {embed_title} | Your response was: {embed_desc}"
         
         result = await client.aio.models.generate_content(
-            model='gemini-3-flash',
+            model='gemini-3-flash-preview',
             contents=message,
             config=types.GenerateContentConfig(
                 system_instruction=sys_inst

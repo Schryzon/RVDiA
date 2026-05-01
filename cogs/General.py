@@ -60,7 +60,7 @@ class Regenerate_Answer_Button(View):
         sys_inst = getenv('rolesys') + f"Currently chatting with {interaction.user}" + f"The current date is {date} at {hour} WITA."
         
         result = await client.aio.models.generate_content(
-            model='gemini-3-flash',
+            model='gemini-3-flash-preview',
             contents=message,
             config=types.GenerateContentConfig(
                 system_instruction=sys_inst
@@ -458,7 +458,7 @@ class Utilities(commands.Cog):
             sys_inst = getenv('rolesys') + f"Currently chatting with {ctx.author}" + f"The current date is {date} at {hour} WITA."
             
             result = await client.aio.models.generate_content(
-                model='gemini-3-flash',
+                model='gemini-3-flash-preview',
                 contents=message,
                 config=types.GenerateContentConfig(
                     system_instruction=sys_inst
