@@ -6,7 +6,8 @@ import openai
 import requests
 import aiohttp
 import pytz
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from datetime import datetime
 from sys import version as pyver
 from os import getenv
@@ -55,14 +56,15 @@ class Regenerate_Answer_Button(View):
         currentTime = datetime.now(pytz.utc).astimezone(pytz.timezone("Asia/Jakarta"))
         date = currentTime.strftime("%d/%m/%Y")
         hour = currentTime.strftime("%H:%M:%S")
-        genai.configure(api_key=os.getenv("googlekey"))
-        model1 = genai.GenerativeModel(
-            'gemini-1.5-flash',
-            system_instruction=getenv('rolesys') + f"Currently chatting with {interaction.user}" + f"The current date is {date} at {hour} WITA."
-        )
-
-        result = await model1.generate_content_async(
-            message
+        client = genai.Client(api_key=os.getenv("googlekey"))
+        sys_inst = getenv('rolesys') + f"Currently chatting with {interaction.user}" + f"The current date is {date} at {hour} WITA."
+        
+        result = await client.aio.models.generate_content(
+            model='gemini-3-flash',
+            contents=message,
+            config=types.GenerateContentConfig(
+                system_instruction=sys_inst
+            )
         )
         AI_response = result.text
         
@@ -452,14 +454,15 @@ class Utilities(commands.Cog):
             currentTime = datetime.now(pytz.utc).astimezone(pytz.timezone("Asia/Jakarta"))
             date = currentTime.strftime("%d/%m/%Y")
             hour = currentTime.strftime("%H:%M:%S")
-            genai.configure(api_key=os.getenv("googlekey"))
-            model1 = genai.GenerativeModel(
-                'gemini-1.5-flash',
-                system_instruction=getenv('rolesys') + f"Currently chatting with {ctx.author}" + f"The current date is {date} at {hour} WITA."
-            )
-
-            result = await model1.generate_content_async(
-                message
+            client = genai.Client(api_key=os.getenv("googlekey"))
+            sys_inst = getenv('rolesys') + f"Currently chatting with {ctx.author}" + f"The current date is {date} at {hour} WITA."
+            
+            result = await client.aio.models.generate_content(
+                model='gemini-3-flash',
+                contents=message,
+                config=types.GenerateContentConfig(
+                    system_instruction=sys_inst
+                )
             )
             AI_response = result.text
             

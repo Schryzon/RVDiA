@@ -10,7 +10,7 @@ import logging
 from os import getenv
 from dotenv import load_dotenv
 from discord.ext import commands
-load_dotenv('./secrets.env')
+load_dotenv()
 
 xlv = commands.Bot(command_prefix="x-",
                    help_command=None,

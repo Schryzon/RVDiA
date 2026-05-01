@@ -2,6 +2,7 @@ import discord
 import asyncio
 from datetime import datetime
 from discord.ext import commands
+from prisma import Json
 from scripts.main import db
 from cogs.Handler import AccountIncompatible
 
@@ -50,7 +51,7 @@ async def level_up(ctx):
         await db.user.update(
             where={'id': user_id},
             data={
-                'data': data,
+                'data': Json(data),
                 'hp': new_hp,
                 'max_hp': new_hp
             }
@@ -87,7 +88,7 @@ async def give_rewards(ctx:commands.Context, user:discord.Member, exp:int, coins
     
     await db.user.update(
         where={'id': user.id},
-        data={'data': data}
+        data={'data': Json(data)}
     )
     
     level_uped = await level_up(user)

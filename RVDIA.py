@@ -15,7 +15,8 @@ import os
 #import openai
 import aiohttp
 import logging
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 import traceback
 import pytz
 from time import time
@@ -28,7 +29,7 @@ from random import choice as rand
 from contextlib import suppress
 from datetime import datetime
 from scripts.main import titlecase, check_vote, db
-load_dotenv('./secrets.env') # Loads the .env file from python-dotenv pack
+load_dotenv() # Loads the .env file from python-dotenv pack
 
 class RVDIA(commands.AutoShardedBot):
   """
@@ -282,14 +283,16 @@ async def send_reply_message(msg:discord.Message, message_embed:discord.Embed):
         currentTime = datetime.now(pytz.utc).astimezone(pytz.timezone("Asia/Jakarta"))
         date = currentTime.strftime("%d/%m/%Y")
         hour = currentTime.strftime("%H:%M:%S")
-        genai.configure(api_key=os.getenv("googlekey"))
-        model1 = genai.GenerativeModel(
-            'gemini-1.5-flash',
-            system_instruction=os.getenv('rolesys') + f"Currently chatting with {msg.author}" + f"The current date is {date} at {hour} WITA. | {author} said: {embed_title} | Your response was: {embed_desc}"
-        )
-
-        result = await model1.generate_content_async(
-            message
+        client = genai.Client(api_key=os.getenv("googlekey"))
+        
+        sys_inst = os.getenv('rolesys') + f"Currently chatting with {msg.author}" + f"The current date is {date} at {hour} WITA. | {author} said: {embed_title} | Your response was: {embed_desc}"
+        
+        result = await client.aio.models.generate_content(
+            model='gemini-3-flash',
+            contents=message,
+            config=types.GenerateContentConfig(
+                system_instruction=sys_inst
+            )
         )
         AI_response = result.text
 

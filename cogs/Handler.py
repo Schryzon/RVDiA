@@ -87,17 +87,16 @@ class Error(commands.Cog):
     if isinstance(error, commands.MissingRequiredArgument):
       await ctx.reply(f"Ada beberapa bagian yang belum kamu isi!\nDibutuhkan: \n**```{error.param}```**")
 
-    # Hack-ish, I'm still figuring out why it didnt work
-    elif 'Not a G-Tech member!' in str(error):
+    elif isinstance(error, NotGTechMember):
       await ctx.reply('Akun Discordmu harus didaftarkan dulu ke data G-Tech sebelum menjalankan command ini!')
 
-    elif 'Not in the G-Tech server!' in str(error):
+    elif isinstance(error, NotInGTechServer):
       await ctx.reply('Command ini hanya bisa dijalankan di G-Tech server!')
 
-    elif 'Not a G-Tech admin!' in str(error):
+    elif isinstance(error, NotGTechAdmin):
       await ctx.reply('Command ini hanya bisa dijalankan oleh admin database G-Tech!')
 
-    elif 'User is blacklisted!' in str(error):
+    elif isinstance(error, Blacklisted):
       await ctx.reply('Maaf, kamu telah diblacklist dari menggunakan RVDIA!')
 
     elif isinstance(error, commands.CommandNotFound):
@@ -133,7 +132,7 @@ class Error(commands.Cog):
     elif isinstance(error, commands.NotOwner):
       await ctx.reply("Hanya Jayananda yang memiliki akses ke command ini!")
 
-    elif 'No profile picture!' in str(error):
+    elif isinstance(error, NoProfilePicture):
       await ctx.reply('Kamu harus memasang foto profil untuk menjalankan command ini!') # Maybe add a note in github somewhere
 
     elif isinstance(error, commands.BotMissingPermissions):
@@ -148,7 +147,7 @@ class Error(commands.Cog):
       + "```" + ",".join(perms) + "```**)"
       )
 
-    elif "Forbidden" in str(error):
+    elif isinstance(error, discord.Forbidden) or "Forbidden" in str(error):
       await ctx.reply("Kode error: `Forbidden`, mungkin `Role`ku atau kamu terlalu rendah/setara, atau kekurangan `Permissions`!")
 
     elif "Invalid base64-encoded string" in str(error) or "Incorrect padding" in str(error):
@@ -163,7 +162,7 @@ class Error(commands.Cog):
     elif "cannot identify image file" in str(error):
       await ctx.reply('Aku tidak bisa mendeteksi file tersebut! Apakah kamu yakin itu file gambar?')
 
-    elif "No event available!" in str(error):
+    elif isinstance(error, NoEventAvailable):
       await ctx.reply('Maaf, saat ini tidak ada event yang berlangsung!')
 
     elif "missing an attachment." in str(error):
@@ -178,7 +177,7 @@ class Error(commands.Cog):
     elif "Rate limit reached for" in str(error):
       await ctx.reply("Aduh, maaf, otakku sedang kepanasan.\nTolong jalankan command lagi setelah 20 detik!")
 
-    elif 'User has not voted yet!' in str(error):
+    elif isinstance(error, NotVoted):
       # Man why doesnt it work tho
       class Vote_Button(View):
         def __init__(self):
@@ -194,7 +193,7 @@ class Error(commands.Cog):
             self.add_item(vote_me)
       await ctx.reply('Kamu belum vote aku!\nVote aku di Top.gg untuk bisa menggunakan command ini!', view=Vote_Button())
 
-    elif 'User has no game account!' in str(error):
+    elif isinstance(error, NoGameAccount):
       await ctx.reply(f'Kamu belum mendaftarkan akunmu ke Land of Revolution!\nDaftarkan akunmu dengan `{ctx.clean_prefix}game register`')
 
     elif isinstance(error, ConnectionResetError) or "reset by peer" in str(error) or "Can't reach database" in str(error):
@@ -209,7 +208,7 @@ class Error(commands.Cog):
       """elif "The server is overloaded or not ready yet." in str(error) or "Bad gateway." in str(error):
       await ctx.reply("Sepertinya ada yang bermasalah dengan otakku tadi.\nTolong coba jalankan ulang command ini lagi!")"""
 
-    elif "User's account is incompatible!" in str(error):
+    elif isinstance(error, AccountIncompatible):
       await ctx.reply(f"Sepertinya akunmu tidak sesuai dengan versi terbaru Re:Volution!\nJalankan **`{ctx.clean_prefix}game register`** untuk mengupdate akunmu!")
 
     # If all else fails (get it?)
@@ -236,7 +235,8 @@ class Error(commands.Cog):
       finally:
           em.set_footer(text = "Please fix the error immediately!", icon_url = self.historia.user.avatar.url)
           if channel:
-              await channel.send(f"<@{self.historia.owner_id}> **Error from console!**", embed = em)
+              owner_id = os.getenv("schryzonid")
+              await channel.send(f"<@{owner_id}> **Error from console!**", embed = em)
           await ctx.reply("Ada yang bermasalah dengan command ini, aku sudah memberikan laporan ke developer!\nJoin support serverku untuk mendapat info lebih lanjut!", view=Support_Button(), ephemeral=True)
           logging.error(str(traceback.print_exception(*exc_info)))
           del exc_info

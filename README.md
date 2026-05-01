@@ -24,20 +24,18 @@ This bot is in Indonesian and has special commands for members of the G-Tech Re'
 ## Want to Tinker with It Yourself?
 1. Clone this repo or download the latest release from tags;
 2. Get a Discord bot token & Top.gg token;
-3. Get a MongoDB URI;
-4. Get an OpenWeather API key and an OpenAI key.
+3. Get a PostgreSQL Database URL (`DATABASE_URL`) for Prisma;
+4. Get an OpenWeather API key, OpenAI key (for DALL-E), and Google Gemini API key (`googlekey`).
 * There might be more necessities.
 
-(For the `.env` format, check out `secrets.env.example`. Remember to keep your bot secure!)
+(For the `.env` format, check out `.env.example`. Remember to keep your bot secure!)
 
 ## Additional Information
 This project is __just for fun__ and to improve my programming skills regarding virtual bots and web apps.
 
-Currently, RVDiA is hosted using DigitalOcean. So, if you want to run bot, I recommend using DigitalOcean's services. But, if you just want to run the bot locally on your personal computer, that's no problem.
+Currently, RVDiA is configured to be hosted using **Railway via Docker**. So, if you want to run the bot, I recommend using Railway's services. But, if you just want to run the bot locally on your personal computer, that's no problem.
 
-Run `python RVDIA.py` to start the bot.
-
-If you want, you can also run `python Xelvie.py`to scout for status changes on the bot.
+Run `./start.sh` (or deploy via Docker) to start the bot. This script will automatically generate the Prisma client, push the database schema, and run both RVDiA and the Xelvie monitor.
 
 Join the [CyroN Central server](https://discord.gg/QqWCnk6zxw) on Discord and contact me (Schryzon) if you have any issues, questions, or want to collaborate on RVDiA's development.
 
@@ -47,7 +45,7 @@ Special thanks to Riverdia (for inspiring the bot's name), iMaze, Mouchi, Dez, Z
 **Made with ❤️ and dedication, Jayananda**
 
 Farewell, Yuyuko, Pandora, and Historia. You will be missed.
-See you soon, RVDiA.
 
 `Verified: 01/08/2023`
 `End of Life: 08/04/2025`
+`Rebirth: 30/04/2026`

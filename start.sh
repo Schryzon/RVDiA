@@ -15,6 +15,10 @@ prisma generate
 echo "🔄 Syncing database schema..."
 prisma db push --accept-data-loss
 
+# Start Xelvie monitor
+echo "👁️ Launching Xelvie Monitor..."
+python Xelvie.py &
+
 # Start the bot
 echo "🤖 Launching RVDiA Bot..."
 python RVDIA.py

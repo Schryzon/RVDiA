@@ -14,6 +14,7 @@ import random
 import json
 import math
 from os import getenv, listdir, path
+from prisma import Json
 from discord.ui import View, Button, button
 from discord import app_commands
 from discord.ext import commands
@@ -860,7 +861,7 @@ class ItemDropdown(discord.ui.Select):
             if used_item:
                 await db.inventory.update(
                     where={'userId': self.user1.id},
-                    data={'items': user_items}
+                    data={'items': Json(user_items)}
                 )
         else:
             # Skill usage (doesn't consume)
@@ -1078,9 +1079,9 @@ class ShopDropdown(discord.ui.Select):
         await db.user.update(
             where={'id': interaction.user.id},
             data={
-                'data': data,
+                'data': Json(data),
                 'inventory': {
-                    'update': {'items': user_items}
+                    'update': {'items': Json(user_items)}
                 }
             }
         )
@@ -1274,9 +1275,9 @@ class UseDropdown(discord.ui.Select):
                 await db.user.update(
                     where={'id': interaction.user.id},
                     data={
-                        'data': data,
+                        'data': Json(data),
                         'inventory': {
-                            'update': {'equipments': new_equipments}
+                            'update': {'equipments': Json(new_equipments)}
                         }
                     }
                 )
@@ -1308,9 +1309,9 @@ class UseDropdown(discord.ui.Select):
                 await db.user.update(
                     where={'id': interaction.user.id},
                     data={
-                        'data': data,
+                        'data': Json(data),
                         'inventory': {
-                            'update': {'equipments': equipments}
+                            'update': {'equipments': Json(equipments)}
                         }
                     }
                 )
@@ -1382,11 +1383,12 @@ class Game(commands.Cog):
             'id': ctx.author.id,
             'hp': 100,
             'max_hp': 100,
-            'data': data_to_save,
+            'data': Json(data_to_save),
             'inventory': {
                 'create': {
-                    'items': {},
-                    'skills': []
+                    'items': Json([]),
+                    'skills': Json([]),
+                    'equipments': Json([])
                 }
             }
         })
@@ -1449,7 +1451,7 @@ class Game(commands.Cog):
             
             await db.user.update(
                 where={'id': ctx.author.id},
-                data={'data': data}
+                data={'data': Json(data)}
             )
             
             embed = discord.Embed(title='Bonus Harianmu', color=0x00FF00, timestamp=next_login)
