@@ -19,7 +19,14 @@
 Revolutionary Virtual Discord Assistant (RVDiA) is an **Indonesian-oriented Multipurpose Discord Bot**.
 
 ## What's Special About This Bot?
-This bot is in Indonesian and has special commands for members of the G-Tech Re'sman club. It also offers a variety of utilities and its own RPG (role-playing game) system with exciting events.
+This bot is in Indonesian and has special commands for members of the G-Tech Re'sman club. It also offers a variety of utilities, its own RPG (role-playing game) system, and a **dynamic web dashboard**.
+
+## Web Dashboard & Landing Page
+RVDiA comes with a built-in web server powered by `aiohttp` and `Jinja2`. 
+- **Dynamic Command List**: Automatically fetches and displays commands from the codebase.
+- **Multi-language Support**: Supports both Indonesian (ID) and English (EN).
+- **Glassmorphism Design**: A premium, modern UI that matches RVDiA's persona.
+- **Localization**: Easily customizable via JSON files in `website/locales/`.
 
 ## Want to Tinker with It Yourself?
 1. Clone this repo or download the latest release from tags;
@@ -35,7 +42,7 @@ This project is __just for fun__ and to improve my programming skills regarding 
 
 Currently, RVDiA is configured to be hosted using **Railway via Docker**. So, if you want to run the bot, I recommend using Railway's services. But, if you just want to run the bot locally on your personal computer, that's no problem.
 
-Run `./start.sh` (or deploy via Docker) to start the bot. This script will automatically generate the Prisma client, push the database schema, and run both RVDiA and the Xelvie monitor.
+Run `./start.sh` (or deploy via Docker) to start the bot. This script will automatically generate the Prisma client, push the database schema, and run both RVDiA and the Xelvie monitor. The web dashboard will be accessible at `http://localhost:8080` (or the configured `PORT`).
 
 Join the [CyroN Central server](https://discord.gg/QqWCnk6zxw) on Discord and contact me (Schryzon) if you have any issues, questions, or want to collaborate on RVDiA's development.
 

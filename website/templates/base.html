@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ i18n.title }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <nav>
+        <a href="/?lang={{ lang }}" class="logo">RVDiA</a>
+        <ul class="nav-links">
+            <li><a href="/?lang={{ lang }}">{{ i18n.home }}</a></li>
+            <li><a href="/commands?lang={{ lang }}">{{ i18n.commands }}</a></li>
+            <li><a href="/privacy?lang={{ lang }}">{{ i18n.privacy }}</a></li>
+            <li><a href="/terms?lang={{ lang }}">{{ i18n.terms }}</a></li>
+        </ul>
+        <div class="lang-switch">
+            <a href="?lang=id">ID</a>
+            <a href="?lang=en">EN</a>
+        </div>
+    </nav>
+
+    {% block content %}{% endblock %}
+
+    <footer>
+        <p>{{ i18n.footer_made_with }} | <a href="/privacy?lang={{ lang }}" style="color:var(--accent-color);">{{ i18n.privacy }}</a> | <a href="/terms?lang={{ lang }}" style="color:var(--accent-color);">{{ i18n.terms }}</a></p>
+    </footer>
+
+    <script src="/static/js/script.js"></script>
+</body>
+</html>

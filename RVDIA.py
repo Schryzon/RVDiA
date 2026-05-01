@@ -69,8 +69,13 @@ class RVDIA(commands.AutoShardedBot):
 
   async def setup_hook(self):
     from scripts.main import db
+    from scripts.web_server import start_web_server
     await db.connect()
     logging.info("Prisma Database connected.")
+    
+    # Start the Web Server
+    self.loop.create_task(start_web_server(self))
+    logging.info("Web Server task created.")
 
 
 

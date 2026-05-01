@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2 class="section-title">{{ i18n.commands_title }}</h2>
+    <p style="text-align: center; color: #ccc; margin-bottom: 2rem;">{{ i18n.commands_subtitle }}</p>
+    
+    <div class="search-container">
+        <input type="text" id="command-search" placeholder="{{ i18n.search_commands }}">
+    </div>
+
+    <div class="commands-grid">
+        {% for cmd in commands %}
+        <div class="command-card">
+            <span class="command-name">{{ cmd.name }}</span>
+            <div class="command-category">{{ i18n.category }}: {{ cmd.cog_name }}</div>
+            <p class="command-desc">{{ cmd.help or i18n.no_description }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

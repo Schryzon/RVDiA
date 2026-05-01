@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+    <img src="/static/images/banner.jpg" alt="RVDiA Banner" class="banner-img">
+    <h1>{{ i18n.hero_title }}</h1>
+    <p>{{ i18n.hero_subtitle }}</p>
+
+    <div class="cta-buttons">
+        <a href="https://discord.com/api/oauth2/authorize?client_id=957471338577166417&permissions=1514446056561&scope=bot%20applications.commands"
+            class="btn btn-primary" target="_blank">{{ i18n.invite }}</a>
+        <a href="https://discord.gg/QqWCnk6zxw" class="btn btn-secondary" target="_blank">{{ i18n.support }}</a>
+    </div>
+</section>
+
+<div class="container">
+    <h2 class="section-title">{{ i18n.features_title }}</h2>
+    <div class="features-grid">
+        <div class="glass-card">
+            <h3>{{ i18n.feature_1_title }}</h3>
+            <p>{{ i18n.feature_1_desc }}</p>
+        </div>
+        <div class="glass-card">
+            <h3>{{ i18n.feature_2_title }}</h3>
+            <p>{{ i18n.feature_2_desc }}</p>
+        </div>
+        <div class="glass-card">
+            <h3>{{ i18n.feature_3_title }}</h3>
+            <p>{{ i18n.feature_3_desc }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
