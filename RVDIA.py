@@ -12,7 +12,6 @@ Licensed under the MIT LICENSE.
 import asyncio
 import discord
 import os
-#import openai
 import aiohttp
 import logging
 from google import genai

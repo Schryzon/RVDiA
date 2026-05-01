@@ -29,7 +29,7 @@ body::before, body::after {
     position: fixed;
     border-radius: 50%;
     filter: blur(100px);
-    z-index: -1;
+    z-index: 0;
     opacity: 0.4;
 }
 
@@ -335,6 +335,78 @@ footer {
     margin-top: 4rem;
     background: rgba(15, 15, 19, 0.8);
     backdrop-filter: blur(var(--glass-blur));
+}
+
+/* Fantasy Royal Background Elements */
+.fantasy-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.construct {
+    position: absolute;
+    background: rgba(255, 215, 0, 0.05);
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    box-shadow: 0 0 20px rgba(255, 77, 240, 0.15), inset 0 0 15px rgba(255, 215, 0, 0.1);
+    animation: float 20s infinite ease-in-out alternate;
+}
+
+.crystal {
+    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+}
+
+.ring {
+    border-radius: 50%;
+    border-width: 2px;
+    background: transparent;
+}
+
+.pillar {
+    clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);
+    background: linear-gradient(to bottom, rgba(255, 77, 240, 0.15), transparent);
+    border: none;
+    box-shadow: none;
+}
+
+/* Specific Positions & Delays */
+.construct-1 { width: 150px; height: 250px; top: 10%; left: 5%; animation-delay: 0s; }
+.construct-2 { width: 300px; height: 300px; top: 40%; right: -5%; animation-delay: -5s; border-color: rgba(255, 77, 240, 0.3); }
+.construct-3 { width: 80px; height: 400px; bottom: -10%; left: 20%; animation-delay: -2s; }
+.construct-4 { width: 100px; height: 180px; top: 20%; right: 15%; animation-delay: -7s; }
+.construct-5 { width: 500px; height: 500px; top: -10%; left: -10%; animation-delay: -10s; border-color: rgba(255, 215, 0, 0.1); border-width: 1px; }
+
+.sparkle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 10px 2px #ff4df0, 0 0 20px 5px gold;
+    animation: twinkle 4s infinite ease-in-out alternate;
+}
+
+.sp-1 { top: 15%; left: 30%; animation-delay: 0s; }
+.sp-2 { top: 45%; left: 10%; animation-delay: 1s; }
+.sp-3 { top: 30%; right: 25%; animation-delay: 2s; }
+.sp-4 { top: 60%; right: 10%; animation-delay: 0.5s; }
+.sp-5 { top: 80%; left: 40%; animation-delay: 1.5s; }
+.sp-6 { top: 25%; right: 45%; animation-delay: 2.5s; }
+.sp-7 { top: 75%; right: 35%; animation-delay: 0.8s; }
+
+@keyframes float {
+    0% { transform: translateY(0) rotate(0deg); }
+    100% { transform: translateY(-40px) rotate(10deg); }
+}
+
+@keyframes twinkle {
+    0% { opacity: 0.2; transform: scale(0.8); }
+    100% { opacity: 1; transform: scale(1.5); }
 }
 
 /* Responsive */

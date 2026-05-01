@@ -15,12 +15,11 @@ from discord.ext import commands
 from dotenv import load_dotenv
 from cogs.Handler import NotInGTechServer, NotGTechMember, NotGTechAdmin, NoProfilePicture, Blacklisted, NoEventAvailable, NotVoted
 from cogs.Handler import NoGameAccount
-#from openai import AsyncOpenAI
-load_dotenv('./secrets.env')
+load_dotenv()
 
 # New in v1.x
 AIClient = AsyncOpenAI(
-   api_key=os.getenv('openaikey')
+   api_key=os.getenv('openaikey', 'not-set')
 )
 
 class Url_Buttons(View):
