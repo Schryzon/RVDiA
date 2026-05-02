@@ -13,8 +13,8 @@ from prisma import Prisma
 from discord.ui import View, Button
 from discord.ext import commands
 from dotenv import load_dotenv
-from cogs.Handler import NotInGTechServer, NotGTechMember, NotGTechAdmin, NoProfilePicture, Blacklisted, NoEventAvailable, NotVoted
-from cogs.Handler import NoGameAccount
+from scripts.errors import NotInGTechServer, NotGTechMember, NotGTechAdmin, NoProfilePicture, Blacklisted, NoEventAvailable, NotVoted
+from scripts.errors import NoGameAccount
 load_dotenv()
 
 # New in v1.x

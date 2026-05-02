@@ -4,7 +4,7 @@ from datetime import datetime
 from discord.ext import commands
 from prisma import Json
 from scripts.main import db
-from cogs.Handler import AccountIncompatible
+from scripts.errors import AccountIncompatible
 
 default_data = {
     'name':'Player',

@@ -11,41 +11,10 @@ import logging
 Error handlers, it's where the ifs and elifs go crazy!
 """
 
-class NotGTechMember(commands.CommandError):
-  """Raised when command is not being run by a G-Tech Resman member"""
-  pass
-
-class NotInGTechServer(commands.CommandError):
-  """Raised when the command was not executed in a G-Tech server"""
-  pass
-
-class NotGTechAdmin(commands.CommandError):
-  """Raised when the command was not executed by a G-Tech Admin, replaces is_owner()"""
-  pass
-
-class NoProfilePicture(commands.CommandError):
-  """Raised when the user doesn't have a profile picture (automatically aborts command)"""
-  pass
-
-class Blacklisted(commands.CommandError):
-    """Raised if user is blacklisted."""
-    pass
-
-class NoEventAvailable(commands.CommandError):
-  """Raised when no events are currently ongoing"""
-  pass
-
-class NotVoted(commands.CommandError):
-  """Raised when user hasn't voted on Top.gg"""
-  pass
-
-class NoGameAccount(commands.CommandError):
-  """Raised when user hasn't created a game account yet"""
-  pass
-
-class AccountIncompatible(commands.CommandError):
-  """Raised when a Re:Volution account doesn't match the format"""
-  pass
+from scripts.errors import (
+    NotGTechMember, NotInGTechServer, NotGTechAdmin, NoProfilePicture,
+    Blacklisted, NoEventAvailable, NotVoted, NoGameAccount, AccountIncompatible
+)
 
 class Support_Button(View):
         def __init__(self):
@@ -77,7 +46,9 @@ class Error(commands.Cog):
     except:
       pass
 
-    error = getattr(error, "original", error)
+    # Robustly unwrap errors (e.g. CommandInvokeError, HybridCommandError)
+    while hasattr(error, "original"):
+      error = error.original
 
     def format_permissions(error: commands.BotMissingPermissions):
       permlist = [req_perms.replace('_', ' ') for req_perms in error.missing_permissions]
@@ -221,16 +192,16 @@ class Error(commands.Cog):
         em.add_field(name=f"Command Cog",value=ctx.cog.qualified_name,inline=False)
         em.add_field(name=f"Args",value=ctx.args,inline=False)
         em.add_field(name=f"Kwargs",value=ctx.kwargs,inline=False)
-        em.add_field(name=f"Error Message",value=error,inline=False)
-        em.add_field(name=f"Error Details", value=str(traceback.print_exception(*exc_info)), inline=False)
+        em.add_field(name=f"Error Message",value=str(error),inline=False)
+        em.add_field(name=f"Error Details", value=f"```py\n{''.join(traceback.format_exception(*exc_info))[:1000]}\n```", inline=False)
 
       except AttributeError: # If not invoked within a cog
         em.add_field(name=f"Command Name",value=ctx.command,inline=False)
         em.add_field(name=f"Invoked By",value=ctx.message.content,inline=False)
         em.add_field(name=f"Args",value=ctx.args,inline=False)
         em.add_field(name=f"Kwargs",value=ctx.kwargs,inline=False)
-        em.add_field(name=f"Error Message",value=error,inline=False)
-        em.add_field(name=f"Error Details", value=str(traceback.print_exception(*exc_info)), inline=False)
+        em.add_field(name=f"Error Message",value=str(error),inline=False)
+        em.add_field(name=f"Error Details", value=f"```py\n{''.join(traceback.format_exception(*exc_info))[:1000]}\n```", inline=False)
 
       finally:
           em.set_footer(text = "Please fix the error immediately!", icon_url = self.historia.user.avatar.url)
@@ -238,7 +209,7 @@ class Error(commands.Cog):
               owner_id = os.getenv("schryzonid")
               await channel.send(f"<@{owner_id}> **Error from console!**", embed = em)
           await ctx.reply("Ada yang bermasalah dengan command ini, aku sudah memberikan laporan ke developer!\nJoin support serverku untuk mendapat info lebih lanjut!", view=Support_Button(), ephemeral=True)
-          logging.error(str(traceback.print_exception(*exc_info)))
+          logging.error("".join(traceback.format_exception(*exc_info)))
           del exc_info
 
 async def setup(pandora):
