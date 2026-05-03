@@ -2019,7 +2019,7 @@ class Game(commands.Cog):
                 inline=False
             )
 
-        view = ShopView(ctx, items, user_record.to_dict()) # Pass as dict for simplicity in View
+        view = ShopView(ctx, items, user_record.dict()) # Pass as dict for simplicity in View
         await ctx.reply(embed = embed, view=view)
 
     @game.command(description='Bertualang di Re:Volution!')
