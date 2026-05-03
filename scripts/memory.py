@@ -39,8 +39,8 @@ class MemoryManager:
         vector_str = "[" + ",".join(map(str, embedding)) + "]"
         
         await db.execute_raw(
-            'INSERT INTO "Memory" ("userId", "content", "embedding", "createdAt") VALUES ($1, $2, $3::vector, $4)',
-            user_id, content, vector_str, datetime.now()
+            'INSERT INTO "Memory" ("userId", "content", "embedding", "createdAt") VALUES ($1, $2, $3::vector, NOW())',
+            user_id, content, vector_str
         )
 
         # 3. Cleanup: Limit sequential history to last 50 messages per user to keep it fast
