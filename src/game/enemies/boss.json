@@ -1,207 +1,273 @@
 [
     {
-        "name":"Schryzon",
-        "desc":"Entitas tidak diketahui.",
-        "tier":"SUPER BOSS",
-        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1148819154267287582/20230906.png",
-        "hp":1000,
-        "atk":80,
-        "def":60,
-        "agl":78,
-        "reward":[
+        "name": "Schryzon",
+        "desc": "Sang Pencipta Konflik. Entitas yang melampaui batas realita.",
+        "tier": "FINAL BOSS",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1148819154267287582/20230906.png",
+        "hp": 8500,
+        "atk": 150,
+        "def": 120,
+        "agl": 110,
+        "reward": [
+            "exp+15000",
+            "cns+5000",
+            "krm+500"
+        ],
+        "skills": [
+            {
+                "name": "Power of Conflict",
+                "func": "dmg+25%"
+            },
+            {
+                "name": "Ultimate Entity",
+                "func": "def+15"
+            },
+            {
+                "name": "Face the Reality",
+                "func": "atk+30"
+            },
+            {
+                "name": "Heal me, World",
+                "func": "hp+40%"
+            },
+            {
+                "name": "Your Life is Mine",
+                "func": "hp-20%"
+            },
+            {
+                "name": "Die, Hero",
+                "func": "dmg+100%"
+            }
+        ]
+    },
+    {
+        "name": "RVDiA",
+        "desc": "Putri yang memegang kendali atas seluruh Re:Volution.",
+        "tier": "FINAL BOSS",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1123190763442929835/RVDiA-Profile-Pic.png",
+        "hp": 7500,
+        "atk": 140,
+        "def": 115,
+        "agl": 120,
+        "reward": [
+            "exp+14999",
+            "cns+4999",
+            "krm+499"
+        ],
+        "skills": [
+            {
+                "name": "Beloved Princess",
+                "func": "def+20"
+            },
+            {
+                "name": "No Holding Back",
+                "func": "atk+15"
+            },
+            {
+                "name": "Revolution",
+                "func": "dmg+50%"
+            },
+            {
+                "name": "Slowmotion",
+                "func": "agl-20"
+            },
+            {
+                "name": "I'm Sorry",
+                "func": "dmg+30%"
+            }
+        ]
+    },
+    {
+        "name": "Shiruto",
+        "desc": "Jiwa yang terpisah dari realita utama.",
+        "tier": "SUPER BOSS",
+        "avatar": "https://cdn.discordapp.com/avatars/735653554165121086/f92ce78ea1e6f1ba95c4b7c539c61b05.png?size=512",
+        "hp": 3500,
+        "atk": 110,
+        "def": 80,
+        "agl": 95,
+        "reward": [
             "exp+5000",
-            "cns+700",
+            "cns+2000",
+            "krm+100"
+        ],
+        "skills": [
+            {
+                "name": "Burst Slash",
+                "func": "dmg+50"
+            },
+            {
+                "name": "I'm Just Toying With You",
+                "func": "def-20"
+            },
+            {
+                "name": "Let's Get Serious",
+                "func": "agl+20"
+            },
+            {
+                "name": "Step it Up, Will You?",
+                "func": "agl-15"
+            }
+        ]
+    },
+    {
+        "name": "Pandora",
+        "desc": "Dewi kematian.",
+        "tier": "BOSS",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122068626237829140/707e4188e73889b71ea185f50bea206feaabb1fa_s2_n2.png",
+        "hp": 4500,
+        "atk": 120,
+        "def": 70,
+        "agl": 65,
+        "reward": [
+            "exp+7500",
+            "cns+3000",
             "krm+150"
         ],
-        "skills":[
+        "skills": [
             {
-                "name":"Power of Conflict",
-                "func":"dmg+25%"
+                "name": "Death",
+                "func": "dmg+30%"
             },
             {
-                "name":"Ultimate Entity",
-                "func":"def+10"
+                "name": "Speed Upgrade",
+                "func": "agl+25"
             },
             {
-                "name":"Face the Reality",
-                "func":"atk+20"
-            },
-            {
-                "name":"Heal me, World",
-                "func":"hp+40%"
-            },
-            {
-                "name":"Your Life is Mine",
-                "func":"hp-15%"
-            },
-            {
-                "name":"Die, Hero",
-                "func":"dmg+100%"
+                "name": "Pandora Paradox",
+                "func": "atk-25"
             }
         ]
     },
     {
-        "name":"RVDiA",
-        "desc":"Re:Volution ~ My Dream World.",
-        "tier":"SUPER BOSS",
-        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1123190763442929835/RVDiA-Profile-Pic.png",
-        "hp":999,
-        "atk":77,
-        "def":56,
-        "agl":70,
-        "reward":[
-            "exp+4999",
-            "cns+699",
-            "krm+149"
+        "name": "Historia",
+        "desc": "Pahlawan legendaris Grouza. Vessel dari Lagtanis.",
+        "tier": "SUPER BOSS",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122069136227442778/20230624_153829.jpg",
+        "hp": 4200,
+        "atk": 115,
+        "def": 85,
+        "agl": 90,
+        "reward": [
+            "exp+7000",
+            "cns+2800",
+            "krm+140"
         ],
-        "skills":[
+        "skills": [
             {
-                "name":"Beloved Princess",
-                "func":"def+12"
+                "name": "Lagtanis Karvista",
+                "func": "dmg+40"
             },
             {
-                "name":"No Holding Back",
-                "func":"atk+8"
+                "name": "Lagtanis Hasten",
+                "func": "atk+15"
             },
             {
-                "name":"Revolution",
-                "func":"dmg+40"
+                "name": "Lagtanis Zakitus",
+                "func": "def+20"
             },
             {
-                "name":"Slowmotion",
-                "func":"agl-10"
+                "name": "Lagtanis Raykaris",
+                "func": "def-30"
             },
             {
-                "name":"I'm Sorry",
-                "func":"dmg+30%"
+                "name": "Lagtanis Fulguros",
+                "func": "hp-15%"
             }
         ]
     },
     {
-        "name":"Shiruto",
-        "desc":"Jiwa yang terpisah.",
-        "tier":"BONUS ENEMY",
-        "avatar":"https://cdn.discordapp.com/avatars/735653554165121086/f92ce78ea1e6f1ba95c4b7c539c61b05.png?size=512",
-        "hp":630,
-        "atk":85,
-        "def":43,
-        "agl":60,
-        "reward":[
-            "exp+1500",
-            "cns+150",
-            "krm+40"
+        "name": "Mira",
+        "desc": "Adik kandung Historia. Vessel dari Daiki.",
+        "tier": "BOSS",
+        "avatar": null,
+        "hp": 3800,
+        "atk": 95,
+        "def": 70,
+        "agl": 115,
+        "reward": [
+            "exp+6500",
+            "cns+2500",
+            "krm+120"
         ],
-        "skills":[
+        "skills": [
             {
-                "name":"Burst Slash",
-                "func":"dmg+30"
+                "name": "Daiki's Breeze",
+                "func": "agl+25"
             },
             {
-                "name":"I'm Just Toying With You",
-                "func":"def-15"
+                "name": "Fleeting Step",
+                "func": "agl+15"
             },
             {
-                "name":"Let's Get Serious",
-                "func":"agl+10"
+                "name": "Whirlwind Slash",
+                "func": "dmg+45"
             },
             {
-                "name":"Step it Up, Will You?",
-                "func":"agl-10"
+                "name": "Sisterly Bond",
+                "func": "def+15"
             }
         ]
     },
     {
-        "name":"Pandora",
-        "desc":"Dewi kematian.",
-        "tier":"BOSS",
-        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122068626237829140/707e4188e73889b71ea185f50bea206feaabb1fa_s2_n2.png",
-        "hp":1200,
-        "atk":90,
-        "def":40,
-        "agl":38,
-        "reward":[
-            "exp+5000",
-            "cns+700",
-            "krm+150"
+        "name": "Victoria",
+        "desc": "Kakak kandung Historia. Corrupted Vessel.",
+        "tier": "SUPER BOSS",
+        "avatar": null,
+        "hp": 5500,
+        "atk": 135,
+        "def": 95,
+        "agl": 80,
+        "reward": [
+            "exp+9000",
+            "cns+4000",
+            "krm+200"
         ],
-        "skills":[
+        "skills": [
             {
-                "name":"Death",
-                "func":"dmg+25%"
+                "name": "Corrupted Soul",
+                "func": "dmg+30%"
             },
             {
-                "name":"Speed Upgrade",
-                "func":"agl+17"
+                "name": "Shadow Burst",
+                "func": "dmg+60"
             },
             {
-                "name":"Pandora Paradox",
-                "func":"atk-20"
+                "name": "Victoria's Lament",
+                "func": "atk+25"
+            },
+            {
+                "name": "Dark Shield",
+                "func": "def+30"
             }
         ]
     },
     {
-        "name":"Historia",
-        "desc":"Pahlawan legendaris Grouza.",
-        "tier":"BOSS",
-        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122069136227442778/20230624_153829.jpg",
-        "hp":870,
-        "atk":73,
-        "def":55,
-        "agl":72,
-        "reward":[
-            "exp+5000",
-            "cns+700",
-            "krm+150"
+        "name": "Zalvia & Sairan",
+        "desc": "Dua dewa yang mewakili keseimbangan alam semesta.",
+        "tier": "BOSS",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122067949679824906/20230624_125606.jpg",
+        "hp": 3800,
+        "atk": 105,
+        "def": 75,
+        "agl": 85,
+        "reward": [
+            "exp+6500",
+            "cns+2500",
+            "krm+125"
         ],
-        "skills":[
+        "skills": [
             {
-                "name":"Lagtanis Karvista",
-                "func":"dmg+25"
+                "name": "Judgement",
+                "func": "dmg+25%"
             },
             {
-                "name":"Lagtanis Hasten",
-                "func":"atk+7"
+                "name": "Brotherly Power",
+                "func": "def+15"
             },
             {
-                "name":"Lagtanis Zakitus",
-                "func":"def+10"
-            },
-            {
-                "name":"Lagtanis Raykaris",
-                "func":"def-20"
-            },
-            {
-                "name":"Lagtanis Fulguros",
-                "func":"hp-10%"
-            }
-        ]
-    },
-    {
-        "name":"Zalvia & Sairan",
-        "desc":"Dewa cahaya dan kegelapan.",
-        "tier":"BOSS",
-        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122067949679824906/20230624_125606.jpg",
-        "hp":912,
-        "atk":74,
-        "def":43,
-        "agl":67,
-        "reward":[
-            "exp+2000",
-            "cns+500",
-            "krm+75"
-        ],
-        "skills":[
-            {
-                "name":"Judgement",
-                "func":"dmg+20%"
-            },
-            {
-                "name":"Brotherly Power",
-                "func":"def+8"
-            },
-            {
-                "name":"Share a Life",
-                "func":"hp-50"
+                "name": "Share a Life",
+                "func": "hp-100"
             }
         ]
     },
@@ -210,35 +276,35 @@
         "desc": "Galactic Soldier MK.3",
         "tier": "SUPER BOSS",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1148814706878980187/0-a655e4d6-922a-445e-9cb9-1ea7ae728d2e.png",
-        "hp": 970,
-        "atk": 72,
-        "def": 75,
-        "agl": 68,
+        "hp": 5000,
+        "atk": 125,
+        "def": 95,
+        "agl": 85,
         "reward": [
-            "exp+3000",
-            "cns+300",
-            "krm+30"
+            "exp+8000",
+            "cns+3500",
+            "krm+200"
         ],
         "skills": [
             {
                 "name": "Vortex Slash III",
-                "func": "dmg+66"
+                "func": "dmg+80"
             },
             {
                 "name": "Gravity Pull III",
-                "func": "agl-27"
+                "func": "agl-35"
             },
             {
                 "name": "Leuko Healing",
-                "func": "hp-15%"
+                "func": "hp-20%"
             },
             {
                 "name": "Light of ViRTUE",
-                "func": "agl+3"
+                "func": "agl+10"
             },
             {
                 "name": "Endless Evolution",
-                "func": "def-10"
+                "func": "def-15"
             }
         ]
     }

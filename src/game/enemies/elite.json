@@ -1,34 +1,34 @@
 [
     {
         "name":"Lagtanis",
-        "desc":"Dewa utama - Petir.",
+        "desc":"Dewa utama yang menguasai kekuatan petir abadi.",
         "tier":"SUPER ELITE",
         "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122156470889349180/20230624_201545.png",
-        "hp":840,
-        "atk":66,
-        "def":53,
-        "agl":42,
+        "hp":1800,
+        "atk":85,
+        "def":65,
+        "agl":60,
         "reward":[
             "exp+1500",
-            "cns+150",
+            "cns+500",
             "krm+40"
         ],
         "skills":[
             {
                 "name":"Karvista",
-                "func":"dmg+25"
+                "func":"dmg+40"
             },
             {
                 "name":"Hasten",
-                "func":"atk+7"
+                "func":"atk+12"
             },
             {
                 "name":"Zakitus",
-                "func":"def+5"
+                "func":"def+10"
             },
             {
                 "name":"Raykaris",
-                "func":"def-15"
+                "func":"def-20"
             },
             {
                 "name":"Fulguros",
@@ -38,17 +38,17 @@
     },
     {
         "name":"Daiki",
-        "desc":"Dewi kedua - Angin.",
+        "desc":"Dewi kedua yang menari bersama angin kencang.",
         "tier":"ELITE",
         "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122156469840773203/20230624_202500.png",
-        "hp":740,
-        "atk":58,
-        "def":40,
-        "agl":71,
+        "hp":1400,
+        "atk":75,
+        "def":55,
+        "agl":85,
         "reward":[
-            "exp+1500",
-            "cns+150",
-            "krm+40"
+            "exp+1200",
+            "cns+400",
+            "krm+30"
         ],
         "skills":[
             {
@@ -57,48 +57,48 @@
             },
             {
                 "name":"Yasashisa Kami",
-                "func":"dmg+7"
+                "func":"dmg+15"
             },
             {
                 "name":"Bougyo Shinjite",
-                "func":"def+10"
+                "func":"def+15"
             },
             {
                 "name":"Kanashiina Sekai",
-                "func":"hp-30"
+                "func":"hp-50"
             },
             {
                 "name":"Ryuukufu",
-                "func":"def-8"
+                "func":"def-12"
             }
         ]
     },
     {
         "name":"Yizai Qi",
-        "desc":"Dewa ketiga - Api.",
+        "desc":"Dewa ketiga yang membakar segalanya dalam sekali serang.",
         "tier":"SUPER ELITE",
         "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122156471573028924/20230624_201721.png",
-        "hp":884,
-        "atk":70,
-        "def":42,
-        "agl":50,
+        "hp":1950,
+        "atk":95,
+        "def":60,
+        "agl":65,
         "reward":[
-            "exp+1500",
-            "cns+150",
-            "krm+40"
+            "exp+1600",
+            "cns+550",
+            "krm+45"
         ],
         "skills":[
             {
                 "name":"Shaoshang",
-                "func":"dmg+40"
+                "func":"dmg+55"
             },
             {
                 "name":"Ganshou Huoyan",
-                "func":"atk+10"
+                "func":"atk+15"
             },
             {
                 "name":"Yi... Zai... Qi",
-                "func":"dmg+60"
+                "func":"dmg+80"
             },
             {
                 "name":"Yuanyuan Lingqi",
@@ -108,26 +108,26 @@
     },
     {
         "name":"Rahjda",
-        "desc":"Dewa keempat - Tanah.",
+        "desc":"Dewa keempat dengan pertahanan tanah yang tak tergoyahkan.",
         "tier":"ELITE",
         "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122156472118296636/20230624_201750.png",
-        "hp":650,
-        "atk":56,
-        "def":79,
-        "agl":38,
+        "hp":1600,
+        "atk":70,
+        "def":95,
+        "agl":50,
         "reward":[
-            "exp+1500",
-            "cns+150",
-            "krm+40"
+            "exp+1300",
+            "cns+450",
+            "krm+35"
         ],
         "skills":[
             {
                 "name":"Phurteela",
-                "func":"agl+15"
+                "func":"agl+20"
             },
             {
                 "name":"Bhookamp",
-                "func":"dmg+60"
+                "func":"dmg+75"
             },
             {
                 "name":"Kshiti Vikaas",
@@ -135,28 +135,28 @@
             },
             {
                 "name":"Dharati Ka Gussa",
-                "func":"atk+14"
+                "func":"atk+20"
             }
         ]
     },
     {
         "name":"Arheious",
-        "desc":"Dewi kelima - Air.",
+        "desc":"Dewi kelima yang mengalir seperti air namun mematikan.",
         "tier":"SUPER ELITE",
         "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122156470394429461/20230624_202247.png",
-        "hp":900,
-        "atk":64,
-        "def":30,
-        "agl":58,
+        "hp":2000,
+        "atk":88,
+        "def":50,
+        "agl":75,
         "reward":[
-            "exp+1500",
-            "cns+150",
-            "krm+40"
+            "exp+1700",
+            "cns+600",
+            "krm+50"
         ],
         "skills":[
             {
                 "name":"Roufichtra",
-                "func":"dmg+50"
+                "func":"dmg+65"
             },
             {
                 "name":"Therapeftiko Nero",
@@ -164,44 +164,44 @@
             },
             {
                 "name":"Aigida Anavalosi",
-                "func":"def+10"
+                "func":"def+15"
             },
             {
                 "name":"Hydrokroustas",
-                "func":"dmg+25"
+                "func":"dmg+35"
             }
         ]
     },
     {
         "name": "ViRTUE",
-        "desc": "Galactic Soldier MK.2",
+        "desc": "Prajurit Galaksi MK.2 dengan kekuatan api dan gravitasi.",
         "tier": "SUPER ELITE",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1148814706371481630/20230906_095029.png",
-        "hp": 920,
-        "atk": 68,
-        "def": 40,
-        "agl": 32,
+        "hp": 2200,
+        "atk": 92,
+        "def": 70,
+        "agl": 55,
         "reward": [
-            "exp+1500",
-            "cns+150",
-            "krm+40"
+            "exp+1800",
+            "cns+650",
+            "krm+55"
         ],
         "skills": [
             {
                 "name": "Vortex Slash II",
-                "func": "dmg+60"
+                "func": "dmg+70"
             },
             {
                 "name": "Gravity Pull II",
-                "func": "agl-25"
+                "func": "agl-30"
             },
             {
                 "name": "Pyro Healing",
-                "func": "hp-10%"
+                "func": "hp-15%"
             },
             {
                 "name": "Flames of VORTeX",
-                "func": "agl+12"
+                "func": "agl+15"
             }
         ]
     }

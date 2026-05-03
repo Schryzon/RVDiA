@@ -157,7 +157,8 @@ class GameInstance():
             # Enemies have karma based on tier
             tier_karma = {
                 "LOW": 5, "NORMAL": 10, "HIGH": 20, "ELITE": 35, 
-                "SUPER ELITE": 50, "BOSS": 75, "SUPER BOSS": 100
+                "SUPER ELITE": 50, "BOSS": 75, "SUPER BOSS": 100,
+                "FINAL BOSS": 200
             }
             self.p2_karma = tier_karma.get(self.user2.get('tier'), 10)
             self.user2_max_hp = self.user2_hp
@@ -912,6 +913,9 @@ class AI():
         # Defining escape moods based on level. (Does not apply to LOW - SUPER NORMAL & BONUS ENEMY)
         tier = self.user2['tier']
         match tier:
+            case "FINAL BOSS":
+                self.escape_mood = 0
+
             case "SUPER BOSS":
                 self.escape_mood = 0
 
@@ -1746,6 +1750,34 @@ class Game(commands.Cog):
         )
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
         embed.set_footer(text="Semoga beruntung di dalam mimpi ini!")
+        await ctx.reply(embed=embed)
+
+    @game.command(description='Lihat catatan pembaruan terbaru Re:Volution!')
+    @check_blacklist()
+    async def changelog(self, ctx:commands.Context):
+        """
+        Catatan pembaruan Re:Volution ~ The Dream World!
+        """
+        embed = discord.Embed(title="📜 Catatan Pembaruan Re:Volution", color=0x86273d)
+        embed.description = (
+            "**Versi 2.0.0 - Rebirth & Rebalance**\n"
+            "*\"Dunia mimpi ini telah berevolusi menjadi lebih menantang dan terstruktur.\"*\n\n"
+            "🔰 **Sistem & Fitur Baru**\n"
+            "• `/game leaderboard`: Pantau siapa Sang Pemimpi terkuat secara global.\n"
+            "• `/game guide`: Panduan lengkap untuk memulai petualanganmu.\n"
+            "• `/game fix_account`: Perbaiki dan migrasikan struktur datamu ke sistem terbaru.\n"
+            "• `/game enemies`: Tampilan daftar musuh kini menggunakan sistem halaman (dimulai dari Boss).\n\n"
+            "⚔️ **Keseimbangan & Konten**\n"
+            "• **Global Rebalance**: Semua musuh telah disesuaikan stat dan HP-nya untuk pertempuran yang lebih adil.\n"
+            "• **Final Boss Tier**: Schryzon & RVDiA kini berada di kasta tertinggi dengan kekuatan yang melampaui batas.\n"
+            "• **New Bosses**: Selamat datang **Mira** (Adik Historia) dan **Victoria** (Kakak Historia) ke dalam Bestiary.\n"
+            "• **Smarter AI**: Musuh kini lebih sering menganalisa statistikmu di tengah pertempuran.\n\n"
+            "👜 **Perbaikan Toko**\n"
+            "• Logika penyimpanan item kini lebih terorganisir antara Skill, Equipment, dan Item.\n"
+            "• Status kepemilikan Skill kini ditampilkan secara biner (YA/TIDAK)."
+        )
+        embed.set_thumbnail(url=self.bot.user.display_avatar.url)
+        embed.set_footer(text="Terima kasih telah menjadi bagian dari Re:Volution!")
         await ctx.reply(embed=embed)
 
     @game.command(description="Menghapuskan akunmu dari Re:Volution.")

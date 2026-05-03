@@ -1,245 +1,110 @@
 [
     {
         "name":"Slippy Slime",
-        "desc":"Makhluk berbahaya menyerupai substansi.",
+        "desc":"Makhluk berbahaya menyerupai substansi kenyal.",
         "tier":"LOW",
         "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122156473275924600/20230624_201436.png",
-        "hp":40,
-        "atk":5,
-        "def":5,
-        "agl":6,
-        "reward":[
-            "exp+10",
-            "cns+5",
-            "krm+1"
-        ],
-        "skills":[
-            {
-                "name":"Slime Headbutt",
-                "func":"dmg+10"
-            },
-            {
-                "name":"Slime Shoot",
-                "func":"dmg+20"
-            },
-            {
-                "name":"Reshape",
-                "func":"hp+15"
-            }
-        ]
+        "hp":80,
+        "atk":12,
+        "def":8,
+        "agl":10,
+        "reward":["exp+15","cns+10","krm+1"],
+        "skills":[{"name":"Slime Headbutt","func":"dmg+15"},{"name":"Slime Shoot","func":"dmg+25"},{"name":"Reshape","func":"hp+20"}]
     },
     {
         "name":"Novice Hunter",
-        "desc":"Pemburu tingkat pemula.",
+        "desc":"Pemburu tingkat pemula yang sedang berlatih.",
         "tier":"LOW",
         "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122156472512544809/20230624_201413.png",
-        "hp":50,
-        "atk":7,
-        "def":5,
-        "agl":10,
-        "reward":[
-            "exp+12",
-            "cns+7"
-        ],
-        "skills":[
-            {
-                "name":"Arrow Shot",
-                "func":"dmg+7"
-            },
-            {
-                "name":"First Aid",
-                "func":"hp+20"
-            },
-            {
-                "name":"Hunter Instinct",
-                "func":"agl+5"
-            }
-        ]
+        "hp":100,
+        "atk":15,
+        "def":10,
+        "agl":15,
+        "reward":["exp+20","cns+15","krm+2"],
+        "skills":[{"name":"Arrow Shot","func":"dmg+10"},{"name":"First Aid","func":"hp+30"},{"name":"Hunter Instinct","func":"agl+8"}]
     },
     {
         "name":"Reivyun",
-        "desc":"Suku kuno terlemah di Revolution Dreamland.",
+        "desc":"Suku kuno di Revolution Dreamland.",
         "tier":"SUPER LOW",
         "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122156472860680252/20230624_201345.png",
-        "hp":65,
-        "atk":8,
-        "def":6,
-        "agl":7,
-        "reward":[
-            "exp+15",
-            "cns+10"
-        ],
-        "skills":[
-            {
-                "name":"United Strike",
-                "func":"dmg+13"
-            },
-            {
-                "name":"Strong Roar",
-                "func":"atk+10"
-            }
-        ]
+        "hp":120,
+        "atk":18,
+        "def":12,
+        "agl":12,
+        "reward":["exp+25","cns+20","krm+3"],
+        "skills":[{"name":"United Strike","func":"dmg+20"},{"name":"Strong Roar","func":"atk+15"}]
     },
     {
         "name":"New Hero",
         "desc":"Petualang baru di Re:Volution.",
         "tier":"SUPER LOW",
         "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122156473674367057/20230624_201513.png",
-        "hp":70,
-        "atk":10,
-        "def":9,
-        "agl":6,
-        "reward":[
-            "exp+11",
-            "cns+8"
-        ],
-        "skills":[
-            {
-                "name":"Healing Light",
-                "func":"hp+30"
-            },
-            {
-                "name":"Focus",
-                "func":"agl+10"
-            }
-        ]
+        "hp":130,
+        "atk":20,
+        "def":15,
+        "agl":10,
+        "reward":["exp+22","cns+18","krm+3"],
+        "skills":[{"name":"Healing Light","func":"hp+40"},{"name":"Focus","func":"agl+15"}]
     },
     {
         "name": "Mudling",
         "desc": "Makhluk lumpur yang menjelma menjadi manusia.",
         "tier": "SUPER LOW",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1148814704878297088/20230906_095158.png",
-        "hp": 75,
-        "atk": 9,
-        "def": 12,
-        "agl": 3,
-        "reward": [
-            "exp+18",
-            "cns+12"
-        ],
-        "skills": [
-            {
-                "name": "Mud Splash",
-                "func": "dmg+12"
-            },
-            {
-                "name": "Earthen Shield",
-                "func": "def+15"
-            }
-        ]
+        "hp": 140,
+        "atk": 18,
+        "def": 20,
+        "agl": 5,
+        "reward": ["exp+28","cns+25","krm+4"],
+        "skills": [{"name": "Mud Splash","func": "dmg+20"},{"name": "Earthen Shield","func": "def+25"}]
     },
     {
         "name": "Blossomling",
         "desc": "Makhluk berbunga dengan serangan penuh racun.",
         "tier": "SUPER LOW",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1148814703326404748/20230906_095458.png",
-        "hp": 60,
-        "atk": 11,
-        "def": 5,
-        "agl": 8,
-        "reward": [
-            "exp+14",
-            "cns+9"
-        ],
-        "skills": [
-            {
-                "name": "Toxic Bloom",
-                "func": "dmg+14"
-            },
-            {
-                "name": "Petal Shield",
-                "func": "def+10"
-            },
-            {
-                "name": "Photosynthesa Melody",
-                "func": "hp+20"
-            }
-        ]
+        "hp": 110,
+        "atk": 22,
+        "def": 10,
+        "agl": 15,
+        "reward": ["exp+24","cns+20","krm+4"],
+        "skills": [{"name": "Toxic Bloom","func": "dmg+25"},{"name": "Petal Shield","func": "def+15"},{"name": "Photosynthesa Melody","func": "hp+30"}]
     },
     {
         "name": "Nature Seeker",
         "desc": "Penjelajah alam, pencari rahasia kehidupan.",
         "tier": "SUPER LOW",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1148814704458879097/20230906_095251.png",
-        "hp": 75,
-        "atk": 12,
-        "def": 7,
-        "agl": 5,
-        "reward": [
-            "exp+14",
-            "cns+9"
-        ],
-        "skills": [
-            {
-                "name": "Floral Strike",
-                "func": "dmg+14"
-            },
-            {
-                "name": "Natural Insight",
-                "func": "agl+6"
-            },
-            {
-                "name": "Plant Regrowth",
-                "func": "hp+25"
-            }
-        ]
+        "hp": 140,
+        "atk": 24,
+        "def": 15,
+        "agl": 10,
+        "reward": ["exp+24","cns+20","krm+4"],
+        "skills": [{"name": "Floral Strike","func": "dmg+25"},{"name": "Natural Insight","func": "agl+10"},{"name": "Plant Regrowth","func": "hp+35"}]
     },
     {
         "name": "Bubbles",
         "desc": "Makhluk bergelembung dan berbahaya.",
         "tier": "SUPER LOW",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1181926946981023804/0-7b4f479d-ad40-4e94-8e34-90710516db33.png",
-        "hp": 75,
-        "atk": 12,
-        "def": 8,
-        "agl": 5,
-        "reward": [
-            "exp+18",
-            "cns+12",
-            "krm+2"
-        ],
-        "skills": [
-            {
-                "name": "Toxic Burst",
-                "func": "dmg+15"
-            },
-            {
-                "name": "Acidic Spray",
-                "func": "dmg+10"
-            },
-            {
-                "name": "Viscous Form",
-                "func": "def+12"
-            }
-        ]
+        "hp": 140,
+        "atk": 24,
+        "def": 18,
+        "agl": 10,
+        "reward": ["exp+30","cns+25","krm+5"],
+        "skills": [{"name": "Toxic Burst","func": "dmg+25"},{"name": "Acidic Spray","func": "dmg+15"},{"name": "Viscous Form","func": "def+20"}]
     },
     {
         "name": "Grove Prowler",
         "desc": "Hewan pemangsa dari hutan yang licin dan lincah.",
         "tier": "SUPER LOW",
         "avatar": null,
-        "hp": 60,
-        "atk": 15,
-        "def": 6,
-        "agl": 12,
-        "reward": [
-            "exp+20",
-            "cns+14",
-            "krm+3"
-        ],
-        "skills": [
-            {
-                "name": "Claw Swipe",
-                "func": "dmg+12"
-            },
-            {
-                "name": "Fleet-footed",
-                "func": "agl+15"
-            },
-            {
-                "name": "Predatory Instinct",
-                "func": "atk+8"
-            }
-        ]
-    }       
+        "hp": 110,
+        "atk": 30,
+        "def": 12,
+        "agl": 25,
+        "reward": ["exp+35","cns+30","krm+6"],
+        "skills": [{"name": "Claw Swipe","func": "dmg+20"},{"name": "Fleet-footed","func": "agl+25"},{"name": "Predatory Instinct","func": "atk+15"}]
+    }
 ]

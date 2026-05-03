@@ -1,232 +1,233 @@
 [
     {
         "name":"Mechanical Knight",
-        "desc":"Prajurit futuristik, namun sulit menghindar.",
+        "desc":"Prajurit futuristik dengan pertahanan baja yang kokoh.",
         "tier":"SUPER HIGH",
         "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122026194121015306/20230624_104417.png",
-        "hp":250,
-        "atk":50,
-        "def":47,
-        "agl":10,
+        "hp":650,
+        "atk":55,
+        "def":55,
+        "agl":25,
         "reward":[
-            "exp+50",
-            "cns+25",
-            "krm+9"
+            "exp+150",
+            "cns+100",
+            "krm+15"
         ],
         "skills":[
             {
                 "name":"Wake Up",
-                "func":"agl+15"
+                "func":"agl+20"
             },
             {
                 "name":"Knightly Stare",
-                "func":"agl-10"
+                "func":"agl-15"
             },
             {
                 "name":"Knightly Strength",
-                "func":"atk+7"
+                "func":"atk+12"
             }
         ]
     },
     {
         "name":"Nyrion",
-        "desc":"Pasukan tempur khusus pemberantas kejahatan.",
+        "desc":"Pasukan tempur khusus yang ahli dalam pertempuran taktis.",
         "tier":"HIGH",
         "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122026096867680346/20230624_105124.png",
-        "hp":170,
+        "hp":450,
         "atk":45,
-        "def":50,
-        "agl":40,
+        "def":40,
+        "agl":45,
         "reward":[
-            "exp+47",
-            "cns+28",
-            "krm+6"
+            "exp+120",
+            "cns+80",
+            "krm+10"
         ],
         "skills":[
             {
                 "name":"Mag Dump",
-                "func":"dmg+30"
+                "func":"dmg+40"
             },
             {
                 "name":"Gigantoka Spirit",
-                "func":"atk+10"
+                "func":"atk+15"
             },
             {
                 "name":"Mentality Crusher",
-                "func":"def-8"
+                "func":"def-12"
             }
         ]
     },
     {
         "name":"Carmendria",
-        "desc":"Raja tua pemimpin pasukan Nyrion.",
+        "desc":"Raja veteran yang masih memiliki aura kekuatan yang luar biasa.",
         "tier":"SUPER HIGH",
         "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122026194800488508/20230624_104510.png",
-        "hp":200,
-        "atk":48,
-        "def":40,
-        "agl":33,
+        "hp":700,
+        "atk":58,
+        "def":45,
+        "agl":40,
         "reward":[
-            "exp+58",
-            "cns+40",
-            "krm+13"
+            "exp+180",
+            "cns+120",
+            "krm+20"
         ],
         "skills":[
             {
                 "name":"Revenge",
-                "func":"atk+15"
+                "func":"atk+20"
             },
             {
                 "name":"Focus",
-                "func":"agl+10"
+                "func":"agl+15"
             },
             {
                 "name":"Lifesteal",
-                "func":"hp-40"
+                "func":"hp-60"
             }
         ]
     },
     {
         "name":"Reinvier",
-        "desc":"Permaisuri dari Carmendria.",
+        "desc":"Permaisuri misterius dengan sihir hitam yang mematikan.",
         "tier":"HIGH",
         "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122026096423092294/20230624_122454.png",
-        "hp":160,
-        "atk":52,
-        "def":34,
-        "agl":47,
+        "hp":420,
+        "atk":50,
+        "def":35,
+        "agl":55,
         "reward":[
-            "exp+50",
-            "cns+35"
+            "exp+130",
+            "cns+90",
+            "krm+12"
         ],
         "skills":[
             {
                 "name":"Fearless Princess",
-                "func":"def+14"
+                "func":"def+18"
             },
             {
                 "name":"Black Magic",
-                "func":"dmg+30"
+                "func":"dmg+45"
             },
             {
                 "name":"Lifesteal",
-                "func":"hp-30"
+                "func":"hp-50"
             }
         ]
     },
     {
         "name": "JIN-SUCHI",
-        "desc": "Manusia hybrid - Keahlian.",
+        "desc": "Hybrid manusia yang mengandalkan keahlian menembak jitu.",
         "tier": "HIGH",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1181926945219420261/0-2ec4abf1-da59-48ca-990b-b53d6713a23b.png",
-        "hp": 150,
-        "atk": 40,
-        "def": 20,
-        "agl": 25,
+        "hp": 480,
+        "atk": 48,
+        "def": 30,
+        "agl": 50,
         "reward": [
-            "exp+60",
-            "cns+25",
-            "krm+10"
+            "exp+140",
+            "cns+95",
+            "krm+14"
         ],
         "skills": [
             {
                 "name": "Precision Shot",
-                "func": "dmg+25"
+                "func": "dmg+35"
             },
             {
                 "name": "Mage's Focus",
-                "func": "agl+15"
+                "func": "agl+20"
             },
             {
                 "name": "Evasion",
-                "func": "agl+10"
+                "func": "agl+15"
             }
         ]
     },
     {
         "name": "HIRO-KAZE",
-        "desc": "Manusia hybrid - Keseimbangan.",
+        "desc": "Hybrid manusia yang seimbang dalam segala aspek tempur.",
         "tier": "HIGH",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1181926944527355986/0-c599fa60-70f1-42af-9aad-7667a4c38969.png",
-        "hp": 120,
-        "atk": 35,
-        "def": 15,
-        "agl": 40,
+        "hp": 460,
+        "atk": 46,
+        "def": 32,
+        "agl": 52,
         "reward": [
-            "exp+55",
-            "cns+20",
-            "krm+8"
+            "exp+135",
+            "cns+92",
+            "krm+13"
         ],
         "skills": [
             {
                 "name": "Gale Strike",
-                "func": "dmg+30"
+                "func": "dmg+40"
             },
             {
                 "name": "Windwalk",
-                "func": "agl+20"
+                "func": "agl+25"
             },
             {
                 "name": "Tempest Rage",
-                "func": "atk+15"
+                "func": "atk+18"
             }
         ]
     },
     {
         "name": "MIKA-DARYA",
-        "desc": "Manusia hybrid - Manipulasi.",
+        "desc": "Hybrid manusia yang ahli dalam memanipulasi bayangan.",
         "tier": "SUPER HIGH",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1181926945890521138/0-e92081e3-2efb-43b3-bdf0-b03b84a6e49a.png",
-        "hp": 180,
-        "atk": 50,
-        "def": 25,
-        "agl": 30,
+        "hp": 680,
+        "atk": 62,
+        "def": 48,
+        "agl": 45,
         "reward": [
-            "exp+70",
-            "cns+30",
-            "krm+12"
+            "exp+190",
+            "cns+130",
+            "krm+22"
         ],
         "skills": [
             {
                 "name": "Umbral Slash",
-                "func": "dmg+40"
+                "func": "dmg+55"
             },
             {
                 "name": "Dark Shroud",
-                "func": "def+20"
+                "func": "def+25"
             },
             {
                 "name": "Shadowmeld",
-                "func": "agl+10"
+                "func": "agl+15"
             }
         ]
     },
     {
         "name": "VORTeX",
-        "desc": "Galactic Soldier MK.1",
+        "desc": "Prajurit Galaksi MK.1, pionir dalam teknologi tempur luar angkasa.",
         "tier": "SUPER HIGH",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1148814705687806032/20230906_095119.png",
-        "hp": 190,
-        "atk": 50,
-        "def": 30,
-        "agl": 21,
+        "hp": 750,
+        "atk": 65,
+        "def": 52,
+        "agl": 35,
         "reward": [
-            "exp+70",
-            "cns+30",
-            "krm+12"
+            "exp+200",
+            "cns+150",
+            "krm+25"
         ],
         "skills": [
             {
                 "name": "Vortex Slash I",
-                "func": "dmg+40"
+                "func": "dmg+50"
             },
             {
                 "name": "Gravity Pull I",
-                "func": "agl-15"
+                "func": "agl-20"
             },
             {
                 "name": "Hydro Healing",
-                "func": "hp-30"
+                "func": "hp-50"
             }
         ]
     }

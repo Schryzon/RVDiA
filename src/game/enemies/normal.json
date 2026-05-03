@@ -1,219 +1,220 @@
 [
     {
-        "name":"SEI-RO",
-        "desc":"Manusia hybrid - Kecepatan.",
-        "tier":"NORMAL",
-        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122026093835206656/20230624_122754.png",
-        "hp":80,
-        "atk":14,
-        "def":8,
-        "agl":20,
-        "reward":[
-            "exp+30",
-            "cns+14",
+        "name": "SEI-RO",
+        "desc": "Manusia hybrid - Kecepatan.",
+        "tier": "NORMAL",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122026093835206656/20230624_122754.png",
+        "hp": 180,
+        "atk": 22,
+        "def": 15,
+        "agl": 35,
+        "reward": [
+            "exp+50",
+            "cns+30",
             "krm+5"
         ],
-        "skills":[
+        "skills": [
             {
-                "name":"Flash Punch",
-                "func":"dmg+10"
+                "name": "Flash Punch",
+                "func": "dmg+15"
             },
             {
-                "name":"Flash Heal",
-                "func":"hp+15"
+                "name": "Flash Heal",
+                "func": "hp+25"
             },
             {
-                "name":"Slowmotion",
-                "func":"agl-7"
+                "name": "Slowmotion",
+                "func": "agl-12"
             },
             {
-                "name":"Unwavering Speed",
-                "func":"agl+5"
+                "name": "Unwavering Speed",
+                "func": "agl+10"
             }
         ]
     },
     {
-        "name":"KOU-RAI",
-        "desc":"Manusia hybrid - Kecerdasan.",
-        "tier":"NORMAL",
-        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122026092958589068/20230624_122622.png",
-        "hp":100,
-        "atk":19,
-        "def":14,
-        "agl":7,
-        "reward":[
-            "exp+36",
-            "cns+17",
-            "krm+2"
+        "name": "KOU-RAI",
+        "desc": "Manusia hybrid - Kecerdasan.",
+        "tier": "NORMAL",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122026092958589068/20230624_122622.png",
+        "hp": 220,
+        "atk": 28,
+        "def": 25,
+        "agl": 15,
+        "reward": [
+            "exp+60",
+            "cns+40",
+            "krm+6"
         ],
-        "skills":[
+        "skills": [
             {
-                "name":"G.S.B",
-                "func":"dmg+15"
+                "name": "G.S.B",
+                "func": "dmg+25"
             },
             {
-                "name":"P.L.H.S",
-                "func":"hp+10"
+                "name": "P.L.H.S",
+                "func": "hp+20"
             },
             {
-                "name":"L.N.S",
-                "func":"hp-15"
+                "name": "L.N.S",
+                "func": "hp-25"
             },
             {
-                "name":"F.A.V",
-                "func":"agl+4"
+                "name": "F.A.V",
+                "func": "agl+8"
             },
             {
-                "name":"I.C.B.M",
-                "func":"dmg+25"
+                "name": "I.C.B.M",
+                "func": "dmg+45"
             }
         ]
     },
     {
-        "name":"AKA-ZUMI",
-        "desc":"Manusia hybrid - Kelincahan.",
-        "tier":"NORMAL",
-        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122026093470298142/20230624_122709.png",
-        "hp":100,
-        "atk":20,
-        "def":8,
-        "agl":17,
-        "reward":[
-            "exp+36",
-            "cns+17",
-            "krm+2"
+        "name": "AKA-ZUMI",
+        "desc": "Manusia hybrid - Kelincahan.",
+        "tier": "NORMAL",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122026093470298142/20230624_122709.png",
+        "hp": 200,
+        "atk": 26,
+        "def": 18,
+        "agl": 30,
+        "reward": [
+            "exp+55",
+            "cns+35",
+            "krm+5"
         ],
-        "skills":[
+        "skills": [
             {
-                "name":"Maniac Slash",
-                "func":"dmg+20"
+                "name": "Maniac Slash",
+                "func": "dmg+30"
             },
             {
-                "name":"Evil Smile",
-                "func":"def+12"
+                "name": "Evil Smile",
+                "func": "def+15"
             },
             {
-                "name":"Evil Laugh",
-                "func":"def-5"
+                "name": "Evil Laugh",
+                "func": "def-10"
             },
             {
-                "name":"Maniac Stare",
-                "func":"agl-10"
+                "name": "Maniac Stare",
+                "func": "agl-15"
             }
         ]
     },
     {
-        "name":"SHIN-KURO",
-        "desc":"Manusia hybrid - Kekuatan.",
-        "tier":"SUPER NORMAL",
-        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122026095353540688/20230624_122931.png",
-        "hp":120,
-        "atk":25,
-        "def":10,
-        "agl":11,
-        "reward":[
-            "exp+40",
-            "cns+20",
-            "krm+2"
+        "name": "SHIN-KURO",
+        "desc": "Manusia hybrid - Kekuatan.",
+        "tier": "SUPER NORMAL",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122026095353540688/20230624_122931.png",
+        "hp": 260,
+        "atk": 35,
+        "def": 22,
+        "agl": 18,
+        "reward": [
+            "exp+70",
+            "cns+50",
+            "krm+8"
         ],
-        "skills":[
+        "skills": [
             {
-                "name":"Anti-Hero Slam",
-                "func":"dmg+25"
+                "name": "Anti-Hero Slam",
+                "func": "dmg+35"
             },
             {
-                "name":"Mighty Stare",
-                "func":"agl-5"
+                "name": "Mighty Stare",
+                "func": "agl-8"
             },
             {
-                "name":"Crushing Uppercut",
-                "func":"dmg+15"
+                "name": "Crushing Uppercut",
+                "func": "dmg+25"
             }
         ]
     },
     {
-        "name":"CHI-SAKI",
-        "desc":"Manusia hybrid - Keberanian.",
-        "tier":"SUPER NORMAL",
-        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122026095017992243/20230624_122840.png",
-        "hp":130,
-        "atk":27,
-        "def":16,
-        "agl":0,
-        "reward":[
-            "exp+42",
-            "cns+22",
-            "krm+2"
+        "name": "CHI-SAKI",
+        "desc": "Manusia hybrid - Keberanian.",
+        "tier": "SUPER NORMAL",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122026095017992243/20230624_122840.png",
+        "hp": 280,
+        "atk": 38,
+        "def": 28,
+        "agl": 10,
+        "reward": [
+            "exp+75",
+            "cns+55",
+            "krm+8"
         ],
-        "skills":[
+        "skills": [
             {
-                "name":"Undying Will",
-                "func":"hp+20"
+                "name": "Undying Will",
+                "func": "hp+35"
             },
             {
-                "name":"Keep Moving",
-                "func":"agl+9"
+                "name": "Keep Moving",
+                "func": "agl+12"
             },
             {
-                "name":"Relentless Punch",
-                "func":"dmg+30"
+                "name": "Relentless Punch",
+                "func": "dmg+40"
             }
         ]
     },
     {
-        "name":"FEI-XANG",
-        "desc":"Manusia hybrid - Kesatuan.",
-        "tier":"SUPER NORMAL",
-        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122026092618854480/20230624_122553.png",
-        "hp":105,
-        "atk":33,
-        "def":20,
-        "agl":15,
-        "reward":[
-            "exp+45",
-            "cns+23",
-            "krm+4"
+        "name": "FEI-XANG",
+        "desc": "Manusia hybrid - Kesatuan.",
+        "tier": "SUPER NORMAL",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122026092618854480/20230624_122553.png",
+        "hp": 240,
+        "atk": 42,
+        "def": 30,
+        "agl": 20,
+        "reward": [
+            "exp+80",
+            "cns+60",
+            "krm+10"
         ],
-        "skills":[
+        "skills": [
             {
-                "name":"Lianmeng Gongji",
-                "func":"dmg+30"
+                "name": "Lianmeng Gongji",
+                "func": "dmg+45"
             },
             {
-                "name":"Zengjia Liliang",
-                "func":"atk+10"
+                "name": "Zengjia Liliang",
+                "func": "atk+18"
             }
         ]
     },
     {
-        "name":"LRSF",
-        "desc":"Land of Revolution Special Forces.",
-        "tier":"NORMAL",
-        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1148814703754231898/20230906_095400.png",
-        "hp":100,
-        "atk":30,
-        "def":17,
-        "agl":23,
-        "reward":[
-            "exp+31",
-            "cns+27"
+        "name": "LRSF",
+        "desc": "Land of Revolution Special Forces.",
+        "tier": "NORMAL",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1148814703754231898/20230906_095400.png",
+        "hp": 220,
+        "atk": 38,
+        "def": 25,
+        "agl": 35,
+        "reward": [
+            "exp+65",
+            "cns+45",
+            "krm+7"
         ],
-        "skills":[
+        "skills": [
             {
-                "name":"Holographic Barrier",
-                "func":"def+5"
+                "name": "Holographic Barrier",
+                "func": "def+12"
             },
             {
-                "name":"Grenade",
-                "func":"dmg+26"
+                "name": "Grenade",
+                "func": "dmg+40"
             },
             {
-                "name":"Los, Los, Los",
-                "func":"agl+5"
+                "name": "Los, Los, Los",
+                "func": "agl+10"
             },
             {
-                "name":"Snipe 'em",
-                "func":"dmg+40"
+                "name": "Snipe 'em",
+                "func": "dmg+60"
             }
         ]
     }
