@@ -93,6 +93,8 @@ class GameInstance():
         except:
             self.user2_hp = 100
 
+        self.user1_max_hp = 100
+        self.user2_max_hp = 100
         self.running = False
         self.ctx = ctx
         self.bot = bot
@@ -158,6 +160,7 @@ class GameInstance():
                 "SUPER ELITE": 50, "BOSS": 75, "SUPER BOSS": 100
             }
             self.p2_karma = tier_karma.get(self.user2.get('tier'), 10)
+            self.user2_max_hp = self.user2_hp
             
             comp_data2 = {
                 'stats':user2_stats,
@@ -171,11 +174,6 @@ class GameInstance():
 
 
     async def attack(self, dealer_stat:list, taker_stat:list, dealer_id:int, is_defending:bool, dealer_karma:int = 10, taker_karma:int = 10):
-        try:
-            if not isinstance(self.user2, discord.Member):
-                user_2_max_hp = self.user2['hp']
-        except AttributeError: # Ignore on Attr Error
-            pass
         user_1_atk, user_1_def, user_1_agl = dealer_stat[0], dealer_stat[1], dealer_stat[2]
         user_2_atk, user_2_def, user_2_agl = taker_stat[0], taker_stat[1], taker_stat[2]
 
@@ -184,7 +182,7 @@ class GameInstance():
             
         # Base Damage Calculation
         if dealer_id != 1 and self.ctx.command.name == "battle":
-            scaling = max(user_2_max_hp / 90, 1) if user_2_max_hp > 500 else max(user_2_max_hp / 10, 1) if user_2_max_hp > 200 else user_2_max_hp
+            scaling = max(self.user2_max_hp / 90, 1) if self.user2_max_hp > 500 else max(self.user2_max_hp / 10, 1) if self.user2_max_hp > 200 else self.user2_max_hp
             damage = round(max(0, user_1_atk * (random.randint(80, 100) - user_2_def) / scaling))
         else:
             damage = round(max(0, user_1_atk * (random.randint(80, 100) - user_2_def) / 100))
@@ -694,7 +692,15 @@ class GameInstance():
                     case "check":
                         self.ai_knows_user = True
                         embed = discord.Embed(title=f"🔍 {self.user2['name']} sedang memperhatikanmu...", color=0x3498db)
-                        embed.description = f"**{self.user2['name']}** sedang menganalisa gaya bertarungmu!\nKewaspadaannya meningkat."
+                        embed.description = (
+                            f"**{self.user2['name']}** sedang membaca alur seranganmu!\n"
+                            f"\"Hmm... jadi ini kemampuanmu yang sebenarnya?\"\n\n"
+                            f"📊 **Analisa Target:**\n"
+                            f"• HP: `{self.user1_hp}`/`100`\n"
+                            f"• Attack: `{self.user1_stats[0]}`\n"
+                            f"• Defense: `{self.user1_stats[1]}`\n"
+                            f"• Agility: `{self.user1_stats[2]}`"
+                        )
                         try:
                             embed.set_thumbnail(url = self.enemy_avatar)
                         except:
@@ -819,7 +825,7 @@ class AI():
             self.instance.ai_knows_user = False
             
         self.actions = ["attack", "defend", "skip"]
-        if self.turns > 2 and not self.instance.ai_knows_user:
+        if self.turns > 0 and not self.instance.ai_knows_user:
             self.actions.append("check")
             
         if self.turns > 3:
@@ -854,8 +860,8 @@ class AI():
             if self.user1_hp < 30: # Finisher instinct
                 self.attack_mood += 40
         else:
-            # Chance to check stats increases as turns go by
-            self.check_mood += (self.turns * 5)
+            # Chance to check stats increases significantly as turns go by
+            self.check_mood += (self.turns * 12)
 
         if self.user1_hp > self.user2_hp:
             self.attack_mood += 12
@@ -1002,10 +1008,10 @@ class ItemDropdown(discord.ui.Select):
             return await interaction.response.send_message("Akun bermasalah!", ephemeral=True)
             
         inventory = user_record.inventory
-        user_items = inventory.items if isinstance(inventory.items, list) else []
         used_item = None
         
         if self.types == 'item':
+            user_items = inventory.items if isinstance(inventory.items, list) else []
             for item in user_items:
                 if item['_id'] == self.values[0] and item.get('owned', 0) > 0:
                     item['owned'] -= 1
@@ -1019,8 +1025,8 @@ class ItemDropdown(discord.ui.Select):
                 )
         else:
             # Skill usage (doesn't consume)
-            # Old code just checked if it exists and is owned
-            for item in user_items:
+            user_skills = inventory.skills if isinstance(inventory.skills, list) else []
+            for item in user_skills:
                 if item['_id'] == self.values[0] and item.get('owned', 0) > 0:
                     used_item = [item['name'], item['func']]
                     break
@@ -1202,10 +1208,22 @@ class ShopDropdown(discord.ui.Select):
         if current_money < matched_item['cost']:
             return await interaction.response.send_message(f"Waduh!\n{matched_item['paywith']}mu tidak cukup untuk membeli barang ini!", ephemeral=True)
 
-        # Handle items and skills
-        # Equipment (1-) and Skills (2-) are unique
+        # Handle items, skills, and equipment correctly
         user_items = inventory.items if isinstance(inventory.items, list) else []
-        mongo_dict = {item['_id']: item for item in user_items}
+        user_skills = inventory.skills if isinstance(inventory.skills, list) else []
+        user_equipments = inventory.equipments if isinstance(inventory.equipments, list) else []
+        
+        target_field = 'items'
+        current_list = user_items
+        
+        if '1-' in item_id:
+            target_field = 'equipments'
+            current_list = user_equipments
+        elif '2-' in item_id:
+            target_field = 'skills'
+            current_list = user_skills
+            
+        mongo_dict = {item['_id']: item for item in current_list}
         
         if item_id in mongo_dict:
             if '1-' in item_id:
@@ -1213,18 +1231,16 @@ class ShopDropdown(discord.ui.Select):
             if '2-' in item_id:
                 return await interaction.response.send_message("Kamu hanya bisa memelajari skill sekali saja!", ephemeral=True)
             
-            # Increment owned count (if we care about it in JSONB)
-            for item in user_items:
+            for item in current_list:
                 if item['_id'] == item_id:
                     item['owned'] = item.get('owned', 0) + 1
                     break
         else:
-            # Add new item
             new_item = matched_item.copy()
-            cost = new_item.pop('cost')
+            new_item.pop('cost')
             new_item.pop('paywith')
             new_item['owned'] = 1
-            user_items.append(new_item)
+            current_list.append(new_item)
 
         # Deduct money
         data[currency_key] -= matched_item['cost']
@@ -1235,12 +1251,73 @@ class ShopDropdown(discord.ui.Select):
             data={
                 'data': Json(data),
                 'inventory': {
-                    'update': {'items': Json(user_items)}
+                    'update': {target_field: Json(current_list)}
                 }
             }
         )
 
         await interaction.response.send_message(f"Pembelian berhasil!\nKamu telah membeli `{matched_item['name']}`", ephemeral=True)
+
+class PaginatedEnemyView(View):
+    def __init__(self, ctx):
+        super().__init__(timeout=120)
+        self.ctx = ctx
+        self.tiers = ['boss', 'elite', 'high', 'normal', 'low']
+        self.current_tier_index = 0
+        self.enemies = []
+
+    async def get_embed(self):
+        tier = self.tiers[self.current_tier_index]
+        enemy_path = path.join(path.dirname(__file__), '..', 'src', 'game', 'enemies', f'{tier}.json')
+        with open(enemy_path, 'r') as file:
+            self.enemies = json.load(file)
+        
+        strongest = max(self.enemies, key=lambda x: x['hp'] + x['atk'] + x['def'] + x['agl'])
+        
+        embed = discord.Embed(title=f"📖 Bestiary: {tier.title()}", color=0xff0000 if tier == 'boss' else 0x3498db)
+        embed.description = f"Menampilkan musuh tingkat **{tier.upper()}**\n\n"
+        
+        for index, enemy in enumerate(self.enemies):
+            embed.add_field(
+                name=f"{index+1}. {enemy['name']} ({enemy['tier']})",
+                value=f"**HP**: `{enemy['hp']}` | **Stats**: `{enemy['atk']}/{enemy['def']}/{enemy['agl']}`",
+                inline=False
+            )
+            
+        if strongest.get('avatar'):
+            embed.set_thumbnail(url=strongest['avatar'])
+            
+        embed.set_footer(text=f"Halaman {self.current_tier_index + 1}/{len(self.tiers)} • Pilih musuh untuk detail!")
+        
+        self.clear_items()
+        self.add_item(self.prev_page)
+        self.add_item(self.destroy)
+        self.add_item(self.next_page)
+        self.add_item(SpecificEnemyDropdown(self.enemies))
+        
+        return embed
+
+    @discord.ui.button(label='◀', style=discord.ButtonStyle.blurple)
+    async def prev_page(self, interaction: discord.Interaction, button: Button):
+        if interaction.user != self.ctx.author:
+            return await interaction.response.send_message("Hanya yang memanggil command ini yang bisa menggunakannya!", ephemeral=True)
+        self.current_tier_index = (self.current_tier_index - 1) % len(self.tiers)
+        embed = await self.get_embed()
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    @discord.ui.button(label='▶', style=discord.ButtonStyle.blurple)
+    async def next_page(self, interaction: discord.Interaction, button: Button):
+        if interaction.user != self.ctx.author:
+            return await interaction.response.send_message("Hanya yang memanggil command ini yang bisa menggunakannya!", ephemeral=True)
+        self.current_tier_index = (self.current_tier_index + 1) % len(self.tiers)
+        embed = await self.get_embed()
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    @discord.ui.button(label='✖', style=discord.ButtonStyle.danger)
+    async def destroy(self, interaction: discord.Interaction, button: Button):
+        if interaction.user != self.ctx.author:
+            return await interaction.response.send_message("Hanya yang memanggil command ini yang bisa menggunakannya!", ephemeral=True)
+        await interaction.message.delete()
 
 class EnemyDropdown(discord.ui.Select):
     def __init__(self):
@@ -1352,14 +1429,27 @@ class ShopView(View):
             item.disabled = True
         await self.message.edit(view=self)
         
-    def get_owned_count(self, item_id):
-        try:
-            for key in self.data.get('items', []):
-                if key['_id'] == item_id:
-                    return key.get('owned', 0)
-        except:
-            pass
-        return 0
+    def get_owned_display(self, item):
+        item_id = item['_id']
+        inventory = self.data.get('inventory', {})
+        
+        check_list = []
+        if '1-' in item_id: check_list = inventory.get('equipments', [])
+        elif '2-' in item_id: check_list = inventory.get('skills', [])
+        else: check_list = inventory.get('items', [])
+        
+        if not isinstance(check_list, list): check_list = []
+        
+        for owned_item in check_list:
+            if owned_item['_id'] == item_id:
+                count = owned_item.get('owned', 0)
+                if item['type'] == 'Skill' or item['type'] == 'Equipment':
+                    return "YA" if count > 0 else "TIDAK"
+                return str(count)
+                
+        if item['type'] == 'Skill' or item['type'] == 'Equipment':
+            return "TIDAK"
+        return "0"
 
     async def update_embed(self, last_page):
         embed = discord.Embed(title='Toko Xaneria', color=0xFFFF00)
@@ -1379,9 +1469,13 @@ class ShopView(View):
             )
         
         for index, item in enumerate(self.items[start_index:end_index], start=start_index + 1):
-            owned_count = self.get_owned_count(item['_id'])
-            self.owned.append(owned_count)
-            generate_embed_field(index, item, owned_count)
+            owned_display = self.get_owned_display(item)
+            self.owned.append(owned_display)
+            embed.add_field(
+                name=f"{index}. {item['name']}",
+                value=f"**`{item['desc']}`**\n({item['func']})\n**Tipe:** {item['type']}\n**Harga:** {item['cost']} {item['paywith']}\n**Dimiliki:** {owned_display}",
+                inline=False
+            )
 
         self.clear_items() # Fuck this
         self.add_item(self.back)
@@ -1596,7 +1690,65 @@ class Game(commands.Cog):
         await asyncio.sleep(0.7)
         await self.account(ctx)
     
-    @game.command(description='Menghapuskan akunmu dari Re:Volution.')
+    @game.command(description="Tunjukkan siapa Sang Pemimpi terkuat saat ini!")
+    @check_blacklist()
+    async def leaderboard(self, ctx:commands.Context):
+        """
+        Lihat siapa yang terkuat di Re:Volution ~ The Dream World!
+        """
+        users = await db.user.find_many()
+        if not users:
+            return await ctx.reply("Belum ada pemain yang terdaftar!")
+            
+        # Sort by level DESC, then karma DESC
+        sorted_users = sorted(users, key=lambda u: (u.data.get('level', 1), u.data.get('karma', 0)), reverse=True)
+        top_10 = sorted_users[:10]
+        
+        embed = discord.Embed(title="🏆 Papan Peringkat Re:Volution 🏆", color=discord.Color.gold())
+        embed.description = "Inilah 10 pemain yang memiliki mimpi paling kuat!"
+        
+        for i, user in enumerate(top_10, 1):
+            name = user.data.get('name', 'Unknown')
+            level = user.data.get('level', 1)
+            karma = user.data.get('karma', 0)
+            embed.add_field(
+                name=f"{i}. {name}",
+                value=f"🔰 Level: `{level}` | 👹 Karma: `{karma}`",
+                inline=False
+            )
+        
+        embed.set_footer(text="Teruslah bertualang untuk mencapai puncak!")
+        await ctx.reply(embed=embed)
+
+    @game.command(description='Panduan bermain Re:Volution.')
+    @check_blacklist()
+    async def guide(self, ctx:commands.Context):
+        """
+        Panduan bermain Re:Volution ~ The Dream World!
+        """
+        embed = discord.Embed(title="✨ Panduan Re:Volution ✨", color=0x86273d)
+        embed.description = (
+            "Halo, Sang Pemimpi! 💫\n"
+            "Selamat datang di **Re:Volution ~ The Dream World**. Aku akan memandumu memahami dunia ini!\n\n"
+            "🛡️ **Memulai Petualangan**\n"
+            "Gunakan `/game register` untuk membuat akunmu. Setelah itu, kamu bisa mulai menjelajah!\n\n"
+            "⚔️ **Pertarungan (Combat)**\n"
+            "• `/game battle`: Lawan monster untuk mendapatkan EXP, Koin, dan Karma.\n"
+            "• `/game fight`: Tantang temanmu dalam pertarungan PvP yang sengit!\n"
+            "• Selama bertarung, kamu bisa Menyerang (Attack), Bertahan (Defend), menggunakan Item, atau Skill.\n"
+            "• **Karma**: Semakin tinggi Karma, semakin besar peluang Critical Hit dan Dodge!\n\n"
+            "💰 **Ekonomi & Kekuatan**\n"
+            "• `/game shop`: Beli item konsumsi, perlengkapan (Equipment), atau pelajari Skill baru.\n"
+            "• `/game account`: Lihat statusmu, koin, dan karma.\n"
+            "• `/game adventure`: Jalankan petualangan singkat untuk hadiah cepat.\n\n"
+            "📜 **Tips dari RVDiA**\n"
+            "*\"Jangan lupa untuk selalu melengkapi equipment terbaikmu sebelum melawan Boss! Jika merasa lelah, beristirahatlah sejenak di Xaneria.\"*"
+        )
+        embed.set_thumbnail(url=self.bot.user.display_avatar.url)
+        embed.set_footer(text="Semoga beruntung di dalam mimpi ini!")
+        await ctx.reply(embed=embed)
+
+    @game.command(description="Menghapuskan akunmu dari Re:Volution.")
     @has_registered()
     @check_blacklist()
     async def resign(self, ctx:commands.Context):
@@ -1666,12 +1818,96 @@ class Game(commands.Cog):
             if level_uped:
                 return await send_level_up_msg(ctx)
             
-    @game.command(description='Lihat profil pengguna di Re:Volution!')
+    @game.command(name='account', aliases=['profile'], description='Lihat profil pengguna di Re:Volution!')
     @app_commands.describe(user='Pengguna mana yang ingin dilihat akunnya?')
     @app_commands.rename(user='pengguna')
     @has_registered()
     @check_compatible()
     @check_blacklist()
+    async def profile(self, ctx:commands.Context, *, user:discord.User=None):
+        """
+        Lihat profil pengguna di Re:Volution ~ The Dream World!
+        """
+        await self.account(ctx, user=user)
+
+    @game.command(description='Perbaiki struktur data akunmu.')
+    @has_registered()
+    @check_blacklist()
+    async def fix_account(self, ctx:commands.Context):
+        """
+        Gunakan ini jika akunmu mengalami masalah struktur data atau item tidak muncul di tempatnya.
+        """
+        user_record = await db.user.find_unique(where={'id': ctx.author.id}, include={'inventory': True})
+        if not user_record:
+            return await ctx.reply('Kamu belum terdaftar!')
+            
+        # 1. Fix User.data
+        data = user_record.data
+        updated_data = False
+        for key, value in default_data.items():
+            if key not in data:
+                data[key] = value
+                updated_data = True
+        
+        # 2. Fix Inventory distribution
+        inventory = user_record.inventory
+        if not inventory:
+             await db.inventory.create(data={
+                 'userId': ctx.author.id,
+                 'items': Json([]),
+                 'skills': Json([]),
+                 'equipments': Json([])
+             })
+             inventory = await db.inventory.find_unique(where={'userId': ctx.author.id})
+
+        all_items = inventory.items if isinstance(inventory.items, list) else []
+        skills = inventory.skills if isinstance(inventory.skills, list) else []
+        equipments = inventory.equipments if isinstance(inventory.equipments, list) else []
+        
+        new_items = []
+        new_skills = skills
+        new_equipments = equipments
+        
+        moved_skills = 0
+        moved_equips = 0
+        
+        for item in all_items:
+            item_id = item.get('_id', '')
+            if item_id.startswith('1-'):
+                if not any(e['_id'] == item_id for e in new_equipments):
+                    new_equipments.append(item)
+                    moved_equips += 1
+            elif item_id.startswith('2-'):
+                if not any(s['_id'] == item_id for s in new_skills):
+                    new_skills.append(item)
+                    moved_skills += 1
+            else:
+                new_items.append(item)
+        
+        # Update User data if changed
+        if updated_data:
+            await db.user.update(where={'id': ctx.author.id}, data={'data': Json(data)})
+            
+        # Update Inventory
+        await db.inventory.update(
+            where={'userId': ctx.author.id},
+            data={
+                'items': Json(new_items),
+                'skills': Json(new_skills),
+                'equipments': Json(new_equipments)
+            }
+        )
+        
+        msg = f"✅ Akunmu telah diperbaiki!"
+        if moved_skills > 0 or moved_equips > 0:
+            msg += f"\n- Berhasil memindahkan `{moved_skills}` skill.\n- Berhasil memindahkan `{moved_equips}` perlengkapan."
+        if updated_data:
+            msg += "\n- Struktur data profil juga telah diperbarui."
+        if moved_skills == 0 and moved_equips == 0 and not updated_data:
+            msg = "✅ Akunmu sudah dalam kondisi terbaik! Tidak ada yang perlu diperbaiki."
+            
+        await ctx.reply(msg)
+
     async def account(self, ctx:commands.Context, *, user:discord.User=None):
         """
         Tampilkan informasi akun Re:Volution-mu!
@@ -1722,22 +1958,36 @@ class Game(commands.Cog):
         embed.set_thumbnail(url=getenv('xaneria'))
 
         user_items = inventory.items if isinstance(inventory.items, list) else []
-        def get_owned_count(item_id):
-            for item in user_items:
-                if item['_id'] == item_id:
-                    return item.get('owned', 0)
-            return 0
+        user_skills = inventory.skills if isinstance(inventory.skills, list) else []
+        user_equipments = inventory.equipments if isinstance(inventory.equipments, list) else []
+
+        def get_owned_display(item):
+            item_id = item['_id']
+            check_list = user_items
+            if '1-' in item_id: check_list = user_equipments
+            elif '2-' in item_id: check_list = user_skills
+            
+            for owned_item in check_list:
+                if owned_item['_id'] == item_id:
+                    count = owned_item.get('owned', 0)
+                    if item['type'] == 'Skill' or item['type'] == 'Equipment':
+                        return "YA" if count > 0 else "TIDAK"
+                    return str(count)
+            
+            if item['type'] == 'Skill' or item['type'] == 'Equipment':
+                return "TIDAK"
+            return "0"
 
         options_per_page = 5
         for index, item in enumerate(items[:options_per_page], start=1):
-            owned_count = get_owned_count(item['_id'])
+            owned_display = get_owned_display(item)
             embed.add_field(
                 name=f"{index}. {item['name']}",
-                value=f"**`{item['desc']}`**\n({item['func']})\n**Tipe:** {item['type']}\n**Harga:** {item['cost']} {item['paywith']}\n**Dimiliki:** {owned_count}",
+                value=f"**`{item['desc']}`**\n({item['func']})\n**Tipe:** {item['type']}\n**Harga:** {item['cost']} {item['paywith']}\n**Dimiliki:** {owned_display}",
                 inline=False
             )
 
-        view = ShopView(ctx, items, data)
+        view = ShopView(ctx, items, user_record.to_dict()) # Pass as dict for simplicity in View
         await ctx.reply(embed = embed, view=view)
 
     @game.command(description='Bertualang di Re:Volution!')
@@ -1816,9 +2066,9 @@ class Game(commands.Cog):
         """
         Lihat daftar musuh yang muncul di Re:Volution ~ The Dream World!
         """
-        view = EnemyView()
-        async with ctx.typing():
-            await ctx.reply(f"Untuk melihat daftar musuh, silahkan tekan di bawah ini ↓", view=view)
+        view = PaginatedEnemyView(ctx)
+        embed = await view.get_embed()
+        await ctx.reply(embed=embed, view=view)
 
 
     @game.command(description='Request untuk pemindahan data akun.')
