@@ -1,5 +1,6 @@
 import discord
 import os
+import asyncio
 import pytz
 from google import genai
 from google.genai import types
@@ -59,23 +60,32 @@ class Regenerate_Answer_Button(View):
             f"\nRemember to be stay in character as RVDiA (loving, cute, informal)."
         )
         
-        try:
-            result = await client.aio.models.generate_content(
-                model='gemini-3-flash-preview',
-                contents=message,
-                config=types.GenerateContentConfig(
-                    system_instruction=sys_inst,
-                    tools=[types.Tool(google_search=types.GoogleSearch())]
+        AI_response = None
+        max_retries = 2
+        for attempt in range(max_retries + 1):
+            try:
+                result = await client.aio.models.generate_content(
+                    model='gemini-3-flash-preview',
+                    contents=message,
+                    config=types.GenerateContentConfig(
+                        system_instruction=sys_inst,
+                        tools=[types.Tool(google_search=types.GoogleSearch())]
+                    )
                 )
-            )
-            AI_response = result.text
-        except Exception as e:
-            if "429" in str(e) or "ResourceExhausted" in str(e):
-                AI_response = "Aduuh! Sepertinya aku lagi kecapekan nih... Banyak banget yang nanya. Tunggu sebentar ya, nanti tanya lagi! 🌸"
-            elif "safety" in str(e).lower():
-                AI_response = "Umm... sepertinya itu pertanyaan yang kurang pantas. Aku gak bisa jawab kalau soal itu ya! ❌"
-            else:
-                AI_response = "Waduh, otakku tiba-tiba nge-blank... Coba tanya lagi nanti ya! 💫"
+                AI_response = result.text
+                break
+            except Exception as e:
+                if ("429" in str(e) or "ResourceExhausted" in str(e)) and attempt < max_retries:
+                    await asyncio.sleep(3 * (attempt + 1))
+                    continue
+                
+                if "429" in str(e) or "ResourceExhausted" in str(e):
+                    AI_response = "Aduuh! Sepertinya aku lagi kecapekan nih... Banyak banget yang nanya. Tunggu sebentar ya, nanti tanya lagi! 🌸"
+                elif "safety" in str(e).lower():
+                    AI_response = "Umm... sepertinya itu pertanyaan yang kurang pantas. Aku gak bisa jawab kalau soal itu ya! ❌"
+                else:
+                    AI_response = "Waduh, otakku tiba-tiba nge-blank... Coba tanya lagi nanti ya! 💫"
+                break
         
         # Save the new AI response to memory
         await memory_manager.add_memory(user_id, "model", AI_response)
@@ -140,23 +150,32 @@ class Conversation(commands.Cog):
                 f"\nRemember to be stay in character as RVDiA (loving, cute, informal)."
             )
             
-            try:
-                result = await client.aio.models.generate_content(
-                    model='gemini-3-flash-preview',
-                    contents=message,
-                    config=types.GenerateContentConfig(
-                        system_instruction=sys_inst,
-                        tools=[types.Tool(google_search=types.GoogleSearch())]
+            AI_response = None
+            max_retries = 2
+            for attempt in range(max_retries + 1):
+                try:
+                    result = await client.aio.models.generate_content(
+                        model='gemini-3-flash-preview',
+                        contents=message,
+                        config=types.GenerateContentConfig(
+                            system_instruction=sys_inst,
+                            tools=[types.Tool(google_search=types.GoogleSearch())]
+                        )
                     )
-                )
-                AI_response = result.text
-            except Exception as e:
-                if "429" in str(e) or "ResourceExhausted" in str(e):
-                    AI_response = "Aduuh! Sepertinya aku lagi kecapekan nih... Hunter lain banyak banget yang nanya. Tunggu sebentar ya, nanti tanya lagi! 🌸"
-                elif "safety" in str(e).lower():
-                    AI_response = "Umm... sepertinya itu pertanyaan yang kurang pantas. Aku gak bisa jawab kalau soal itu ya! ❌"
-                else:
-                    AI_response = "Waduh, otakku tiba-tiba nge-blank... Coba tanya lagi nanti ya! 💫"
+                    AI_response = result.text
+                    break # Success!
+                except Exception as e:
+                    if ("429" in str(e) or "ResourceExhausted" in str(e)) and attempt < max_retries:
+                        await asyncio.sleep(3 * (attempt + 1)) # Wait 3s, then 6s
+                        continue
+                    
+                    if "429" in str(e) or "ResourceExhausted" in str(e):
+                        AI_response = "Aduuh! Sepertinya aku lagi kecapekan nih... Hunter lain banyak banget yang nanya. Tunggu sebentar ya, nanti tanya lagi! 🌸"
+                    elif "safety" in str(e).lower():
+                        AI_response = "Umm... sepertinya itu pertanyaan yang kurang pantas. Aku gak bisa jawab kalau soal itu ya! ❌"
+                    else:
+                        AI_response = "Waduh, otakku tiba-tiba nge-blank... Coba tanya lagi nanti ya! 💫"
+                    break
             
             # Save AI response to memory
             await memory_manager.add_memory(user_id, "model", AI_response)
