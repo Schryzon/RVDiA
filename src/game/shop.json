@@ -43,9 +43,9 @@
         "name":"Healing Light",
         "_id":"2-heallight",
         "usefor":"battle",
-        "desc":"Cahaya yang mampu menyembuhkan lukamu.",
+        "desc":"Cahaya yang mampu menyembuhkan lukamu. (15% HP)",
         "type":"Skill",
-        "func":"hp+30",
+        "func":"hp+15%",
         "cost":8,
         "paywith":"Karma"
     },
@@ -73,9 +73,9 @@
         "name":"Rejuvenation Potion",
         "_id":"0-rejuv",
         "usefor":"battle",
-        "desc":"Memulihkan sebagian besar dari lukamu.",
+        "desc":"Memulihkan sebagian besar dari lukamu. (50% HP)",
         "type":"Consumable",
-        "func":"hp+100",
+        "func":"hp+50%",
         "cost":19,
         "paywith":"Karma"
     },
@@ -113,10 +113,10 @@
         "name":"Hailstorm Spike",
         "_id":"2-hlstorm",
         "usefor":"battle",
-        "desc":"Menjatuhkan ratusan duri es ke musuh.",
+        "desc":"Menjatuhkan duri es ke musuh. (10% Max HP Damage)",
         "type":"Skill",
-        "func":"dmg+25",
-        "cost":7,
+        "func":"dmg+10%",
+        "cost":15,
         "paywith":"Karma"
     },
     {
@@ -153,20 +153,20 @@
         "name":"Lifesteal",
         "_id":"2-lifesteal",
         "usefor":"battle",
-        "desc":"Mengambil sebagian HP lawan.",
+        "desc":"Mengambil sebagian HP lawan. (15% HP)",
         "type":"Skill",
-        "func":"hp-30",
-        "cost":8,
+        "func":"hp-15%",
+        "cost":12,
         "paywith":"Karma"
     },
     {
         "name":"Light Beam",
         "_id":"2-lightbeam",
         "usefor":"battle",
-        "desc":"Memancarkan sinar cahaya kuat ke lawan.",
+        "desc":"Memancarkan sinar cahaya kuat ke lawan. (25% Max HP Damage)",
         "type":"Skill",
-        "func":"dmg+50",
-        "cost":14,
+        "func":"dmg+25%",
+        "cost":25,
         "paywith":"Karma"
     },
     {
@@ -210,6 +210,26 @@
         "paywith":"Koin"
     },
     {
+        "name":"Divine Nectar",
+        "_id":"0-divnect",
+        "usefor":"battle",
+        "desc":"Nektar suci yang memulihkan seluruh lukamu. (100% HP)",
+        "type":"Consumable",
+        "func":"hp+100%",
+        "cost":50,
+        "paywith":"Karma"
+    },
+    {
+        "name":"Cursed Dagger",
+        "_id":"0-cursdagger",
+        "usefor":"battle",
+        "desc":"Belati terkutuk yang melukai lawan secara persentase. (20% HP)",
+        "type":"Consumable",
+        "func":"dmg+20%",
+        "cost":30,
+        "paywith":"Karma"
+    },
+    {
         "name":"Daiki's Grace",
         "_id":"2-daigrace",
         "usefor":"battle",
@@ -239,4 +259,4 @@
         "cost":25,
         "paywith":"Karma"
     }
-]
+]

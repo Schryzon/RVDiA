@@ -22,12 +22,14 @@ from time import time
 from dotenv import load_dotenv
 from pkgutil import iter_modules
 from scripts.help_menu.help import Help
-from cogs.General import Regenerate_Answer_Button
+from cogs.Conversation import Regenerate_Answer_Button
 from discord.ext import commands, tasks
 from random import choice as rand
 from contextlib import suppress
 from datetime import datetime
 from scripts.main import titlecase, check_vote, db
+from scripts.memory import memory_manager
+from scripts.error_logger import format_error_report
 load_dotenv() # Loads the .env file from python-dotenv pack
 
 class RVDIA(commands.AutoShardedBot):
@@ -38,8 +40,8 @@ class RVDIA(commands.AutoShardedBot):
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "Endless v1.1.9"
-    self.event_mode = False
+    self.__version__ = "Rebirth v2.0.0"
+    self.event_mode = True
     self.color = 0x86273d
     self.runtime = time() # UNIX float
     self.coin_emoji = "<:rvdia_coin:1121004598962954300>"
@@ -157,6 +159,7 @@ async def update_guild_status():
 
     except Exception as error:
        logging.error(f'Error sending server count update!\n{error.__class__.__name__}: {error}')
+
 
 @rvdia.command(aliases = ['on', 'enable'], hidden=True)
 @commands.is_owner()
@@ -284,12 +287,30 @@ async def send_reply_message(msg:discord.Message, message_embed:discord.Embed):
         embed_title = message_embed.title
         author = message_embed.author.name
         message = msg.content
+        user_id = msg.author.id
+        
+        # Save user message to memory
+        await memory_manager.add_memory(user_id, "user", message)
+        
+        # Retrieve context
+        context = await memory_manager.get_context(user_id, message)
+        
         currentTime = datetime.now(pytz.utc).astimezone(pytz.timezone("Asia/Jakarta"))
         date = currentTime.strftime("%d/%m/%Y")
         hour = currentTime.strftime("%H:%M:%S")
         client = genai.Client(api_key=os.getenv("googlekey"))
         
-        sys_inst = os.getenv('rolesys') + f"Currently chatting with {msg.author}" + f"The current date is {date} at {hour} WITA. | {author} said: {embed_title} | Your response was: {embed_desc}"
+        # Construct dynamic prompt
+        sys_inst = (
+            os.getenv('rolesys') + 
+            f"\n\nContext Information:\n"
+            f"Currently chatting with: {msg.author}\n"
+            f"Current Date: {date}, Time: {hour} WITA\n"
+            f"\nRecent Conversation History:\n{context['history']}\n"
+            f"\nRelevant Past Memories:\n{context['memories']}\n"
+            f"| {author} said: {embed_title} | Your previous response was: {embed_desc}\n"
+            f"\nRemember to stay in character as RVDiA (loving, cute, informal)."
+        )
         
         result = await client.aio.models.generate_content(
             model='gemini-3-flash-preview',
@@ -299,6 +320,9 @@ async def send_reply_message(msg:discord.Message, message_embed:discord.Embed):
             )
         )
         AI_response = result.text
+        
+        # Save AI response to memory
+        await memory_manager.add_memory(user_id, "model", AI_response)
 
         if len(message) > 256:
           message = message[:253] + '...' #Adding ... from 253rd character, ignoring other characters.
@@ -311,7 +335,7 @@ async def send_reply_message(msg:discord.Message, message_embed:discord.Embed):
         embed.description = AI_response
         embed.set_author(name=msg.author)
         embed.set_footer(text='Jika ada yang ingin ditanyakan, bisa langsung direply!')
-        regenerate_button = Regenerate_Answer_Button(message)
+        regenerate_button = Regenerate_Answer_Button(user_id, message)
         await msg.channel.send(embed=embed, view=regenerate_button)
 
   except Exception as e:
@@ -436,8 +460,9 @@ async def on_message(msg:discord.Message):
                  
           await msg.channel.send('Ada yang bermasalah dengan fitur ini, aku sudah mengirimkan laporan ke developer!')
           channel = rvdia.get_channel(int(os.getenv("errorchannel")))
-          await channel.send(f'`{e}` Untuk fitur {fitur}!\nDetail:\n```{traceback.print_exc()}```')
-          logging.error(str(traceback.print_exc()))
+          embed = format_error_report(e, context=f"Fitur: {fitur}")
+          await channel.send(embed=embed)
+          logging.error(f"Error in on_message: {str(e)}")
 
 # Didn't know I'd use this, but pretty coolio
 if __name__ == "__main__":

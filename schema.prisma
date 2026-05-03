@@ -1,11 +1,13 @@
 generator client {
   provider             = "prisma-client-py"
   recursive_type_depth = 5
+  previewFeatures      = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgvector(map: "vector")]
 }
 
 model User {
@@ -17,6 +19,20 @@ model User {
   updatedAt DateTime @updatedAt
   
   inventory Inventory?
+  guildId   Int?
+  guild     Guild?     @relation(fields: [guildId], references: [id])
+}
+
+model Guild {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  tagline   String?  @default("Welcome to my guild!")
+  iconUrl   String?
+  ownerId   BigInt   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members   User[]
 }
 
 model Inventory {
@@ -59,5 +75,25 @@ model GTechNews {
   desc        String
   attachments String?
   createdAt   DateTime @default(now())
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  userId    BigInt
+  role      String   // "user" or "model"
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model Memory {
+  id        Int                      @id @default(autoincrement())
+  userId    BigInt
+  content   String
+  embedding Unsupported("vector(768)")?
+  createdAt DateTime                 @default(now())
+
+  @@index([userId])
 }
 

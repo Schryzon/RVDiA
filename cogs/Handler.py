@@ -15,6 +15,7 @@ from scripts.errors import (
     NotGTechMember, NotInGTechServer, NotGTechAdmin, NoProfilePicture,
     Blacklisted, NoEventAvailable, NotVoted, NoGameAccount, AccountIncompatible
 )
+from scripts.error_logger import format_error_report
 
 class Support_Button(View):
         def __init__(self):
@@ -185,32 +186,14 @@ class Error(commands.Cog):
     # If all else fails (get it?)
     else:
       channel = self.historia.get_channel(int(os.getenv("errorchannel")))
-      em = discord.Embed(title = "An Error Occurred!", color = 0xff4df0, timestamp = ctx.message.created_at)
-      try:
-        em.add_field(name=f"Command Name",value=ctx.command,inline=False)
-        em.add_field(name=f"Invoked By",value=ctx.message.content,inline=False)
-        em.add_field(name=f"Command Cog",value=ctx.cog.qualified_name,inline=False)
-        em.add_field(name=f"Args",value=ctx.args,inline=False)
-        em.add_field(name=f"Kwargs",value=ctx.kwargs,inline=False)
-        em.add_field(name=f"Error Message",value=str(error),inline=False)
-        em.add_field(name=f"Error Details", value=f"```py\n{''.join(traceback.format_exception(*exc_info))[:1000]}\n```", inline=False)
-
-      except AttributeError: # If not invoked within a cog
-        em.add_field(name=f"Command Name",value=ctx.command,inline=False)
-        em.add_field(name=f"Invoked By",value=ctx.message.content,inline=False)
-        em.add_field(name=f"Args",value=ctx.args,inline=False)
-        em.add_field(name=f"Kwargs",value=ctx.kwargs,inline=False)
-        em.add_field(name=f"Error Message",value=str(error),inline=False)
-        em.add_field(name=f"Error Details", value=f"```py\n{''.join(traceback.format_exception(*exc_info))[:1000]}\n```", inline=False)
-
-      finally:
-          em.set_footer(text = "Please fix the error immediately!", icon_url = self.historia.user.avatar.url)
-          if channel:
-              owner_id = os.getenv("schryzonid")
-              await channel.send(f"<@{owner_id}> **Error from console!**", embed = em)
-          await ctx.reply("Ada yang bermasalah dengan command ini, aku sudah memberikan laporan ke developer!\nJoin support serverku untuk mendapat info lebih lanjut!", view=Support_Button(), ephemeral=True)
-          logging.error("".join(traceback.format_exception(*exc_info)))
-          del exc_info
+      embed = format_error_report(error, context=f"Command: {ctx.command}")
+      
+      if channel:
+          owner_id = os.getenv("schryzonid")
+          await channel.send(f"<@{owner_id}> **Error from console!**", embed=embed)
+      
+      await ctx.reply("Ada yang bermasalah dengan command ini, aku sudah memberikan laporan ke developer!\nJoin support serverku untuk mendapat info lebih lanjut!", view=Support_Button(), ephemeral=True)
+      logging.error(f"Error in command {ctx.command}: {str(error)}")
 
 async def setup(pandora):
   await pandora.add_cog(Error(pandora))

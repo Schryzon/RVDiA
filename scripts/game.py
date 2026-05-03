@@ -19,8 +19,7 @@ default_data = {
     'agility':8,
     'items':{},
     'special_skills':[],
-    'equipments':[],
-    'guild':None
+    'equipments':[]
 }
 
 async def level_up(ctx):

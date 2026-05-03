@@ -126,6 +126,7 @@ class GameInstance():
             'hp': self.user1_hp,
             'max_hp': self.user1_max_hp
         }
+        self.p1_karma = stats1.get('karma', 10)
         self.p1_skill_limit = calc_skill_limit(stats1['level'])
 
         if self.command_name == "fight":
@@ -138,27 +139,38 @@ class GameInstance():
             stats2 = user2_data.data
             self.user2_hp = user2_data.hp
             self.user2_max_hp = user2_data.max_hp
+            self.p2_karma = stats2.get('karma', 10)
             
             user2_stats = [stats2['attack'], stats2['defense'], stats2['agility']]
             comp_data2 = {
                 'stats': user2_stats,
                 'hp': self.user2_hp,
-                'max_hp': self.user2_max_hp
+                'max_hp': self.user2_max_hp,
+                'karma': self.p2_karma
             }
             self.p2_skill_limit = calc_skill_limit(stats2['level'])
 
         else:
             user2_stats = [self.user2['atk'], self.user2['def'], self.user2['agl']]
+            # Enemies have karma based on tier
+            tier_karma = {
+                "LOW": 5, "NORMAL": 10, "HIGH": 20, "ELITE": 35, 
+                "SUPER ELITE": 50, "BOSS": 75, "SUPER BOSS": 100
+            }
+            self.p2_karma = tier_karma.get(self.user2.get('tier'), 10)
+            
             comp_data2 = {
                 'stats':user2_stats,
                 'hp':self.user2_hp,
-                'max_hp': self.user2_hp # PvE enemies might not have max_hp yet
+                'max_hp': self.user2_hp,
+                'karma': self.p2_karma
             }
 
+        comp_data1['karma'] = self.p1_karma
         return [comp_data1, comp_data2]
 
 
-    async def attack(self, dealer_stat:list, taker_stat:list, dealer_id:int, is_defending:bool):
+    async def attack(self, dealer_stat:list, taker_stat:list, dealer_id:int, is_defending:bool, dealer_karma:int = 10, taker_karma:int = 10):
         try:
             if not isinstance(self.user2, discord.Member):
                 user_2_max_hp = self.user2['hp']
@@ -169,20 +181,33 @@ class GameInstance():
 
         if is_defending:
             user_2_def += random.randint(8, 15)
+            
+        # Base Damage Calculation
         if dealer_id != 1 and self.ctx.command.name == "battle":
-            if user_2_max_hp > 500:
-                scaling = user_2_max_hp/90
-            elif user_2_max_hp > 200:
-                scaling = user_2_max_hp/10
-            else:
-                scaling = user_2_max_hp
-
-            damage = round(max(0, user_1_atk*(random.randint(80, 100) - user_2_def)/scaling))
+            scaling = max(user_2_max_hp / 90, 1) if user_2_max_hp > 500 else max(user_2_max_hp / 10, 1) if user_2_max_hp > 200 else user_2_max_hp
+            damage = round(max(0, user_1_atk * (random.randint(80, 100) - user_2_def) / scaling))
         else:
-            damage = round(max(0, user_1_atk*(random.randint(80, 100) - user_2_def)/100))
-        miss_chance = (user_2_agl - user_1_agl)*2 + 5
+            damage = round(max(0, user_1_atk * (random.randint(80, 100) - user_2_def) / 100))
+            
+        # Luck Mechanics (Karma)
+        # Critical Hit: Base 5% + (Karma / 20)%
+        crit_chance = 5 + (dealer_karma / 20)
+        is_crit = random.random() * 100 < crit_chance
+        if is_crit:
+            damage = round(damage * 1.5)
+            
+        # Miss Chance: (Agl Diff * 2) + 5. High Karma reduces miss chance.
+        miss_chance = max(0, (user_2_agl - user_1_agl) * 2 + 5 - (dealer_karma / 50))
+        
+        # Miracle Dodge: If taker has high Karma, small chance to dodge anyway
+        dodge_chance = taker_karma / 100
+        is_miracle_dodge = random.random() * 100 < dodge_chance
+        
         hit_chance = 100 - miss_chance
         attack_chance = random.randint(0, 100)
+
+        if is_miracle_dodge:
+            return [0, False, True] # Damage, IsCrit, IsMiracle
 
         try:
             if dealer_id == self.user1.id and is_defending:
@@ -200,10 +225,10 @@ class GameInstance():
             else:
                 self.user1_hp = self.user1_hp - damage
 
-            return damage
+            return [damage, is_crit, False]
         
         else:
-            return 0
+            return [0, False, False]
         
     def defend(self, user):
         if user == self.user1:
@@ -226,29 +251,46 @@ class GameInstance():
             func = func.split('+')
             match func[0]:
                 case 'HP':
-                    if user1 == self.user1:
-                        self.user1_hp += int(func[1])
+                    val = func[1]
+                    is_percent = val.endswith('%')
+                    if is_percent:
+                        pct = int(val[:-1])
+                        amount = round((self.user1_max_hp if user1 == self.user1 else self.user2_max_hp) * (pct / 100))
+                    else:
+                        amount = int(val)
 
+                    if user1 == self.user1:
+                        self.user1_hp += amount
+                        if self.user1_hp > self.user1_max_hp: self.user1_hp = self.user1_max_hp
                     else:
-                        self.user2_hp += int(func[1])
+                        self.user2_hp += amount
+                        if self.user2_hp > self.user2_max_hp: self.user2_hp = self.user2_max_hp
+                        
                     if isinstance(user1, discord.Member):
-                        await self.ctx.channel.send(f'{user1.mention} memulihkan `{func[1]}` HP!')
+                        await self.ctx.channel.send(f'{user1.mention} memulihkan `{amount}` HP!')
                     else:
-                        await self.ctx.channel.send(f"{user1['name']} memulihkan `{func[1]}` HP!")
+                        await self.ctx.channel.send(f"{user1['name']} memulihkan `{amount}` HP!")
 
                 case 'DMG':
-                    if user1 == self.user1:
-                        self.user2_hp -= int(func[1])
-
+                    val = func[1]
+                    is_percent = val.endswith('%')
+                    if is_percent:
+                        pct = int(val[:-1])
+                        amount = round((self.user2_max_hp if user1 == self.user1 else self.user1_max_hp) * (pct / 100))
                     else:
-                        self.user1_hp -= int(func[1])
+                        amount = int(val)
+
+                    if user1 == self.user1:
+                        self.user2_hp -= amount
+                    else:
+                        self.user1_hp -= amount
                     
                     if isinstance(user1, discord.Member) and isinstance(user2, discord.Member):
-                        await self.ctx.channel.send(f'{user1.mention} memberikan `{func[1]}` Damage instan ke {user2.mention}!')
+                        await self.ctx.channel.send(f'{user1.mention} memberikan `{amount}` Damage instan ke {user2.mention}!')
                     elif not isinstance(user1, discord.Member) and isinstance(user2, discord.Member):
-                        await self.ctx.channel.send(f"{user1['name']} memberikan `{func[1]}` Damage instan ke {user2.mention}!")
+                        await self.ctx.channel.send(f"{user1['name']} memberikan `{amount}` Damage instan ke {user2.mention}!")
                     else:
-                        await self.ctx.channel.send(f"{user1.mention} memberikan `{func[1]}` Damage instan ke {user2['name']}!")
+                        await self.ctx.channel.send(f"{user1.mention} memberikan `{amount}` Damage instan ke {user2['name']}!")
 
                 case 'ATK':
                     if user1 == self.user1:
@@ -307,19 +349,29 @@ class GameInstance():
             func = func.split('-')
             match func[0]:
                 case 'HP':
-                    if user1 == self.user1:
-                        self.user2_hp -= int(func[1])
-                        self.user1_hp += int(func[1])
+                    val = func[1]
+                    is_percent = val.endswith('%')
+                    if is_percent:
+                        pct = int(val[:-1])
+                        amount = round((self.user2_max_hp if user1 == self.user1 else self.user1_max_hp) * (pct / 100))
+                    else:
+                        amount = int(val)
 
+                    if user1 == self.user1:
+                        self.user2_hp -= amount
+                        self.user1_hp += amount
+                        if self.user1_hp > self.user1_max_hp: self.user1_hp = self.user1_max_hp
                     else:
-                        self.user1_hp -= int(func[1])
-                        self.user2_hp += int(func[1])
+                        self.user1_hp -= amount
+                        self.user2_hp += amount
+                        if self.user2_hp > self.user2_max_hp: self.user2_hp = self.user2_max_hp
+
                     if isinstance(user1, discord.Member) and isinstance(user2, discord.Member):
-                        await self.ctx.channel.send(f'{user1.mention} mengambil `{func[1]}` HP dari {user2.mention}!')
+                        await self.ctx.channel.send(f'{user1.mention} mengambil `{amount}` HP dari {user2.mention}!')
                     elif not isinstance(user1, discord.Member) and isinstance(user2, discord.Member):
-                        await self.ctx.channel.send(f"{user1['name']} mengambil `{func[1]}` HP dari {user2.mention}!")
+                        await self.ctx.channel.send(f"{user1['name']} mengambil `{amount}` HP dari {user2.mention}!")
                     else:
-                        await self.ctx.channel.send(f"{user1.mention} mengambil `{func[1]}` HP dari {user2['name']}!")
+                        await self.ctx.channel.send(f"{user1.mention} mengambil `{amount}` HP dari {user2['name']}!")
 
                 case 'ATK':
                     if user1 == self.user1:
@@ -418,12 +470,25 @@ class GameInstance():
 
             match res_1.content:
                 case "Opsi terpilih: 💥Serang":
-                    damage = await self.attack(self.user1_stats, self.user2_stats, self.user1.id, self.user2_defend)
-                    embed = discord.Embed(title=f'💥{self.user1.display_name} Menyerang!', color=self.user1.color)
-                    if isinstance(self.user2, discord.Member):
-                        embed.description = f"**`{damage}` Damage!**\nHP <@{self.user2.id}> tersisa `{self.user2_hp}` HP!"
+                    damage_info = await self.attack(self.user1_stats, self.user2_stats, self.user1.id, self.user2_defend, self.p1_karma, self.p2_karma)
+                    damage, is_crit, is_dodge = damage_info[0], damage_info[1], damage_info[2]
+                    
+                    title = f"💥 {self.user1.display_name} Menyerang!"
+                    if is_crit: title = f"✨ CRITICAL HIT! ✨"
+                    if is_dodge: title = f"💫 MIRACLE DODGE! 💫"
+                    
+                    embed = discord.Embed(title=title, color=self.user1.color if not is_crit else discord.Color.gold())
+                    
+                    if is_dodge:
+                        embed.description = f"**{self.user2.display_name if isinstance(self.user2, discord.Member) else self.user2['name']}** berhasil menghindari serangan secara ajaib!"
+                    elif damage > 0:
+                        if isinstance(self.user2, discord.Member):
+                            embed.description = f"**`{damage}` Damage!**\nHP <@{self.user2.id}> tersisa `{self.user2_hp}` HP!"
+                        else:
+                            embed.description = f"**`{damage}` Damage!**\nHP {self.user2['name']} tersisa `{self.user2_hp}` HP!"
                     else:
-                        embed.description = f"**`{damage}` Damage!**\nHP {self.user2['name']} tersisa `{self.user2_hp}` HP!"
+                        embed.description = f"Serangan {self.user1.display_name} meleset!"
+                        
                     embed.set_thumbnail(url=self.user1.display_avatar.url)
                     await self.ctx.channel.send(embed=embed)
 
@@ -513,9 +578,22 @@ class GameInstance():
             
                 match res_2.content:
                     case "Opsi terpilih: 💥Serang":
-                        damage = await self.attack(datas[1]['stats'], datas[0]['stats'], self.user2.id, self.user1_defend)
-                        embed = discord.Embed(title=f'💥{self.user2.display_name} Menyerang!', color=self.user2.color)
-                        embed.description = f"**`{damage}` Damage!**\nHP <@{self.user1.id}> tersisa `{self.user1_hp}` HP!"
+                        damage_info = await self.attack(datas[1]['stats'], datas[0]['stats'], self.user2.id, self.user1_defend, self.p2_karma, self.p1_karma)
+                        damage, is_crit, is_dodge = damage_info[0], damage_info[1], damage_info[2]
+                        
+                        title = f"💥 {self.user2.display_name} Menyerang!"
+                        if is_crit: title = f"✨ CRITICAL HIT! ✨"
+                        if is_dodge: title = f"💫 MIRACLE DODGE! 💫"
+                        
+                        embed = discord.Embed(title=title, color=self.user2.color if not is_crit else discord.Color.gold())
+                        
+                        if is_dodge:
+                            embed.description = f"**{self.user1.display_name}** berhasil menghindari serangan secara ajaib!"
+                        elif damage > 0:
+                            embed.description = f"**`{damage}` Damage!**\nHP <@{self.user1.id}> tersisa `{self.user1_hp}` HP!"
+                        else:
+                            embed.description = f"Serangan {self.user2.display_name} meleset!"
+                            
                         embed.set_thumbnail(url=self.user2.display_avatar.url)
                         await self.ctx.channel.send(embed=embed)
 
@@ -578,9 +656,22 @@ class GameInstance():
                 choice = await ai.decide()
                 match choice:
                     case "attack":
-                        damage = await self.attack(self.user2_stats, self.user1_stats, 1, self.user1_defend)
-                        embed = discord.Embed(title=f'💥{self.user2["name"]} Menyerang!', color=0xff0000)
-                        embed.description = f"**`{damage}` Damage!**\nHP <@{self.user1.id}> tersisa `{self.user1_hp}` HP!"
+                        damage_info = await self.attack(self.user2_stats, self.user1_stats, 1, self.user1_defend, self.p2_karma, self.p1_karma)
+                        damage, is_crit, is_dodge = damage_info[0], damage_info[1], damage_info[2]
+                        
+                        title = f"💥 {self.user2['name']} Menyerang!"
+                        if is_crit: title = f"✨ CRITICAL HIT! ✨"
+                        if is_dodge: title = f"💫 MIRACLE DODGE! 💫"
+                        
+                        embed = discord.Embed(title=title, color=0xff0000 if not is_crit else discord.Color.gold())
+                        
+                        if is_dodge:
+                            embed.description = f"**{self.user1.display_name}** berhasil menghindari serangan secara ajaib!"
+                        elif damage > 0:
+                            embed.description = f"**`{damage}` Damage!**\nHP <@{self.user1.id}> tersisa `{self.user1_hp}` HP!"
+                        else:
+                            embed.description = f"Serangan {self.user2['name']} meleset!"
+                            
                         try:
                             embed.set_thumbnail(url = self.enemy_avatar)
                         except:
@@ -599,6 +690,26 @@ class GameInstance():
 
                     case "skill":
                         await self.ai_choose_skill(self.user2['skills'], self.user2, self.user1)
+
+                    case "check":
+                        self.ai_knows_user = True
+                        embed = discord.Embed(title=f"🔍 {self.user2['name']} sedang memperhatikanmu...", color=0x3498db)
+                        embed.description = f"**{self.user2['name']}** sedang menganalisa gaya bertarungmu!\nKewaspadaannya meningkat."
+                        try:
+                            embed.set_thumbnail(url = self.enemy_avatar)
+                        except:
+                            pass
+                        await self.ctx.channel.send(embed=embed)
+
+                    case "skip":
+                        self.defend(self.user2) # Skipping turn gives a minor defense boost
+                        embed = discord.Embed(title=f"⌚ {self.user2['name']} Menunggu...", color=0x95a5a6)
+                        embed.description = f"**{self.user2['name']}** tidak melakukan apa-apa dan beralih ke posisi siaga."
+                        try:
+                            embed.set_thumbnail(url = self.enemy_avatar)
+                        except:
+                            pass
+                        await self.ctx.channel.send(embed=embed)
 
                     case "run":
                         embed = discord.Embed(title=f'🏃{self.user2["name"]} Kabur!', color=0xff0000)
@@ -695,18 +806,27 @@ class AI():
         self.defend_mood = 0
         self.escape_mood = 0
         self.skill_mood = 0
+        self.check_mood = 0
+        self.skip_mood = 0
+        
         self.turns = turns
         self.user1_stats = instance.user1_stats
         self.user2_stats = instance.user2_stats
         self.ai_skill_usage = instance.ai_skill_usage
-        self.traits = [self.attack_mood, self.defend_mood, self.skill_mood, self.escape_mood]
-        self.actions = ["attack", "defend"]
+        
+        # Persistence: AI remembers if it has checked your stats
+        if not hasattr(self.instance, 'ai_knows_user'):
+            self.instance.ai_knows_user = False
+            
+        self.actions = ["attack", "defend", "skip"]
+        if self.turns > 2 and not self.instance.ai_knows_user:
+            self.actions.append("check")
+            
         if self.turns > 3:
             try:
                 skills = self.user2['skills']
                 if skills:
                     self.actions.append("skill")
-
             except:
                 pass
         if self.turns > 6:
@@ -717,6 +837,25 @@ class AI():
         user2_stats = self.user2_stats
         user_1_atk, user_1_def, user_1_agl = user1_stats[0], user1_stats[1], user1_stats[2]
         user_2_atk, user_2_def, user_2_agl = user2_stats[0], user2_stats[1], user2_stats[2]
+
+        # Psychological Scaling if AI knows the user
+        if self.instance.ai_knows_user:
+            atk_diff = user_2_atk - user_1_def
+            p_atk_diff = user_1_atk - user_2_def
+            
+            if atk_diff > 20: # AI is confident
+                self.attack_mood += 25
+                self.skill_mood += 15
+            elif p_atk_diff > 20: # AI is scared
+                self.defend_mood += 30
+                self.skip_mood += 10
+                self.escape_mood += 15
+            
+            if self.user1_hp < 30: # Finisher instinct
+                self.attack_mood += 40
+        else:
+            # Chance to check stats increases as turns go by
+            self.check_mood += (self.turns * 5)
 
         if self.user1_hp > self.user2_hp:
             self.attack_mood += 12
@@ -757,6 +896,12 @@ class AI():
 
         if user_2_agl >= user_1_agl:
             self.escape_mood += 3
+        else:
+            self.skip_mood += 5
+
+        # Skip logic: AI bides time if it's high HP but user is defending
+        if self.user1_defend and self.user2_hp > 50:
+            self.skip_mood += 15
 
         # Defining escape moods based on level. (Does not apply to LOW - SUPER NORMAL & BONUS ENEMY)
         tier = self.user2['tier']
@@ -799,13 +944,22 @@ class AI():
                 if self.ai_skill_usage >= 1 and 'skill' in self.actions:
                     self.actions.remove("skill")
 
-        sorted_traits = sorted(self.traits, reverse=True)
-        if random.randint(0, 100) < 10:
-            action = random.choice(self.actions)
-        else:
-            action = random.choice([action for trait, action in zip(self.traits, self.actions) if trait == sorted_traits[0]])
-
-        return action
+        # Compile final weights
+        moods = {
+            "attack": self.attack_mood,
+            "defend": self.defend_mood,
+            "skill": self.skill_mood,
+            "run": self.escape_mood,
+            "check": self.check_mood,
+            "skip": self.skip_mood
+        }
+        
+        # Filter available actions
+        available_moods = {k: v for k, v in moods.items() if k in self.actions}
+        
+        # Pick the best action with a bit of randomness
+        chosen_action = max(available_moods, key=lambda k: available_moods[k] + random.randint(0, 10))
+        return chosen_action
     
 class ItemDropdown(discord.ui.Select):
     def __init__(self, items:list, user1, type) -> None:
@@ -1115,25 +1269,70 @@ class EnemyDropdown(discord.ui.Select):
         super().__init__(custom_id="enemydrop", placeholder="Level Musuh", min_values=1, max_values=1, options=options)
 
     async def callback(self, interaction: discord.Interaction):
-        with open(f'./src/game/enemies/{self.values[0]}.json') as file:
-            content = file.read()
-            enemies = json.loads(content)
+        enemy_path = path.join(path.dirname(__file__), '..', 'src', 'game', 'enemies', f'{self.values[0]}.json')
+        with open(enemy_path, 'r') as file:
+            enemies = json.load(file)
         
-        embed = discord.Embed(title=f"Daftar Musuh", color=interaction.user.color)
+        # Find the strongest enemy (highest total stats + HP)
+        strongest = max(enemies, key=lambda x: x['hp'] + x['atk'] + x['def'] + x['agl'])
+        
+        embed = discord.Embed(title=f"Bestiary: {self.values[0].title()}", color=interaction.user.color)
         for index, enemy in enumerate(enemies):
             embed.add_field(
                 name=f"{index+1}. {enemy['name']} ({enemy['tier']})",
-                value=f"\"{enemy['desc']}\"\n**HP**: `{enemy['hp']}`\n**Attack**: `{enemy['atk']}`\n**Defense**: `{enemy['def']}`\n**Agility**: `{enemy['agl']}`\n",
+                value=f"**HP**: `{enemy['hp']}` | **Stats**: `{enemy['atk']}/{enemy['def']}/{enemy['agl']}`",
                 inline=False
                 )
-        embed.set_thumbnail(url = interaction.user.display_avatar.url) # Lazy, might add a placeholder later
-        embed.set_footer(text="Kamu bisa melawan salah satu dari mereka dengan command battle!")
-        await interaction.response.edit_message(content='', embed=embed, view=EnemyView())
+        
+        if strongest.get('avatar'):
+            embed.set_thumbnail(url=strongest['avatar'])
+        else:
+            embed.set_thumbnail(url=interaction.user.display_avatar.url)
+            
+        embed.set_footer(text="Pilih musuh dari dropdown di bawah untuk melihat detail!")
+        await interaction.response.edit_message(content='', embed=embed, view=EnemyView(enemies))
+
+class SpecificEnemyDropdown(discord.ui.Select):
+    def __init__(self, enemies: list):
+        options = []
+        for index, enemy in enumerate(enemies):
+            options.append(discord.SelectOption(
+                label=f"{enemy['name']}",
+                value=str(index),
+                description=f"{enemy['tier']} - HP: {enemy['hp']}",
+                emoji="👹"
+            ))
+        super().__init__(placeholder="Pilih musuh untuk detail...", min_values=1, max_values=1, options=options)
+        self.enemies = enemies
+
+    async def callback(self, interaction: discord.Interaction):
+        enemy = self.enemies[int(self.values[0])]
+        
+        embed = discord.Embed(title=f"Detail Musuh: {enemy['name']}", description=f"*{enemy['desc']}*", color=0xff0000)
+        embed.add_field(name="Tier", value=f"`{enemy['tier']}`", inline=True)
+        embed.add_field(name="HP", value=f"`{enemy['hp']}`", inline=True)
+        embed.add_field(name="Stats (A/D/Ag)", value=f"`{enemy['atk']}/{enemy['def']}/{enemy['agl']}`", inline=True)
+        
+        if enemy.get('skills'):
+            skill_list = "\n".join([f"✨ **{s['name']}**: `{s['func']}`" for s in enemy['skills']])
+            embed.add_field(name="Kemampuan Spesial", value=skill_list, inline=False)
+            
+        if enemy.get('reward'):
+            rewards = ", ".join(enemy['reward'])
+            embed.add_field(name="Potensi Hadiah", value=f"`{rewards}`", inline=False)
+            
+        if enemy.get('avatar'):
+            embed.set_thumbnail(url=enemy['avatar'])
+            
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 class EnemyView(View):
-    def __init__(self):
+    def __init__(self, enemies: list = None):
         super().__init__(timeout=120)
-        self.add_item(EnemyDropdown())
+        if enemies:
+            self.add_item(SpecificEnemyDropdown(enemies))
+        else:
+            self.add_item(EnemyDropdown())
         
 class ShopView(View):
     """
@@ -1719,6 +1918,182 @@ class Game(commands.Cog):
             
         view = UseView(things, ctx)
         await ctx.reply(f'{ctx.author.mention}', view=view)
+
+    @commands.hybrid_group(name="guild", description="Sistem Guild Re:Volution", fallback="info")
+    @check_blacklist()
+    async def guild(self, ctx: commands.Context):
+        """
+        Lihat informasi guild kamu atau guild orang lain.
+        """
+        user_record = await db.user.find_unique(where={'id': ctx.author.id}, include={'guild': True})
+        if not user_record or not user_record.guild:
+            return await ctx.reply("Kamu belum bergabung dengan guild manapun! Gunakan `/guild create` untuk membuat guild baru.", ephemeral=True)
+        
+        guild = user_record.guild
+        members_count = await db.user.count(where={'guildId': guild.id})
+        
+        embed = discord.Embed(title=guild.name, description=guild.tagline or "No tagline set.", color=ctx.author.color)
+        if guild.iconUrl:
+            embed.set_thumbnail(url=guild.iconUrl)
+        
+        embed.add_field(name="👑 Owner", value=f"<@{guild.ownerId}>")
+        embed.add_field(name="👥 Anggota", value=f"{members_count} Anggota")
+        embed.set_footer(text=f"ID Guild: {guild.id} | Dibuat pada {guild.createdAt.strftime('%d/%m/%Y')}")
+        
+        await ctx.reply(embed=embed)
+
+    @guild.command(name="create", description="Buat guild baru! (Biaya: 5000 Koin)")
+    @app_commands.describe(name="Nama guild impianmu")
+    @check_blacklist()
+    async def guild_create(self, ctx: commands.Context, name: str):
+        """
+        Buat guild baru untuk komunitasmu!
+        """
+        user_record = await db.user.find_unique(where={'id': ctx.author.id})
+        if not user_record:
+            return await ctx.reply("Kamu belum terdaftar di Re:Volution!", ephemeral=True)
+        
+        if user_record.guildId:
+            return await ctx.reply("Kamu sudah berada di sebuah guild! Keluar dulu sebelum membuat yang baru.", ephemeral=True)
+        
+        data = user_record.data
+        if data['coins'] < 5000:
+            return await ctx.reply(f"Koinmu tidak cukup! Dibutuhkan **5000** Koin, kamu hanya punya **{data['coins']}**.", ephemeral=True)
+        
+        # Check if name exists
+        existing = await db.guild.find_unique(where={'name': name})
+        if existing:
+            return await ctx.reply(f"Nama guild `{name}` sudah diambil orang lain!", ephemeral=True)
+        
+        # Create guild
+        new_guild = await db.guild.create(data={
+            'name': name,
+            'ownerId': ctx.author.id,
+        })
+        
+        # Update user
+        data['coins'] -= 5000
+        await db.user.update(
+            where={'id': ctx.author.id},
+            data={
+                'guildId': new_guild.id,
+                'data': data
+            }
+        )
+        
+        embed = discord.Embed(title="🏰 Guild Diciptakan!", description=f"Selamat! Guild **{name}** telah resmi didirikan.", color=discord.Color.gold())
+        embed.add_field(name="Biaya", value="5000 Koin")
+        embed.set_footer(text="Gunakan /guild edit untuk mengatur ikon dan tagline!")
+        
+        await ctx.reply(embed=embed)
+
+    @guild.command(name="edit", description="Ubah identitas guildmu (Hanya Owner)")
+    @app_commands.describe(
+        name="Nama baru guild",
+        tagline="Tagline keren guildmu",
+        icon_url="URL Gambar untuk ikon guild"
+    )
+    @check_blacklist()
+    async def guild_edit(self, ctx: commands.Context, name: str = None, tagline: str = None, icon_url: str = None):
+        """
+        Ubah detail guildmu agar terlihat lebih keren!
+        """
+        user_record = await db.user.find_unique(where={'id': ctx.author.id}, include={'guild': True})
+        if not user_record or not user_record.guild:
+            return await ctx.reply("Kamu tidak berada dalam guild!", ephemeral=True)
+        
+        guild = user_record.guild
+        if guild.ownerId != ctx.author.id:
+            return await ctx.reply("Hanya Owner guild yang bisa mengubah pengaturan ini!", ephemeral=True)
+        
+        update_data = {}
+        if name:
+            existing = await db.guild.find_unique(where={'name': name})
+            if existing and existing.id != guild.id:
+                return await ctx.reply(f"Nama guild `{name}` sudah digunakan!", ephemeral=True)
+            update_data['name'] = name
+        if tagline:
+            update_data['tagline'] = tagline
+        if icon_url:
+            if not icon_url.startswith("http"):
+                return await ctx.reply("Ikon harus berupa URL gambar yang valid!", ephemeral=True)
+            update_data['iconUrl'] = icon_url
+            
+        if not update_data:
+            return await ctx.reply("Pilihl|ah apa yang ingin kamu ubah!", ephemeral=True)
+            
+        await db.guild.update(where={'id': guild.id}, data=update_data)
+        await ctx.reply(f"✅ Detail guild **{guild.name}** berhasil diperbarui!")
+
+    @guild.command(name="invite", description="Undang seseorang ke guildmu")
+    @app_commands.describe(user="User yang ingin diundang")
+    @check_blacklist()
+    async def guild_invite(self, ctx: commands.Context, user: discord.Member):
+        """
+        Undang temanmu untuk bergabung dalam guild!
+        """
+        user_record = await db.user.find_unique(where={'id': ctx.author.id}, include={'guild': True})
+        if not user_record or not user_record.guild:
+            return await ctx.reply("Kamu tidak berada dalam guild!", ephemeral=True)
+        
+        guild = user_record.guild
+        if guild.ownerId != ctx.author.id:
+            return await ctx.reply("Hanya Owner yang bisa mengundang orang baru untuk saat ini!", ephemeral=True)
+            
+        target_record = await db.user.find_unique(where={'id': user.id})
+        if not target_record:
+            return await ctx.reply("Orang tersebut belum terdaftar di Re:Volution!", ephemeral=True)
+        
+        if target_record.guildId:
+            return await ctx.reply("Orang tersebut sudah memiliki guild!", ephemeral=True)
+            
+        # Sending invitation
+        view = GuildInviteView(guild, user)
+        await ctx.reply(f"💌 {user.mention}, kamu diundang untuk bergabung ke guild **{guild.name}**!", view=view)
+
+    @guild.command(name="leave", description="Keluar dari guild saat ini")
+    @check_blacklist()
+    async def guild_leave(self, ctx: commands.Context):
+        """
+        Keluar dari guild. Jika kamu Owner, guild akan dibubarkan!
+        """
+        user_record = await db.user.find_unique(where={'id': ctx.author.id}, include={'guild': True})
+        if not user_record or not user_record.guild:
+            return await ctx.reply("Kamu tidak berada dalam guild!", ephemeral=True)
+            
+        guild = user_record.guild
+        if guild.ownerId == ctx.author.id:
+            # Bubarkan guild
+            await db.guild.delete(where={'id': guild.id})
+            await ctx.reply(f"💥 Guild **{guild.name}** telah dibubarkan karena Owner keluar.")
+        else:
+            await db.user.update(where={'id': ctx.author.id}, data={'guildId': None})
+            await ctx.reply(f"👋 Kamu telah keluar dari guild **{guild.name}**.")
+
+class GuildInviteView(View):
+    def __init__(self, guild, target_user):
+        super().__init__(timeout=60.0)
+        self.guild = guild
+        self.target_user = target_user
+
+    @discord.ui.button(label="Terima", style=discord.ButtonStyle.success, emoji="✅")
+    async def accept(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self.target_user.id:
+            return await interaction.response.send_message("Undangan ini bukan untukmu!", ephemeral=True)
+            
+        # Re-check if guild still exists
+        guild_exists = await db.guild.find_unique(where={'id': self.guild.id})
+        if not guild_exists:
+            return await interaction.response.send_message("Guild ini sudah tidak ada!", ephemeral=True)
+            
+        await db.user.update(where={'id': self.target_user.id}, data={'guildId': self.guild.id})
+        await interaction.response.edit_message(content=f"✅ {self.target_user.mention} telah bergabung dengan guild **{self.guild.name}**!", view=None)
+
+    @discord.ui.button(label="Tolak", style=discord.ButtonStyle.danger, emoji="❌")
+    async def decline(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self.target_user.id:
+            return await interaction.response.send_message("Undangan ini bukan untukmu!", ephemeral=True)
+        await interaction.response.edit_message(content=f"❌ {self.target_user.mention} menolak undangan.", view=None)
 
 async def setup(bot):
     await bot.add_cog(Game(bot))

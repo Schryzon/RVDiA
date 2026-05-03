@@ -16,7 +16,7 @@
         "skills":[
             {
                 "name":"Power of Conflict",
-                "func":"dmg+70"
+                "func":"dmg+25%"
             },
             {
                 "name":"Ultimate Entity",
@@ -28,15 +28,15 @@
             },
             {
                 "name":"Heal me, World",
-                "func":"hp+450"
+                "func":"hp+40%"
             },
             {
                 "name":"Your Life is Mine",
-                "func":"hp-60"
+                "func":"hp-15%"
             },
             {
                 "name":"Die, Hero",
-                "func":"dmg+9999"
+                "func":"dmg+100%"
             }
         ]
     },
@@ -73,7 +73,7 @@
             },
             {
                 "name":"I'm Sorry",
-                "func":"dmg+100"
+                "func":"dmg+30%"
             }
         ]
     },
@@ -127,7 +127,7 @@
         "skills":[
             {
                 "name":"Death",
-                "func":"dmg+80"
+                "func":"dmg+25%"
             },
             {
                 "name":"Speed Upgrade",
@@ -172,7 +172,7 @@
             },
             {
                 "name":"Lagtanis Fulguros",
-                "func":"hp-40"
+                "func":"hp-10%"
             }
         ]
     },
@@ -193,7 +193,7 @@
         "skills":[
             {
                 "name":"Judgement",
-                "func":"dmg+65"
+                "func":"dmg+20%"
             },
             {
                 "name":"Brotherly Power",
@@ -230,7 +230,7 @@
             },
             {
                 "name": "Leuko Healing",
-                "func": "hp-53"
+                "func": "hp-15%"
             },
             {
                 "name": "Light of ViRTUE",

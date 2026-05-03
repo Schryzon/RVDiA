@@ -32,7 +32,7 @@
             },
             {
                 "name":"Fulguros",
-                "func":"hp-20"
+                "func":"hp-10%"
             }
         ]
     },
@@ -53,7 +53,7 @@
         "skills":[
             {
                 "name":"Fuujin no Ikari",
-                "func":"hp+150"
+                "func":"hp+20%"
             },
             {
                 "name":"Yasashisa Kami",
@@ -102,7 +102,7 @@
             },
             {
                 "name":"Yuanyuan Lingqi",
-                "func":"hp+230"
+                "func":"hp+25%"
             }
         ]
     },
@@ -131,7 +131,7 @@
             },
             {
                 "name":"Kshiti Vikaas",
-                "func":"hp+170"
+                "func":"hp+15%"
             },
             {
                 "name":"Dharati Ka Gussa",
@@ -160,7 +160,7 @@
             },
             {
                 "name":"Therapeftiko Nero",
-                "func":"hp+300"
+                "func":"hp+30%"
             },
             {
                 "name":"Aigida Anavalosi",
@@ -197,7 +197,7 @@
             },
             {
                 "name": "Pyro Healing",
-                "func": "hp-50"
+                "func": "hp-10%"
             },
             {
                 "name": "Flames of VORTeX",
