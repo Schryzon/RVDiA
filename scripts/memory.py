@@ -9,14 +9,15 @@ import json
 class MemoryManager:
     def __init__(self):
         self.client = genai.Client(api_key=os.getenv("googlekey"))
-        self.model_name = "text-embedding-004"
+        self.model_name = "gemini-embedding-001"
         self.embedding_dim = 768
 
     async def get_embedding(self, text: str):
         """Generates embedding for the given text using Gemini."""
         result = await self.client.aio.models.embed_content(
             model=self.model_name,
-            contents=text
+            contents=text,
+            config=types.EmbedContentConfig(output_dimensionality=self.embedding_dim)
         )
         return result.embeddings[0].values
 
