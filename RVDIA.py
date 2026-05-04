@@ -94,9 +94,15 @@ async def on_ready():
     Detect when RVDiA is ready (not connected to Discord).
     """
     await rvdia.wait_until_ready() # So I "don't" get rate limited
-    for cog in cogs_list:
+    
+    # Dynamically find cogs to pick up new files
+    current_cogs = [c.name for c in iter_modules(['cogs'], prefix='cogs.')]
+    for cog in current_cogs:
       if not cog == 'cogs.__init__':
-          await rvdia.load_extension(cog)
+          try:
+              await rvdia.load_extension(cog)
+          except commands.ExtensionAlreadyLoaded:
+              pass
     logging.info('Internal cogs loaded!')
     
     if not rvdia.synced:
@@ -196,6 +202,15 @@ async def unload(ctx, ext):
   except commands.ExtensionNotLoaded:
     await ctx.send(f"Cog `{ext}.py` sudah dimatikan!")
 
+@rvdia.command(hidden=True)
+@commands.is_owner()
+async def sync(ctx):
+    """
+    Sync slash commands
+    """
+    synced = await rvdia.tree.sync()
+    await ctx.send(f"Synced {len(synced)} commands.")
+
 @rvdia.command(hidden = True)
 @commands.is_owner()
 async def cogs(ctx):
@@ -213,10 +228,14 @@ async def refresh(ctx):
   """
   In case something went horribly wrong
   """
+  dynamic_cogs = [c.name for c in iter_modules(['cogs'], prefix='cogs.')]
   with suppress(commands.ExtensionNotLoaded):
-    for cog in cogs_list:
+    for cog in dynamic_cogs:
       if not cog == 'cogs.__init__':
-          await rvdia.unload_extension(cog)
+          try:
+              await rvdia.unload_extension(cog)
+          except:
+              pass
           await rvdia.load_extension(cog)
   await ctx.reply('Cogs refreshed.')
 
