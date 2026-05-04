@@ -232,65 +232,7 @@ class General(commands.Cog):
             await ctx.reply(embed=embed)
 
 
-    @avatar_command.command(aliases=['grayscale'], description="Ubah foto profil menjadi grayscale (hitam putih).")
-    @app_commands.rename(user='pengguna')
-    @app_commands.describe(user='Foto profil siapa yang ingin diedit?')
-    @has_pfp()
-    @check_blacklist()
-    async def greyscale(self, ctx, *, user:discord.User = None):
-        """Ubah foto profil menjadi grayscale."""
-        user = user or ctx.author
-        avatar = user.display_avatar.with_format("png").url
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f'https://some-random-api.com/canvas/filter/greyscale?avatar={avatar}') as data:
-                image = BytesIO(await data.read())
-                await session.close()
-                await ctx.reply(file=discord.File(image, 'Grayscale.png'))
 
-    @avatar_command.command(description="Ubah foto profil menjadi inverted (warna terbalik).")
-    @app_commands.rename(user='pengguna')
-    @app_commands.describe(user='Foto profil siapa yang ingin diedit?')
-    @has_pfp()
-    @check_blacklist()
-    async def invert(self, ctx, *, user:discord.User = None):
-        """Ubah foto profil menjadi inverted."""
-        user = user or ctx.author
-        avatar = user.display_avatar.with_format("png").url
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f'https://some-random-api.com/canvas/filter/invert?avatar={avatar}') as data:
-                image = BytesIO(await data.read())
-                await session.close()
-                await ctx.reply(file=discord.File(image, 'Inverted.png'))
-
-    @avatar_command.command(description="Meng-crop lingkaran pada foto profilmu!")
-    @app_commands.rename(user='pengguna')
-    @app_commands.describe(user='Foto profil siapa yang ingin diedit?')
-    @has_pfp()
-    @check_blacklist()
-    async def circle(self, ctx, *, user:discord.User = None):
-        """Meng-crop lingkaran pada foto profilmu!"""
-        user = user or ctx.author
-        avatar = user.display_avatar.with_format("png").url
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f'https://some-random-api.com/canvas/misc/circle?avatar={avatar}') as data:
-                image = BytesIO(await data.read())
-                await session.close()
-                await ctx.reply(file=discord.File(image, 'Circled.png'))
-
-    @avatar_command.command(description="Membuat foto profilmu menjadi buram!")
-    @app_commands.rename(user='pengguna')
-    @app_commands.describe(user='Foto profil siapa yang ingin diedit?')
-    @has_pfp()
-    @check_blacklist()
-    async def blur(self, ctx, *, user:discord.User = None):
-        """Membuat foto profilmu menjadi buram!"""
-        user = user or ctx.author
-        avatar = user.display_avatar.with_format("png").url
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f'https://some-random-api.com/canvas/misc/blur?avatar={avatar}') as data:
-                image = BytesIO(await data.read())
-                await session.close()
-                await ctx.reply(file=discord.File(image, 'Blurred.png'))
 
 
 class Utilities(commands.Cog):

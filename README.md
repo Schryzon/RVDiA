@@ -15,8 +15,8 @@
 </p>
 
 # RVDiA
-## "Revolusioner, Virtual, Independen."
-Revolutionary Virtual Discord Assistant (RVDiA) is an **Indonesian-oriented Multipurpose Discord Bot**.
+## "Revolusioner, Virtual, Digital-Artis."
+Revolutionary Virtual Digital Artist (RVDiA) is an **Indonesian-oriented Fun Bot focused on Games and Image Processing**.
 
 ## What's Special About This Bot?
 This bot is in Indonesian and has special commands for members of the G-Tech Re'sman club. It also offers a variety of utilities, its own RPG (role-playing game) system, and a **dynamic web dashboard**.

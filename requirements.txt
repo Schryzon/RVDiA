@@ -13,3 +13,6 @@ tqdm
 colorama
 pytz
 pgvector
+numpy
+opencv-python
+matplotlib

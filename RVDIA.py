@@ -1,8 +1,8 @@
 """
 Schryzon (Widiyasa Jayananda)
 G-Tech Re'sman Programming Division
-RVDiA (Revolutionary Virtual Discord Assistant)
-Feel free to modify and do other stuff.
+RVDiA (Revolutionary Virtual Digital Artist)
+Focused on Gaming, Image Processing, and Digital Arts.
 Contributions are welcome.
 Licensed under the MIT LICENSE.
 * Note: Now that RVDiA is verified, I own the rights to the name.
@@ -34,9 +34,8 @@ load_dotenv() # Loads the .env file from python-dotenv pack
 
 class RVDIA(commands.AutoShardedBot):
   """
-  A subclass of commands.AutoShardedBot; RVDiA herself.
-  This is in order to make her attributes easier to maintain.
-  (Nah, I'm just lazy tbh.)
+  RVDiA: The Revolutionary Virtual Digital Artist.
+  Dedicated to providing high-quality image processing and engaging games.
   """
   def __init__(self, **kwargs):
     self.synced = False
@@ -309,7 +308,7 @@ async def send_reply_message(msg:discord.Message, message_embed:discord.Embed):
             f"\nRecent Conversation History:\n{context['history']}\n"
             f"\nRelevant Past Memories:\n{context['memories']}\n"
             f"| {author} said: {embed_title} | Your previous response was: {embed_desc}\n"
-            f"\nRemember to stay in character as RVDiA (loving, cute, informal)."
+            f"\nRemember to stay in character as RVDiA (a talented digital artist and gamer, loving, cute, informal)."
         )
         
         result = await client.aio.models.generate_content(

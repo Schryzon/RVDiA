@@ -1858,11 +1858,11 @@ class Game(commands.Cog):
         
         last_login_raw = data.get('last_login')
         if isinstance(last_login_raw, str):
-            last_login = datetime.datetime.fromisoformat(last_login_raw)
+            last_login = datetime.fromisoformat(last_login_raw)
         else:
             last_login = last_login_raw # Fallback if it's already a datetime object
             
-        current_time = datetime.datetime.now()
+        current_time = datetime.now()
         delta_time = current_time - last_login
 
         next_login = last_login + datetime.timedelta(hours=24)
