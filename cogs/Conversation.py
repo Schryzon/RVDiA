@@ -40,8 +40,11 @@ class Regenerate_Answer_Button(View):
         user_id = interaction.user.id
         message = self.last_question
         
-        # Retrieve context
+        # 1. Retrieve context
         context = await memory_manager.get_context(user_id, message)
+        
+        # 2. We don't save the question again here since it's a regeneration
+        # but we use the embedding for the AI response if needed (though we skip model embeddings)
         
         currentTime = datetime.now(pytz.utc).astimezone(pytz.timezone("Asia/Jakarta"))
         date = currentTime.strftime("%d/%m/%Y")
@@ -65,7 +68,7 @@ class Regenerate_Answer_Button(View):
         for attempt in range(max_retries + 1):
             try:
                 result = await client.aio.models.generate_content(
-                    model='gemini-3-flash-preview',
+                    model='gemini-2.5-flash-lite',
                     contents=message,
                     config=types.GenerateContentConfig(
                         system_instruction=sys_inst,
@@ -87,7 +90,7 @@ class Regenerate_Answer_Button(View):
                     AI_response = "Waduh, otakku tiba-tiba nge-blank... Coba tanya lagi nanti ya! 💫"
                 break
         
-        # Save the new AI response to memory
+        # 3. Save the new AI response to memory (Optimized: skips embedding)
         await memory_manager.add_memory(user_id, "model", AI_response)
         
         display_message = message
@@ -127,11 +130,11 @@ class Conversation(commands.Cog):
         async with ctx.typing():
             user_id = ctx.author.id
             
-            # Save user message to memory
-            await memory_manager.add_memory(user_id, "user", message)
-            
-            # Retrieve context
+            # 1. Retrieve context (generates query embedding)
             context = await memory_manager.get_context(user_id, message)
+            
+            # 2. Save user message to memory, REUSING embedding
+            await memory_manager.add_memory(user_id, "user", message, embedding=context['embedding'])
             
             currentTime = datetime.now(pytz.utc).astimezone(pytz.timezone("Asia/Jakarta"))
             date = currentTime.strftime("%d/%m/%Y")
@@ -155,7 +158,7 @@ class Conversation(commands.Cog):
             for attempt in range(max_retries + 1):
                 try:
                     result = await client.aio.models.generate_content(
-                        model='gemini-3-flash-preview',
+                        model='gemini-2.5-flash-lite',
                         contents=message,
                         config=types.GenerateContentConfig(
                             system_instruction=sys_inst,
@@ -177,7 +180,7 @@ class Conversation(commands.Cog):
                         AI_response = "Waduh, otakku tiba-tiba nge-blank... Coba tanya lagi nanti ya! 💫"
                     break
             
-            # Save AI response to memory
+            # 3. Save AI response to memory (Optimized: skips embedding)
             await memory_manager.add_memory(user_id, "model", AI_response)
             
             display_message = message

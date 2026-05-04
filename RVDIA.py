@@ -1,8 +1,8 @@
 """
 Schryzon (Widiyasa Jayananda)
 G-Tech Re'sman Programming Division
-RVDiA (Revolutionary Virtual Digital Artist)
-Focused on Gaming, Image Processing, and Digital Arts.
+RVDiA (Revolutionary Virtual Discord Assistant)
+Feel free to modify and do other stuff.
 Contributions are welcome.
 Licensed under the MIT LICENSE.
 * Note: Now that RVDiA is verified, I own the rights to the name.
@@ -34,8 +34,9 @@ load_dotenv() # Loads the .env file from python-dotenv pack
 
 class RVDIA(commands.AutoShardedBot):
   """
-  RVDiA: The Revolutionary Virtual Digital Artist.
-  Dedicated to providing high-quality image processing and engaging games.
+  A subclass of commands.AutoShardedBot; RVDiA herself.
+  This is in order to make her attributes easier to maintain.
+  (Nah, I'm just lazy tbh.)
   """
   def __init__(self, **kwargs):
     self.synced = False
@@ -288,11 +289,11 @@ async def send_reply_message(msg:discord.Message, message_embed:discord.Embed):
         message = msg.content
         user_id = msg.author.id
         
-        # Save user message to memory
-        await memory_manager.add_memory(user_id, "user", message)
-        
-        # Retrieve context
+        # 1. Retrieve context (this also generates the query embedding)
         context = await memory_manager.get_context(user_id, message)
+        
+        # 2. Save user message to memory, REUSING the embedding from context
+        await memory_manager.add_memory(user_id, "user", message, embedding=context['embedding'])
         
         currentTime = datetime.now(pytz.utc).astimezone(pytz.timezone("Asia/Jakarta"))
         date = currentTime.strftime("%d/%m/%Y")
@@ -312,7 +313,7 @@ async def send_reply_message(msg:discord.Message, message_embed:discord.Embed):
         )
         
         result = await client.aio.models.generate_content(
-            model='gemini-3-flash-preview',
+            model='gemini-2.5-flash-lite',
             contents=message,
             config=types.GenerateContentConfig(
                 system_instruction=sys_inst
@@ -320,7 +321,7 @@ async def send_reply_message(msg:discord.Message, message_embed:discord.Embed):
         )
         AI_response = result.text
         
-        # Save AI response to memory
+        # 3. Save AI response to memory (Optimized: skips embedding for model role)
         await memory_manager.add_memory(user_id, "model", AI_response)
 
         if len(message) > 256:
@@ -338,19 +339,19 @@ async def send_reply_message(msg:discord.Message, message_embed:discord.Embed):
         await msg.channel.send(embed=embed, view=regenerate_button)
 
   except Exception as e:
-    error_codes = ["500", "503", "104", 'blocked']
+    error_codes = ["500", "503", "104", 'blocked', '429', 'ResourceExhausted']
     if any(codes in str(e) for codes in error_codes):
         retries = 0
-        delay = 1
-        max_retries = 5
-        while retries <= max_retries:
+        max_retries = 3
+        while retries < max_retries:
             retries += 1
             try:
+                await asyncio.sleep(2 * retries) # Exponential backoff
                 return await send_reply_message(msg, message_embed)
-
-            except:
-                await asyncio.sleep(delay)
-        raise e
+            except Exception as retry_e:
+                if retries >= max_retries:
+                    raise retry_e
+    raise e
 
 @rvdia.event
 async def on_message(msg:discord.Message):
