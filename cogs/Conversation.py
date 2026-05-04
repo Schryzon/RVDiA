@@ -68,7 +68,7 @@ class Regenerate_Answer_Button(View):
         for attempt in range(max_retries + 1):
             try:
                 result = await client.aio.models.generate_content(
-                    model='gemini-2.5-flash-lite',
+                    model='gemini-1.5-flash',
                     contents=message,
                     config=types.GenerateContentConfig(
                         system_instruction=sys_inst,
@@ -158,7 +158,7 @@ class Conversation(commands.Cog):
             for attempt in range(max_retries + 1):
                 try:
                     result = await client.aio.models.generate_content(
-                        model='gemini-2.5-flash-lite',
+                        model='gemini-1.5-flash',
                         contents=message,
                         config=types.GenerateContentConfig(
                             system_instruction=sys_inst,
