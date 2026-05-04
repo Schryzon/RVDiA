@@ -200,7 +200,7 @@ class Conversation(commands.Cog):
             return await ctx.reply(embed=embed, view=regenerate_button)
 
     @commands.hybrid_command(
-        aliases=['image', 'create'],
+        aliases=['generate', 'create'],
         description='Ciptakan sebuah karya seni!'
     )
     @app_commands.describe(prompt='Apa yang ingin diciptakan?')
