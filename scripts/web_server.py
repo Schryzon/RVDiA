@@ -2,7 +2,12 @@ import json
 import os
 import aiohttp_jinja2
 import jinja2
+import hmac
+import hashlib
+import re
+from datetime import datetime, timedelta
 from aiohttp import web
+from scripts.main import db
 
 def load_locales():
     locales = {}
@@ -66,6 +71,29 @@ async def handle_terms(request):
         'lang': lang
     })
 
+async def handle_saweria(request):
+    # (Leaving placeholder or removing as per previous turn)
+    return web.Response(text="OK")
+
+async def handle_internal_dm(request):
+    # Only allow from localhost for security
+    if request.remote != '127.0.0.1' and request.remote != 'localhost':
+        return web.Response(text="Unauthorized", status=401)
+        
+    try:
+        data = await request.json()
+        user_id = data.get('user_id')
+        message = data.get('message')
+        
+        bot = request.app['bot']
+        user = await bot.fetch_user(user_id)
+        if user:
+            await user.send(message)
+            return web.Response(text="OK")
+        return web.Response(text="User not found", status=404)
+    except Exception as e:
+        return web.Response(text=str(e), status=500)
+
 async def start_web_server(bot):
     app = web.Application()
     app['bot'] = bot
@@ -83,6 +111,7 @@ async def start_web_server(bot):
     app.router.add_get('/commands', handle_commands)
     app.router.add_get('/privacy', handle_privacy)
     app.router.add_get('/terms', handle_terms)
+    app.router.add_post('/internal/dm', handle_internal_dm)
     
     runner = web.AppRunner(app)
     await runner.setup()

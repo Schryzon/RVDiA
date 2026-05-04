@@ -21,6 +21,7 @@ model User {
   inventory Inventory?
   guildId   Int?
   guild     Guild?     @relation(fields: [guildId], references: [id])
+  premiumUntil DateTime?
 }
 
 model Guild {

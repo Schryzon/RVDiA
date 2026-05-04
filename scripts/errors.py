@@ -35,3 +35,7 @@ class NoGameAccount(commands.CommandError):
 class AccountIncompatible(commands.CommandError):
   """Raised when a Re:Volution account doesn't match the format"""
   pass
+
+class NoPremiumStatus(commands.CommandError):
+  """Raised when a user doesn't have premium status"""
+  pass

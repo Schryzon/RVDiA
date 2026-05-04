@@ -8,7 +8,7 @@ It doesn't need to be here, but it is.
 import asyncio
 import re
 import discord
-import datetime
+from datetime import datetime, timedelta
 import time
 import random
 import json
@@ -1644,6 +1644,67 @@ class UseView(View):
         super().__init__(timeout=30)
         self.add_item(UseDropdown(items, ctx))
 
+class LeaderboardView(View):
+    def __init__(self, ctx, data: list, title: str, type: str = "player"):
+        super().__init__(timeout=60)
+        self.ctx = ctx
+        self.data = data
+        self.title = title
+        self.type = type
+        self.current_page = 0
+        self.items_per_page = 10
+        self.max_pages = (len(data) - 1) // self.items_per_page + 1
+
+    async def get_embed(self):
+        start_idx = self.current_page * self.items_per_page
+        end_idx = start_idx + self.items_per_page
+        items = self.data[start_idx:end_idx]
+        
+        embed = discord.Embed(title=self.title, color=0xffd700) # Gold
+        embed.description = f"Menampilkan peringkat **{start_idx + 1}** sampai **{min(end_idx, len(self.data))}** dari **{len(self.data)}**."
+        
+        for i, item in enumerate(items, start=start_idx + 1):
+            if self.type == "player":
+                name = item.data.get('name', 'Unknown')
+                level = item.data.get('level', 1)
+                karma = item.data.get('karma', 0)
+                embed.add_field(
+                    name=f"{i}. {name}",
+                    value=f"🔰 Level: `{level}` | 👹 Karma: `{karma}`",
+                    inline=False
+                )
+            else: # guild
+                name = item.name
+                member_count = len(item.members) if hasattr(item, 'members') else 0
+                embed.add_field(
+                    name=f"{i}. {name}",
+                    value=f"👥 Anggota: `{member_count}` | 👑 Owner: <@{item.ownerId}>",
+                    inline=False
+                )
+        
+        embed.set_footer(text=f"Halaman {self.current_page + 1}/{self.max_pages}")
+        return embed
+
+    @discord.ui.button(label='◀', style=discord.ButtonStyle.blurple)
+    async def prev_page(self, interaction: discord.Interaction, button: Button):
+        if interaction.user != self.ctx.author:
+            return await interaction.response.send_message("Bukan tombolmu, Sang Pemimpi!", ephemeral=True)
+        self.current_page = (self.current_page - 1) % self.max_pages
+        await interaction.response.edit_message(embed=await self.get_embed())
+
+    @discord.ui.button(label='✖', style=discord.ButtonStyle.danger)
+    async def destroy(self, interaction: discord.Interaction, button: Button):
+        if interaction.user != self.ctx.author:
+            return await interaction.response.send_message("Hanya yang memanggil ini yang bisa menutupnya!", ephemeral=True)
+        await interaction.message.delete()
+
+    @discord.ui.button(label='▶', style=discord.ButtonStyle.blurple)
+    async def next_page(self, interaction: discord.Interaction, button: Button):
+        if interaction.user != self.ctx.author:
+            return await interaction.response.send_message("Bukan tombolmu, Sang Pemimpi!", ephemeral=True)
+        self.current_page = (self.current_page + 1) % self.max_pages
+        await interaction.response.edit_message(embed=await self.get_embed())
+
 class Game(commands.Cog):
     """
     Kumpulan command game RPG RVDiA (Re:Volution).
@@ -1706,23 +1767,11 @@ class Game(commands.Cog):
             
         # Sort by level DESC, then karma DESC
         sorted_users = sorted(users, key=lambda u: (u.data.get('level', 1), u.data.get('karma', 0)), reverse=True)
-        top_10 = sorted_users[:10]
+        top_100 = sorted_users[:100]
         
-        embed = discord.Embed(title="🏆 Papan Peringkat Re:Volution 🏆", color=discord.Color.gold())
-        embed.description = "Inilah 10 pemain yang memiliki mimpi paling kuat!"
-        
-        for i, user in enumerate(top_10, 1):
-            name = user.data.get('name', 'Unknown')
-            level = user.data.get('level', 1)
-            karma = user.data.get('karma', 0)
-            embed.add_field(
-                name=f"{i}. {name}",
-                value=f"🔰 Level: `{level}` | 👹 Karma: `{karma}`",
-                inline=False
-            )
-        
-        embed.set_footer(text="Teruslah bertualang untuk mencapai puncak!")
-        await ctx.reply(embed=embed)
+        view = LeaderboardView(ctx, top_100, "🏆 Papan Peringkat Re:Volution 🏆", type="player")
+        embed = await view.get_embed()
+        await ctx.reply(embed=embed, view=view)
 
     @game.command(description='Panduan bermain Re:Volution.')
     @check_blacklist()
@@ -1951,7 +2000,12 @@ class Game(commands.Cog):
             return await ctx.reply('Waduh! Akun tersebut belum terdaftar di Re:Volution!')
         
         data = user_record.data
-        embed = discord.Embed(title=f"Profil Re:Volution ~ {data['name']}", color=0x86273d)
+        
+        # Premium Check
+        is_p = user_record.premiumUntil and user_record.premiumUntil > datetime.now()
+        title_prefix = "💎 " if is_p else ""
+        
+        embed = discord.Embed(title=f"{title_prefix}Profil Re:Volution ~ {data['name']}", color=0x86273d)
         embed.set_thumbnail(url=target.display_avatar.url)
         
         # Display HP and Max HP
@@ -2258,8 +2312,8 @@ class Game(commands.Cog):
         await db.user.update(
             where={'id': ctx.author.id},
             data={
-                'guildId': new_guild.id,
-                'data': data
+                'guild': {'connect': {'id': new_guild.id}},
+                'data': Json(data)
             }
         )
         
@@ -2349,8 +2403,124 @@ class Game(commands.Cog):
             await db.guild.delete(where={'id': guild.id})
             await ctx.reply(f"💥 Guild **{guild.name}** telah dibubarkan karena Owner keluar.")
         else:
-            await db.user.update(where={'id': ctx.author.id}, data={'guildId': None})
+            await db.user.update(where={'id': ctx.author.id}, data={'guild': {'disconnect': True}})
             await ctx.reply(f"👋 Kamu telah keluar dari guild **{guild.name}**.")
+
+    @guild.command(name="leaderboard", aliases=["lb"], description="Lihat guild terkuat di Re:Volution!")
+    @check_blacklist()
+    async def guild_leaderboard(self, ctx: commands.Context):
+        """
+        Papan peringkat Guild berdasarkan jumlah anggota.
+        """
+        guilds = await db.guild.find_many(include={'members': True})
+        if not guilds:
+            return await ctx.reply("Belum ada guild yang terdaftar!")
+            
+        # Sort by member count DESC
+        sorted_guilds = sorted(guilds, key=lambda g: len(g.members), reverse=True)
+        top_100 = sorted_guilds[:100]
+        
+        view = LeaderboardView(ctx, top_100, "🏆 Papan Peringkat Guild 🏆", type="guild")
+        embed = await view.get_embed()
+        await ctx.reply(embed=embed, view=view)
+
+    @guild.command(name="icon", description="Lihat atau ubah ikon guildmu!")
+    @app_commands.describe(url="URL Gambar baru untuk ikon guild (Kosongkan untuk melihat ikon saat ini)")
+    @check_blacklist()
+    async def guild_icon(self, ctx: commands.Context, url: str = None):
+        """
+        Lihat atau ubah ikon guildmu agar terlihat lebih megah!
+        """
+        user_record = await db.user.find_unique(where={'id': ctx.author.id}, include={'guild': True})
+        if not user_record or not user_record.guild:
+            return await ctx.reply("Kamu tidak berada dalam guild!", ephemeral=True)
+        
+        guild = user_record.guild
+        
+        if url:
+            if guild.ownerId != ctx.author.id:
+                return await ctx.reply("Hanya Owner guild yang bisa mengubah ikon!", ephemeral=True)
+            if not url.startswith("http"):
+                return await ctx.reply("Ikon harus berupa URL gambar yang valid!", ephemeral=True)
+            
+            await db.guild.update(where={'id': guild.id}, data={'iconUrl': url})
+            return await ctx.reply(f"✅ Ikon guild **{guild.name}** berhasil diperbarui!")
+            
+        if not guild.iconUrl:
+            return await ctx.reply(f"Guild **{guild.name}** belum memiliki ikon!")
+            
+        embed = discord.Embed(title=f"Ikon Guild: {guild.name}", color=ctx.author.color)
+        embed.set_image(url=guild.iconUrl)
+        await ctx.reply(embed=embed)
+
+    @commands.hybrid_group(name="premium", description="Fitur Premium Re:Volution", fallback="info")
+    @check_blacklist()
+    async def premium(self, ctx: commands.Context):
+        """
+        Lihat status dan keuntungan menjadi Dream Weaver.
+        """
+        user_record = await db.user.find_unique(where={'id': ctx.author.id})
+        if not user_record:
+            return await ctx.reply("Kamu belum terdaftar!")
+            
+        is_p = user_record.premiumUntil and user_record.premiumUntil > datetime.now()
+        
+        embed = discord.Embed(title="💎 Dream Weaver Premium 💎", color=0x00ffff)
+        if is_p:
+            embed.description = f"Status: **AKTIF**\nBerlaku sampai: <t:{int(user_record.premiumUntil.timestamp())}:F>"
+        else:
+            embed.description = "Status: **TIDAK AKTIF**\nJadilah Dream Weaver untuk mendapatkan berbagai keuntungan!"
+            
+        embed.add_field(name="✨ Keuntungan", value=(
+            "• **2x EXP & Koin**: Petualangan jadi lebih cepat!\n"
+            "• **💎 Badge Eksklusif**: Tampil beda di profil & leaderboard.\n"
+            "• **🏰 Guild Prioritas**: Biaya pembuatan guild lebih murah (mendatang).\n"
+            "• **💖 Dukungan**: Membantu pengembangan Re:Volution!"
+        ), inline=False)
+        
+        embed.set_footer(text="Gunakan /premium buy untuk cara berlangganan.")
+        await ctx.reply(embed=embed)
+
+    @premium.command(name="buy", description="Cara menjadi Dream Weaver (15k IDR / 30 Hari)")
+    @check_blacklist()
+    async def premium_buy(self, ctx: commands.Context):
+        """
+        Instruksi berlangganan Premium.
+        """
+        saweria_link = getenv('SAWERIA_LINK', 'https://saweria.co/Schryzon')
+        
+        embed = discord.Embed(title="💎 Cara Menjadi Dream Weaver", color=0x00ffff)
+        embed.description = (
+            f"Dukung pengembangan bot ini hanya dengan **Rp 15.000 / 30 Hari**!\n\n"
+            f"**Langkah-langkah:**\n"
+            f"1. Buka link Saweria berikut: **[Klik di Sini]({saweria_link})**\n"
+            f"2. Selesaikan pembayaran (nominal Rp 15.000).\n"
+            f"3. Simpan/Screenshot bukti pembayaran berhasil.\n"
+            f"4. Jalankan command `/premium claim` dan lampirkan screenshot tersebut.\n\n"
+            f"*Status premium akan diaktifkan oleh admin segera setelah verifikasi.*"
+        )
+        embed.set_thumbnail(url=self.bot.user.display_avatar.url)
+        await ctx.reply(embed=embed)
+
+    @premium.command(name="claim", description="Klaim status Premium dengan mengunggah bukti pembayaran!")
+    @app_commands.describe(bukti="Screenshot bukti pembayaran Saweria-mu")
+    @check_blacklist()
+    async def premium_claim(self, ctx: commands.Context, bukti: discord.Attachment):
+        """
+        Kirim bukti pembayaranmu untuk diverifikasi oleh Xelvie!
+        """
+        staff_channel_id = getenv('STAFF_CHANNEL_ID')
+        if not staff_channel_id:
+            return await ctx.reply("Sistem klaim sedang tidak tersedia, silahkan hubungi admin secara langsung.", ephemeral=True)
+            
+        staff_channel = self.bot.get_channel(int(staff_channel_id))
+        if not staff_channel:
+            return await ctx.reply("Terjadi kesalahan konfigurasi, silahkan hubungi admin.", ephemeral=True)
+            
+        # Send raw notification for Xelvie to catch
+        await staff_channel.send(f"[CLAIM_PREMIUM] {ctx.author.id} {bukti.url}")
+        
+        await ctx.reply("✅ Bukti pembayaranmu telah dikirim! Mohon tunggu verifikasi dari admin (Xelvie akan memberitahumu!).", ephemeral=True)
 
 class GuildInviteView(View):
     def __init__(self, guild, target_user):
@@ -2368,7 +2538,7 @@ class GuildInviteView(View):
         if not guild_exists:
             return await interaction.response.send_message("Guild ini sudah tidak ada!", ephemeral=True)
             
-        await db.user.update(where={'id': self.target_user.id}, data={'guildId': self.guild.id})
+        await db.user.update(where={'id': self.target_user.id}, data={'guild': {'connect': {'id': self.guild.id}}})
         await interaction.response.edit_message(content=f"✅ {self.target_user.mention} telah bergabung dengan guild **{self.guild.name}**!", view=None)
 
     @discord.ui.button(label="Tolak", style=discord.ButtonStyle.danger, emoji="❌")

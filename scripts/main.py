@@ -14,7 +14,8 @@ from discord.ui import View, Button
 from discord.ext import commands
 from dotenv import load_dotenv
 from scripts.errors import NotInGTechServer, NotGTechMember, NotGTechAdmin, NoProfilePicture, Blacklisted, NoEventAvailable, NotVoted
-from scripts.errors import NoGameAccount
+from scripts.errors import NoGameAccount, NoPremiumStatus
+from datetime import datetime
 load_dotenv()
 
 # New in v1.x
@@ -131,6 +132,16 @@ def has_registered():
             raise NoGameAccount('User has no game account!')
         return True
     
+    return commands.check(predicate)
+
+def is_premium():
+    async def predicate(ctx):
+        user = await db.user.find_unique(where={'id': ctx.author.id})
+        if not user or not user.premiumUntil:
+            raise NoPremiumStatus("Fitur ini khusus untuk Dream Weaver! 💎")
+        if user.premiumUntil < datetime.now():
+            raise NoPremiumStatus("Masa berlaku Premium-mu telah habis!")
+        return True
     return commands.check(predicate)
 
 # def buy_item(ctx:commands.Context):

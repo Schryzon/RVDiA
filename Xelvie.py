@@ -7,10 +7,17 @@ Used to detect RVDIA's status
 import discord
 import random
 import logging
+import asyncio
+import re
+import aiohttp
 from os import getenv
 from dotenv import load_dotenv
 from discord.ext import commands
+from datetime import datetime, timedelta
+from prisma import Prisma, Json
+
 load_dotenv()
+db = Prisma()
 
 xlv = commands.Bot(command_prefix="x-",
                    help_command=None,
@@ -18,16 +25,84 @@ xlv = commands.Bot(command_prefix="x-",
                    activity=discord.Activity(type=discord.ActivityType.watching, name="RVDiA"))
 
 
+class PremiumApprovalView(discord.ui.View):
+    def __init__(self, user_id, bukti_url):
+        super().__init__(timeout=None)
+        self.user_id = user_id
+        self.bukti_url = bukti_url
+
+    @discord.ui.button(label="Setujui (30 Hari)", style=discord.ButtonStyle.success, emoji="✅")
+    async def approve(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not interaction.user.guild_permissions.administrator:
+            return await interaction.response.send_message("Hanya admin yang bisa menyetujui klaim!", ephemeral=True)
+            
+        user = await db.user.find_unique(where={'id': self.user_id})
+        if not user:
+            return await interaction.response.send_message("User tidak ditemukan di database!", ephemeral=True)
+            
+        now = datetime.now()
+        if user.premiumUntil and user.premiumUntil > now:
+            new_expiry = user.premiumUntil + timedelta(days=30)
+        else:
+            new_expiry = now + timedelta(days=30)
+            
+        await db.user.update(where={'id': self.user_id}, data={'premiumUntil': new_expiry})
+        
+        embed = interaction.message.embeds[0]
+        embed.color = discord.Color.green()
+        embed.title = "💎 Klaim Premium DISETUJUI ✅"
+        embed.set_footer(text=f"Disetujui oleh {interaction.user.name}")
+        
+        await interaction.response.edit_message(embed=embed, view=None)
+        
+        try:
+            target_user = await interaction.client.fetch_user(self.user_id)
+            await target_user.send(f"💎 **Klaim Premium Berhasil!** Selamat, kamu telah menjadi Dream Weaver selama 30 hari!\nBerlaku sampai: <t:{int(new_expiry.timestamp())}:F>")
+        except:
+            # Relay via RVDiA Bridge
+            await self.relay_dm(self.user_id, f"💎 **Klaim Premium Berhasil!** Selamat, kamu telah menjadi Dream Weaver selama 30 hari!\nBerlaku sampai: <t:{int(new_expiry.timestamp())}:F>")
+
+    @discord.ui.button(label="Tolak", style=discord.ButtonStyle.danger, emoji="❌")
+    async def reject(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not interaction.user.guild_permissions.administrator:
+            return await interaction.response.send_message("Hanya admin yang bisa menolak klaim!", ephemeral=True)
+            
+        embed = interaction.message.embeds[0]
+        embed.color = discord.Color.red()
+        embed.title = "💎 Klaim Premium DITOLAK ❌"
+        embed.set_footer(text=f"Ditolak oleh {interaction.user.name}")
+        
+        await interaction.response.edit_message(embed=embed, view=None)
+        
+        try:
+            target_user = await interaction.client.fetch_user(self.user_id)
+            await target_user.send("❌ **Klaim Premium Ditolak.** Bukti pembayaran tidak valid atau tidak sesuai. Silahkan hubungi admin jika ada kesalahan.")
+        except:
+            # Relay via RVDiA Bridge
+            await self.relay_dm(self.user_id, "❌ **Klaim Premium Ditolak.** Bukti pembayaran tidak valid atau tidak sesuai. Silahkan hubungi admin jika ada kesalahan.")
+
+    async def relay_dm(self, user_id, message):
+        async with aiohttp.ClientSession() as session:
+            port = int(getenv("PORT", 8080))
+            url = f"http://127.0.0.1:{port}/internal/dm"
+            payload = {'user_id': user_id, 'message': message}
+            try:
+                async with session.post(url, json=payload) as resp:
+                    if resp.status != 200:
+                        logging.error(f"Relay DM failed with status {resp.status}")
+            except Exception as e:
+                logging.error(f"Failed to connect to relay: {e}")
+
 @xlv.event
 async def on_connect():
-  logging.info('XLV connected!')
-
+    if not db.is_connected():
+        await db.connect()
+    logging.info('XLV connected!')
 
 @xlv.event
 async def on_ready():
   await xlv.wait_until_ready()
   logging.info('XLV is ready!')
-
 
 @xlv.event
 async def on_presence_update(before, after):
@@ -36,12 +111,33 @@ async def on_presence_update(before, after):
     if str(after.status) == "offline" or str(after.status) == "invisible":
       await channel.send(f"<@{getenv('schryzonid')}>\n⚪ RVDIA is now **`OFFLINE`**!")
 
-  return
-
-
 @xlv.event
 async def on_message(message):
-  return  # This bot doesn't need commands, just tell.
+    if message.author.bot and message.author.id == int(getenv("rvdiaid")):
+        # Detect claim notification from RVDiA
+        if "[CLAIM_PREMIUM]" in message.content:
+            try:
+                # Format: [CLAIM_PREMIUM] {user_id} {bukti_url}
+                parts = message.content.split()
+                user_id = int(parts[1])
+                bukti_url = parts[2]
+                
+                await message.delete()
+                
+                user = await xlv.fetch_user(user_id)
+                embed = discord.Embed(title="💎 Klaim Premium Baru!", color=0x00ffff)
+                embed.set_author(name=user.name, icon_url=user.display_avatar.url)
+                embed.add_field(name="User ID", value=f"`{user_id}`", inline=True)
+                embed.add_field(name="User Mention", value=user.mention, inline=True)
+                embed.set_image(url=bukti_url)
+                embed.set_footer(text="Gunakan tombol di bawah untuk menyetujui atau menolak.")
+                
+                view = PremiumApprovalView(user_id, bukti_url)
+                await message.channel.send(embed=embed, view=view)
+            except Exception as e:
+                logging.error(f"Error processing claim: {e}")
+    
+    await xlv.process_commands(message)
 
 greetings = ["Hello there,", "Greetings,", "Welcome to CyroN,", "Why hello there,", "Thanks for joining,", "Heya hee ho,", 
     "Welcome,", "A new member joined,", "Yokoso,", "Hi~", "Konnichiwa,", "Heya,", "Helloooo~,"
