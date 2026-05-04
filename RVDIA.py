@@ -103,6 +103,8 @@ async def on_ready():
               await rvdia.load_extension(cog)
           except commands.ExtensionAlreadyLoaded:
               pass
+          except Exception as e:
+              logging.error(f"Could not load cog {cog}: {e}")
     logging.info('Internal cogs loaded!')
     
     if not rvdia.synced:
@@ -229,15 +231,20 @@ async def refresh(ctx):
   In case something went horribly wrong
   """
   dynamic_cogs = [c.name for c in iter_modules(['cogs'], prefix='cogs.')]
-  with suppress(commands.ExtensionNotLoaded):
-    for cog in dynamic_cogs:
-      if not cog == 'cogs.__init__':
-          try:
-              await rvdia.unload_extension(cog)
-          except:
-              pass
-          await rvdia.load_extension(cog)
-  await ctx.reply('Cogs refreshed.')
+  results = []
+  for cog in dynamic_cogs:
+    if not cog == 'cogs.__init__':
+        try:
+            with suppress(commands.ExtensionNotLoaded):
+                await rvdia.unload_extension(cog)
+            await rvdia.load_extension(cog)
+            results.append(f"✅ `{cog}`")
+        except Exception as e:
+            results.append(f"❌ `{cog}`: {str(e)[:50]}")
+            logging.error(f"Failed to load cog {cog}: {e}")
+            
+  embed = discord.Embed(title="Cogs Refresh Status", description="\n".join(results), color=rvdia.color)
+  await ctx.reply(embed=embed)
 
 @rvdia.command(hidden=True)
 @commands.is_owner()
