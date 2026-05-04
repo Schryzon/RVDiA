@@ -14,5 +14,6 @@ colorama
 pytz
 pgvector
 numpy
-opencv-python
+opencv-python-headless
 matplotlib
+scipy
