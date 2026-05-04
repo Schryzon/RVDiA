@@ -2291,6 +2291,11 @@ class Game(commands.Cog):
         
         if user_record.guildId:
             return await ctx.reply("Kamu sudah berada di sebuah guild! Keluar dulu sebelum membuat yang baru.", ephemeral=True)
+            
+        # Check if user already owns a guild (Unique constraint check)
+        existing_owned = await db.guild.find_unique(where={'ownerId': ctx.author.id})
+        if existing_owned:
+            return await ctx.reply(f"Kamu sudah memiliki guild bernama **{existing_owned.name}**! Kamu harus membubarkannya dulu sebelum membuat yang baru.", ephemeral=True)
         
         data = user_record.data
         if data['coins'] < 5000:
