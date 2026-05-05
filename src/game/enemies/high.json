@@ -1,123 +1,123 @@
 [
     {
-        "name":"Mechanical Knight",
-        "desc":"Prajurit futuristik dengan pertahanan baja yang kokoh.",
-        "tier":"SUPER HIGH",
-        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122026194121015306/20230624_104417.png",
-        "hp":650,
-        "atk":55,
-        "def":55,
-        "agl":25,
-        "reward":[
+        "name": "Mechanical Knight",
+        "desc": "Prajurit futuristik dengan pertahanan baja kokoh.",
+        "tier": "SUPER HIGH",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122026194121015306/20230624_104417.png",
+        "hp": 650,
+        "atk": 55,
+        "def": 55,
+        "agl": 25,
+        "reward": [
             "exp+150",
             "cns+100",
             "krm+15"
         ],
-        "skills":[
+        "skills": [
             {
-                "name":"Wake Up",
-                "func":"agl+20"
+                "name": "Wake Up",
+                "func": "agl+20"
             },
             {
-                "name":"Knightly Stare",
-                "func":"agl-15"
+                "name": "Knightly Stare",
+                "func": "agl-15"
             },
             {
-                "name":"Knightly Strength",
-                "func":"atk+12"
+                "name": "Knightly Strength",
+                "func": "atk+12"
             }
         ]
     },
     {
-        "name":"Nyrion",
-        "desc":"Pasukan tempur khusus yang ahli dalam pertempuran taktis.",
-        "tier":"HIGH",
-        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122026096867680346/20230624_105124.png",
-        "hp":450,
-        "atk":45,
-        "def":40,
-        "agl":45,
-        "reward":[
+        "name": "Nyrion",
+        "desc": "Pasukan tempur khusus pertempuran taktis.",
+        "tier": "HIGH",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122026096867680346/20230624_105124.png",
+        "hp": 450,
+        "atk": 45,
+        "def": 40,
+        "agl": 45,
+        "reward": [
             "exp+120",
             "cns+80",
             "krm+10"
         ],
-        "skills":[
+        "skills": [
             {
-                "name":"Mag Dump",
-                "func":"dmg+40"
+                "name": "Mag Dump",
+                "func": "dmg+40"
             },
             {
-                "name":"Gigantoka Spirit",
-                "func":"atk+15"
+                "name": "Gigantoka Spirit",
+                "func": "atk+15"
             },
             {
-                "name":"Mentality Crusher",
-                "func":"def-12"
+                "name": "Mentality Crusher",
+                "func": "def-12"
             }
         ]
     },
     {
-        "name":"Carmendria",
-        "desc":"Raja veteran yang masih memiliki aura kekuatan yang luar biasa.",
-        "tier":"SUPER HIGH",
-        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122026194800488508/20230624_104510.png",
-        "hp":700,
-        "atk":58,
-        "def":45,
-        "agl":40,
-        "reward":[
+        "name": "Carmendria",
+        "desc": "Raja tua pemimpin pasukan Nyrion.",
+        "tier": "SUPER HIGH",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122026194800488508/20230624_104510.png",
+        "hp": 700,
+        "atk": 58,
+        "def": 45,
+        "agl": 40,
+        "reward": [
             "exp+180",
             "cns+120",
             "krm+20"
         ],
-        "skills":[
+        "skills": [
             {
-                "name":"Revenge",
-                "func":"atk+20"
+                "name": "Revenge",
+                "func": "atk+20"
             },
             {
-                "name":"Focus",
-                "func":"agl+15"
+                "name": "Focus",
+                "func": "agl+15"
             },
             {
-                "name":"Lifesteal",
-                "func":"hp-60"
+                "name": "Lifesteal",
+                "func": "hp-60"
             }
         ]
     },
     {
-        "name":"Reinvier",
-        "desc":"Permaisuri misterius dengan sihir hitam yang mematikan.",
-        "tier":"HIGH",
-        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122026096423092294/20230624_122454.png",
-        "hp":420,
-        "atk":50,
-        "def":35,
-        "agl":55,
-        "reward":[
+        "name": "Reinvier",
+        "desc": "Permaisuri dari Carmendria.",
+        "tier": "HIGH",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122026096423092294/20230624_122454.png",
+        "hp": 420,
+        "atk": 50,
+        "def": 35,
+        "agl": 55,
+        "reward": [
             "exp+130",
             "cns+90",
             "krm+12"
         ],
-        "skills":[
+        "skills": [
             {
-                "name":"Fearless Princess",
-                "func":"def+18"
+                "name": "Fearless Princess",
+                "func": "def+18"
             },
             {
-                "name":"Black Magic",
-                "func":"dmg+45"
+                "name": "Black Magic",
+                "func": "dmg+45"
             },
             {
-                "name":"Lifesteal",
-                "func":"hp-50"
+                "name": "Lifesteal",
+                "func": "hp-50"
             }
         ]
     },
     {
         "name": "JIN-SUCHI",
-        "desc": "Hybrid manusia yang mengandalkan keahlian menembak jitu.",
+        "desc": "Manusia hybrid - Keahlian.",
         "tier": "HIGH",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1181926945219420261/0-2ec4abf1-da59-48ca-990b-b53d6713a23b.png",
         "hp": 480,
@@ -146,7 +146,7 @@
     },
     {
         "name": "HIRO-KAZE",
-        "desc": "Hybrid manusia yang seimbang dalam segala aspek tempur.",
+        "desc": "Manusia hybrid - Keseimbangan.",
         "tier": "HIGH",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1181926944527355986/0-c599fa60-70f1-42af-9aad-7667a4c38969.png",
         "hp": 460,
@@ -175,7 +175,7 @@
     },
     {
         "name": "MIKA-DARYA",
-        "desc": "Hybrid manusia yang ahli dalam memanipulasi bayangan.",
+        "desc": "Manusia hybrid - Manipulasi.",
         "tier": "SUPER HIGH",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1181926945890521138/0-e92081e3-2efb-43b3-bdf0-b03b84a6e49a.png",
         "hp": 680,
@@ -204,7 +204,7 @@
     },
     {
         "name": "VORTeX",
-        "desc": "Prajurit Galaksi MK.1, pionir dalam teknologi tempur luar angkasa.",
+        "desc": "Galactic Soldier MK.1",
         "tier": "SUPER HIGH",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1148814705687806032/20230906_095119.png",
         "hp": 750,

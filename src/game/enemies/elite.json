@@ -1,180 +1,180 @@
 [
     {
-        "name":"Lagtanis",
-        "desc":"Dewa utama yang menguasai kekuatan petir abadi.",
-        "tier":"SUPER ELITE",
-        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122156470889349180/20230624_201545.png",
-        "hp":1800,
-        "atk":85,
-        "def":65,
-        "agl":60,
-        "reward":[
+        "name": "Lagtanis",
+        "desc": "Dewa utama - Petir.",
+        "tier": "SUPER ELITE",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122156470889349180/20230624_201545.png",
+        "hp": 1800,
+        "atk": 85,
+        "def": 65,
+        "agl": 60,
+        "reward": [
             "exp+1500",
             "cns+500",
             "krm+40"
         ],
-        "skills":[
+        "skills": [
             {
-                "name":"Karvista",
-                "func":"dmg+40"
+                "name": "Karvista",
+                "func": "dmg+40"
             },
             {
-                "name":"Hasten",
-                "func":"atk+12"
+                "name": "Hasten",
+                "func": "atk+12"
             },
             {
-                "name":"Zakitus",
-                "func":"def+10"
+                "name": "Zakitus",
+                "func": "def+10"
             },
             {
-                "name":"Raykaris",
-                "func":"def-20"
+                "name": "Raykaris",
+                "func": "def-20"
             },
             {
-                "name":"Fulguros",
-                "func":"hp-10%"
+                "name": "Fulguros",
+                "func": "hp-10%"
             }
         ]
     },
     {
-        "name":"Daiki",
-        "desc":"Dewi kedua yang menari bersama angin kencang.",
-        "tier":"ELITE",
-        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122156469840773203/20230624_202500.png",
-        "hp":1400,
-        "atk":75,
-        "def":55,
-        "agl":85,
-        "reward":[
+        "name": "Daiki",
+        "desc": "Dewi kedua - Angin.",
+        "tier": "ELITE",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122156469840773203/20230624_202500.png",
+        "hp": 1400,
+        "atk": 75,
+        "def": 55,
+        "agl": 85,
+        "reward": [
             "exp+1200",
             "cns+400",
             "krm+30"
         ],
-        "skills":[
+        "skills": [
             {
-                "name":"Fuujin no Ikari",
-                "func":"hp+20%"
+                "name": "Fuujin no Ikari",
+                "func": "hp+20%"
             },
             {
-                "name":"Yasashisa Kami",
-                "func":"dmg+15"
+                "name": "Yasashisa Kami",
+                "func": "dmg+15"
             },
             {
-                "name":"Bougyo Shinjite",
-                "func":"def+15"
+                "name": "Bougyo Shinjite",
+                "func": "def+15"
             },
             {
-                "name":"Kanashiina Sekai",
-                "func":"hp-50"
+                "name": "Kanashiina Sekai",
+                "func": "hp-50"
             },
             {
-                "name":"Ryuukufu",
-                "func":"def-12"
+                "name": "Ryuukufu",
+                "func": "def-12"
             }
         ]
     },
     {
-        "name":"Yizai Qi",
-        "desc":"Dewa ketiga yang membakar segalanya dalam sekali serang.",
-        "tier":"SUPER ELITE",
-        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122156471573028924/20230624_201721.png",
-        "hp":1950,
-        "atk":95,
-        "def":60,
-        "agl":65,
-        "reward":[
+        "name": "Yizai Qi",
+        "desc": "Dewa ketiga - Api.",
+        "tier": "SUPER ELITE",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122156471573028924/20230624_201721.png",
+        "hp": 1950,
+        "atk": 95,
+        "def": 60,
+        "agl": 65,
+        "reward": [
             "exp+1600",
             "cns+550",
             "krm+45"
         ],
-        "skills":[
+        "skills": [
             {
-                "name":"Shaoshang",
-                "func":"dmg+55"
+                "name": "Shaoshang",
+                "func": "dmg+55"
             },
             {
-                "name":"Ganshou Huoyan",
-                "func":"atk+15"
+                "name": "Ganshou Huoyan",
+                "func": "atk+15"
             },
             {
-                "name":"Yi... Zai... Qi",
-                "func":"dmg+80"
+                "name": "Yi... Zai... Qi",
+                "func": "dmg+80"
             },
             {
-                "name":"Yuanyuan Lingqi",
-                "func":"hp+25%"
+                "name": "Yuanyuan Lingqi",
+                "func": "hp+25%"
             }
         ]
     },
     {
-        "name":"Rahjda",
-        "desc":"Dewa keempat dengan pertahanan tanah yang tak tergoyahkan.",
-        "tier":"ELITE",
-        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122156472118296636/20230624_201750.png",
-        "hp":1600,
-        "atk":70,
-        "def":95,
-        "agl":50,
-        "reward":[
+        "name": "Rahjda",
+        "desc": "Dewa keempat - Tanah.",
+        "tier": "ELITE",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122156472118296636/20230624_201750.png",
+        "hp": 1600,
+        "atk": 70,
+        "def": 95,
+        "agl": 50,
+        "reward": [
             "exp+1300",
             "cns+450",
             "krm+35"
         ],
-        "skills":[
+        "skills": [
             {
-                "name":"Phurteela",
-                "func":"agl+20"
+                "name": "Phurteela",
+                "func": "agl+20"
             },
             {
-                "name":"Bhookamp",
-                "func":"dmg+75"
+                "name": "Bhookamp",
+                "func": "dmg+75"
             },
             {
-                "name":"Kshiti Vikaas",
-                "func":"hp+15%"
+                "name": "Kshiti Vikaas",
+                "func": "hp+15%"
             },
             {
-                "name":"Dharati Ka Gussa",
-                "func":"atk+20"
+                "name": "Dharati Ka Gussa",
+                "func": "atk+20"
             }
         ]
     },
     {
-        "name":"Arheious",
-        "desc":"Dewi kelima yang mengalir seperti air namun mematikan.",
-        "tier":"SUPER ELITE",
-        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122156470394429461/20230624_202247.png",
-        "hp":2000,
-        "atk":88,
-        "def":50,
-        "agl":75,
-        "reward":[
+        "name": "Arheious",
+        "desc": "Dewi kelima - Air.",
+        "tier": "SUPER ELITE",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122156470394429461/20230624_202247.png",
+        "hp": 2000,
+        "atk": 88,
+        "def": 50,
+        "agl": 75,
+        "reward": [
             "exp+1700",
             "cns+600",
             "krm+50"
         ],
-        "skills":[
+        "skills": [
             {
-                "name":"Roufichtra",
-                "func":"dmg+65"
+                "name": "Roufichtra",
+                "func": "dmg+65"
             },
             {
-                "name":"Therapeftiko Nero",
-                "func":"hp+30%"
+                "name": "Therapeftiko Nero",
+                "func": "hp+30%"
             },
             {
-                "name":"Aigida Anavalosi",
-                "func":"def+15"
+                "name": "Aigida Anavalosi",
+                "func": "def+15"
             },
             {
-                "name":"Hydrokroustas",
-                "func":"dmg+35"
+                "name": "Hydrokroustas",
+                "func": "dmg+35"
             }
         ]
     },
     {
         "name": "ViRTUE",
-        "desc": "Prajurit Galaksi MK.2 dengan kekuatan api dan gravitasi.",
+        "desc": "Galactic Soldier MK.2",
         "tier": "SUPER ELITE",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1148814706371481630/20230906_095029.png",
         "hp": 2200,
