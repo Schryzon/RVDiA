@@ -21,12 +21,15 @@ Revolutionary Virtual Discord Assistant (RVDiA) is an **Indonesian-oriented Fun 
 ## What's Special About This Bot?
 This bot is in Indonesian and has special commands for members of the G-Tech Re'sman club. It also offers a variety of utilities, its own RPG (role-playing game) system, and a **dynamic web dashboard**.
 
-## Web Dashboard & Landing Page
-RVDiA comes with a built-in web server powered by `aiohttp` and `Jinja2`. 
-- **Dynamic Command List**: Automatically fetches and displays commands from the codebase.
-- **Multi-language Support**: Supports both Indonesian (ID) and English (EN).
-- **Glassmorphism Design**: A premium, modern UI that matches RVDiA's persona.
-- **Localization**: Easily customizable via JSON files in `website/locales/`.
+## Core Features & Recent Updates
+- **RPG Battle System**: A deep, turn-based combat system with levels, stats, and skills.
+    - **Enemy Tiers**: From Low to the new **BONUS ENEMY** tier featuring legendary characters like Shiruto and Kamen Riders.
+    - **Visual Flair**: Every enemy now features a unique dynamic color theme in combat.
+- **Local AI Architecture**: Decoupled from proprietary cloud services for enhanced privacy and cost-efficiency.
+    - **Local Embeddings**: Uses `sentence-transformers` for high-performance multilingual vector search.
+    - **Privacy-First Search**: Integrated DuckDuckGo RAG system for real-time information retrieval without tracking.
+- **Image Processing**: Advanced image manipulation and generation tools.
+- **Dynamic Web Dashboard**: Built with `aiohttp` and `Jinja2` featuring glassmorphism design.
 
 ## Want to Tinker with It Yourself?
 1. Clone this repo or download the latest release from tags;

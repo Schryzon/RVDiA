@@ -1,33 +1,28 @@
 import os
 import asyncio
-from google import genai
-from google.genai import types
+from sentence_transformers import SentenceTransformer
 from scripts.main import db
 from datetime import datetime
 import json
+import torch
 
 class MemoryManager:
     def __init__(self):
-        self.client = genai.Client(api_key=os.getenv("googlekey"))
-        self.model_name = "gemini-embedding-001"
-        self.embedding_dim = 768
+        # We use a lightweight multilingual model (384 dimensions)
+        # Excellent for Indonesian and English mix.
+        self.model_name = "paraphrase-multilingual-MiniLM-L12-v2"
+        self.embedding_dim = 384
+        # Load model locally
+        self.model = SentenceTransformer(self.model_name, device="cpu")
 
     async def get_embedding(self, text: str):
-        """Generates embedding for the given text using Gemini. Includes retry logic for 429s."""
-        max_retries = 3
-        for attempt in range(max_retries + 1):
-            try:
-                result = await self.client.aio.models.embed_content(
-                    model=self.model_name,
-                    contents=text,
-                    config=types.EmbedContentConfig(output_dimensionality=self.embedding_dim)
-                )
-                return result.embeddings[0].values
-            except Exception as e:
-                if ("429" in str(e) or "ResourceExhausted" in str(e)) and attempt < max_retries:
-                    await asyncio.sleep(2 * (attempt + 1))
-                    continue
-                raise e
+        """Generates embedding for the given text using local sentence-transformers."""
+        # SentenceTransformer.encode is synchronous, but we can wrap it or just run it
+        # Since it's a lightweight model on 8GB RAM, it should be very fast.
+        # We use loop.run_in_executor to avoid blocking the event loop.
+        loop = asyncio.get_event_loop()
+        embedding = await loop.run_in_executor(None, lambda: self.model.encode(text, convert_to_tensor=False))
+        return embedding.tolist()
 
     async def add_memory(self, user_id: int, role: str, content: str, embedding: list = None):
         """Adds a message to sequential history and generates a long-term memory.

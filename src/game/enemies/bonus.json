@@ -1,0 +1,336 @@
+[
+    {
+        "name": "Shiruto",
+        "desc": "Jiwa yang terpisah.",
+        "tier": "BONUS ENEMY",
+        "avatar": "https://cdn.discordapp.com/avatars/735653554165121086/f92ce78ea1e6f1ba95c4b7c539c61b05.png?size=512",
+        "hp": 4500,
+        "atk": 120,
+        "def": 95,
+        "agl": 110,
+        "reward": [
+            "exp+10000",
+            "cns+4000",
+            "krm+200"
+        ],
+        "skills": [
+            {
+                "name": "Burst Slash",
+                "func": "DMG+80"
+            },
+            {
+                "name": "Ethereal Shift",
+                "func": "AGL+30"
+            },
+            {
+                "name": "Serious Strike",
+                "func": "ATK+25"
+            }
+        ],
+        "color": "#43c5e8"
+    },
+    {
+        "name": "Kamen Rider Kuuga (Ultimate)",
+        "desc": "Prajurit legendaris dengan kekuatan kegelapan yang suci. 'No Fear, No Pain'.",
+        "tier": "BONUS ENEMY",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1501110155499012126/kuuga.jpg?ex=69fae146&is=69f98fc6&hm=fb8debcb3626760042924b4ce41a7f5e871f9bbef6cb28fd2d12adc2238d341a",
+        "hp": 6500,
+        "atk": 150,
+        "def": 110,
+        "agl": 95,
+        "reward": [
+            "exp+12000",
+            "cns+5000",
+            "krm+300"
+        ],
+        "skills": [
+            {
+                "name": "Pyrokinesis",
+                "func": "DMG+100"
+            },
+            {
+                "name": "Ultimate Kick",
+                "func": "DMG+40%"
+            },
+            {
+                "name": "CHOU HENSHIN: RISING ULTIMATE",
+                "func": "atk+30"
+            }
+        ],
+        "color": "#c15a52"
+    },
+    {
+        "name": "Kamen Rider Agito (Shining)",
+        "desc": "Evolusi tanpa batas dari kekuatan matahari.",
+        "tier": "BONUS ENEMY",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1501107996481294447/agito.JPG?ex=69fadf43&is=69f98dc3&hm=a30dc09371003b03fb2df1ef54b726240f94fda5c33e65c029c6e053c830108e&",
+        "hp": 6000,
+        "atk": 140,
+        "def": 105,
+        "agl": 110,
+        "reward": [
+            "exp+12000",
+            "cns+5000",
+            "krm+300"
+        ],
+        "skills": [
+            {
+                "name": "Shining Clash",
+                "func": "DMG+90"
+            },
+            {
+                "name": "Shining Rider Kick",
+                "func": "DMG+30%"
+            }
+        ],
+        "color": "#555a70"
+    },
+    {
+        "name": "Kamen Rider Ryuki (Survive)",
+        "desc": "Prajurit cermin yang bertarung demi keinginannya. 'Those who don't fight won't survive'.",
+        "tier": "BONUS ENEMY",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1501107996032372806/ryuki.JPG?ex=69fadf43&is=69f98dc3&hm=7be4e0bbe53b2eeb31bb6dd04cd36fd6c11729e64b1ad34064e6008c76cef00a&",
+        "hp": 5800,
+        "atk": 155,
+        "def": 95,
+        "agl": 95,
+        "reward": [
+            "exp+12000",
+            "cns+5000",
+            "krm+300"
+        ],
+        "skills": [
+            {
+                "name": "Dragon Firestorm",
+                "func": "DMG+110"
+            },
+            {
+                "name": "Final Vent",
+                "func": "DMG+35%"
+            },
+            {
+                "name": "Guard Vent",
+                "func": "def+30"
+            },
+            {
+                "name": "Speed Vent",
+                "func": "agl+15"
+            },
+            {
+                "name": "Sword Vent",
+                "func": "atk+15"
+            },
+            {
+                "name": "Shoot Vent",
+                "func": "atk+15"
+            }
+        ],
+        "color": "#e4df41"
+    },
+    {
+        "name": "Kamen Rider Faiz (Blaster)",
+        "desc": "Puncak dari teknologi Smart Brain. 'Open Your Eyes for the Next Faiz'.",
+        "tier": "BONUS ENEMY",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1501107995663143023/faiz.JPG?ex=69fadf43&is=69f98dc3&hm=5df008cae3fa6ed915176b0c220c05084cb2de3a0395c8e60c98f99ffd0e5a08&",
+        "hp": 5500,
+        "atk": 150,
+        "def": 90,
+        "agl": 115,
+        "reward": [
+            "exp+12000",
+            "cns+5000",
+            "krm+300"
+        ],
+        "skills": [
+            {
+                "name": "Photon Breaker",
+                "func": "DMG+130"
+            },
+            {
+                "name": "Blaster Crimson Smash",
+                "func": "DMG+45%"
+            },
+            {
+                "name": "Photon Field Floater",
+                "func": "agl+15"
+            }
+        ],
+        "color": "#edcef2"
+    },
+    {
+        "name": "Kamen Rider Blade (King)",
+        "desc": "Perpaduan 13 Undead yang menciptakan ksatria tak terkalahkan.",
+        "tier": "BONUS ENEMY",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1501107995164147803/blade.JPG?ex=69fadf43&is=69f98dc3&hm=693ad09df898609e8f6f195ac36d190e8cf2820e02ef3bc8aa73ee22e6365ed6&",
+        "hp": 7000,
+        "atk": 140,
+        "def": 130,
+        "agl": 75,
+        "reward": [
+            "exp+12000",
+            "cns+5000",
+            "krm+300"
+        ],
+        "skills": [
+            {
+                "name": "Royal Straight Flush",
+                "func": "DMG+160"
+            },
+            {
+                "name": "King Defense",
+                "func": "DEF+40"
+            }
+        ],
+        "color": "#cfcec6"
+    },
+    {
+        "name": "Kamen Rider Hibiki (Armed)",
+        "desc": "Ksatria Oni yang telah mencapai puncak latihan spiritualnya.",
+        "tier": "BONUS ENEMY",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1501107994266435754/hibiki.JPG?ex=69fadf43&is=69f98dc3&hm=274448a3e7d0ecbf1606d04337d4a66467746758ea7a5ddbea88899ccaeed1bc&",
+        "hp": 7500,
+        "atk": 135,
+        "def": 100,
+        "agl": 80,
+        "reward": [
+            "exp+12000",
+            "cns+5000",
+            "krm+300"
+        ],
+        "skills": [
+            {
+                "name": "Ongeki Ha",
+                "func": "DMG+100"
+            },
+            {
+                "name": "Armed Sonic",
+                "func": "ATK+30"
+            }
+        ],
+        "color": "#d34e76"
+    },
+    {
+        "name": "Kamen Rider Kabuto (Hyper Form)",
+        "desc": "Berjalan di jalan surga, menguasai segalanya. 'Cast Off: Change Beetle'.",
+        "tier": "BONUS ENEMY",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1501107993834557531/kabuto.JPG?ex=69fadf42&is=69f98dc2&hm=932005c081530c5a6ea810e2495bb3769b44e5a479c9e5430d31de4870791bc1&",
+        "hp": 5200,
+        "atk": 145,
+        "def": 85,
+        "agl": 160,
+        "reward": [
+            "exp+12000",
+            "cns+5000",
+            "krm+300"
+        ],
+        "skills": [
+            {
+                "name": "Hyper Clock Up",
+                "func": "AGL+60"
+            },
+            {
+                "name": "Hyper Kick",
+                "func": "DMG+170"
+            },
+            {
+                "name": "Perfect Zecter",
+                "func": "ATK+40"
+            },
+            {
+                "name": "Kabuto Power, TheBee Power, Drake Power, Sasword Power... ALL ZECTERS COMBINED",
+                "func": "dmg+100%"
+            }
+        ],
+        "color": "#de51ee"
+    },
+    {
+        "name": "Kamen Rider Den-O (Liner)",
+        "desc": "Ksatria kereta waktu yang melampaui imajinasi.",
+        "tier": "BONUS ENEMY",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1501107993352077342/den-o.JPG?ex=69fadf42&is=69f98dc2&hm=6ed03773fa55e9b5883093ef24dbeb686c203a1c3732b58a08dfa473a8e9c9e6&",
+        "hp": 5600,
+        "atk": 140,
+        "def": 95,
+        "agl": 105,
+        "reward": [
+            "exp+12000",
+            "cns+5000",
+            "krm+300"
+        ],
+        "skills": [
+            {
+                "name": "Densha Giri",
+                "func": "DMG+110"
+            },
+            {
+                "name": "Full Charge",
+                "func": "DMG+25%"
+            }
+        ],
+        "color": "#e658d6"
+    },
+    {
+        "name": "Kamen Rider Kiva (Emperor)",
+        "desc": "Pewaris takhta Fangire yang legendaris. 'Wake Up!'.",
+        "tier": "BONUS ENEMY",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1501107992588849172/kiva.JPG?ex=69fadf42&is=69f98dc2&hm=500cd02a5cb6b23fe7e7dce64fa19a51ae9365c032852db9f67ca4130c70f6d6&",
+        "hp": 5900,
+        "atk": 150,
+        "def": 100,
+        "agl": 100,
+        "reward": [
+            "exp+12000",
+            "cns+5000",
+            "krm+300"
+        ],
+        "skills": [
+            {
+                "name": "Emperor Moon Break",
+                "func": "DMG+130"
+            },
+            {
+                "name": "Zanvat Sword Slash",
+                "func": "DMG+30%"
+            },
+            {
+                "name": "WAKE UP FEVER",
+                "func": "agl+15"
+            }
+        ],
+        "color": "#dd737c"
+    },
+    {
+        "name": "Kamen Rider Decade (Complete)",
+        "desc": "Sang Penghancur Dunia. 'I'm just a passing-through Kamen Rider, remember that!'.",
+        "tier": "BONUS ENEMY",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1501107991892725900/decade.JPG?ex=69fadf42&is=69f98dc2&hm=c0d74e4c0e43f1c81e336c1b31fd7f08c5bb9e912274be3b5c32626a216232cd&",
+        "hp": 8500,
+        "atk": 170,
+        "def": 120,
+        "agl": 120,
+        "reward": [
+            "exp+15000",
+            "cns+7000",
+            "krm+500"
+        ],
+        "skills": [
+            {
+                "name": "Dimension Slash",
+                "func": "DMG+220"
+            },
+            {
+                "name": "Final Attack Ride",
+                "func": "DMG+60%"
+            },
+            {
+                "name": "Attack Ride: Illusion",
+                "func": "AGL+40"
+            },
+            {
+                "name": "FINAL KAMEN ATTACK FORM RIDE: DE-DE-DECADE!",
+                "func": "dmg+100%"
+            }
+        ],
+        "color": "#456e48"
+    }
+]

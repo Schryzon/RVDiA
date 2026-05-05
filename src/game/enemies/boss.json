@@ -38,7 +38,8 @@
                 "name": "Die, Hero",
                 "func": "dmg+100%"
             }
-        ]
+        ],
+        "color": "#59c2e1"
     },
     {
         "name": "RVDiA",
@@ -75,40 +76,8 @@
                 "name": "I'm Sorry",
                 "func": "dmg+30%"
             }
-        ]
-    },
-    {
-        "name": "Shiruto",
-        "desc": "Jiwa yang terpisah dari realita utama.",
-        "tier": "SUPER BOSS",
-        "avatar": "https://cdn.discordapp.com/avatars/735653554165121086/f92ce78ea1e6f1ba95c4b7c539c61b05.png?size=512",
-        "hp": 3500,
-        "atk": 110,
-        "def": 80,
-        "agl": 95,
-        "reward": [
-            "exp+5000",
-            "cns+2000",
-            "krm+100"
         ],
-        "skills": [
-            {
-                "name": "Burst Slash",
-                "func": "dmg+50"
-            },
-            {
-                "name": "I'm Just Toying With You",
-                "func": "def-20"
-            },
-            {
-                "name": "Let's Get Serious",
-                "func": "agl+20"
-            },
-            {
-                "name": "Step it Up, Will You?",
-                "func": "agl-15"
-            }
-        ]
+        "color": "#56fa5f"
     },
     {
         "name": "Pandora",
@@ -137,7 +106,8 @@
                 "name": "Pandora Paradox",
                 "func": "atk-25"
             }
-        ]
+        ],
+        "color": "#e55c62"
     },
     {
         "name": "Historia",
@@ -174,7 +144,8 @@
                 "name": "Lagtanis Fulguros",
                 "func": "hp-15%"
             }
-        ]
+        ],
+        "color": "#f8c9cc"
     },
     {
         "name": "Mira",
@@ -207,7 +178,8 @@
                 "name": "Sisterly Bond",
                 "func": "def+15"
             }
-        ]
+        ],
+        "color": "#5b71ef"
     },
     {
         "name": "Victoria",
@@ -240,7 +212,8 @@
                 "name": "Dark Shield",
                 "func": "def+30"
             }
-        ]
+        ],
+        "color": "#dfeede"
     },
     {
         "name": "Zalvia & Sairan",
@@ -269,7 +242,8 @@
                 "name": "Share a Life",
                 "func": "hp-100"
             }
-        ]
+        ],
+        "color": "#cf43e5"
     },
     {
         "name": "VeRiTAS",
@@ -306,6 +280,7 @@
                 "name": "Endless Evolution",
                 "func": "def-15"
             }
-        ]
+        ],
+        "color": "#f74858"
     }
 ]

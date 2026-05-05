@@ -34,7 +34,8 @@
                 "name": "Fulguros",
                 "func": "hp-10%"
             }
-        ]
+        ],
+        "color": "#7dda41"
     },
     {
         "name": "Daiki",
@@ -71,7 +72,8 @@
                 "name": "Ryuukufu",
                 "func": "def-12"
             }
-        ]
+        ],
+        "color": "#d9fd58"
     },
     {
         "name": "Yizai Qi",
@@ -104,7 +106,8 @@
                 "name": "Yuanyuan Lingqi",
                 "func": "hp+25%"
             }
-        ]
+        ],
+        "color": "#ef5bfc"
     },
     {
         "name": "Rahjda",
@@ -137,7 +140,8 @@
                 "name": "Dharati Ka Gussa",
                 "func": "atk+20"
             }
-        ]
+        ],
+        "color": "#656aee"
     },
     {
         "name": "Arheious",
@@ -170,7 +174,8 @@
                 "name": "Hydrokroustas",
                 "func": "dmg+35"
             }
-        ]
+        ],
+        "color": "#58f47a"
     },
     {
         "name": "ViRTUE",
@@ -203,6 +208,7 @@
                 "name": "Flames of VORTeX",
                 "func": "agl+15"
             }
-        ]
+        ],
+        "color": "#f5da7f"
     }
 ]

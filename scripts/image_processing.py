@@ -538,21 +538,49 @@ class Image_Ops:
 
     # --- I/O ---
     @staticmethod
-    def read(path: str, grayscale: bool = False) -> ArrayLike:
+    def read(path: str, grayscale: bool = False, mode: Literal["imread", "opencv"] = "imread") -> ArrayLike:
+        """Reads an image from path.
+        
+        Parameters
+        ----------
+        path : str
+            Path to the image file.
+        grayscale : bool
+            If True, reads as grayscale.
+        mode : 'imread' | 'opencv'
+            'imread' (default): returns RGB (standard behavior).
+            'opencv': returns BGR (OpenCV native behavior).
+        """
         if not isinstance(path, str) or not path.strip():
             raise ValueError("path must be a non-empty string.")
         flag = cv2.IMREAD_GRAYSCALE if grayscale else cv2.IMREAD_COLOR
         img = cv2.imread(path, flag)
         if img is None:
             raise FileNotFoundError(f"Could not read image from path: {path}")
-        if not grayscale:
+        if not grayscale and mode == "imread":
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         return img
 
     @staticmethod
-    def show(image: ArrayLike, title: str = "Image", show_axis: bool = False) -> None:
-        """Display an image. Set show_axis=True to see pixel coordinates."""
+    def show(image: ArrayLike, title: str = "Image", show_axis: bool = False, mode: Literal["rgb", "bgr"] = "rgb") -> None:
+        """Display an image. Set show_axis=True to see pixel coordinates.
+        
+        Parameters
+        ----------
+        image : ArrayLike
+            Image to display.
+        title : str
+            Plot title.
+        show_axis : bool
+            Whether to show pixel coordinates.
+        mode : 'rgb' | 'bgr'
+            'rgb' (default): Standard color order for matplotlib.
+            'bgr': OpenCV color order (will be converted to RGB for display).
+        """
         image = to_cpu(_validate_image(image))
+        if image.ndim == 3 and mode == "bgr":
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            
         plt.figure(figsize=(6, 6))
         plt.imshow(image, cmap="gray" if image.ndim == 2 else None)
         plt.title(title)
@@ -604,9 +632,16 @@ class Image_Ops:
         return [Image_Ops.create_blank_like(img, color=color) for img in images]
 
     @staticmethod
-    def show_pair(original: ArrayLike, processed: ArrayLike, title_left: str = "Before", title_right: str = "After", show_axis: bool = False) -> None:
+    def show_pair(original: ArrayLike, processed: ArrayLike, title_left: str = "Before", title_right: str = "After", show_axis: bool = False, mode: Literal["rgb", "bgr"] = "rgb") -> None:
         original = to_cpu(_validate_image(original, name="original"))
         processed = to_cpu(_validate_image(processed, name="processed"))
+        
+        if mode == "bgr":
+            if original.ndim == 3:
+                original = cv2.cvtColor(original, cv2.COLOR_BGR2RGB)
+            if processed.ndim == 3:
+                processed = cv2.cvtColor(processed, cv2.COLOR_BGR2RGB)
+                
         plt.figure(figsize=(12, 5))
         plt.subplot(1, 2, 1)
         plt.title(title_left)
@@ -626,6 +661,7 @@ class Image_Ops:
         image: ArrayLike, title: str = "Pixel Inspector",
         show_grid: bool = False, colorbar: bool = True,
         figsize: tuple[int, int] = (10, 8),
+        mode: Literal["rgb", "bgr"] = "rgb"
     ) -> None:
         """Interactive pixel inspector with zoom/pan and hover coordinate readout.
 
@@ -649,6 +685,8 @@ class Image_Ops:
             Figure size in inches.
         """
         image = to_cpu(_validate_image(image))
+        if image.ndim == 3 and mode == "bgr":
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         h, w = image.shape[:2]
         fig, ax = plt.subplots(figsize=figsize)
 
@@ -692,6 +730,7 @@ class Image_Ops:
         share_zoom: bool = True,
         show_grid: bool = False,
         figsize: tuple[int, int] | None = None,
+        mode: Literal["rgb", "bgr"] = "rgb"
     ) -> None:
         """Interactive multi-image inspector with optional shared zoom/pan.
 
@@ -751,6 +790,8 @@ class Image_Ops:
             r, c = divmod(i, ncols)
             ax = axes[r][c]
             img = to_cpu(_validate_image(images[i], name=f"images[{i}]"))
+            if mode == "bgr" and img.ndim == 3:
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             ih, iw = img.shape[:2]
 
             kw = dict(interpolation="nearest")
@@ -791,7 +832,8 @@ class Image_Ops:
         ncols: int | None = None,
         figsize: tuple[int, int] | None = None,
         show_axis: bool = False,
-        cmap: str | None = "auto"
+        cmap: str | None = "auto",
+        mode: Literal["rgb", "bgr"] = "rgb"
     ) -> None:
         """Static grid display of multiple images.
 
@@ -830,6 +872,8 @@ class Image_Ops:
             plt.subplot(nrows, ncols, i + 1)
             
             img_cpu = to_cpu(_validate_image(img, name=f"images[{i}]"))
+            if mode == "bgr" and img_cpu.ndim == 3:
+                img_cpu = cv2.cvtColor(img_cpu, cv2.COLOR_BGR2RGB)
             
             # Dynamic cmap logic
             current_cmap = cmap
@@ -1221,10 +1265,35 @@ class Image_Ops:
 
     # --- Color ---
     @staticmethod
-    def to_grayscale(image: ArrayLike) -> ArrayLike:
-        image = to_cpu(_validate_image(image))
+    def to_grayscale(image: ArrayLike, method: Literal["opencv", "manual", "average"] = "opencv") -> ArrayLike:
+        """Converts a color image to grayscale.
+        
+        Parameters
+        ----------
+        image : ArrayLike
+            Color image to convert.
+        method : 'opencv' | 'manual' | 'average'
+            'opencv' (default): Uses cv2.cvtColor (standard weighted).
+            'manual': Uses Gray = 0.299R + 0.587G + 0.114B.
+            'average': Uses Gray = (R + G + B) / 3.
+        """
+        image = _validate_image(image)
         if image.ndim == 2:
             return image.copy()
+        
+        if method == "manual":
+            xp_mod = _xp(image)
+            img_f = image.astype(xp_mod.float32)
+            r, g, b = img_f[..., 0], img_f[..., 1], img_f[..., 2]
+            gray = 0.299 * r + 0.587 * g + 0.114 * b
+            return gray.astype(image.dtype)
+            
+        if method == "average":
+            xp_mod = _xp(image)
+            img_f = image.astype(xp_mod.float32)
+            gray = img_f.mean(axis=2)
+            return gray.astype(image.dtype)
+            
         return cv2.cvtColor(to_cpu(image), cv2.COLOR_RGB2GRAY)
 
     @staticmethod
@@ -1273,10 +1342,57 @@ class Image_Ops:
         return [image[..., i] for i in range(image.shape[2])]
 
     @staticmethod
+    def rgb_split(image: ArrayLike) -> tuple[ArrayLike, ArrayLike, ArrayLike]:
+        """Extracts R, G, B channels from a color image."""
+        image = _validate_image(image)
+        if image.ndim != 3 or image.shape[2] < 3:
+            raise ValueError("rgb_split requires a 3-channel color image.")
+        return image[..., 0], image[..., 1], image[..., 2]
+
+    @staticmethod
     def channel_merge(channels: Sequence[ArrayLike]) -> ArrayLike:
         if len(channels) == 0:
             raise ValueError("channels must be non-empty.")
         return np.stack(channels, axis=-1)
+
+    @staticmethod
+    def rgb_merge(r: ArrayLike, g: ArrayLike, b: ArrayLike) -> ArrayLike:
+        """Recombines R, G, B channels into a color image."""
+        r = _validate_image(r, name="r")
+        g = _validate_image(g, name="g")
+        b = _validate_image(b, name="b")
+        xp_mod = _xp(r)
+        return xp_mod.stack([r, g, b], axis=-1)
+
+    @staticmethod
+    def show_rgb_channels(image: ArrayLike, title: str = "RGB Channels", figsize: tuple[int, int] = (15, 5), mode: Literal["rgb", "bgr"] = "rgb") -> None:
+        """Displays the original image and its R, G, B channels side-by-side.
+        
+        Parameters
+        ----------
+        image : ArrayLike
+            Color image to visualize.
+        title : str
+            Title for the entire plot.
+        figsize : tuple[int, int]
+            Figure size.
+        mode : 'rgb' | 'bgr'
+            Color mode of the input image.
+        """
+        image = to_cpu(_validate_image(image))
+        if image.ndim != 3:
+            raise ValueError("show_rgb_channels requires a 3-channel color image.")
+        
+        # If BGR, convert to RGB for standard splitting logic
+        if mode == "bgr":
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            
+        r, g, b = Image_Ops.rgb_split(image)
+        
+        titles = ["Original", "Red Channel", "Green Channel", "Blue Channel"]
+        images = [image, r, g, b]
+        
+        Image_Ops.show_collection(images, titles=titles, ncols=4, figsize=figsize)
 
     # --- Pixel ops ---
     @staticmethod
@@ -3030,8 +3146,13 @@ decimate_image = Image_Ops.undilate
 decimate_image_keep_resolution = Image_Ops.undilate_keep_resolution
 decimate_image_float = Image_Ops.downsample
 decimate_image_keep_resolution_float = Image_Ops.downsample_keep_resolution
+
 invert_colors = Image_Ops.invert
 threshold_image = Image_Ops.to_binary
+to_grayscale = Image_Ops.to_grayscale
+rgb_split = Image_Ops.rgb_split
+rgb_merge = Image_Ops.rgb_merge
+show_rgb_channels = Image_Ops.show_rgb_channels
 add_to_image = Image_Ops.add
 subtract_from_image = Image_Ops.subtract
 multiply_image = Image_Ops.multiply

@@ -1,51 +1,115 @@
 [
     {
-        "name":"Slippy Slime",
-        "desc":"Makhluk berbahaya menyerupai substansi kenyal.",
-        "tier":"LOW",
-        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122156473275924600/20230624_201436.png",
-        "hp":80,
-        "atk":12,
-        "def":8,
-        "agl":10,
-        "reward":["exp+15","cns+10","krm+1"],
-        "skills":[{"name":"Slime Headbutt","func":"dmg+15"},{"name":"Slime Shoot","func":"dmg+25"},{"name":"Reshape","func":"hp+20"}]
+        "name": "Slippy Slime",
+        "desc": "Makhluk berbahaya menyerupai substansi kenyal.",
+        "tier": "LOW",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122156473275924600/20230624_201436.png",
+        "hp": 80,
+        "atk": 12,
+        "def": 8,
+        "agl": 10,
+        "reward": [
+            "exp+15",
+            "cns+10",
+            "krm+1"
+        ],
+        "skills": [
+            {
+                "name": "Slime Headbutt",
+                "func": "dmg+15"
+            },
+            {
+                "name": "Slime Shoot",
+                "func": "dmg+25"
+            },
+            {
+                "name": "Reshape",
+                "func": "hp+20"
+            }
+        ],
+        "color": "#57cace"
     },
     {
-        "name":"Novice Hunter",
-        "desc":"Pemburu tingkat pemula yang sedang berlatih.",
-        "tier":"LOW",
-        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122156472512544809/20230624_201413.png",
-        "hp":100,
-        "atk":15,
-        "def":10,
-        "agl":15,
-        "reward":["exp+20","cns+15","krm+2"],
-        "skills":[{"name":"Arrow Shot","func":"dmg+10"},{"name":"First Aid","func":"hp+30"},{"name":"Hunter Instinct","func":"agl+8"}]
+        "name": "Novice Hunter",
+        "desc": "Pemburu tingkat pemula yang sedang berlatih.",
+        "tier": "LOW",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122156472512544809/20230624_201413.png",
+        "hp": 100,
+        "atk": 15,
+        "def": 10,
+        "agl": 15,
+        "reward": [
+            "exp+20",
+            "cns+15",
+            "krm+2"
+        ],
+        "skills": [
+            {
+                "name": "Arrow Shot",
+                "func": "dmg+10"
+            },
+            {
+                "name": "First Aid",
+                "func": "hp+30"
+            },
+            {
+                "name": "Hunter Instinct",
+                "func": "agl+8"
+            }
+        ],
+        "color": "#c170c1"
     },
     {
-        "name":"Reivyun",
-        "desc":"Suku kuno di Revolution Dreamland.",
-        "tier":"SUPER LOW",
-        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122156472860680252/20230624_201345.png",
-        "hp":120,
-        "atk":18,
-        "def":12,
-        "agl":12,
-        "reward":["exp+25","cns+20","krm+3"],
-        "skills":[{"name":"United Strike","func":"dmg+20"},{"name":"Strong Roar","func":"atk+15"}]
+        "name": "Reivyun",
+        "desc": "Suku kuno di Revolution Dreamland.",
+        "tier": "SUPER LOW",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122156472860680252/20230624_201345.png",
+        "hp": 120,
+        "atk": 18,
+        "def": 12,
+        "agl": 12,
+        "reward": [
+            "exp+25",
+            "cns+20",
+            "krm+3"
+        ],
+        "skills": [
+            {
+                "name": "United Strike",
+                "func": "dmg+20"
+            },
+            {
+                "name": "Strong Roar",
+                "func": "atk+15"
+            }
+        ],
+        "color": "#6bed5a"
     },
     {
-        "name":"New Hero",
-        "desc":"Petualang baru di Re:Volution.",
-        "tier":"SUPER LOW",
-        "avatar":"https://cdn.discordapp.com/attachments/978258193710985246/1122156473674367057/20230624_201513.png",
-        "hp":130,
-        "atk":20,
-        "def":15,
-        "agl":10,
-        "reward":["exp+22","cns+18","krm+3"],
-        "skills":[{"name":"Healing Light","func":"hp+40"},{"name":"Focus","func":"agl+15"}]
+        "name": "New Hero",
+        "desc": "Petualang baru di Re:Volution.",
+        "tier": "SUPER LOW",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122156473674367057/20230624_201513.png",
+        "hp": 130,
+        "atk": 20,
+        "def": 15,
+        "agl": 10,
+        "reward": [
+            "exp+22",
+            "cns+18",
+            "krm+3"
+        ],
+        "skills": [
+            {
+                "name": "Healing Light",
+                "func": "hp+40"
+            },
+            {
+                "name": "Focus",
+                "func": "agl+15"
+            }
+        ],
+        "color": "#79e0e4"
     },
     {
         "name": "Mudling",
@@ -56,8 +120,22 @@
         "atk": 18,
         "def": 20,
         "agl": 5,
-        "reward": ["exp+28","cns+25","krm+4"],
-        "skills": [{"name": "Mud Splash","func": "dmg+20"},{"name": "Earthen Shield","func": "def+25"}]
+        "reward": [
+            "exp+28",
+            "cns+25",
+            "krm+4"
+        ],
+        "skills": [
+            {
+                "name": "Mud Splash",
+                "func": "dmg+20"
+            },
+            {
+                "name": "Earthen Shield",
+                "func": "def+25"
+            }
+        ],
+        "color": "#6fe4df"
     },
     {
         "name": "Blossomling",
@@ -68,8 +146,26 @@
         "atk": 22,
         "def": 10,
         "agl": 15,
-        "reward": ["exp+24","cns+20","krm+4"],
-        "skills": [{"name": "Toxic Bloom","func": "dmg+25"},{"name": "Petal Shield","func": "def+15"},{"name": "Photosynthesa Melody","func": "hp+30"}]
+        "reward": [
+            "exp+24",
+            "cns+20",
+            "krm+4"
+        ],
+        "skills": [
+            {
+                "name": "Toxic Bloom",
+                "func": "dmg+25"
+            },
+            {
+                "name": "Petal Shield",
+                "func": "def+15"
+            },
+            {
+                "name": "Photosynthesa Melody",
+                "func": "hp+30"
+            }
+        ],
+        "color": "#c2cef9"
     },
     {
         "name": "Nature Seeker",
@@ -80,8 +176,26 @@
         "atk": 24,
         "def": 15,
         "agl": 10,
-        "reward": ["exp+24","cns+20","krm+4"],
-        "skills": [{"name": "Floral Strike","func": "dmg+25"},{"name": "Natural Insight","func": "agl+10"},{"name": "Plant Regrowth","func": "hp+35"}]
+        "reward": [
+            "exp+24",
+            "cns+20",
+            "krm+4"
+        ],
+        "skills": [
+            {
+                "name": "Floral Strike",
+                "func": "dmg+25"
+            },
+            {
+                "name": "Natural Insight",
+                "func": "agl+10"
+            },
+            {
+                "name": "Plant Regrowth",
+                "func": "hp+35"
+            }
+        ],
+        "color": "#e6ccd7"
     },
     {
         "name": "Bubbles",
@@ -92,8 +206,26 @@
         "atk": 24,
         "def": 18,
         "agl": 10,
-        "reward": ["exp+30","cns+25","krm+5"],
-        "skills": [{"name": "Toxic Burst","func": "dmg+25"},{"name": "Acidic Spray","func": "dmg+15"},{"name": "Viscous Form","func": "def+20"}]
+        "reward": [
+            "exp+30",
+            "cns+25",
+            "krm+5"
+        ],
+        "skills": [
+            {
+                "name": "Toxic Burst",
+                "func": "dmg+25"
+            },
+            {
+                "name": "Acidic Spray",
+                "func": "dmg+15"
+            },
+            {
+                "name": "Viscous Form",
+                "func": "def+20"
+            }
+        ],
+        "color": "#fae663"
     },
     {
         "name": "Grove Prowler",
@@ -104,7 +236,25 @@
         "atk": 30,
         "def": 12,
         "agl": 25,
-        "reward": ["exp+35","cns+30","krm+6"],
-        "skills": [{"name": "Claw Swipe","func": "dmg+20"},{"name": "Fleet-footed","func": "agl+25"},{"name": "Predatory Instinct","func": "atk+15"}]
+        "reward": [
+            "exp+35",
+            "cns+30",
+            "krm+6"
+        ],
+        "skills": [
+            {
+                "name": "Claw Swipe",
+                "func": "dmg+20"
+            },
+            {
+                "name": "Fleet-footed",
+                "func": "agl+25"
+            },
+            {
+                "name": "Predatory Instinct",
+                "func": "atk+15"
+            }
+        ],
+        "color": "#e5c3da"
     }
 ]

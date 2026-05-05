@@ -30,7 +30,8 @@
                 "name": "Unwavering Speed",
                 "func": "agl+10"
             }
-        ]
+        ],
+        "color": "#7df1eb"
     },
     {
         "name": "KOU-RAI",
@@ -67,7 +68,8 @@
                 "name": "I.C.B.M",
                 "func": "dmg+45"
             }
-        ]
+        ],
+        "color": "#5f4156"
     },
     {
         "name": "AKA-ZUMI",
@@ -100,7 +102,8 @@
                 "name": "Maniac Stare",
                 "func": "agl-15"
             }
-        ]
+        ],
+        "color": "#4174c8"
     },
     {
         "name": "SHIN-KURO",
@@ -129,7 +132,8 @@
                 "name": "Crushing Uppercut",
                 "func": "dmg+25"
             }
-        ]
+        ],
+        "color": "#77d5cf"
     },
     {
         "name": "CHI-SAKI",
@@ -158,7 +162,8 @@
                 "name": "Relentless Punch",
                 "func": "dmg+40"
             }
-        ]
+        ],
+        "color": "#776969"
     },
     {
         "name": "FEI-XANG",
@@ -183,7 +188,8 @@
                 "name": "Zengjia Liliang",
                 "func": "atk+18"
             }
-        ]
+        ],
+        "color": "#efeaea"
     },
     {
         "name": "LRSF",
@@ -216,6 +222,7 @@
                 "name": "Snipe 'em",
                 "func": "dmg+60"
             }
-        ]
+        ],
+        "color": "#5561c3"
     }
 ]

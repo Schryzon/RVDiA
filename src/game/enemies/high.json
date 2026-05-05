@@ -26,7 +26,8 @@
                 "name": "Knightly Strength",
                 "func": "atk+12"
             }
-        ]
+        ],
+        "color": "#5bee71"
     },
     {
         "name": "Nyrion",
@@ -55,7 +56,8 @@
                 "name": "Mentality Crusher",
                 "func": "def-12"
             }
-        ]
+        ],
+        "color": "#63446b"
     },
     {
         "name": "Carmendria",
@@ -84,7 +86,8 @@
                 "name": "Lifesteal",
                 "func": "hp-60"
             }
-        ]
+        ],
+        "color": "#df4e73"
     },
     {
         "name": "Reinvier",
@@ -113,7 +116,8 @@
                 "name": "Lifesteal",
                 "func": "hp-50"
             }
-        ]
+        ],
+        "color": "#f45e48"
     },
     {
         "name": "JIN-SUCHI",
@@ -142,7 +146,8 @@
                 "name": "Evasion",
                 "func": "agl+15"
             }
-        ]
+        ],
+        "color": "#da71c5"
     },
     {
         "name": "HIRO-KAZE",
@@ -171,7 +176,8 @@
                 "name": "Tempest Rage",
                 "func": "atk+18"
             }
-        ]
+        ],
+        "color": "#eafaf1"
     },
     {
         "name": "MIKA-DARYA",
@@ -200,7 +206,8 @@
                 "name": "Shadowmeld",
                 "func": "agl+15"
             }
-        ]
+        ],
+        "color": "#d7fdf3"
     },
     {
         "name": "VORTeX",
@@ -229,6 +236,7 @@
                 "name": "Hydro Healing",
                 "func": "hp-50"
             }
-        ]
+        ],
+        "color": "#ccc776"
     }
 ]

@@ -158,7 +158,7 @@ class GameInstance():
             tier_karma = {
                 "LOW": 5, "NORMAL": 10, "HIGH": 20, "ELITE": 35, 
                 "SUPER ELITE": 50, "BOSS": 75, "SUPER BOSS": 100,
-                "FINAL BOSS": 200
+                "BONUS ENEMY": 150, "FINAL BOSS": 200
             }
             self.p2_karma = tier_karma.get(self.user2.get('tier'), 10)
             self.user2_max_hp = self.user2_hp
@@ -534,7 +534,7 @@ class GameInstance():
                         embed.set_author(name='Info Lawan:')
                     
                     else:
-                        embed = discord.Embed(title=self.user2['name'], color=0xff0000)
+                        embed = discord.Embed(title=self.user2['name'], color=discord.Color.from_str(self.user2.get('color', '#ff0000')))
                         embed.description = f"\"{self.user2['desc']}\"\nHP: `{self.user2_hp}`/`{datas[1]['hp']}`\nBertahan? `{'TIDAK' if self.user2_defend is False else 'YA'}`"
                         embed.add_field(
                             name="Statisik Tempur",
@@ -662,7 +662,7 @@ class GameInstance():
                         if is_crit: title = f"✨ CRITICAL HIT! ✨"
                         if is_dodge: title = f"💫 MIRACLE DODGE! 💫"
                         
-                        embed = discord.Embed(title=title, color=0xff0000 if not is_crit else discord.Color.gold())
+                        embed = discord.Embed(title=title, color=discord.Color.from_str(self.user2.get('color', '#ff0000')) if not is_crit else discord.Color.gold())
                         
                         if is_dodge:
                             embed.description = f"**{self.user1.display_name}** berhasil menghindari serangan secara ajaib!"
@@ -679,7 +679,7 @@ class GameInstance():
 
                     case "defend":
                         self.defend(self.user2)
-                        embed = discord.Embed(title=f'🛡️{self.user2["name"]} Melindungi Diri!', color=0xff0000)
+                        embed = discord.Embed(title=f'🛡️{self.user2["name"]} Melindungi Diri!', color=discord.Color.from_str(self.user2.get('color', '#ff0000')))
                         embed.description = f"**Defense bertambah untuk serangan selanjutnya!**"
                         try:
                             embed.set_thumbnail(url = self.enemy_avatar)
@@ -692,12 +692,12 @@ class GameInstance():
 
                     case "check":
                         self.ai_knows_user = True
-                        embed = discord.Embed(title=f"🔍 {self.user2['name']} sedang memperhatikanmu...", color=0x3498db)
+                        embed = discord.Embed(title=f"🔍 {self.user2['name']} sedang memperhatikanmu...", color=discord.Color.from_str(self.user2.get('color', '#3498db')))
                         embed.description = (
                             f"**{self.user2['name']}** sedang membaca alur seranganmu!\n"
                             f"\"Hmm... jadi ini kemampuanmu yang sebenarnya?\"\n\n"
                             f"📊 **Analisa Target:**\n"
-                            f"• HP: `{self.user1_hp}`/`100`\n"
+                            f"• HP: `{self.user1_hp}`/`{self.user1_max_hp}`\n"
                             f"• Attack: `{self.user1_stats[0]}`\n"
                             f"• Defense: `{self.user1_stats[1]}`\n"
                             f"• Agility: `{self.user1_stats[2]}`"
@@ -710,7 +710,7 @@ class GameInstance():
 
                     case "skip":
                         self.defend(self.user2) # Skipping turn gives a minor defense boost
-                        embed = discord.Embed(title=f"⌚ {self.user2['name']} Menunggu...", color=0x95a5a6)
+                        embed = discord.Embed(title=f"⌚ {self.user2['name']} Menunggu...", color=discord.Color.from_str(self.user2.get('color', '#95a5a6')))
                         embed.description = f"**{self.user2['name']}** tidak melakukan apa-apa dan beralih ke posisi siaga."
                         try:
                             embed.set_thumbnail(url = self.enemy_avatar)
@@ -719,7 +719,7 @@ class GameInstance():
                         await self.ctx.channel.send(embed=embed)
 
                     case "run":
-                        embed = discord.Embed(title=f'🏃{self.user2["name"]} Kabur!', color=0xff0000)
+                        embed = discord.Embed(title=f'🏃{self.user2["name"]} Kabur!', color=discord.Color.from_str(self.user2.get('color', '#ff0000')))
                         embed.description = f"**Sayang sekali!\nCoba lagi nanti!**"
                         embed.set_footer(text="Tidak ada hadiah ketika musuh kabur!")
                         try:
@@ -784,7 +784,7 @@ class GameInstance():
                         'Selalu ingat untuk memeriksa status musuhmu!'
                         ]
                 tips = random.choice(tips)
-                embed = discord.Embed(title=f"Kamu Kalah!", color=0xff0000)
+                embed = discord.Embed(title=f"Kamu Kalah!", color=discord.Color.from_str(self.user2.get('color', '#ff0000')))
                 embed.description = f"{self.user2['name']} menang dengan `{self.user2_hp}` HP tersisa!"
                 embed.set_footer(text=f'Tip: {tips}')
                 try:
@@ -1266,7 +1266,7 @@ class PaginatedEnemyView(View):
     def __init__(self, ctx):
         super().__init__(timeout=120)
         self.ctx = ctx
-        self.tiers = ['boss', 'elite', 'high', 'normal', 'low']
+        self.tiers = ['boss', 'bonus', 'elite', 'high', 'normal', 'low']
         self.current_tier_index = 0
         self.enemies = []
 
@@ -1344,6 +1344,10 @@ class EnemyDropdown(discord.ui.Select):
                 value='normal'
             ))
         options.append(discord.SelectOption(
+                label='Bonus',
+                value='bonus'
+            ))
+        options.append(discord.SelectOption(
                 label='Low',
                 value='low'
             ))
@@ -1389,7 +1393,7 @@ class SpecificEnemyDropdown(discord.ui.Select):
     async def callback(self, interaction: discord.Interaction):
         enemy = self.enemies[int(self.values[0])]
         
-        embed = discord.Embed(title=f"Detail Musuh: {enemy['name']}", description=f"*{enemy['desc']}*", color=0xff0000)
+        embed = discord.Embed(title=f"Detail Musuh: {enemy['name']}", description=f"*{enemy['desc']}*", color=discord.Color.from_str(enemy.get('color', '#ff0000')))
         embed.add_field(name="Tier", value=f"`{enemy['tier']}`", inline=True)
         embed.add_field(name="HP", value=f"`{enemy['hp']}`", inline=True)
         embed.add_field(name="Stats (A/D/Ag)", value=f"`{enemy['atk']}/{enemy['def']}/{enemy['agl']}`", inline=True)
@@ -2115,6 +2119,7 @@ class Game(commands.Cog):
     @app_commands.rename(enemy_name = 'nama_musuh')
     @app_commands.choices(enemy_tier=[
         app_commands.Choice(name='BOSS', value='boss'),
+        app_commands.Choice(name='BONUS', value='bonus'),
         app_commands.Choice(name='ELITE', value='elite'),
         app_commands.Choice(name='High (Tinggi)', value='high'),
         app_commands.Choice(name="Normal (Sedang)", value='normal'),
