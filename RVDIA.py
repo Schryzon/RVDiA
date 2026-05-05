@@ -339,7 +339,7 @@ async def send_reply_message(msg:discord.Message, message_embed:discord.Embed):
         )
         
         result = await client.aio.models.generate_content(
-            model='gemini-1.5-flash',
+            model='gemini-3-flash-preview',
             contents=message,
             config=types.GenerateContentConfig(
                 system_instruction=sys_inst
