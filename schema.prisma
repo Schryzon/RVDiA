@@ -92,7 +92,7 @@ model Memory {
   id        Int                      @id @default(autoincrement())
   userId    BigInt
   content   String
-  embedding Unsupported("vector(768)")?
+  embedding Unsupported("vector(384)")?
   createdAt DateTime                 @default(now())
 
   @@index([userId])
