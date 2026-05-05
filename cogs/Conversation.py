@@ -249,25 +249,25 @@ class Conversation(commands.Cog):
             max_retries = 2
             for attempt in range(max_retries + 1):
                 try:
-                # Check if the query might need search
-                search_context = ""
-                needs_search = any(kw in message.lower() for kw in ["kapan", "siapa", "dimana", "berita", "terbaru", "harga", "cek"])
-                if needs_search:
-                    results = await search_web(message)
-                    search_context = format_search_results(results)
+                    # Check if the query might need search
+                    search_context = ""
+                    needs_search = any(kw in message.lower() for kw in ["kapan", "siapa", "dimana", "berita", "terbaru", "harga", "cek"])
+                    if needs_search:
+                        results = await search_web(message)
+                        search_context = format_search_results(results)
 
-                # Update system instruction with search context
-                current_sys_inst = sys_inst
-                if search_context:
-                    current_sys_inst += f"\n\nAdditional Search Context:\n{search_context}"
+                    # Update system instruction with search context
+                    current_sys_inst = sys_inst
+                    if search_context:
+                        current_sys_inst += f"\n\nAdditional Search Context:\n{search_context}"
 
-                result = await client.aio.models.generate_content(
-                    model='gemini-3-flash-preview',
-                    contents=message,
-                    config=types.GenerateContentConfig(
-                        system_instruction=current_sys_inst
+                    result = await client.aio.models.generate_content(
+                        model='gemini-3-flash-preview',
+                        contents=message,
+                        config=types.GenerateContentConfig(
+                            system_instruction=current_sys_inst
+                        )
                     )
-                )
                     AI_response = result.text
                     break # Success!
                 except Exception as e:

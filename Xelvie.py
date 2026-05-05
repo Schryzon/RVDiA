@@ -149,7 +149,7 @@ ending = [". I hope you have a fantastic day at CyroN!", ". I sure hope you brou
     ]
 left = ["Did they do something bad?", "Were you feeling uncomfortable? :(", "See you on the other side!",
     "I'll miss you...", "I hope the best for them.", "\n...", "One member lost.", "Goodbye!", "I'll never forget this day...",
-    "\*Sobbing intensifies\*", "\*Sigh\*"
+    r"*Sobbing intensifies*", r"*Sigh*"
     ]
 
 @xlv.event
