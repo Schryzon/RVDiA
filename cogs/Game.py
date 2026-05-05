@@ -106,6 +106,8 @@ class GameInstance():
         self.ai_skill_usage = 0
         self.p1_skill_limit = 0
         self.p2_skill_limit = 0
+        self.ai_miss_count = 0
+        self.ai_consecutive_misses = 0
         try:
             self.enemy_avatar = self.user2['avatar'] or getenv('defaultenemy')
         except:
@@ -196,10 +198,12 @@ class GameInstance():
             damage = round(damage * 1.5)
             
         # Miss Chance: (Agl Diff * 2) + 5. High Karma reduces miss chance.
-        miss_chance = max(0, (user_2_agl - user_1_agl) * 2 + 5 - (dealer_karma / 50))
+        # Cap miss chance at 45% so it's never impossible to hit.
+        miss_chance = min(45, max(0, (user_2_agl - user_1_agl) * 2 + 5 - (dealer_karma / 50)))
         
-        # Miracle Dodge: If taker has high Karma, small chance to dodge anyway
-        dodge_chance = taker_karma / 100
+        # Miracle Dodge: If taker has high Karma, small chance to dodge anyway.
+        # Cap dodge chance at 15% to prevent frustration.
+        dodge_chance = min(15, taker_karma / 100)
         is_miracle_dodge = random.random() * 100 < dodge_chance
         
         hit_chance = 100 - miss_chance
@@ -223,6 +227,8 @@ class GameInstance():
                 self.user2_hp = self.user2_hp - damage
             else:
                 self.user1_hp = self.user1_hp - damage
+                if damage > 0:
+                    self.ai_consecutive_misses = 0
 
             return [damage, is_crit, False]
         
@@ -433,8 +439,38 @@ class GameInstance():
                         await self.ctx.channel.send(f'{user1.mention} mengurangi kelincahan dari {user2["name"]}!\n(-`{func[1]}` Agility)')
 
     async def ai_choose_skill(self, skill_set:list, ai, player):
-        skill = random.choice(skill_set)
+        # Filter skills based on turn and situation
+        turn = self.turns
+        ai_missed_a_lot = self.ai_miss_count > 3 or self.ai_consecutive_misses >= 1
+        
+        def is_finisher(func):
+            func = func.upper()
+            return "HP-100%" in func or "DMG+100%" in func or "DMG+50%" in func
+
+        def get_cat(func):
+            func = func.upper()
+            if any(x in func for x in ["DMG", "ATK+", "DEF-", "HP-", "AGL-"]): return "OFFENSIVE"
+            return "DEFENSIVE"
+
+        # 1. Filter out finishers if turn is too early
+        available_skills = [s for s in skill_set if not (is_finisher(s['func']) and turn < 10)]
+        
+        # 2. If no skills left (all are finishers), just pick one anyway if it's turn > 5
+        if not available_skills and turn > 5:
+            available_skills = skill_set
+
+        # 3. If missing often, prioritize offensive skills
+        if ai_missed_a_lot:
+            offensive = [s for s in available_skills if get_cat(s['func']) == "OFFENSIVE"]
+            if offensive:
+                available_skills = offensive
+
+        if not available_skills:
+            available_skills = skill_set # Fallback
+
+        skill = random.choice(available_skills)
         skill_func = skill['func'].upper()
+        
         await self.ctx.channel.send(f"{self.user2['name']} menggunakan skill:\n# {skill['name']}!")
         await asyncio.sleep(1)
         await self.func_converter(skill_func, ai, player)
@@ -670,6 +706,7 @@ class GameInstance():
                             embed.description = f"**`{damage}` Damage!**\nHP <@{self.user1.id}> tersisa `{self.user1_hp}` HP!"
                         else:
                             embed.description = f"Serangan {self.user2['name']} meleset!"
+                            self.ai_miss_count += 1
                             
                         try:
                             embed.set_thumbnail(url = self.enemy_avatar)
@@ -820,6 +857,8 @@ class AI():
         self.user1_stats = instance.user1_stats
         self.user2_stats = instance.user2_stats
         self.ai_skill_usage = instance.ai_skill_usage
+        self.ai_miss_count = instance.ai_miss_count
+        self.ai_consecutive_misses = instance.ai_consecutive_misses
         
         # Persistence: AI remembers if it has checked your stats
         if not hasattr(self.instance, 'ai_knows_user'):
@@ -829,14 +868,14 @@ class AI():
         if self.turns > 0 and not self.instance.ai_knows_user:
             self.actions.append("check")
             
-        if self.turns > 3:
+        if self.turns > 1: # AI can use skills earlier now
             try:
                 skills = self.user2['skills']
                 if skills:
                     self.actions.append("skill")
             except:
                 pass
-        if self.turns > 6:
+        if self.turns > 8: # Running away is harder for AI now
             self.actions.append("run")
     
     async def decide(self):
@@ -860,9 +899,22 @@ class AI():
             
             if self.user1_hp < 30: # Finisher instinct
                 self.attack_mood += 40
+
+            # Danger Analysis: If AI misses too often, it gets aggressive
+            if self.ai_miss_count > 3 or self.ai_consecutive_misses >= 1:
+                self.skill_mood += 25
+                self.attack_mood += 15
+                self.escape_mood = max(0, self.escape_mood - 10) # AI won't run if it's frustrated
         else:
             # Chance to check stats increases significantly as turns go by
             self.check_mood += (self.turns * 12)
+        
+        # Battle Duration Analysis
+        if self.turns > 12:
+            self.skill_mood += 20 # Resort to skills to end the drag
+            self.attack_mood += 10
+        if self.turns > 20:
+            self.skill_mood += 40 # Desperation
 
         if self.user1_hp > self.user2_hp:
             self.attack_mood += 12
