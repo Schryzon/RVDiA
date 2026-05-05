@@ -13,6 +13,7 @@ import time
 import random
 import json
 import math
+import difflib
 from os import getenv, listdir, path
 from prisma import Json
 from discord.ui import View, Button, button
@@ -1229,8 +1230,35 @@ class ResignButton(View):
             await interaction.response.send_message("Kamu tidak diperbolehkan berinteraksi dengan tombol ini!", ephemeral=True)
             return
         
-        user_record = await db.user.find_unique(where={'id': interaction.user.id})
-        name = user_record.data['name'] if user_record else "Unknown"
+        user_record = await db.user.find_unique(where={'id': interaction.user.id}, include={'guild': True})
+        if not user_record:
+            return await interaction.response.send_message("Akunmu tidak ditemukan!", ephemeral=True)
+
+        name = user_record.data['name']
+        
+        # Legacy Logic: Throne Transfer
+        if user_record.guild and user_record.guild.ownerId == interaction.user.id:
+            guild = user_record.guild
+            # Find all members except the owner
+            members = await db.user.find_many(where={
+                'guildId': guild.id,
+                'NOT': {'id': interaction.user.id}
+            })
+            
+            if members:
+                # Find the strongest member (highest level, then karma)
+                new_owner = sorted(members, key=lambda u: (u.data.get('level', 1), u.data.get('karma', 0)), reverse=True)[0]
+                
+                await db.guild.update(
+                    where={'id': guild.id},
+                    data={'ownerId': new_owner.id}
+                )
+                await interaction.channel.send(f"👑 **{name}** telah turun dari tahta. Tahta guild **{guild.name}** kini diwariskan kepada **{new_owner.data.get('name', 'Seseorang')}**!")
+            else:
+                # No one else in the guild, delete it
+                await db.guild.delete(where={'id': guild.id})
+                await interaction.channel.send(f"💥 Guild **{guild.name}** telah dibubarkan karena tidak ada penerus tahta.")
+
         await db.user.delete(where={'id': interaction.user.id})
         await interaction.response.send_message(f'Aku telah menghapus akunmu.\nSampai jumpa, `{name}`, di Re:Volution!')
         self.value = True
@@ -1924,8 +1952,8 @@ class Game(commands.Cog):
         if view.value is None:
             await ctx.channel.send('Waktu habis, penghapusan akun dibatalkan.')
         elif view.value:
-            await db.user.delete(where={'id': ctx.author.id})
-            await ctx.reply('Akunmu telah dihapus. Sampai jumpa lagi!')
+            # Account deletion is handled inside the ResignButton view
+            pass
 
     @game.command(aliases=['login'], description='Dapatkan bonus login harian!')
     @has_registered()
@@ -2217,10 +2245,30 @@ class Game(commands.Cog):
         enemy = None
         
         if enemy_name:
-            for dict in enemies:
-                if dict['name'].lower() == enemy_name.lower():
-                    enemy = dict
+            query = enemy_name.lower()
+            # 1. Try exact match first
+            for e in enemies:
+                if e['name'].lower() == query:
+                    enemy = e
                     break
+            
+            # 2. Substring matching
+            if not enemy:
+                for e in enemies:
+                    if query in e['name'].lower():
+                        enemy = e
+                        break
+
+            # 3. Fuzzy finder logic
+            if not enemy:
+                enemy_names = [e['name'] for e in enemies]
+                matches = difflib.get_close_matches(enemy_name, enemy_names, n=1, cutoff=0.4)
+                if matches:
+                    matched_name = matches[0]
+                    for e in enemies:
+                        if e['name'] == matched_name:
+                            enemy = e
+                            break
 
             if enemy == None:
                 return await ctx.reply(f"Aku tidak dapat menemukan musuh bernama **`{enemy_name}`** di level **`{enemy_tier.value.upper()}`**\nPastikan nama musuh dan/atau levelnya benar!", ephemeral=True)
