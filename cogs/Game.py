@@ -108,6 +108,9 @@ class GameInstance():
         self.p2_skill_limit = 0
         self.ai_miss_count = 0
         self.ai_consecutive_misses = 0
+        self.turns = 0
+        self.p1_karma = 10
+        self.p2_karma = 10
         try:
             self.enemy_avatar = self.user2['avatar'] or getenv('defaultenemy')
         except:
@@ -152,6 +155,7 @@ class GameInstance():
                 'max_hp': self.user2_max_hp,
                 'karma': self.p2_karma
             }
+            self.p2_karma = stats2.get('karma', 10)
             self.p2_skill_limit = calc_skill_limit(stats2['level'])
 
         else:
@@ -173,6 +177,8 @@ class GameInstance():
             }
 
         comp_data1['karma'] = self.p1_karma
+        self.p1_karma = self.p1_karma # Ensure instance attribute is updated
+        self.p2_karma = self.p2_karma # Ensure instance attribute is updated
         return [comp_data1, comp_data2]
 
 
@@ -491,7 +497,7 @@ class GameInstance():
         else:
             await self.ctx.reply(f"⚔️ Perang dimulai!\nMusuh: **`{self.user2['name']}`**\nLevel: **``{self.user2['tier']}``**")
         await asyncio.sleep(2.7)
-        turns = 1
+        self.turns = 1
 
         while self.user1_hp > 0 and self.user2_hp > 0:
             fight_view1 = FightView()
@@ -687,7 +693,7 @@ class GameInstance():
                         await self.ctx.channel.send("Opsi tidak valid, giliran dilewatkan.")
 
             else:
-                ai = AI(self, turns)
+                ai = AI(self, self.turns)
                 choice = await ai.decide()
                 match choice:
                     case "attack":
@@ -707,6 +713,7 @@ class GameInstance():
                         else:
                             embed.description = f"Serangan {self.user2['name']} meleset!"
                             self.ai_miss_count += 1
+                            self.ai_consecutive_misses += 1
                             
                         try:
                             embed.set_thumbnail(url = self.enemy_avatar)
@@ -765,7 +772,7 @@ class GameInstance():
                             pass
                         return await self.ctx.channel.send(embed=embed)
                     
-            turns += 1
+            self.turns += 1
 
             await asyncio.sleep(2.5)
 
@@ -859,6 +866,8 @@ class AI():
         self.ai_skill_usage = instance.ai_skill_usage
         self.ai_miss_count = instance.ai_miss_count
         self.ai_consecutive_misses = instance.ai_consecutive_misses
+        self.p1_karma = instance.p1_karma
+        self.p2_karma = instance.p2_karma
         
         # Persistence: AI remembers if it has checked your stats
         if not hasattr(self.instance, 'ai_knows_user'):
@@ -902,9 +911,26 @@ class AI():
 
             # Danger Analysis: If AI misses too often, it gets aggressive
             if self.ai_miss_count > 3 or self.ai_consecutive_misses >= 1:
-                self.skill_mood += 25
-                self.attack_mood += 15
-                self.escape_mood = max(0, self.escape_mood - 10) # AI won't run if it's frustrated
+                # User's logic: resort to offensive skills and abandon regular attacks
+                if 'skill' in self.actions:
+                    self.skill_mood += 100
+                    if 'attack' in self.actions:
+                        self.actions.remove("attack")
+                else:
+                    # If no skills available, just get more aggressive with what's left
+                    self.attack_mood += 25
+                
+                self.escape_mood = max(0, self.escape_mood - 15) # AI won't run if it's frustrated
+            
+            # Karma Awareness: If player has high karma, they are hard to hit with regular attacks
+            if self.p1_karma > 50:
+                self.skill_mood += 30
+                self.check_mood += 10
+            
+            # If AI has high karma, it feels more confident using skills
+            if self.p2_karma > 50:
+                self.skill_mood += 15
+                self.attack_mood += 10
         else:
             # Chance to check stats increases significantly as turns go by
             self.check_mood += (self.turns * 12)
