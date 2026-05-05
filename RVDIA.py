@@ -361,7 +361,7 @@ async def send_reply_message(msg:discord.Message, message_embed:discord.Embed):
         embed.description = AI_response
         embed.set_author(name=msg.author)
         embed.set_footer(text='Jika ada yang ingin ditanyakan, bisa langsung direply!')
-        regenerate_button = Regenerate_Answer_Button(user_id, message)
+        regenerate_button = Regenerate_Answer_Button(user_id, message, AI_response)
         await msg.channel.send(embed=embed, view=regenerate_button)
 
   except Exception as e:

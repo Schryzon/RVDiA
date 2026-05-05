@@ -2,6 +2,8 @@ import discord
 import os
 import asyncio
 import pytz
+import logging
+import random
 from google import genai
 from google.genai import types
 from datetime import datetime
@@ -11,20 +13,94 @@ from discord.ui import View, Button, button
 from PIL import Image
 from scripts.main import titlecase, check_blacklist, AIClient, db
 from scripts.memory import memory_manager
+from scripts.error_logger import format_error_report
 
 class Regenerate_Answer_Button(View):
-    def __init__(self, user_id: int, last_question: str):
+    def __init__(self, user_id: int, last_question: str, initial_response: str):
         super().__init__(timeout=None)
         self.user_id = user_id
         self.last_question = last_question
+        self.responses = [initial_response]
+        self.current_page = 0
+        self.show_vote = random.random() < 0.1  # 10% chance to show vote button
         
-        vote_me = Button(
-            label='Suka RVDiA? Vote!', 
-            emoji='<:rvdia:1140812479883128862>',
-            style=discord.ButtonStyle.green, 
-            url='https://top.gg/bot/957471338577166417/vote'
+        self.update_buttons()
+
+    def update_buttons(self):
+        # Clear existing buttons to rebuild with correct states
+        self.clear_items()
+        
+        # 1. Back Button
+        back_btn = Button(
+            emoji='⬅️', 
+            style=discord.ButtonStyle.gray, 
+            disabled=(self.current_page == 0),
+            custom_id="prev_page"
         )
-        self.add_item(vote_me)
+        back_btn.callback = self.prev_page
+        self.add_item(back_btn)
+        
+        # 2. Regenerate Button (Always in the middle)
+        regen_btn = Button(
+            label="Jawab Ulang", 
+            emoji='🔁', 
+            style=discord.ButtonStyle.blurple,
+            custom_id="regenerate"
+        )
+        regen_btn.callback = self.regenerate
+        self.add_item(regen_btn)
+        
+        # 3. Next Button
+        next_btn = Button(
+            emoji='➡️', 
+            style=discord.ButtonStyle.gray, 
+            disabled=(self.current_page == len(self.responses) - 1),
+            custom_id="next_page"
+        )
+        next_btn.callback = self.next_page
+        self.add_item(next_btn)
+        
+        # 4. Vote Button (Rare)
+        if self.show_vote:
+            vote_me = Button(
+                label='Vote for RVDiA!', 
+                emoji='<:rvdia:1140812479883128862>',
+                style=discord.ButtonStyle.green, 
+                url='https://top.gg/bot/957471338577166417/vote'
+            )
+            self.add_item(vote_me)
+
+    async def update_view(self, interaction: discord.Interaction):
+        self.update_buttons()
+        
+        display_message = self.last_question
+        if len(display_message) > 256:
+            display_message = display_message[:253] + '...'
+
+        embed = discord.Embed(
+            title=' '.join((titlecase(word) for word in display_message.split(' '))), 
+            color=interaction.user.color, 
+            timestamp=interaction.message.created_at
+        )
+        embed.description = self.responses[self.current_page]
+        embed.set_author(name=interaction.user)
+        embed.set_footer(text=f'Halaman {self.current_page + 1}/{len(self.responses)} • Jika ingin tanya lagi, silakan reply!')
+        
+        await interaction.message.edit(embed=embed, view=self)
+
+    async def prev_page(self, interaction: discord.Interaction):
+        if self.current_page > 0:
+            self.current_page -= 1
+            await self.update_view(interaction)
+        else:
+            await interaction.response.defer()
+
+    async def next_page(self, interaction: discord.Interaction):
+        if self.current_page < len(self.responses) - 1:
+            self.current_page += 1
+            await self.update_view(interaction)
+        else:
+            await interaction.response.defer()
 
     async def on_timeout(self) -> None:
         for item in self.children:
@@ -32,8 +108,7 @@ class Regenerate_Answer_Button(View):
         if hasattr(self, 'message'):
             await self.message.edit(view=self)
 
-    @button(label="Jawab Ulang", custom_id='regenerate', style=discord.ButtonStyle.blurple, emoji='🔁')
-    async def regenerate(self, interaction: discord.Interaction, button: Button):
+    async def regenerate(self, interaction: discord.Interaction):
         await interaction.response.defer()
         await interaction.channel.typing()
         
@@ -88,25 +163,25 @@ class Regenerate_Answer_Button(View):
                     AI_response = "Umm... sepertinya itu pertanyaan yang kurang pantas. Aku gak bisa jawab kalau soal itu ya! ❌"
                 else:
                     AI_response = "Waduh, otakku tiba-tiba nge-blank... Coba tanya lagi nanti ya! 💫"
+                    # Log the error and send to developer
+                    logging.error(f"Error in Regenerate_Answer_Button: {e}")
+                    try:
+                        error_channel = interaction.client.get_channel(int(os.getenv("errorchannel")))
+                        if error_channel:
+                            embed = format_error_report(e, context=f"Regenerate Chat (User: {interaction.user})")
+                            await error_channel.send(embed=embed)
+                    except Exception as log_e:
+                        logging.error(f"Failed to send error report: {log_e}")
                 break
+        
+        if AI_response and AI_response not in self.responses:
+            self.responses.append(AI_response)
+            self.current_page = len(self.responses) - 1
         
         # 3. Save the new AI response to memory (Optimized: skips embedding)
         await memory_manager.add_memory(user_id, "model", AI_response)
         
-        display_message = message
-        if len(display_message) > 256:
-            display_message = display_message[:253] + '...'
-
-        embed = discord.Embed(
-            title=' '.join((titlecase(word) for word in display_message.split(' '))), 
-            color=interaction.user.color, 
-            timestamp=interaction.message.created_at
-        )
-        embed.description = AI_response
-        embed.set_author(name=interaction.user)
-        embed.set_footer(text='Jika ada yang ingin ditanyakan, bisa langsung direply!')
-        
-        return await interaction.message.edit(embed=embed, view=self)
+        await self.update_view(interaction)
 
 class Conversation(commands.Cog):
     """
@@ -178,6 +253,15 @@ class Conversation(commands.Cog):
                         AI_response = "Umm... sepertinya itu pertanyaan yang kurang pantas. Aku gak bisa jawab kalau soal itu ya! ❌"
                     else:
                         AI_response = "Waduh, otakku tiba-tiba nge-blank... Coba tanya lagi nanti ya! 💫"
+                        # Log the error and send to developer
+                        logging.error(f"Error in chat command: {e}")
+                        try:
+                            error_channel = ctx.bot.get_channel(int(os.getenv("errorchannel")))
+                            if error_channel:
+                                embed = format_error_report(e, context=f"Chat Command (User: {ctx.author})")
+                                await error_channel.send(embed=embed)
+                        except Exception as log_e:
+                            logging.error(f"Failed to send error report: {log_e}")
                     break
             
             # 3. Save AI response to memory (Optimized: skips embedding)
@@ -196,7 +280,7 @@ class Conversation(commands.Cog):
             embed.set_author(name=ctx.author)
             embed.set_footer(text='Jika ada yang ingin ditanyakan, bisa langsung direply!')
             
-            regenerate_button = Regenerate_Answer_Button(user_id, message)
+            regenerate_button = Regenerate_Answer_Button(user_id, message, AI_response)
             return await ctx.reply(embed=embed, view=regenerate_button)
 
     @commands.hybrid_command(
