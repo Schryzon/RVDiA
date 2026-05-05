@@ -9,7 +9,7 @@ import json
 class MemoryManager:
     def __init__(self):
         self.client = genai.Client(api_key=os.getenv("googlekey"))
-        self.model_name = "text-embedding-004"
+        self.model_name = "gemini-embedding-001"
         self.embedding_dim = 768
 
     async def get_embedding(self, text: str):
