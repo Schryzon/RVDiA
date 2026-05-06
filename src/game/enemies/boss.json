@@ -37,6 +37,14 @@
             {
                 "name": "Die, Hero",
                 "func": "dmg+100%"
+            },
+            {
+                "name": "Gaze of Void",
+                "func": "agl-25"
+            },
+            {
+                "name": "Reality Warp",
+                "func": "def-30"
             }
         ],
         "color": "#59c2e1"
@@ -75,6 +83,14 @@
             {
                 "name": "I'm Sorry",
                 "func": "dmg+30%"
+            },
+            {
+                "name": "Merciful Prayer",
+                "func": "hp+15%"
+            },
+            {
+                "name": "Royal Decree",
+                "func": "atk-20"
             }
         ],
         "color": "#56fa5f"
@@ -105,6 +121,14 @@
             {
                 "name": "Pandora Paradox",
                 "func": "atk-25"
+            },
+            {
+                "name": "Grave Call",
+                "func": "hp-10%"
+            },
+            {
+                "name": "Eternal Night",
+                "func": "agl-15"
             }
         ],
         "color": "#e55c62"
@@ -126,7 +150,7 @@
         "skills": [
             {
                 "name": "Lagtanis Karvista",
-                "func": "dmg+40"
+                "func": "dmg+8%"
             },
             {
                 "name": "Lagtanis Hasten",
@@ -172,7 +196,7 @@
             },
             {
                 "name": "Whirlwind Slash",
-                "func": "dmg+45"
+                "func": "dmg+10%"
             },
             {
                 "name": "Sisterly Bond",
@@ -202,7 +226,7 @@
             },
             {
                 "name": "Shadow Burst",
-                "func": "dmg+60"
+                "func": "dmg+12%"
             },
             {
                 "name": "Victoria's Lament",
@@ -211,6 +235,14 @@
             {
                 "name": "Dark Shield",
                 "func": "def+30"
+            },
+            {
+                "name": "Corrupted Pulse",
+                "func": "hp-5%"
+            },
+            {
+                "name": "Despair",
+                "func": "atk-15"
             }
         ],
         "color": "#dfeede"
@@ -240,7 +272,7 @@
             },
             {
                 "name": "Share a Life",
-                "func": "hp-100"
+                "func": "hp-5%"
             }
         ],
         "color": "#cf43e5"
@@ -262,7 +294,7 @@
         "skills": [
             {
                 "name": "Vortex Slash III",
-                "func": "dmg+80"
+                "func": "dmg+20%"
             },
             {
                 "name": "Gravity Pull III",

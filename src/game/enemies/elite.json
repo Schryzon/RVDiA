@@ -16,7 +16,7 @@
         "skills": [
             {
                 "name": "Karvista",
-                "func": "dmg+40"
+                "func": "dmg+6%"
             },
             {
                 "name": "Hasten",
@@ -33,6 +33,10 @@
             {
                 "name": "Fulguros",
                 "func": "hp-10%"
+            },
+            {
+                "name": "Thunderstrike",
+                "func": "dmg+5%"
             }
         ],
         "color": "#7dda41"
@@ -58,7 +62,7 @@
             },
             {
                 "name": "Yasashisa Kami",
-                "func": "dmg+15"
+                "func": "dmg+3%"
             },
             {
                 "name": "Bougyo Shinjite",
@@ -66,11 +70,15 @@
             },
             {
                 "name": "Kanashiina Sekai",
-                "func": "hp-50"
+                "func": "hp-4%"
             },
             {
                 "name": "Ryuukufu",
                 "func": "def-12"
+            },
+            {
+                "name": "Zephyr Shield",
+                "func": "def+10"
             }
         ],
         "color": "#d9fd58"
@@ -92,7 +100,7 @@
         "skills": [
             {
                 "name": "Shaoshang",
-                "func": "dmg+55"
+                "func": "dmg+8%"
             },
             {
                 "name": "Ganshou Huoyan",
@@ -100,7 +108,7 @@
             },
             {
                 "name": "Yi... Zai... Qi",
-                "func": "dmg+80"
+                "func": "dmg+15%"
             },
             {
                 "name": "Yuanyuan Lingqi",
@@ -130,7 +138,7 @@
             },
             {
                 "name": "Bhookamp",
-                "func": "dmg+75"
+                "func": "dmg+12%"
             },
             {
                 "name": "Kshiti Vikaas",
@@ -160,7 +168,7 @@
         "skills": [
             {
                 "name": "Roufichtra",
-                "func": "dmg+65"
+                "func": "dmg+10%"
             },
             {
                 "name": "Therapeftiko Nero",
@@ -172,7 +180,11 @@
             },
             {
                 "name": "Hydrokroustas",
-                "func": "dmg+35"
+                "func": "dmg+5%"
+            },
+            {
+                "name": "Ocean's Grace",
+                "func": "hp+10%"
             }
         ],
         "color": "#58f47a"
@@ -194,7 +206,7 @@
         "skills": [
             {
                 "name": "Vortex Slash II",
-                "func": "dmg+70"
+                "func": "dmg+12%"
             },
             {
                 "name": "Gravity Pull II",

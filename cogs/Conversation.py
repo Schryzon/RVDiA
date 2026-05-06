@@ -150,7 +150,7 @@ class Regenerate_Answer_Button(View):
                 
                 # Check if the query might need search
                 search_context = ""
-                needs_search = any(kw in message.lower() for kw in ["kapan", "siapa", "dimana", "berita", "terbaru", "harga", "cek"])
+                needs_search = any(kw in message.lower() for kw in ["kapan", "siapa", "dimana", "berita", "terbaru", "harga", "cek", "apa itu", "kenapa", "bagaimana", "tutorial", "cara", "rekomendasi", "info", "lokasi", "jadwal", "skor", "cuaca", "trending", "viral", "cari", "search"])
                 if needs_search:
                     results = await search_web(message)
                     search_context = format_search_results(results)
@@ -251,7 +251,7 @@ class Conversation(commands.Cog):
                 try:
                     # Check if the query might need search
                     search_context = ""
-                    needs_search = any(kw in message.lower() for kw in ["kapan", "siapa", "dimana", "berita", "terbaru", "harga", "cek"])
+                    needs_search = any(kw in message.lower() for kw in ["kapan", "siapa", "dimana", "berita", "terbaru", "harga", "cek", "apa itu", "kenapa", "bagaimana", "tutorial", "cara", "rekomendasi", "info", "lokasi", "jadwal", "skor", "cuaca", "trending", "viral", "cari", "search"])
                     if needs_search:
                         results = await search_web(message)
                         search_context = format_search_results(results)

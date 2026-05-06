@@ -16,7 +16,7 @@
         "skills": [
             {
                 "name": "Burst Slash",
-                "func": "DMG+80"
+                "func": "DMG+12%"
             },
             {
                 "name": "Ethereal Shift",
@@ -46,7 +46,7 @@
         "skills": [
             {
                 "name": "Pyrokinesis",
-                "func": "DMG+100"
+                "func": "DMG+15%"
             },
             {
                 "name": "Ultimate Kick",
@@ -55,13 +55,25 @@
             {
                 "name": "CHOU HENSHIN: RISING ULTIMATE",
                 "func": "atk+30"
+            },
+            {
+                "name": "Molecular Manipulation",
+                "func": "def-30"
+            },
+            {
+                "name": "Ultimate Punch",
+                "func": "dmg+15%"
+            },
+            {
+                "name": "Rising Ultimate Transformation",
+                "func": "atk+40"
             }
         ],
         "color": "#c15a52"
     },
     {
         "name": "Kamen Rider Agito (Shining)",
-        "desc": "Evolusi tanpa batas dari kekuatan matahari.",
+        "desc": "Evolusi tanpa batas dari kekuatan matahari. 'For Agito... for Humanity!'",
         "tier": "BONUS ENEMY",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1501107996481294447/agito.JPG?ex=69fadf43&is=69f98dc3&hm=a30dc09371003b03fb2df1ef54b726240f94fda5c33e65c029c6e053c830108e&",
         "hp": 6000,
@@ -76,11 +88,23 @@
         "skills": [
             {
                 "name": "Shining Clash",
-                "func": "DMG+90"
+                "func": "DMG+14%"
             },
             {
                 "name": "Shining Rider Kick",
                 "func": "DMG+30%"
+            },
+            {
+                "name": "Shining Rider Punch",
+                "func": "dmg+12%"
+            },
+            {
+                "name": "Shining Caliber: Twin Mode",
+                "func": "atk+25"
+            },
+            {
+                "name": "Sun's Blessing",
+                "func": "hp+15%"
             }
         ],
         "color": "#555a70"
@@ -102,7 +126,7 @@
         "skills": [
             {
                 "name": "Dragon Firestorm",
-                "func": "DMG+110"
+                "func": "DMG+16%"
             },
             {
                 "name": "Final Vent",
@@ -123,6 +147,18 @@
             {
                 "name": "Shoot Vent",
                 "func": "atk+15"
+            },
+            {
+                "name": "Trick Vent",
+                "func": "agl+30"
+            },
+            {
+                "name": "Strange Vent",
+                "func": "atk+20"
+            },
+            {
+                "name": "Fire Wall",
+                "func": "def+25"
             }
         ],
         "color": "#e4df41"
@@ -144,7 +180,7 @@
         "skills": [
             {
                 "name": "Photon Breaker",
-                "func": "DMG+130"
+                "func": "DMG+18%"
             },
             {
                 "name": "Blaster Crimson Smash",
@@ -153,6 +189,14 @@
             {
                 "name": "Photon Field Floater",
                 "func": "agl+15"
+            },
+            {
+                "name": "Photon Buster",
+                "func": "dmg+20%"
+            },
+            {
+                "name": "Grand Impact",
+                "func": "dmg+15%"
             }
         ],
         "color": "#edcef2"
@@ -174,11 +218,23 @@
         "skills": [
             {
                 "name": "Royal Straight Flush",
-                "func": "DMG+160"
+                "func": "DMG+22%"
             },
             {
                 "name": "King Defense",
                 "func": "DEF+40"
+            },
+            {
+                "name": "King Rouzer: Straight Flush",
+                "func": "dmg+25%"
+            },
+            {
+                "name": "Rouse Combo: Evolution King",
+                "func": "atk+35"
+            },
+            {
+                "name": "Evolution Shield",
+                "func": "def+40"
             }
         ],
         "color": "#cfcec6"
@@ -200,11 +256,23 @@
         "skills": [
             {
                 "name": "Ongeki Ha",
-                "func": "DMG+100"
+                "func": "DMG+15%"
             },
             {
                 "name": "Armed Sonic",
                 "func": "ATK+30"
+            },
+            {
+                "name": "Ongekida: Rekkaken",
+                "func": "dmg+15%"
+            },
+            {
+                "name": "Armed Saber: Kengeki",
+                "func": "atk+30"
+            },
+            {
+                "name": "Sound Purification",
+                "func": "hp+10%"
             }
         ],
         "color": "#d34e76"
@@ -230,15 +298,27 @@
             },
             {
                 "name": "Hyper Kick",
-                "func": "DMG+170"
+                "func": "DMG+25%"
             },
             {
                 "name": "Perfect Zecter",
                 "func": "ATK+40"
             },
             {
-                "name": "Kabuto Power, TheBee Power, Drake Power, Sasword Power... ALL ZECTERS COMBINED",
-                "func": "dmg+100%"
+                "name": "Hyper Clock Up",
+                "func": "agl+80"
+            },
+            {
+                "name": "Hyper Blade",
+                "func": "dmg+20%"
+            },
+            {
+                "name": "Maximum Hyper Cyclone",
+                "func": "dmg+50%"
+            },
+            {
+                "name": "Maximum Hyper Typhoon",
+                "func": "dmg+50%"
             }
         ],
         "color": "#de51ee"
@@ -260,11 +340,23 @@
         "skills": [
             {
                 "name": "Densha Giri",
-                "func": "DMG+110"
+                "func": "DMG+16%"
             },
             {
                 "name": "Full Charge",
                 "func": "DMG+25%"
+            },
+            {
+                "name": "DenKamen Sword: Ura-Rod",
+                "func": "agl+25"
+            },
+            {
+                "name": "DenKamen Sword: Kin-Ax",
+                "func": "def+30"
+            },
+            {
+                "name": "Train Slash: Momo-Sword",
+                "func": "dmg+18%"
             }
         ],
         "color": "#e658d6"
@@ -286,7 +378,7 @@
         "skills": [
             {
                 "name": "Emperor Moon Break",
-                "func": "DMG+130"
+                "func": "DMG+18%"
             },
             {
                 "name": "Zanvat Sword Slash",
@@ -295,6 +387,18 @@
             {
                 "name": "WAKE UP FEVER",
                 "func": "agl+15"
+            },
+            {
+                "name": "Tatsulot Roulette",
+                "func": "atk+25"
+            },
+            {
+                "name": "Zanvat Sword Slash (True)",
+                "func": "dmg+22%"
+            },
+            {
+                "name": "Emperor Bat Form",
+                "func": "agl+35"
             }
         ],
         "color": "#dd737c"
@@ -316,7 +420,7 @@
         "skills": [
             {
                 "name": "Dimension Slash",
-                "func": "DMG+220"
+                "func": "DMG+30%"
             },
             {
                 "name": "Final Attack Ride",
@@ -327,7 +431,15 @@
                 "func": "AGL+40"
             },
             {
-                "name": "FINAL KAMEN ATTACK FORM RIDE: DE-DE-DECADE!",
+                "name": "Dimension Blast",
+                "func": "dmg+25%"
+            },
+            {
+                "name": "K-Touch: Decade Complete 21",
+                "func": "atk+50"
+            },
+            {
+                "name": "FINAL KAMEN ATTACK FORM RIDE: DE-DE-DECADE",
                 "func": "dmg+100%"
             }
         ],

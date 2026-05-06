@@ -190,13 +190,19 @@ class GameInstance():
         if is_defending:
             user_2_def += random.randint(8, 15)
             
-        # Base Damage Calculation
-        if dealer_id != 1 and self.ctx.command.name == "battle":
-            scaling = max(self.user2_max_hp / 90, 1) if self.user2_max_hp > 500 else max(self.user2_max_hp / 10, 1) if self.user2_max_hp > 200 else self.user2_max_hp
-            damage = round(max(0, user_1_atk * (random.randint(80, 100) - user_2_def) / scaling))
-        else:
-            damage = round(max(0, user_1_atk * (random.randint(80, 100) - user_2_def) / 100))
-            
+        # Unified Improved Formula for both PvE (Battle) and PvP (Fight)
+        # Ratio-based damage calculation ensures scaling for late-game/uncapped stats
+        base_atk = user_1_atk * (random.randint(85, 115) / 100)
+        
+        # Scaling for high HP pools (mostly for PvE bosses, but applies to high-HP players)
+        scaling = max(1, self.user2_max_hp / 500) if self.user2_max_hp > 500 else 1
+        
+        damage = round((base_atk * (120 / (120 + user_2_def))) / scaling)
+        damage = max(damage, round(user_1_atk * 0.05)) # Min damage 5% of Atk
+        
+        miss_chance = min(40, max(0, (user_2_agl - user_1_agl) * 1.5 + 5 - (dealer_karma / 50)))
+        dodge_chance = min(12, taker_karma / 120)
+        
         # Luck Mechanics (Karma)
         # Critical Hit: Base 5% + (Karma / 20)%
         crit_chance = 5 + (dealer_karma / 20)
@@ -204,17 +210,10 @@ class GameInstance():
         if is_crit:
             damage = round(damage * 1.5)
             
-        # Miss Chance: (Agl Diff * 2) + 5. High Karma reduces miss chance.
-        # Cap miss chance at 45% so it's never impossible to hit.
-        miss_chance = min(45, max(0, (user_2_agl - user_1_agl) * 2 + 5 - (dealer_karma / 50)))
-        
-        # Miracle Dodge: If taker has high Karma, small chance to dodge anyway.
-        # Cap dodge chance at 15% to prevent frustration.
-        dodge_chance = min(15, taker_karma / 100)
-        is_miracle_dodge = random.random() * 100 < dodge_chance
-        
         hit_chance = 100 - miss_chance
         attack_chance = random.randint(0, 100)
+
+        is_miracle_dodge = random.random() * 100 < dodge_chance
 
         if is_miracle_dodge:
             return [0, False, True] # Damage, IsCrit, IsMiracle
@@ -306,16 +305,9 @@ class GameInstance():
 
                 case 'ATK':
                     if user1 == self.user1:
-                        if not self.user1_stats[0] + int(func[1]) >= 100:
-                            self.user1_stats[0] += int(func[1])
-                        else:
-                            self.user1_stats[0] = 100
-
+                        self.user1_stats[0] += int(func[1])
                     else:
-                        if not self.user2_stats[0] + int(func[1]) >= 100:
-                            self.user2_stats[0] += int(func[1])
-                        else:
-                            self.user2_stats[0] = 100
+                        self.user2_stats[0] += int(func[1])
                     
                     if isinstance(user1, discord.Member):
                         await self.ctx.channel.send(f'{user1.mention} menjadi lebih kuat!\n(+`{func[1]}` Attack)')
@@ -324,16 +316,9 @@ class GameInstance():
 
                 case 'DEF':
                     if user1 == self.user1:
-                        if not self.user1_stats[1] + int(func[1]) >= 100:
-                            self.user1_stats[1] += int(func[1])
-                        else:
-                            self.user1_stats[1] = 100
-
+                        self.user1_stats[1] += int(func[1])
                     else:
-                        if not self.user2_stats[1] + int(func[1]) >= 100:
-                            self.user2_stats[1] += int(func[1])
-                        else:
-                            self.user2_stats[1] = 100
+                        self.user2_stats[1] += int(func[1])
                     
                     if isinstance(user1, discord.Member):
                         await self.ctx.channel.send(f'{user1.mention} menjadi lebih kuat!\n(+`{func[1]}` Defense)')
@@ -342,16 +327,9 @@ class GameInstance():
 
                 case 'AGL':
                     if user1 == self.user1:
-                        if not self.user1_stats[2] + int(func[1]) >= 100:
-                            self.user1_stats[2] += int(func[1])
-                        else:
-                            self.user1_stats[2] = 100
-
+                        self.user1_stats[2] += int(func[1])
                     else:
-                        if not self.user2_stats[2] + int(func[1]) >= 100:
-                            self.user2_stats[2] += int(func[1])
-                        else:
-                            self.user2_stats[2] = 100
+                        self.user2_stats[2] += int(func[1])
                     
                     if isinstance(user1, discord.Member):
                         await self.ctx.channel.send(f'{user1.mention} menjadi lebih lincah!\n(+`{func[1]}` Agility)')
@@ -544,9 +522,13 @@ class GameInstance():
                 case "Opsi terpilih: 👜Barang":
                     await self.use(self.user1, 'item')
                     try:
-                        res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and " menggunakan " in r.content, timeout = 10)
-                        func = res_use.content.split('\n')[2] # Dear god hope this works
-                        await self.func_converter(func, self.user1, self.user2)
+                        res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and " menggunakan " in r.content and "\n(" in r.content, timeout = 10)
+                        func_lines = res_use.content.split('\n')
+                        if len(func_lines) >= 3:
+                            func = func_lines[2]
+                            await self.func_converter(func, self.user1, self.user2)
+                        else:
+                            await self.ctx.channel.send("Format item tidak valid, gunakan kembali item yang benar.")
                     except asyncio.TimeoutError:
                         await self.ctx.channel.send(f"{self.user1.mention}, giliranmu dilewatkan karena tidak menggunakan item!")
 
@@ -556,10 +538,14 @@ class GameInstance():
                     else:
                         await self.use(self.user1, 'skill')
                         try:
-                            res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and " menggunakan " in r.content, timeout = 10)
-                            func = res_use.content.split('\n')[2] # Dear god hope this works
-                            await self.func_converter(func, self.user1, self.user2)
-                            p1_skills_used += 1
+                            res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and " menggunakan " in r.content and "\n(" in r.content, timeout = 10)
+                            func_lines = res_use.content.split('\n')
+                            if len(func_lines) >= 3:
+                                func = func_lines[2]
+                                await self.func_converter(func, self.user1, self.user2)
+                                p1_skills_used += 1
+                            else:
+                                await self.ctx.channel.send("Format skill tidak valid, gunakan kembali skill yang benar.")
                         except asyncio.TimeoutError:
                             await self.ctx.channel.send(f"{self.user1.mention}, giliranmu dilewatkan karena tidak menggunakan skill!")
 
@@ -662,10 +648,14 @@ class GameInstance():
                     case "Opsi terpilih: 👜Barang":
                         await self.use(self.user2, 'item')
                         try:
-                            res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and " menggunakan " in r.content, timeout = 10)
-                            func = res_use.content.split('\n')[2] # Dear god hope this works
-                            await asyncio.sleep(1.2)
-                            await self.func_converter(func, self.user2, self.user1)
+                            res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and " menggunakan " in r.content and "\n(" in r.content, timeout = 10)
+                            func_lines = res_use.content.split('\n')
+                            if len(func_lines) >= 3:
+                                func = func_lines[2]
+                                await asyncio.sleep(1.2)
+                                await self.func_converter(func, self.user2, self.user1)
+                            else:
+                                await self.ctx.channel.send("Format item tidak valid.")
                         except asyncio.TimeoutError:
                             await self.ctx.channel.send(f"{self.user2.mention}, giliranmu dilewatkan karena tidak menggunakan item!")
 
@@ -675,11 +665,15 @@ class GameInstance():
                         else:
                             await self.use(self.user2, 'skill')
                             try:
-                                res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and " menggunakan " in r.content, timeout = 10)
-                                func = res_use.content.split('\n')[2] # Dear god hope this works
-                                await asyncio.sleep(1.2)
-                                await self.func_converter(func, self.user2, self.user1)
-                                p2_skills_used += 1
+                                res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and " menggunakan " in r.content and "\n(" in r.content, timeout = 10)
+                                func_lines = res_use.content.split('\n')
+                                if len(func_lines) >= 3:
+                                    func = func_lines[2]
+                                    await asyncio.sleep(1.2)
+                                    await self.func_converter(func, self.user2, self.user1)
+                                    p2_skills_used += 1
+                                else:
+                                    await self.ctx.channel.send("Format skill tidak valid.")
                             except asyncio.TimeoutError:
                                 await self.ctx.channel.send(f"{self.user2.mention}, giliranmu dilewatkan karena tidak menggunakan skill!")
 
