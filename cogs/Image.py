@@ -404,10 +404,17 @@ class Image(commands.Cog):
             except Exception as e:
                 await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
 
-    @image_group.command(description="Tampilkan histogram gambar.")
+    @commands.hybrid_group(name='histogram')
+    @check_blacklist()
+    async def histogram_group(self, ctx: commands.Context):
+        """Kumpulan command untuk analisis histogram."""
+        if ctx.invoked_subcommand is None:
+            await ctx.send_help(ctx.command)
+
+    @histogram_group.command(name="show", description="Tampilkan histogram gambar.")
     @app_commands.describe(user="User yang avatar-nya ingin dilihat histogram-nya", attachment="Gambar yang ingin dilihat histogram-nya")
     @check_blacklist()
-    async def histogram(self, ctx: commands.Context, user: discord.User = None, attachment: discord.Attachment = None):
+    async def histogram_show(self, ctx: commands.Context, user: discord.User = None, attachment: discord.Attachment = None):
         async with ctx.typing():
             try:
                 bytes_data = await self._get_image_bytes(ctx, user, attachment)
@@ -418,7 +425,7 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
 
-    @image_group.command(description="Samakan histogram antara dua gambar (match).")
+    @histogram_group.command(name="match", description="Samakan histogram antara dua gambar (match).")
     @app_commands.describe(user1="User pertama", user2="User kedua", attachment1="Gambar pertama", attachment2="Gambar kedua")
     @check_blacklist()
     async def match(self, ctx: commands.Context, user1: discord.User = None, user2: discord.User = None, attachment1: discord.Attachment = None, attachment2: discord.Attachment = None):
@@ -460,7 +467,7 @@ class Image(commands.Cog):
             except Exception as e:
                 await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
 
-    @image_group.command(description="Transfer warna dari satu gambar ke gambar lain.")
+    @histogram_group.command(name="transfer", description="Transfer warna dari satu gambar ke gambar lain.")
     @app_commands.describe(source_user="User sumber warna", ref_user="User referensi warna", source_attachment="Gambar sumber warna", ref_attachment="Gambar referensi warna")
     @check_blacklist()
     async def transfer(self, ctx: commands.Context, source_user: discord.User = None, ref_user: discord.User = None, source_attachment: discord.Attachment = None, ref_attachment: discord.Attachment = None):
@@ -639,7 +646,7 @@ class Image(commands.Cog):
             except ValueError as e: await ctx.reply(str(e))
             except Exception as e: await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
 
-    @image_group.command(description="Bandingkan dua gambar menggunakan histogram.")
+    @histogram_group.command(name="compare", description="Bandingkan dua gambar menggunakan histogram.")
     @app_commands.describe(user1="User pertama", user2="User kedua", attachment1="Gambar pertama", attachment2="Gambar kedua", method="Metode perbandingan (correl/chisqr/intersect/bhattacharyya)")
     @check_blacklist()
     async def hist_compare(self, ctx: commands.Context, user1: discord.User = None, user2: discord.User = None, attachment1: discord.Attachment = None, attachment2: discord.Attachment = None, method: str = "correl"):
@@ -672,7 +679,7 @@ class Image(commands.Cog):
             except ValueError as e: await ctx.reply(str(e))
             except Exception as e: await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
 
-    @image_group.command(description="Tampilkan grafik CDF (Cumulative Distribution Function).")
+    @histogram_group.command(name="cdf", description="Tampilkan grafik CDF (Cumulative Distribution Function).")
     @app_commands.describe(user="User yang avatar-nya ingin dilihat", attachment="Gambar yang ingin dilihat")
     @check_blacklist()
     async def hist_cdf(self, ctx: commands.Context, user: discord.User = None, attachment: discord.Attachment = None):
