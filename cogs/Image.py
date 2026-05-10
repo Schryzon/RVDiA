@@ -91,6 +91,15 @@ class Image(commands.Cog):
         except Exception as e:
             await ctx.reply(f"Terjadi kesalahan saat memproses gambar: `{str(e)}`")
 
+    @commands.hybrid_group(name='image')
+    @check_blacklist()
+    async def image_group(self, ctx: commands.Context):
+        """
+        Kumpulan command untuk memproses gambar. [GROUP]
+        """
+        if ctx.invoked_subcommand is None:
+            await ctx.send_help(ctx.command)
+
     @image_group.command(description="Lihat status akselerasi GPU.")
     @check_blacklist()
     async def gpu(self, ctx: commands.Context):
@@ -102,15 +111,6 @@ class Image(commands.Cog):
         embed.add_field(name="Device", value=device, inline=True)
         embed.set_footer(text="Menggunakan CuPy untuk pengolahan array skala besar.")
         await ctx.reply(embed=embed)
-
-    @commands.hybrid_group(name='image')
-    @check_blacklist()
-    async def image_group(self, ctx: commands.Context):
-        """
-        Kumpulan command untuk memproses gambar. [GROUP]
-        """
-        if ctx.invoked_subcommand is None:
-            await ctx.send_help(ctx.command)
 
     @image_group.command(description="Ubah gambar menjadi hitam putih (grayscale).")
     @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit")

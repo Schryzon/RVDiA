@@ -62,7 +62,7 @@ Join the [CyroN Central server](https://discord.gg/QqWCnk6zxw) on Discord and co
 ### Credits
 Special thanks to Riverdia (for inspiring the bot's name), iMaze, Mouchi, Dez, Zenchew, Ismita, Pockii, Kyuu, Kazama, Bcntt, Nateflakes, nathawiguna, opensourze, Shiruto, Satya Yoga, and many more for helping me with previous projects!
 
-**Made with ❤️ and dedication, Jayananda**
+**Made with ❤️ and dedication, Jayananda and contributors**
 
 ## Community
 - [Contributing Guidelines](CONTRIBUTING.md)
