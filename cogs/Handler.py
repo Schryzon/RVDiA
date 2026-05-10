@@ -183,14 +183,15 @@ class Error(commands.Cog):
     elif isinstance(error, AccountIncompatible):
       await ctx.reply(f"Sepertinya akunmu tidak sesuai dengan versi terbaru Re:Volution!\nJalankan **`{ctx.clean_prefix}game register`** untuk mengupdate akunmu!")
 
-    # If all else fails (get it?)
     else:
-      channel = self.historia.get_channel(int(os.getenv("errorchannel")))
-      embed = format_error_report(error, context=f"Command: {ctx.command}")
-      
-      if channel:
-          owner_id = os.getenv("schryzonid")
-          await channel.send(f"<@{owner_id}> **Error from console!**", embed=embed)
+      error_channel_id = os.getenv("errorchannel")
+      if error_channel_id:
+          channel = self.historia.get_channel(int(error_channel_id))
+          embed = format_error_report(error, context=f"Command: {ctx.command}")
+          
+          if channel:
+              owner_id = os.getenv("schryzonid")
+              await channel.send(f"<@{owner_id}> **Error from console!**", embed=embed)
       
       await ctx.reply("Ada yang bermasalah dengan command ini, aku sudah memberikan laporan ke developer!\nJoin support serverku untuk mendapat info lebih lanjut!", view=Support_Button(), ephemeral=True)
       logging.error(f"Error in command {ctx.command}: {str(error)}")

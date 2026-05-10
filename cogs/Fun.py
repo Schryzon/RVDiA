@@ -58,16 +58,19 @@ class Fun(commands.Cog):
             pfp2 = Image.open(data2)
             pfp2 = pfp2.resize((420, 420))
             sus.paste(pfp2, (1024, 28))
-            sus.save('shipres.png')
+            res_filename = f'shipres_{ctx.author.id}.png'
+            sus.save(res_filename)
 
             L = len(member1.name)//2
             LL = len(member2.name)//2
             embed = discord.Embed(title="Hasil Penjodohan", description = f"❤️ **{success}%** ❤️\n{ss}\n**Nama ship:** {member1.name[:L] + member2.name[LL:]}", color=ctx.author.colour)
             embed.set_footer(text=f"{member1.name} dan {member2.name}")
-            file = discord.File("shipres.png")
-            embed.set_image(url= "attachment://shipres.png")
+            file = discord.File(res_filename)
+            embed.set_image(url= f"attachment://{res_filename}")
             await ctx.send(file = file, embed = embed)
-            remove('./shipres.png')
+            
+            sus.close()
+            remove(res_filename)
 
 async def setup (bot):
     await bot.add_cog(Fun(bot))

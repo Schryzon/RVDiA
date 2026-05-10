@@ -108,7 +108,7 @@ else:
 
 ArrayLike = np.ndarray
 AxisMode = Literal["horizontal", "vertical"]
-MatchMode = Literal["pad", "resize"]
+MatchMode = Literal["pad", "resize", "pad+resize", "cover", "contain", "crop", "tl-crop"]
 PadMode = Literal["constant", "edge", "reflect", "symmetric", "wrap", "zero", "none"]
 InterpMode = Literal["nearest", "linear", "area", "cubic", "lanczos"]
 RotDir = Literal["ccw", "cw"]
@@ -205,6 +205,31 @@ def _center_crop_or_pad(image: ArrayLike, target_h: int, target_w: int) -> Array
     return image
 
 
+def _tl_crop(image: ArrayLike, target_h: int, target_w: int) -> ArrayLike:
+    """Top-left crops an image without any centering or padding."""
+    return image[:target_h, :target_w, ...]
+
+
+def _fit_cover(image: ArrayLike, target_h: int, target_w: int) -> ArrayLike:
+    """Resizes to cover the target dimensions (maintaining aspect ratio) and then center-crops."""
+    h, w = image.shape[:2]
+    scale = max(target_h / h, target_w / w)
+    new_h, new_w = int(round(h * scale)), int(round(w * scale))
+    new_h, new_w = max(new_h, target_h), max(new_w, target_w)
+    resized = _resize_to(image, new_h, new_w)
+    return _center_crop_or_pad(resized, target_h, target_w)
+
+
+def _fit_contain(image: ArrayLike, target_h: int, target_w: int) -> ArrayLike:
+    """Resizes to fit within target dimensions (maintaining aspect ratio) and then center-pads."""
+    h, w = image.shape[:2]
+    scale = min(target_h / h, target_w / w)
+    new_h, new_w = int(round(h * scale)), int(round(w * scale))
+    new_h, new_w = min(new_h, target_h), min(new_w, target_w)
+    resized = _resize_to(image, new_h, new_w)
+    return _center_crop_or_pad(resized, target_h, target_w)
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 #  Histogram
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -245,16 +270,21 @@ class Histogram:
         return xp_mod.stack(cdfs, axis=-1)
 
     @staticmethod
-    def show(image: ArrayLike, title: str = "Histogram", normalize: bool = False, color: str = "black") -> None:
+    def show(image: ArrayLike, title: str = "Histogram", normalize: bool = False, color: str | list[str] = "black") -> None:
         """Display histogram for a single image."""
         image = to_cpu(_validate_image(image))
         plt.figure(figsize=(7, 4))
         if image.ndim == 2:
             plt.hist(image.ravel(), bins=256, range=(0, 256), color=color, density=normalize)
         else:
-            colors = ["r", "g", "b"]
-            for i, c in enumerate(colors[: image.shape[2]]):
-                plt.hist(image[..., i].ravel(), bins=256, range=(0, 256), color=c, alpha=0.5, density=normalize)
+            # Handle color sequence or single color override
+            if isinstance(color, (list, tuple)):
+                ch_colors = color
+            else:
+                ch_colors = [color] * image.shape[2] if color != "black" else ["r", "g", "b"]
+            
+            for i in range(min(image.shape[2], len(ch_colors))):
+                plt.hist(image[..., i].ravel(), bins=256, range=(0, 256), color=ch_colors[i], alpha=0.5, density=normalize)
         plt.title(title)
         plt.xlabel("Pixel value")
         plt.ylabel("Probability Density" if normalize else "Frequency")
@@ -349,6 +379,42 @@ class Histogram:
     def compare(img1: ArrayLike, img2: ArrayLike, title1: str = "Image 1", title2: str = "Image 2", normalize: bool = False) -> None:
         """Side-by-side histogram comparison of two images."""
         Histogram.show_multi([img1, img2], titles=[title1, title2], normalize=normalize, ncols=2)
+
+    @staticmethod
+    def show_combined(
+        images: Sequence[ArrayLike],
+        labels: Sequence[str] | None = None,
+        colors: Sequence[str] | None = None,
+        title: str = "Combined Histogram",
+        normalize: bool = False,
+        bins: int = 256,
+        alpha: float = 0.5
+    ) -> None:
+        """Overlaps multiple histograms in the same plot area for direct comparison."""
+        if not images:
+            raise ValueError("images must be a non-empty sequence.")
+        
+        plt.figure(figsize=(10, 6))
+        for i, img in enumerate(images):
+            img_cpu = to_cpu(_validate_image(img, name=f"images[{i}]"))
+            label = labels[i] if labels and i < len(labels) else f"Image {i}"
+            color = colors[i] if colors and i < len(colors) else None
+            
+            # Use grayscale version for color images to keep the plot readable
+            if img_cpu.ndim == 3:
+                data = cv2.cvtColor(img_cpu, cv2.COLOR_RGB2GRAY).ravel()
+            else:
+                data = img_cpu.ravel()
+                
+            plt.hist(data, bins=bins, range=(0, 256), color=color, 
+                     alpha=alpha, density=normalize, label=label)
+        
+        plt.title(title)
+        plt.xlabel("Pixel Value")
+        plt.ylabel("Density" if normalize else "Frequency")
+        plt.legend()
+        plt.grid(axis='y', alpha=0.3)
+        plt.show()
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1097,14 +1163,33 @@ class Image_Ops:
         if not (0.0 <= alpha <= 1.0):
             raise ValueError("alpha must be in [0, 1].")
         beta = (1.0 - alpha) if beta is None else beta
-        if match not in ("resize", "pad"):
-            raise ValueError("match must be 'resize' or 'pad'.")
+        if match not in ("resize", "pad", "pad+resize", "cover", "contain", "crop", "tl-crop"):
+            raise ValueError("match must be 'resize', 'pad', 'pad+resize', 'cover', 'contain', 'crop', or 'tl-crop'.")
         image1, image2 = _match_channels(image1, image2)
         h1, w1 = image1.shape[:2]
         h2, w2 = image2.shape[:2]
         if (h1, w1) != (h2, w2):
             if match == "resize":
                 image2 = _resize_to(image2, h1, w1)
+            elif match == "pad+resize":
+                image2 = _center_crop_or_pad(image2, h1, w1)
+            elif match == "cover":
+                if h1 * w1 <= h2 * w2:
+                    image2 = _fit_cover(image2, h1, w1)
+                else:
+                    image1 = _fit_cover(image1, h2, w2)
+            elif match == "crop":
+                if h1 * w1 <= h2 * w2:
+                    image2 = _center_crop_or_pad(image2, h1, w1)
+                else:
+                    image1 = _center_crop_or_pad(image1, h2, w2)
+            elif match == "tl-crop":
+                if h1 * w1 <= h2 * w2:
+                    image2 = _tl_crop(image2, h1, w1)
+                else:
+                    image1 = _tl_crop(image1, h2, w2)
+            elif match == "contain":
+                image2 = _fit_contain(image2, h1, w1)
             else:
                 target_h, target_w = max(h1, h2), max(w1, w2)
                 image1 = _pad_to(image1, target_h, target_w)
@@ -1113,6 +1198,49 @@ class Image_Ops:
         if np.issubdtype(image1.dtype, np.integer):
             out = np.clip(out, 0, 255)
         return out.astype(image1.dtype)
+
+    @staticmethod
+    def overlay(bg: ArrayLike, fg: ArrayLike, position: tuple[int, int] = (0, 0)) -> ArrayLike:
+        """Slaps the foreground image on top of the background at a specific (x, y) position.
+        
+        Parameters
+        ----------
+        bg : ArrayLike
+            Background image.
+        fg : ArrayLike
+            Foreground image to be placed on top.
+        position : tuple[int, int]
+            (x, y) coordinates for the top-left corner of the foreground.
+        """
+        bg = _validate_image(bg, name="bg")
+        fg = _validate_image(fg, name="fg")
+        
+        # Dispatch to GPU if smart mode allows
+        bg = _smart(bg)
+        fg = _smart(fg)
+        
+        # Match channels FIRST so 'out' has the correct dimensionality
+        bg, fg = _match_channels(bg, fg)
+        xp_mod = _xp(bg)
+        
+        out = bg.copy()
+        bh, bw = bg.shape[:2]
+        fh, fw = fg.shape[:2]
+        x, y = position
+        
+        # Calculate valid intersection boundaries
+        y1, y2 = max(0, y), min(bh, y + fh)
+        x1, x2 = max(0, x), min(bw, x + fw)
+        
+        # Calculate corresponding foreground slices
+        fy1, fx1 = max(0, -y), max(0, -x)
+        fy2, fx2 = fy1 + (y2 - y1), fx1 + (x2 - x1)
+        
+        if y1 < y2 and x1 < x2:
+            # Slices are already channel-matched
+            out[y1:y2, x1:x2, ...] = fg[fy1:fy2, fx1:fx2, ...]
+            
+        return out
 
     @staticmethod
     def map_translate_blend_tiles(
@@ -1143,12 +1271,32 @@ class Image_Ops:
             target_h = max(image1.shape[0], image2.shape[0])
             image1 = _resize_to(image1, target_h, image1.shape[1])
             image2 = _resize_to(image2, target_h, image2.shape[1])
+        elif match == "pad+resize":
+            target_h = max(image1.shape[0], image2.shape[0])
+            image1 = _center_crop_or_pad(image1, target_h, image1.shape[1])
+            image2 = _center_crop_or_pad(image2, target_h, image2.shape[1])
+        elif match == "cover":
+            target_h = max(image1.shape[0], image2.shape[0])
+            image1 = _fit_cover(image1, target_h, image1.shape[1])
+            image2 = _fit_cover(image2, target_h, image2.shape[1])
+        elif match == "contain":
+            target_h = max(image1.shape[0], image2.shape[0])
+            image1 = _fit_contain(image1, target_h, image1.shape[1])
+            image2 = _fit_contain(image2, target_h, image2.shape[1])
+        elif match == "crop":
+            target_h = min(image1.shape[0], image2.shape[0])
+            image1 = _center_crop_or_pad(image1, target_h, image1.shape[1])
+            image2 = _center_crop_or_pad(image2, target_h, image2.shape[1])
+        elif match == "tl-crop":
+            target_h = min(image1.shape[0], image2.shape[0])
+            image1 = _tl_crop(image1, target_h, image1.shape[1])
+            image2 = _tl_crop(image2, target_h, image2.shape[1])
         elif match == "pad":
             target_h = max(image1.shape[0], image2.shape[0])
             image1 = _pad_to(image1, target_h, image1.shape[1])
             image2 = _pad_to(image2, target_h, image2.shape[1])
         else:
-            raise ValueError("match must be 'pad' or 'resize'.")
+            raise ValueError("match must be 'pad', 'resize', 'pad+resize', 'cover', 'contain', 'crop', or 'tl-crop'.")
         return np.concatenate([image1, image2], axis=1)
 
     @staticmethod
@@ -1160,12 +1308,32 @@ class Image_Ops:
             target_w = max(image1.shape[1], image2.shape[1])
             image1 = _resize_to(image1, image1.shape[0], target_w)
             image2 = _resize_to(image2, image2.shape[0], target_w)
+        elif match == "pad+resize":
+            target_w = max(image1.shape[1], image2.shape[1])
+            image1 = _center_crop_or_pad(image1, image1.shape[0], target_w)
+            image2 = _center_crop_or_pad(image2, image2.shape[0], target_w)
+        elif match == "cover":
+            target_w = max(image1.shape[1], image2.shape[1])
+            image1 = _fit_cover(image1, image1.shape[0], target_w)
+            image2 = _fit_cover(image2, image2.shape[0], target_w)
+        elif match == "contain":
+            target_w = max(image1.shape[1], image2.shape[1])
+            image1 = _fit_contain(image1, image1.shape[0], target_w)
+            image2 = _fit_contain(image2, image2.shape[0], target_w)
+        elif match == "crop":
+            target_w = min(image1.shape[1], image2.shape[1])
+            image1 = _center_crop_or_pad(image1, image1.shape[0], target_w)
+            image2 = _center_crop_or_pad(image2, image2.shape[0], target_w)
+        elif match == "tl-crop":
+            target_w = min(image1.shape[1], image2.shape[1])
+            image1 = _tl_crop(image1, image1.shape[0], target_w)
+            image2 = _tl_crop(image2, image2.shape[0], target_w)
         elif match == "pad":
             target_w = max(image1.shape[1], image2.shape[1])
             image1 = _pad_to(image1, image1.shape[0], target_w)
             image2 = _pad_to(image2, image2.shape[0], target_w)
         else:
-            raise ValueError("match must be 'pad' or 'resize'.")
+            raise ValueError("match must be 'pad', 'resize', 'pad+resize', 'cover', 'contain', 'crop', or 'tl-crop'.")
         return np.concatenate([image1, image2], axis=0)
 
     @staticmethod
@@ -1263,6 +1431,30 @@ class Image_Ops:
         downsampled = Image_Ops.downsample(image, scale=scale, interpolation=interpolation)
         return _center_crop_or_pad(downsampled, h, w)
 
+    @staticmethod
+    def crop_to_content(image: ArrayLike, tolerance: int = 0) -> ArrayLike:
+        """Crops the image to the bounding box of non-zero (or > tolerance) pixels.
+        Useful for removing black borders."""
+        image = _validate_image(image)
+        xp_mod = _xp(image)
+        
+        if image.ndim == 3:
+            gray = image.sum(axis=2)
+        else:
+            gray = image
+            
+        mask = gray > tolerance
+        rows = xp_mod.any(mask, axis=1)
+        cols = xp_mod.any(mask, axis=0)
+        
+        if not xp_mod.any(rows):
+            return image
+            
+        rmin, rmax = int(xp_mod.where(rows)[0][0]), int(xp_mod.where(rows)[0][-1])
+        cmin, cmax = int(xp_mod.where(cols)[0][0]), int(xp_mod.where(cols)[0][-1])
+        
+        return image[rmin:rmax+1, cmin:cmax+1, ...]
+
     # --- Color ---
     @staticmethod
     def to_grayscale(image: ArrayLike, method: Literal["opencv", "manual", "average"] = "opencv") -> ArrayLike:
@@ -1295,6 +1487,19 @@ class Image_Ops:
             return gray.astype(image.dtype)
             
         return cv2.cvtColor(to_cpu(image), cv2.COLOR_RGB2GRAY)
+
+    @staticmethod
+    def to_color(image: ArrayLike) -> ArrayLike:
+        """Converts a grayscale image to a 3-channel RGB image by replicating the channel."""
+        image = _validate_image(image)
+        if image.ndim == 3:
+            return image.copy()
+        
+        # Dispatch to GPU if smart mode allows
+        image = _smart(image)
+        xp_mod = _xp(image)
+        
+        return xp_mod.repeat(image[..., None], 3, axis=2)
 
     @staticmethod
     def to_binary(image: ArrayLike, threshold: int = 127, method: Literal["fixed", "otsu"] = "fixed") -> ArrayLike:
@@ -1514,6 +1719,101 @@ class Image_Ops:
         noisy[rnd > 1 - prob / 2] = 255
         return noisy
 
+    @staticmethod
+    def intensity_threshold_mask(image1: ArrayLike, image2: ArrayLike, threshold: float, match: MatchMode = "resize") -> ArrayLike:
+        """
+        Replaces elements of image1 with elements of image2 exactly at that location 
+        if image1's intensity is above the threshold.
+        
+        Supports both grayscale and colored images.
+        
+        Parameters
+        ----------
+        image1 : ArrayLike
+            Base image. Intensity is calculated from this image.
+        image2 : ArrayLike
+            Replacement image.
+        threshold : float
+            Intensity threshold (X).
+        match : MatchMode
+            How to handle size mismatches ('resize' or 'pad').
+        """
+        image1 = _validate_image(image1, name="image1")
+        image2 = _validate_image(image2, name="image2")
+        
+        # Dispatch to GPU if smart mode allows
+        image1 = _smart(image1)
+        image2 = _smart(image2)
+        xp_mod = _xp(image1)
+        
+        # Ensure spatial dimensions match
+        h1, w1 = image1.shape[:2]
+        h2, w2 = image2.shape[:2]
+        if (h1, w1) != (h2, w2):
+            if match == "resize":
+                image2 = _resize_to(image2, h1, w1)
+                if xp_mod is cp:
+                    image2 = cp.asarray(image2)
+            elif match == "pad+resize":
+                image2 = _center_crop_or_pad(image2, h1, w1)
+                if xp_mod is cp and not isinstance(image2, cp.ndarray):
+                    image2 = cp.asarray(image2)
+            elif match == "cover":
+                if h1 * w1 <= h2 * w2:
+                    image2 = _fit_cover(image2, h1, w1)
+                    if xp_mod is cp and not isinstance(image2, cp.ndarray):
+                        image2 = cp.asarray(image2)
+                else:
+                    image1 = _fit_cover(image1, h2, w2)
+                    if xp_mod is cp and not isinstance(image1, cp.ndarray):
+                        image1 = cp.asarray(image1)
+            elif match == "crop":
+                if h1 * w1 <= h2 * w2:
+                    image2 = _center_crop_or_pad(image2, h1, w1)
+                    if xp_mod is cp and not isinstance(image2, cp.ndarray):
+                        image2 = cp.asarray(image2)
+                else:
+                    image1 = _center_crop_or_pad(image1, h2, w2)
+                    if xp_mod is cp and not isinstance(image1, cp.ndarray):
+                        image1 = cp.asarray(image1)
+            elif match == "tl-crop":
+                if h1 * w1 <= h2 * w2:
+                    image2 = _tl_crop(image2, h1, w1)
+                    if xp_mod is cp and not isinstance(image2, cp.ndarray):
+                        image2 = cp.asarray(image2)
+                else:
+                    image1 = _tl_crop(image1, h2, w2)
+                    if xp_mod is cp and not isinstance(image1, cp.ndarray):
+                        image1 = cp.asarray(image1)
+            elif match == "contain":
+                image2 = _fit_contain(image2, h1, w1)
+                if xp_mod is cp and not isinstance(image2, cp.ndarray):
+                    image2 = cp.asarray(image2)
+            else:
+                image2 = _pad_to(image2, h1, w1) if (h2 <= h1 and w2 <= w1) else _resize_to(image2, h1, w1)
+                if xp_mod is cp and not isinstance(image2, cp.ndarray):
+                    image2 = cp.asarray(image2)
+        
+        # Match channels before processing
+        image1, image2 = _match_channels(image1, image2)
+        
+        # Calculate intensity
+        if image1.ndim == 2:
+            intensity = image1
+        else:
+            # Manual intensity: 0.299R + 0.587G + 0.114B
+            img_f = image1.astype(xp_mod.float32)
+            intensity = 0.299 * img_f[..., 0] + 0.587 * img_f[..., 1] + 0.114 * img_f[..., 2]
+            
+        # Create mask
+        mask = intensity > threshold
+        
+        # Apply mask
+        if image1.ndim == 3:
+            mask = mask[..., xp_mod.newaxis]
+            
+        return xp_mod.where(mask, image2, image1)
+
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1595,8 +1895,8 @@ class Specialization:
 
         if image.ndim == 2 and reference.ndim == 2:
             return _match_channel(image, reference)
-        out = np.zeros_like(image)
         image, reference = _match_channels(image, reference)
+        out = np.zeros_like(image)
         for i in range(image.shape[2]):
             out[..., i] = _match_channel(image[..., i], reference[..., i])
         return out
@@ -3119,7 +3419,11 @@ crop_image = Image_Ops.crop
 crop_circle = Image_Ops.crop_circle
 rotate_circle = Image_Ops.rotate_circle
 translate_image = Image_Ops.translate
+resize_image = Image_Ops.resize
 slice_image = Image_Ops.slice
+pad_image = Image_Ops.pad
+overlay_image = Image_Ops.overlay
+intensity_threshold_mask = Image_Ops.intensity_threshold_mask
 save_image = Image_Ops.save
 create_blank_image = Image_Ops.create_blank
 create_blank_like = Image_Ops.create_blank_like
@@ -3150,6 +3454,7 @@ decimate_image_keep_resolution_float = Image_Ops.downsample_keep_resolution
 invert_colors = Image_Ops.invert
 threshold_image = Image_Ops.to_binary
 to_grayscale = Image_Ops.to_grayscale
+to_color = Image_Ops.to_color
 rgb_split = Image_Ops.rgb_split
 rgb_merge = Image_Ops.rgb_merge
 show_rgb_channels = Image_Ops.show_rgb_channels
@@ -3162,6 +3467,7 @@ add_salt_pepper_noise = Image_Ops.add_salt_pepper
 show_histogram = Histogram.show
 show_histograms = Histogram.show_multi
 show_histogram_original_normalized = Histogram.show_original_and_normalized
+show_combined_histogram = Histogram.show_combined
 
 convolve_image = Convolution.apply
 

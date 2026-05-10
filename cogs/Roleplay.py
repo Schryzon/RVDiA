@@ -170,7 +170,7 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         """
         Tampar seseorang!
         """
-        get_request = await self.nekos_get('slap')
+        get_request = await self.nekos_get('pat')
         gif_url = get_request[0]
         anime_name = get_request[1]
         return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Mengelus Kepala', user)

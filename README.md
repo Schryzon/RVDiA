@@ -4,8 +4,18 @@
 
 <p align="center">
   <a href="https://discord.com/api/oauth2/authorize?client_id=957471338577166417&permissions=1514446056561&scope=bot%20applications.commands">
-  <img src="https://img.shields.io/badge/SCHRYZON-RVDIA-ff4df0?style=for-the-badge&logo=python&logoColor=yellow" alt="SCHRYZON - RVDiA"></a>
-  <a href="https://discord.gg/QqWCnk6zxw"><img alt="Discord" src="https://img.shields.io/discord/877009215271604275?style=for-the-badge"></a>
+    <img src="https://img.shields.io/badge/SCHRYZON-RVDIA-ff4df0?style=for-the-badge&logo=python&logoColor=yellow" alt="SCHRYZON - RVDiA">
+  </a>
+  <a href="https://discord.gg/QqWCnk6zxw">
+    <img alt="Discord" src="https://img.shields.io/discord/877009215271604275?style=for-the-badge&logo=discord&logoColor=white">
+  </a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.12-blue?style=flat-square&logo=python&logoColor=white" alt="Python 3.12">
+  <img src="https://img.shields.io/badge/License-AGPL--3.0-orange?style=flat-square" alt="License: AGPL-3.0">
+  <img src="https://img.shields.io/badge/Deployed%20with-Railway-black?style=flat-square&logo=railway" alt="Deployed with Railway">
+  <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" alt="Status: Active">
 </p>
 
 <p align ="center">
@@ -23,13 +33,13 @@ This bot is in Indonesian and has special commands for members of the G-Tech Re'
 
 ## Core Features & Recent Updates
 - **RPG Battle System**: A deep, turn-based combat system with levels, stats, and skills.
-    - **Enemy Tiers**: From Low to the new **BONUS ENEMY** tier featuring legendary characters like Shiruto and Kamen Riders.
-    - **Visual Flair**: Every enemy now features a unique dynamic color theme in combat.
+    - **Massive Content**: Over **100+ items and skills** available in the paginated Shop.
+    - **Elite Challenges**: New **FINAL BOSS** tier featuring multi-phase threats like Demi-fiend and Nahobino.
+    - **Persona Integration**: Added legendary protagonists Makoto Yuki, Yu Narukami, and Ren Amamiya as high-stakes Bonus Enemies.
+    - **Tactical UI**: Enhanced in-battle UI with real-time stat checking and detailed enemy skill analysis.
 - **Local AI Architecture**: Decoupled from proprietary cloud services for enhanced privacy and cost-efficiency.
-    - **Local Embeddings**: Uses `sentence-transformers` for high-performance multilingual vector search.
-    - **Privacy-First Search**: Integrated DuckDuckGo RAG system for real-time information retrieval without tracking.
-- **Image Processing**: Advanced image manipulation and generation tools.
-- **Dynamic Web Dashboard**: Built with `aiohttp` and `Jinja2` featuring glassmorphism design.
+    - **Multilingual Search**: Optimized for English and Indonesian casual chat behaviors.
+- **Dynamic Web Dashboard**: Built with `aiohttp` and `Jinja2` featuring premium Glassmorphism aesthetics and multilingual support (ID/EN).
 
 ## Want to Tinker with It Yourself?
 1. Clone this repo or download the latest release from tags;
@@ -54,8 +64,16 @@ Special thanks to Riverdia (for inspiring the bot's name), iMaze, Mouchi, Dez, Z
 
 **Made with ❤️ and dedication, Jayananda**
 
+## Community
+- [Contributing Guidelines](CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+
+---
+
 Farewell, Yuyuko, Pandora, and Historia. You will be missed.
 
 `Verified: 01/08/2023`
+
 `End of Life: 08/04/2025`
+
 `Rebirth: 30/04/2026`

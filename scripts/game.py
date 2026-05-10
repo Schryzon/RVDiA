@@ -23,7 +23,7 @@ default_data = {
 }
 
 async def level_up(ctx):
-    user_id = ctx.id if isinstance(ctx, discord.Member) else ctx.author.id
+    user_id = ctx.id if isinstance(ctx, (discord.Member, discord.User)) else ctx.author.id
     user = await db.user.find_unique(where={'id': user_id})
     if not user:
         return False
@@ -69,11 +69,21 @@ async def send_level_up_msg(ctx:commands.Context, user:discord.Member = None):
     target = user if user else ctx.author
     return await ctx.channel.send(f'Selamat, {target.mention}!\nKamu telah naik ke level `{user_level}`!\nEXP selanjutnya: `{next_exp}`')
 
-def split_reward_string(rewards:list):
-    array = []
-    for reward in rewards:
-        array.append(int(reward.split('+')[1]))
-    return array
+def split_reward_string(rewards: list):
+    """
+    Parses a list of reward strings like ['exp+100', 'cns+50', 'krm-10']
+    Returns a list of values: [exp, coins, karma]
+    """
+    res = {"exp": 0, "cns": 0, "krm": 0}
+    for r in rewards:
+        if '+' in r:
+            parts = r.split('+')
+            res[parts[0]] = int(parts[1])
+        elif '-' in r:
+            parts = r.split('-')
+            res[parts[0]] = -int(parts[1])
+    
+    return [res["exp"], res["cns"], res["krm"]]
 
 async def give_rewards(ctx:commands.Context, user:discord.Member, exp:int, coins:int, karma:int=0):
     user_record = await db.user.find_unique(where={'id': user.id})

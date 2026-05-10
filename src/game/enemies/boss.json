@@ -1,58 +1,162 @@
 [
     {
         "name": "Schryzon",
-        "desc": "Sang Pencipta Konflik. Entitas yang melampaui batas realita.",
+        "desc": "Sang Pencipta Konflik. Entitas absolut yang melampaui batas realita dan imajinasi.",
         "tier": "FINAL BOSS",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1148819154267287582/20230906.png",
-        "hp": 8500,
-        "atk": 150,
-        "def": 120,
-        "agl": 110,
+        "hp": 30000,
+        "atk": 400,
+        "def": 350,
+        "agl": 320,
         "reward": [
-            "exp+15000",
-            "cns+5000",
-            "krm+500"
+            "exp+50000",
+            "cns+20000",
+            "krm+1000"
         ],
         "skills": [
             {
                 "name": "Power of Conflict",
-                "func": "dmg+25%"
+                "func": "dmg+25%",
+                "desc": "Kekuatan murni dari konflik yang menghancurkan segalanya."
             },
             {
                 "name": "Ultimate Entity",
-                "func": "def+15"
+                "func": "def+15",
+                "desc": "Keberadaan absolut yang tidak terpengaruh oleh hukum dunia."
             },
             {
                 "name": "Face the Reality",
-                "func": "atk+30"
+                "func": "atk+30",
+                "desc": "Memaksa lawan menghadapi realita yang pahit."
             },
             {
                 "name": "Heal me, World",
-                "func": "hp+40%"
+                "func": "hp+40%",
+                "desc": "Dunia bersujud untuk memulihkan lukanya."
             },
             {
                 "name": "Your Life is Mine",
-                "func": "hp-20%"
+                "func": "hp-20%",
+                "desc": "Menarik paksa vitalitas dari keberadaan lawan."
             },
             {
                 "name": "Die, Hero",
-                "func": "dmg+100%"
+                "func": "dmg+100%",
+                "desc": "Hukuman mati bagi mereka yang berani menantang Sang Pencipta."
             },
             {
                 "name": "Gaze of Void",
-                "func": "agl-25"
+                "func": "agl-25",
+                "desc": "Tatapan hampa yang menghentikan pergerakan waktu."
+            },
+            {
+                "name": "Reality Overwrite",
+                "func": "all+25",
+                "desc": "Menulis ulang hukum alam untuk meningkatkan seluruh status secara absolut."
+            },
+            {
+                "name": "Void Pressure",
+                "func": "all-20",
+                "desc": "Tekanan dari kehampaan yang meruntuhkan seluruh aspek target."
             },
             {
                 "name": "Reality Warp",
-                "func": "def-30"
+                "func": "def-50",
+                "desc": "Membengkokkan ruang untuk melenyapkan pertahanan musuh."
             }
         ],
         "color": "#59c2e1"
     },
     {
+        "name": "Demi-fiend",
+        "desc": "The Hitoshura. Manusia setengah iblis yang membawa kehancuran dan penciptaan kembali.",
+        "tier": "FINAL BOSS",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1502845810734403644/demifiend.jpg?ex=6a0131ba&is=69ffe03a&hm=9a2f7a40b896ddb057e17b2b8ed523d67dc72e5a201c40afb4b6400ca8882fe4&",
+        "hp": 18000,
+        "atk": 320,
+        "def": 280,
+        "agl": 250,
+        "reward": [
+            "exp+35000",
+            "cns+15000",
+            "krm+800"
+        ],
+        "skills": [
+            {
+                "name": "Freikugel",
+                "func": "dmg+75%",
+                "desc": "Serangan fisik Almighty yang melampaui segala jenis pertahanan."
+            },
+            {
+                "name": "Gaea Rage",
+                "func": "all-10",
+                "desc": "Amarah bumi yang menggetarkan jiwa dan melemahkan seluruh status lawan."
+            },
+            {
+                "name": "Javelin Rain",
+                "func": "atk-25",
+                "desc": "Hujan lembing yang melumpuhkan kekuatan menyerang target."
+            },
+            {
+                "name": "Magma Axis",
+                "func": "dmg+35%",
+                "desc": "Semburan energi magma murni yang membakar keberadaan lawan."
+            },
+            {
+                "name": "Mediarahan",
+                "func": "hp+100%",
+                "desc": "Keajaiban yang memulihkan seluruh luka secara instan."
+            }
+        ],
+        "color": "#1a472a"
+    },
+    {
+        "name": "Nahobino",
+        "desc": "Entitas terlarang yang menyatukan manusia dan dewa. Sang penyelamat atau penghancur tahta.",
+        "tier": "FINAL BOSS",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1502845811292242134/nahobino.jpg?ex=6a0131ba&is=69ffe03a&hm=4441e6e4a2d41a7dfa1c8365f901edb4dc316710f229fb105b18cb92047e6ecb&",
+        "hp": 20000,
+        "atk": 350,
+        "def": 250,
+        "agl": 300,
+        "reward": [
+            "exp+38000",
+            "cns+18000",
+            "krm+850"
+        ],
+        "skills": [
+            {
+                "name": "Murakumo",
+                "func": "dmg+65%",
+                "desc": "Pedang Almighty yang menebas esensi dari target."
+            },
+            {
+                "name": "Luster Candy",
+                "func": "all+15",
+                "desc": "Permen cahaya yang memberikan berkah pada seluruh status diri."
+            },
+            {
+                "name": "Debilitate",
+                "func": "all-15",
+                "desc": "Melemahkan kutukan yang merusak seluruh aspek kekuatan lawan."
+            },
+            {
+                "name": "Kannabi Veil",
+                "func": "def+40",
+                "desc": "Tabir pelindung dewa yang sangat sulit ditembus."
+            },
+            {
+                "name": "Thalassic Calamity",
+                "func": "dmg+40%",
+                "desc": "Bencana lautan yang menghantam musuh dengan kekuatan air yang dingin."
+            }
+        ],
+        "color": "#1a3a47"
+    },
+    {
         "name": "RVDiA",
         "desc": "Putri yang memegang kendali atas seluruh Re:Volution.",
-        "tier": "FINAL BOSS",
+        "tier": "SUPER BOSS",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1123190763442929835/RVDiA-Profile-Pic.png",
         "hp": 7500,
         "atk": 140,
@@ -90,7 +194,8 @@
             },
             {
                 "name": "Royal Decree",
-                "func": "atk-20"
+                "func": "all-8",
+                "desc": "Titah kerajaan yang menurunkan moral dan status lawan."
             }
         ],
         "color": "#56fa5f"

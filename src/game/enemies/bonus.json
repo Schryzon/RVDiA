@@ -35,7 +35,7 @@
         "tier": "BONUS ENEMY",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1501110155499012126/kuuga.jpg?ex=69fae146&is=69f98fc6&hm=fb8debcb3626760042924b4ce41a7f5e871f9bbef6cb28fd2d12adc2238d341a",
         "hp": 6500,
-        "atk": 150,
+        "atk": 200,
         "def": 110,
         "agl": 95,
         "reward": [
@@ -444,5 +444,152 @@
             }
         ],
         "color": "#456e48"
+    },
+    {
+        "name": "Makoto Yuki",
+        "desc": "The Door. Pemuda yang memegang kunci antara hidup dan mati. 'Burn My Dread'.",
+        "tier": "BONUS ENEMY",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1502846936204709898/makoto.png?ex=6a0132c7&is=69ffe147&hm=f1933dfaff7ecf44b252c4e9e3b2824db2175a91641e524c41db86849078d246&",
+        "hp": 7000,
+        "atk": 160,
+        "def": 120,
+        "agl": 110,
+        "reward": [
+            "exp+12000",
+            "cns+5000",
+            "krm+300"
+        ],
+        "skills": [
+            {
+                "name": "Armageddon",
+                "func": "dmg+45%",
+                "desc": "Kombinasi kekuatan mutlak yang menghapuskan sebagian besar keberadaan target."
+            },
+            {
+                "name": "Morning Star",
+                "func": "dmg+20%",
+                "desc": "Cahaya fajar yang menghanguskan kegelapan dan musuh."
+            },
+            {
+                "name": "The Great Seal",
+                "func": "all-5",
+                "desc": "Segel agung yang mengunci sebagian potensi kekuatan lawan."
+            }
+        ],
+        "color": "#00a2ff"
+    },
+    {
+        "name": "Yu Narukami",
+        "desc": "The Wild Card of Inaba. Sang pencari kebenaran di balik kabut. 'Reach Out To The Truth'.",
+        "tier": "BONUS ENEMY",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1502846935462051951/yu.jpg?ex=6a0132c6&is=69ffe146&hm=2588bc78e6b999b56c7cb4badfc44ed583f57df55eaa4f0debef74254a71a2e0&",
+        "hp": 6500,
+        "atk": 165,
+        "def": 110,
+        "agl": 115,
+        "reward": [
+            "exp+12000",
+            "cns+5000",
+            "krm+300"
+        ],
+        "skills": [
+            {
+                "name": "Myriad Truths",
+                "func": "dmg+30%",
+                "desc": "Kebenaran sejati yang menebas segala bentuk kebohongan dan ilusi."
+            },
+            {
+                "name": "Cross Slash",
+                "func": "atk+15",
+                "desc": "Serangan tebasan silang yang sangat kuat dan presisi."
+            },
+            {
+                "name": "Ziodyne",
+                "func": "agl-10",
+                "desc": "Sengatan listrik tingkat tinggi yang melumpuhkan pergerakan lawan."
+            }
+        ],
+        "color": "#ffeb3b"
+    },
+    {
+        "name": "Ren Amamiya",
+        "desc": "Joker. Pemimpin Phantom Thieves yang akan mencuri hatimu. 'Wake Up, Get Up, Get Out There'.",
+        "tier": "BONUS ENEMY",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1502846935868903495/ren.jpg?ex=6a0132c7&is=69ffe147&hm=fe1e4587ef87f3ba45a795c176668ed76c0357707587aeae7af06b026f31e55d&",
+        "hp": 6000,
+        "atk": 155,
+        "def": 100,
+        "agl": 140,
+        "reward": [
+            "exp+12000",
+            "cns+5000",
+            "krm+300"
+        ],
+        "skills": [
+            {
+                "name": "Sinful Shell",
+                "func": "dmg+35%",
+                "desc": "Peluru berisi tujuh dosa mematikan yang menembus takdir dewa."
+            },
+            {
+                "name": "Eigaon",
+                "func": "hp-10%",
+                "desc": "Kutukan kegelapan yang mengikis vitalitas musuh secara perlahan."
+            },
+            {
+                "name": "Showtime",
+                "func": "all+5",
+                "desc": "Pertunjukan spektakuler yang membangkitkan semangat dan seluruh status."
+            }
+        ],
+        "color": "#ff1744"
+    },
+    {
+        "name": "Young Xehanort",
+        "desc": "Entitas misterius yang melampaui waktu dan ruang. Kecepatannya tidak masuk akal dan kekuatannya absolut. 'It is time.'",
+        "tier": "BONUS ENEMY",
+        "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1502861863010963466/mysteriousfigure.png?ex=6a0140ad&is=69ffef2d&hm=d8f8f2c62ca73accce759ec6f36394858fcbde494a17abac4212dd607903e7be",
+        "hp": 100,
+        "atk": 999,
+        "def": 999,
+        "agl": 999,
+        "reward": [
+            "exp+0",
+            "cns+0",
+            "krm+0"
+        ],
+        "skills": [
+            {
+                "name": "Ethereal Blade Combo",
+                "func": "dmg+99%",
+                "desc": "Rentetan tebasan bilah plasma yang merobek realitas dan menyisakan target di ambang kematian."
+            },
+            {
+                "name": "Mega Flare",
+                "func": "dmg+99%",
+                "desc": "Ledakan energi murni yang melenyapkan segalanya dalam sekejap."
+            },
+            {
+                "name": "Doom",
+                "func": "hp-99%",
+                "desc": "Benang energi biru mengikat jiwa, menghitung mundur menuju penghapusan total."
+            },
+            {
+                "name": "Renewal Barrier",
+                "func": "hp+50%",
+                "desc": "Pelindung temporal yang memulihkan setengah dari vitalitas entitas ini secara instan."
+            },
+            {
+                "name": "Whirlwind to the Void",
+                "func": "agl-100",
+                "desc": "Pusaran hampa yang menghentikan waktu bagi lawan."
+            },
+            {
+                "name": "Collision Magnet",
+                "func": "def-100",
+                "desc": "Tarikan gravitasi yang menghancurkan pertahanan target sepenuhnya."
+            }
+        ],
+        "color": "#0000FF"
     }
 ]

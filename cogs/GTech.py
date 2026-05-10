@@ -136,7 +136,9 @@ class GTech(commands.GroupCog, group_name='g-tech'):
             }
         )
         await interaction.response.send_message('Berita baru telah diposting!', ephemeral=True)
-        await self.send_news(int(getenv('gtechnews')))
+        news_channel_id = getenv('gtechnews')
+        if news_channel_id:
+            await self.send_news(int(news_channel_id))
 
     @app_commands.command(description="Lihat berita terbaru tentang G-Tech!")
     @in_gtech_server()
@@ -173,4 +175,8 @@ class GTech(commands.GroupCog, group_name='g-tech'):
         await interaction.response.send_message('Berita terakhir telah dihapus.', ephemeral=True)
 
 async def setup(bot:commands.Bot):
-    await bot.add_cog(GTech(bot), guild=discord.Object(int(getenv('gtechguild'))))
+    gtech_guild_id = getenv('gtechguild')
+    if gtech_guild_id:
+        await bot.add_cog(GTech(bot), guild=discord.Object(int(gtech_guild_id)))
+    else:
+        await bot.add_cog(GTech(bot))

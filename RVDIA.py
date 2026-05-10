@@ -40,7 +40,7 @@ class RVDIA(commands.AutoShardedBot):
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "Rebirth v2.0.0"
+    self.__version__ = "Rebirth v2.1.0"
     self.event_mode = True
     self.color = 0x86273d
     self.runtime = time() # UNIX float

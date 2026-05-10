@@ -14,7 +14,7 @@ from PIL import Image
 from scripts.main import titlecase, check_blacklist, AIClient, db
 from scripts.memory import memory_manager
 from scripts.error_logger import format_error_report
-from scripts.search import search_web, format_search_results
+from scripts.search import search_web, search_images, format_search_results
 
 class Regenerate_Answer_Button(View):
     def __init__(self, user_id: int, last_question: str, initial_response: str):
@@ -87,7 +87,16 @@ class Regenerate_Answer_Button(View):
         embed.set_author(name=interaction.user)
         embed.set_footer(text=f'Halaman {self.current_page + 1}/{len(self.responses)} • Jika ingin tanya lagi, silakan reply!')
         
-        await interaction.message.edit(embed=embed, view=self)
+        # Check if response has an image link
+        import re
+        img_match = re.search(r'https?://\S+\.(?:jpg|jpeg|png|gif|webp)', self.responses[self.current_page])
+        if img_match:
+            embed.set_image(url=img_match.group(0))
+
+        try:
+            await interaction.message.edit(embed=embed, view=self)
+        except discord.NotFound:
+            pass
 
     async def prev_page(self, interaction: discord.Interaction):
         if self.current_page > 0:
@@ -110,95 +119,155 @@ class Regenerate_Answer_Button(View):
             await self.message.edit(view=self)
 
     async def regenerate(self, interaction: discord.Interaction):
-        await interaction.response.defer()
-        await interaction.channel.typing()
+        try:
+            await interaction.response.defer()
+        except discord.NotFound:
+            pass
         
-        user_id = interaction.user.id
-        message = self.last_question
-        
-        # 1. Retrieve context
-        context = await memory_manager.get_context(user_id, message)
-        
-        # 2. We don't save the question again here since it's a regeneration
-        # but we use the embedding for the AI response if needed (though we skip model embeddings)
-        
-        currentTime = datetime.now(pytz.utc).astimezone(pytz.timezone("Asia/Jakarta"))
-        date = currentTime.strftime("%d/%m/%Y")
-        hour = currentTime.strftime("%H:%M:%S")
-        
-        client = genai.Client(api_key=os.getenv("googlekey"))
-        
-        # Construct dynamic prompt
-        sys_inst = (
-            os.getenv('rolesys') + 
-            f"\n\nContext Information:\n"
-            f"Currently chatting with: {interaction.user}\n"
-            f"Current Date: {date}, Time: {hour} WITA\n"
-            f"\nRecent Conversation History:\n{context['history']}\n"
-            f"\nRelevant Past Memories:\n{context['memories']}\n"
-            f"\nRemember to be stay in character as RVDiA (loving, cute, informal)."
-        )
-        
-        AI_response = None
-        max_retries = 2
-        for attempt in range(max_retries + 1):
-            try:
-                # We'll use a manual check for search for now, 
-                # or we could use Gemini's function calling.
-                # To keep it simple and "implemented ourselves", 
-                # we'll look for keywords or just always provide a "search" option.
-                
-                # Check if the query might need search
-                search_context = ""
-                needs_search = any(kw in message.lower() for kw in ["kapan", "siapa", "dimana", "berita", "terbaru", "harga", "cek", "apa itu", "kenapa", "bagaimana", "tutorial", "cara", "rekomendasi", "info", "lokasi", "jadwal", "skor", "cuaca", "trending", "viral", "cari", "search"])
-                if needs_search:
-                    results = await search_web(message)
-                    search_context = format_search_results(results)
+        async with interaction.channel.typing():
+            user_id = interaction.user.id
+            message = self.last_question
+            
+            # 1. Retrieve context
+            context = await memory_manager.get_context(user_id, message)
+            
+            # 2. We don't save the question again here since it's a regeneration
+            # but we use the embedding for the AI response if needed (though we skip model embeddings)
+            
+            currentTime = datetime.now(pytz.utc).astimezone(pytz.timezone("Asia/Jakarta"))
+            date = currentTime.strftime("%d/%m/%Y")
+            hour = currentTime.strftime("%H:%M:%S")
+            
+            client = genai.Client(api_key=os.getenv("googlekey"))
+            
+            # Construct dynamic prompt
+            sys_inst = (
+                os.getenv('rolesys') + 
+                f"\n\nContext Information:\n"
+                f"Currently chatting with: {interaction.user}\n"
+                f"Current Date: {date}, Time: {hour} WITA\n"
+                f"\nRecent Conversation History:\n{context['history']}\n"
+                f"\nRelevant Past Memories:\n{context['memories']}\n"
+                f"\nRemember to be stay in character as RVDiA (loving, cute, informal)."
+            )
+            
+            AI_response = None
+            max_retries = 2
+            for attempt in range(max_retries + 1):
+                try:
+                    # We'll use a manual check for search for now, 
+                    # or we could use Gemini's function calling.
+                    # To keep it simple and "implemented ourselves", 
+                    # we'll look for keywords or just always provide a "search" option.
+                    
+                    # Check if the query might need search
+                    search_context = ""
+                    needs_search = any(kw in message.lower() for kw in ["kapan", "siapa", "dimana", "berita", "terbaru", "harga", "cek", "apa itu", "kenapa", "bagaimana", "tutorial", "cara", "rekomendasi", "info", "lokasi", "jadwal", "skor", "cuaca", "trending", "viral", "cari", "search"])
+                    
+                    image_url = None
+                    needs_image = any(kw in message.lower() for kw in ["tunjukkan gambar", "lihat foto", "show me", "cari gambar", "lihatkan foto", "lihatkan gambar"])
+                    
+                    if needs_search or needs_image:
+                        if needs_image:
+                            img_results = await search_images(message)
+                            if img_results:
+                                image_url = img_results[0]['image']
+                                search_context += f"\n[Found Image: {image_url}]\n"
+                        
+                        results = await search_web(message)
+                        search_context += format_search_results(results)
 
-                # Update system instruction with search context
-                current_sys_inst = sys_inst
-                if search_context:
-                    current_sys_inst += f"\n\nAdditional Search Context:\n{search_context}"
+                    # Update system instruction with search context
+                    current_sys_inst = sys_inst
+                    if search_context:
+                        current_sys_inst += f"\n\nAdditional Search Context:\n{search_context}"
 
-                result = await client.aio.models.generate_content(
-                    model='gemini-3-flash-preview',
-                    contents=message,
-                    config=types.GenerateContentConfig(
-                        system_instruction=current_sys_inst
+                    result = await client.aio.models.generate_content(
+                        model='gemini-3-flash-preview',
+                        contents=message,
+                        config=types.GenerateContentConfig(
+                            system_instruction=current_sys_inst
+                        )
                     )
-                )
-                AI_response = result.text
-                break
-            except Exception as e:
-                if ("429" in str(e) or "ResourceExhausted" in str(e)) and attempt < max_retries:
-                    await asyncio.sleep(3 * (attempt + 1))
-                    continue
-                
-                if "429" in str(e) or "ResourceExhausted" in str(e):
-                    AI_response = "Aduuh! Sepertinya aku lagi kecapekan nih... Banyak banget yang nanya. Tunggu sebentar ya, nanti tanya lagi! 🌸"
-                elif "safety" in str(e).lower():
-                    AI_response = "Umm... sepertinya itu pertanyaan yang kurang pantas. Aku gak bisa jawab kalau soal itu ya! ❌"
-                else:
-                    AI_response = "Waduh, otakku tiba-tiba nge-blank... Coba tanya lagi nanti ya! 💫"
-                    # Log the error and send to developer
-                    logging.error(f"Error in Regenerate_Answer_Button: {e}")
-                    try:
-                        error_channel = interaction.client.get_channel(int(os.getenv("errorchannel")))
-                        if error_channel:
-                            embed = format_error_report(e, context=f"Regenerate Chat (User: {interaction.user})")
-                            await error_channel.send(embed=embed)
-                    except Exception as log_e:
-                        logging.error(f"Failed to send error report: {log_e}")
-                break
+                    AI_response = result.text
+                    
+                    # Append image URL to response if found but not included by AI
+                    if image_url and image_url not in AI_response:
+                        AI_response += f"\n\n{image_url}"
+                        
+                    break
+                except Exception as e:
+                    error_str = str(e)
+                    if any(err in error_str for err in ["429", "ResourceExhausted", "503", "ServiceUnavailable", "UNAVAILABLE"]) and attempt < max_retries:
+                        await asyncio.sleep(3 * (attempt + 1))
+                        continue
+                    
+                    if any(err in error_str for err in ["429", "ResourceExhausted", "503", "ServiceUnavailable", "UNAVAILABLE"]):
+                        AI_response = "Aduuh! Sepertinya aku lagi kecapekan nih... Banyak banget yang nanya. Tunggu sebentar ya, nanti tanya lagi! 🌸"
+                    elif "safety" in str(e).lower():
+                        AI_response = "Umm... sepertinya itu pertanyaan yang kurang pantas. Aku gak bisa jawab kalau soal itu ya! ❌"
+                    else:
+                        AI_response = "Waduh, otakku tiba-tiba nge-blank... Coba tanya lagi nanti ya! 💫"
+                        # Log the error and send to developer
+                        logging.error(f"Error in Regenerate_Answer_Button: {e}")
+                        try:
+                            error_channel = interaction.client.get_channel(int(os.getenv("errorchannel")))
+                            if error_channel:
+                                embed = format_error_report(e, context=f"Regenerate Chat (User: {interaction.user})")
+                                await error_channel.send(embed=embed)
+                        except Exception as log_e:
+                            logging.error(f"Failed to send error report: {log_e}")
+                    break
+            
+            if AI_response and AI_response not in self.responses:
+                self.responses.append(AI_response)
+                self.current_page = len(self.responses) - 1
+            
+            # 3. Save the new AI response to memory (Optimized: skips embedding)
+            await memory_manager.add_memory(user_id, "model", AI_response)
+            
+            await self.update_view(interaction)
+
+class MemoryManagerView(View):
+    def __init__(self, user_id: int, memories: list):
+        super().__init__(timeout=60)
+        self.user_id = user_id
         
-        if AI_response and AI_response not in self.responses:
-            self.responses.append(AI_response)
-            self.current_page = len(self.responses) - 1
+        # Add Select Menu
+        options = []
+        for i, mem in enumerate(memories[:25]): # Max 25 options
+            # Shorten content for label
+            label = mem.content[:90] + "..." if len(mem.content) > 90 else mem.content
+            options.append(discord.SelectOption(
+                label=f"{i+1}. {label}",
+                value=str(mem.id),
+                description=f"Type: {mem.role} | {mem.created_at.strftime('%d/%m/%Y')}"
+            ))
+            
+        self.select = discord.ui.Select(
+            placeholder="Pilih memori untuk dihapus (Bisa pilih banyak)",
+            min_values=1,
+            max_values=len(options),
+            options=options
+        )
+        self.select.callback = self.delete_memories
+        self.add_item(self.select)
+
+    async def delete_memories(self, interaction: discord.Interaction):
+        if interaction.user.id != self.user_id:
+            return await interaction.response.send_message("Ini bukan memorimu! ❌", ephemeral=True)
+            
+        await interaction.response.defer()
+        selected_ids = self.select.values
         
-        # 3. Save the new AI response to memory (Optimized: skips embedding)
-        await memory_manager.add_memory(user_id, "model", AI_response)
-        
-        await self.update_view(interaction)
+        try:
+            # Delete from DB
+            await db.memory.delete_many(where={'id': {'in': [int(sid) for sid in selected_ids]}})
+            await interaction.followup.send(f"✅ Berhasil menghapus {len(selected_ids)} memori pilihanmu!", ephemeral=True)
+            # Remove message
+            await interaction.message.delete()
+        except Exception as e:
+            await interaction.followup.send(f"❌ Gagal menghapus memori: {e}", ephemeral=True)
 
 class Conversation(commands.Cog):
     """
@@ -219,7 +288,12 @@ class Conversation(commands.Cog):
         """
         Tanyakan atau perhintahkan aku untuk melakukan sesuatu!
         """
-        async with ctx.typing():
+        try:
+            await ctx.defer()
+        except discord.NotFound:
+            pass
+            
+        async with ctx.channel.typing():
             user_id = ctx.author.id
             
             # 1. Retrieve context (generates query embedding)
@@ -249,12 +323,24 @@ class Conversation(commands.Cog):
             max_retries = 2
             for attempt in range(max_retries + 1):
                 try:
-                    # Check if the query might need search
+                    # Expanded Casual Vocabulary Detection (English & Indonesian)
+                    search_keywords = ["kapan", "siapa", "dimana", "berita", "terbaru", "harga", "cek", "apa itu", "kenapa", "bagaimana", "tutorial", "cara", "rekomendasi", "info", "lokasi", "jadwal", "skor", "cuaca", "trending", "viral", "cari", "carikan", "search", "jelasin", "ceritain", "apaan", "gimana", "mana", "dong", "google", "googling", "who", "what", "where", "when", "why", "how", "news", "update", "latest", "price", "explain", "tutorial", "recommend", "location", "schedule", "score", "weather", "find out", "tell me about"]
+                    image_keywords = ["tunjukkan gambar", "lihat foto", "cari gambar", "lihatkan", "mana gambar", "mana foto", "liat dong", "spill", "pap", "poto", "gambar dari", "kek gimana", "show me", "pics", "photos", "image", "look like", "picture of", "let me see", "can i see", "send me", "view"]
+
                     search_context = ""
-                    needs_search = any(kw in message.lower() for kw in ["kapan", "siapa", "dimana", "berita", "terbaru", "harga", "cek", "apa itu", "kenapa", "bagaimana", "tutorial", "cara", "rekomendasi", "info", "lokasi", "jadwal", "skor", "cuaca", "trending", "viral", "cari", "search"])
-                    if needs_search:
+                    needs_search = any(kw in message.lower() for kw in search_keywords)
+                    image_url = None
+                    needs_image = any(kw in message.lower() for kw in image_keywords)
+                    
+                    if needs_search or needs_image:
+                        if needs_image:
+                            img_results = await search_images(message)
+                            if img_results:
+                                image_url = img_results[0]['image']
+                                search_context += f"\n[Found Image: {image_url}]\n"
+                        
                         results = await search_web(message)
-                        search_context = format_search_results(results)
+                        search_context += format_search_results(results)
 
                     # Update system instruction with search context
                     current_sys_inst = sys_inst
@@ -269,13 +355,18 @@ class Conversation(commands.Cog):
                         )
                     )
                     AI_response = result.text
+                    
+                    # Append image URL to response if found but not included by AI
+                    if image_url and image_url not in AI_response:
+                        AI_response += f"\n\n{image_url}"
                     break # Success!
                 except Exception as e:
-                    if ("429" in str(e) or "ResourceExhausted" in str(e)) and attempt < max_retries:
+                    error_str = str(e)
+                    if any(err in error_str for err in ["429", "ResourceExhausted", "503", "ServiceUnavailable", "UNAVAILABLE"]) and attempt < max_retries:
                         await asyncio.sleep(3 * (attempt + 1)) # Wait 3s, then 6s
                         continue
                     
-                    if "429" in str(e) or "ResourceExhausted" in str(e):
+                    if any(err in error_str for err in ["429", "ResourceExhausted", "503", "ServiceUnavailable", "UNAVAILABLE"]):
                         AI_response = "Aduuh! Sepertinya aku lagi kecapekan nih... Hunter lain banyak banget yang nanya. Tunggu sebentar ya, nanti tanya lagi! 🌸"
                     elif "safety" in str(e).lower():
                         AI_response = "Umm... sepertinya itu pertanyaan yang kurang pantas. Aku gak bisa jawab kalau soal itu ya! ❌"
@@ -308,8 +399,66 @@ class Conversation(commands.Cog):
             embed.set_author(name=ctx.author)
             embed.set_footer(text='Jika ada yang ingin ditanyakan, bisa langsung direply!')
             
+            # Check if response has an image link
+            import re
+            img_match = re.search(r'https?://\S+\.(?:jpg|jpeg|png|gif|webp)', AI_response)
+            if img_match:
+                embed.set_image(url=img_match.group(0))
+
             regenerate_button = Regenerate_Answer_Button(user_id, message, AI_response)
             return await ctx.reply(embed=embed, view=regenerate_button)
+
+    @commands.hybrid_group(
+        name="memory",
+        aliases=["memori", "history"],
+        description="Kelola memori chat-mu dengan RVDiA."
+    )
+    @check_blacklist()
+    async def memory(self, ctx: commands.Context):
+        """
+        Kelola memori chat-mu dengan RVDiA.
+        """
+        if ctx.invoked_subcommand is None:
+            await ctx.send("Gunakan `/memory clear` atau `/memory manage` untuk mengelola memorimu! 🌸")
+
+    @memory.command(name="clear", description="Hapus seluruh riwayat percakapanmu.")
+    async def memory_clear(self, ctx: commands.Context):
+        """
+        Hapus seluruh riwayat percakapanmu.
+        """
+        confirm_view = View(timeout=30)
+        
+        async def confirm_callback(interaction: discord.Interaction):
+            if interaction.user.id != ctx.author.id:
+                return await interaction.response.send_message("Bukan tombolmu! ❌", ephemeral=True)
+            
+            await interaction.response.defer()
+            await db.memory.delete_many(where={'userId': ctx.author.id})
+            await interaction.followup.send("✅ Seluruh memorimu telah dihapus! Kita mulai dari awal lagi ya? 🌸")
+            await interaction.message.delete()
+
+        confirm_btn = Button(label="Ya, Hapus Semua", style=discord.ButtonStyle.danger)
+        confirm_btn.callback = confirm_callback
+        confirm_view.add_item(confirm_btn)
+        
+        await ctx.send("Apakah kamu yakin ingin menghapus **seluruh** memorimu? Aku tidak akan mengingat percakapan kita sebelumnya lagi... 🥺", view=confirm_view)
+
+    @memory.command(name="manage", description="Pilih memori tertentu untuk dihapus.")
+    async def memory_manage(self, ctx: commands.Context):
+        """
+        Pilih memori tertentu untuk dihapus.
+        """
+        memories = await db.memory.find_many(
+            where={'userId': ctx.author.id},
+            order={'created_at': 'desc'},
+            take=25
+        )
+        
+        if not memories:
+            return await ctx.send("Kamu belum punya memori denganku! Ayo ngobrol dulu! 🌸")
+            
+        view = MemoryManagerView(ctx.author.id, memories)
+        await ctx.send("Berikut adalah 25 memori terakhirmu. Pilih yang ingin kamu hapus:", view=view)
 
     @commands.hybrid_command(
         aliases=['create'],
@@ -354,7 +503,7 @@ class Conversation(commands.Cog):
             right = (width + size) // 2
             bottom = (height + size) // 2
             cropped = img.crop((left, top, right, bottom))
-            cropped.save(img_path[2:])
+            cropped.save(img_path)
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Conversation(bot))

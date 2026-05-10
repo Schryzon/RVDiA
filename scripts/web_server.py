@@ -7,6 +7,7 @@ import hashlib
 import re
 from datetime import datetime, timedelta
 from aiohttp import web
+from discord.ext import commands
 from scripts.main import db
 
 def load_locales():
@@ -38,23 +39,49 @@ async def handle_commands(request):
     i18n, lang = get_i18n(request)
     bot = request.app['bot']
     
-    # Extract dynamic commands from discord.py bot instance
-    cmd_list = []
+    # Extract dynamic commands grouped by category
+    categories = {}
+    
+    # Process prefix commands
     for cmd in bot.commands:
-        if not cmd.hidden:
-            cmd_list.append({
-                'name': cmd.name,
-                'cog_name': cmd.cog_name or 'Uncategorized',
-                'help': cmd.help.strip() if cmd.help else None
-            })
+        if cmd.hidden:
+            continue
             
-    # Sort commands by cog name then command name
-    cmd_list.sort(key=lambda x: (x['cog_name'], x['name']))
+        cog_name = cmd.cog_name or 'Uncategorized'
+        if cog_name not in categories:
+            categories[cog_name] = []
+            
+        cmd_info = {
+            'name': cmd.name,
+            'description': cmd.help.strip() if cmd.help else None,
+            'aliases': cmd.aliases,
+            'subcommands': []
+        }
+        
+        if isinstance(cmd, commands.Group):
+            for sub in cmd.commands:
+                if not sub.hidden:
+                    cmd_info['subcommands'].append({
+                        'name': sub.name,
+                        'description': sub.help.strip() if sub.help else None,
+                        'aliases': sub.aliases
+                    })
+        
+        categories[cog_name].append(cmd_info)
+            
+    # Sort categories and commands within them
+    sorted_categories = []
+    for cat_name in sorted(categories.keys()):
+        cmds = sorted(categories[cat_name], key=lambda x: x['name'])
+        sorted_categories.append({
+            'name': cat_name,
+            'commands': cmds
+        })
 
     return aiohttp_jinja2.render_template('commands.html', request, {
         'i18n': i18n,
         'lang': lang,
-        'commands': cmd_list
+        'categories': sorted_categories
     })
 
 async def handle_privacy(request):
@@ -69,6 +96,23 @@ async def handle_terms(request):
     return aiohttp_jinja2.render_template('terms.html', request, {
         'i18n': i18n,
         'lang': lang
+    })
+
+async def handle_license(request):
+    i18n, lang = get_i18n(request)
+    
+    # Read the LICENSE file
+    license_path = os.path.join(os.path.dirname(__file__), '../LICENSE')
+    try:
+        with open(license_path, 'r', encoding='utf-8') as f:
+            license_content = f.read()
+    except:
+        license_content = "License file not found."
+
+    return aiohttp_jinja2.render_template('license.html', request, {
+        'i18n': i18n,
+        'lang': lang,
+        'license_content': license_content
     })
 
 async def handle_saweria(request):
@@ -111,6 +155,7 @@ async def start_web_server(bot):
     app.router.add_get('/commands', handle_commands)
     app.router.add_get('/privacy', handle_privacy)
     app.router.add_get('/terms', handle_terms)
+    app.router.add_get('/license', handle_license)
     app.router.add_post('/internal/dm', handle_internal_dm)
     
     runner = web.AppRunner(app)

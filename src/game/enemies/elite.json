@@ -36,7 +36,13 @@
             },
             {
                 "name": "Thunderstrike",
-                "func": "dmg+5%"
+                "func": "dmg+5%",
+                "desc": "Sambaran kilat yang memberikan damage tambahan."
+            },
+            {
+                "name": "Lagtanis Overload",
+                "func": "all+8",
+                "desc": "Membebani diri dengan listrik untuk memperkuat seluruh status."
             }
         ],
         "color": "#7dda41"

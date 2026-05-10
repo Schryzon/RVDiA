@@ -2,6 +2,27 @@ import asyncio
 from ddgs import DDGS
 import logging
 
+async def search_images(query: str, max_results: int = 3):
+    """
+    Performs an image search using DuckDuckGo and returns image links.
+    (Non-NSFW by default with safesearch='on')
+    """
+    try:
+        results = []
+        with DDGS() as ddgs:
+            search_results = ddgs.images(query, max_results=max_results, safesearch='on')
+            for r in search_results:
+                results.append({
+                    "title": r.get("title", ""),
+                    "image": r.get("image", ""),
+                    "thumbnail": r.get("thumbnail", ""),
+                    "url": r.get("url", "")
+                })
+        return results
+    except Exception as e:
+        logging.error(f"Error in image search: {e}")
+        return []
+
 async def search_web(query: str, max_results: int = 5):
     """
     Performs a web search using DuckDuckGo and returns snippets and links.

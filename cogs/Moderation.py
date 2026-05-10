@@ -30,7 +30,8 @@ class Moderation(commands.Cog):
         async with ctx.typing():
             owner = await self.bot.fetch_user(ctx.guild.owner_id)
             guild_icon = ctx.guild.icon.url if not ctx.guild.icon is None else getenv('normalpfp')
-            embed = discord.Embed(title=f'{ctx.guild.name}', color=ctx.author.colour, timestamp = ctx.message.created_at)
+            timestamp = ctx.message.created_at if ctx.message else ctx.interaction.created_at
+            embed = discord.Embed(title=f'{ctx.guild.name}', color=ctx.author.colour, timestamp = timestamp)
             embed.set_thumbnail(url=guild_icon)
             embed.set_author(name = "Server Info:")
             embed.add_field(name="Pemilik", value=f"{owner.mention} ({owner})", inline = False)
@@ -115,8 +116,9 @@ class Moderation(commands.Cog):
                 text = f'{i} | Dibuat oleh: {j} | Expire: {k}'
                 invite_list.append(text)
 
-            embed = discord.Embed(title=f'Daftar Invite {ctx.guild.name}', color=ctx.author.color, timestamp=ctx.message.created_at)
-            embed.set_thumbnail(url=ctx.guild.icon.url)
+            timestamp = ctx.message.created_at if ctx.message else ctx.interaction.created_at
+            embed = discord.Embed(title=f'Daftar Invite {ctx.guild.name}', color=ctx.author.color, timestamp=timestamp)
+            embed.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else getenv('normalpfp'))
             embed.description = '\n'.join(invite_list)
             if not embed.description or embed.description == '':
                 return await ctx.reply("Sepertinya server ini belum membuat invite apapun!")
@@ -264,7 +266,8 @@ class Moderation(commands.Cog):
             except:
                 text.append(f'**`Unknown User ({user_id})`** | Jumlah: `{count}` pelanggaran')
         
-        embed = discord.Embed(title=f'Daftar Pelanggaran di {ctx.guild.name}', color=ctx.author.color, timestamp=ctx.message.created_at)
+        timestamp = ctx.message.created_at if ctx.message else ctx.interaction.created_at
+        embed = discord.Embed(title=f'Daftar Pelanggaran di {ctx.guild.name}', color=ctx.author.color, timestamp=timestamp)
         embed.description = '\n'.join(text)
         embed.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else getenv('normalpfp'))
         await ctx.reply(embed=embed)

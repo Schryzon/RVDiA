@@ -80,14 +80,15 @@ class General(commands.Cog):
         """
         async with ctx.typing():
             if attachment:
-                await attachment.save(attachment.filename)
-                file = discord.File(attachment.filename)
+                unique_filename = f"{ctx.author.id}_{attachment.filename}"
+                await attachment.save(unique_filename)
+                file = discord.File(unique_filename)
                 if teks:
                     await ctx.send(teks, file=file)
                 else:
                     await ctx.send(file=file)
                 
-                os.remove(attachment.filename) # Haiyaa
+                os.remove(unique_filename)
             
             else:
                 await ctx.send(teks) if teks else await ctx.send("Aku gak tau harus berkata apa ¯\_(ツ)_/¯")
@@ -129,7 +130,8 @@ class General(commands.Cog):
         await ctx.typing()
         end_typing = time()
         delta_typing = end_typing - start_typing
-        embed= discord.Embed(title= "Ping--Pong!", color=self.bot.color, timestamp=ctx.message.created_at)
+        timestamp = ctx.message.created_at if ctx.message else ctx.interaction.created_at
+        embed= discord.Embed(title= "Ping--Pong!", color=self.bot.color, timestamp=timestamp)
         embed.description = f"**Discord API:** `{round(self.bot.latency*1000)} ms`\n**Typing:** `{round(delta_typing*1000, 2)} ms`"
         await ctx.reply(embed=embed)
 
@@ -162,7 +164,7 @@ class General(commands.Cog):
             else:
                 embed.description = f"[png]({png}) | [jpg]({jpg}) | [webp]({webp})"
                 embed.set_image(url = global_user.avatar.with_format("png").url)
-            embed.set_footer(text=f"{ctx.author}", icon_url=ctx.author.avatar.url)
+            embed.set_footer(text=f"{ctx.author}", icon_url=ctx.author.display_avatar.url)
             await ctx.reply(embed=embed)
 
     @user_command.command(name='info', aliases = ['whois'], description="Lihat info tentang seseorang di server ini.")
@@ -197,7 +199,8 @@ class General(commands.Cog):
             change1 = [underscore.replace('_', ' ') for underscore in perm_list]
             permissions_fixed = [permissions.title() for permissions in change1]
 
-            embed=discord.Embed(title=member, color=member.colour, timestamp=ctx.message.created_at)
+            timestamp = ctx.message.created_at if ctx.message else ctx.interaction.created_at
+            embed=discord.Embed(title=member, color=member.colour, timestamp=timestamp)
             embed.set_author(name="User Info:")
             embed.set_thumbnail(url=avatar_url)
             embed.add_field(name="Nama Panggilan", value=nick, inline=False)
@@ -252,43 +255,56 @@ class Utilities(commands.Cog):
         """
         Lihat info tentang keadaan cuaca di suatu kota atau daerah!
         """
-        async with ctx.typing():
+        try:
+            await ctx.defer()
+        except discord.NotFound:
+            pass
+            
+        async with ctx.channel.typing():
             try:
-                # Need to decode geocode consisting of latitude and longitude
-                data = requests.get(f'http://api.openweathermap.org/geo/1.0/direct?q={location}&limit=1&appid={getenv("openweatherkey")}').json()
-                geocode = [data[0]['lat'], data[0]['lon']]
-                result = requests.get(f"https://api.openweathermap.org/data/2.5/weather?lat={geocode[0]}&lon={geocode[1]}&lang=id&units=metric&appid={getenv('openweatherkey')}").json()
-                icon = f"http://openweathermap.org/img/wn/{result['weather'][0]['icon']}@4x.png"
-                embed = discord.Embed(title=f"Cuaca di {result['name']}", description=f"__{result['weather'][0]['description'].title()}__")
-                embed.color = 0x00ffff
-                embed.set_thumbnail(url=icon)
-                temp = result['main']
-                embed.add_field(
-                        name=f"Suhu ({temp['temp']}°C)",
-                        value = 
-                        f"**Terasa seperti:** ``{temp['feels_like']}°C``\n**Minimum:** ``{temp['temp_min']}°C``\n**Maksimum:** ``{temp['temp_max']}°C``\n"+
-                        f"**Tekanan Atmosfer:** ``{temp['pressure']} hPa``\n**Kelembaban:** ``{temp['humidity']}%``\n**Persentase Awan:** ``{result['clouds']['all']}%``",
-                        inline=False
-                        )
-                wind = result['wind']
-                embed.add_field(
-                    name = "Angin",
-                    value = f"""**Kecepatan:** ``{wind['speed']} m/s``\n**Arah:** ``{wind['deg']}° ({heading(wind['deg'])})``
-                    """, inline=False
-                )
-                embed.add_field(
-                    name="Sunrise",
-                    value=f"<t:{result['sys']['sunrise']}:R>", inline=False
-                )
-                embed.add_field(
-                    name="Sunset",
-                    value=f"<t:{result['sys']['sunset']}:R>"
-                )
-                embed.set_footer(text=f"{ctx.author}", icon_url=ctx.author.display_avatar.url)
-                await ctx.send(embed=embed)
+                async with aiohttp.ClientSession() as session:
+                    # Need to decode geocode consisting of latitude and longitude
+                    async with session.get(f'http://api.openweathermap.org/geo/1.0/direct?q={location}&limit=1&appid={getenv("openweatherkey")}') as resp:
+                        data = await resp.json()
+                    
+                    if not data:
+                        return await ctx.send('Aku tidak bisa menemukan lokasi itu!')
+                        
+                    geocode = [data[0]['lat'], data[0]['lon']]
+                    async with session.get(f"https://api.openweathermap.org/data/2.5/weather?lat={geocode[0]}&lon={geocode[1]}&lang=id&units=metric&appid={getenv('openweatherkey')}") as resp:
+                        result = await resp.json()
+                        
+                    icon = f"http://openweathermap.org/img/wn/{result['weather'][0]['icon']}@4x.png"
+                    embed = discord.Embed(title=f"Cuaca di {result['name']}", description=f"__{result['weather'][0]['description'].title()}__")
+                    embed.color = 0x00ffff
+                    embed.set_thumbnail(url=icon)
+                    temp = result['main']
+                    embed.add_field(
+                            name=f"Suhu ({temp['temp']}°C)",
+                            value = 
+                            f"**Terasa seperti:** ``{temp['feels_like']}°C``\n**Minimum:** ``{temp['temp_min']}°C``\n**Maksimum:** ``{temp['temp_max']}°C``\n"+
+                            f"**Tekanan Atmosfer:** ``{temp['pressure']} hPa``\n**Kelembaban:** ``{temp['humidity']}%``\n**Persentase Awan:** ``{result['clouds']['all']}%``",
+                            inline=False
+                            )
+                    wind = result['wind']
+                    embed.add_field(
+                        name = "Angin",
+                        value = f"""**Kecepatan:** ``{wind['speed']} m/s``\n**Arah:** ``{wind['deg']}° ({heading(wind['deg'])})``
+                        """, inline=False
+                    )
+                    embed.add_field(
+                        name="Sunrise",
+                        value=f"<t:{result['sys']['sunrise']}:R>", inline=False
+                    )
+                    embed.add_field(
+                        name="Sunset",
+                        value=f"<t:{result['sys']['sunset']}:R>"
+                    )
+                    embed.set_footer(text=f"{ctx.author}", icon_url=ctx.author.display_avatar.url)
+                    await ctx.send(embed=embed)
 
-            except(IndexError):
-                await ctx.send('Aku tidak bisa menemukan lokasi itu!')
+            except Exception as e:
+                await ctx.send(f'Terjadi kesalahan: {e}')
 
     @commands.hybrid_command(description="Lihat info tentang waktu di suatu kota atau daerah!")
     @app_commands.describe(location='Daerah mana yang ingin kamu ketahui?')
@@ -432,8 +448,12 @@ class Support(commands.GroupCog, group_name='support'):
         """
         Berikan aku saran untuk perbaikan atau penambahan fitur!
         """
-        channel = self.bot.get_channel(int(os.getenv('suggestionchannel')))
-        embed = discord.Embed(title="Saran Baru!", color=interaction.user.color, timestamp=interaction.message.created_at)
+        suggestion_channel_id = os.getenv('suggestionchannel')
+        if not suggestion_channel_id:
+            return await interaction.response.send_message("Fitur saran belum dikonfigurasi! ❌", ephemeral=True)
+            
+        channel = self.bot.get_channel(int(suggestion_channel_id))
+        embed = discord.Embed(title="Saran Baru!", color=interaction.user.color, timestamp=interaction.created_at)
         embed.set_author(name=f"Dari {interaction.user}")
         if attachment:
             embed.set_image(url = attachment.url)

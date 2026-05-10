@@ -9,12 +9,46 @@
         <input type="text" id="command-search" placeholder="{{ i18n.search_commands }}">
     </div>
 
-    <div class="commands-grid">
-        {% for cmd in commands %}
-        <div class="command-card">
-            <span class="command-name">{{ cmd.name }}</span>
-            <div class="command-category">{{ i18n.category }}: {{ cmd.cog_name }}</div>
-            <p class="command-desc">{{ cmd.help or i18n.no_description }}</p>
+    <div class="categories-list">
+        {% for cat in categories %}
+        <div class="category-section">
+            <h3 class="category-title">{{ cat.name }}</h3>
+            <div class="commands-grid">
+                {% for cmd in cat.commands %}
+                <div class="command-card collapsible" id="cmd-{{ cmd.name }}">
+                    <div class="command-header">
+                        <span class="command-name">{{ cmd.name }}</span>
+                        {% if cmd.subcommands or cmd.aliases %}
+                        <span class="expand-icon">▼</span>
+                        {% endif %}
+                    </div>
+                    <p class="command-desc">{{ cmd.description or i18n.no_description }}</p>
+                    
+                    <div class="command-details">
+                        {% if cmd.aliases %}
+                        <div class="detail-item">
+                            <strong>Aliases:</strong> 
+                            <span class="alias-tag">{{ cmd.aliases|join(', ') }}</span>
+                        </div>
+                        {% endif %}
+
+                        {% if cmd.subcommands %}
+                        <div class="subcommands-section">
+                            <strong>Subcommands:</strong>
+                            <div class="subcommands-list">
+                                {% for sub in cmd.subcommands %}
+                                <div class="subcommand-item">
+                                    <code>{{ cmd.name }} {{ sub.name }}</code>
+                                    <p>{{ sub.description or i18n.no_description }}</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
         </div>
         {% endfor %}
     </div>

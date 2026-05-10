@@ -8,7 +8,11 @@ import io
 from discord.ext import commands
 from discord import app_commands
 from scripts.main import check_blacklist, has_pfp
-from scripts.image_processing import Image_Ops, Convolution, Histogram, Equalization, Enhancement, Specialization, Edge_Detection
+from scripts.image_processing import (
+    Image_Ops, Convolution, Histogram, Equalization, 
+    Enhancement, Specialization, Edge_Detection, 
+    Morphology, gpu_available, gpu_info, _GPU_NAME
+)
 
 class Image(commands.Cog):
     """
@@ -69,7 +73,12 @@ class Image(commands.Cog):
 
             # Convert back to BGR for saving
             if result.ndim == 3:
-                result_bgr = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
+                # If color, check channel count
+                if result.shape[2] == 3:
+                    result_bgr = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
+                else:
+                    # Just pick first 3 if more, or duplicate if less (handled by image_processing usually)
+                    result_bgr = result[..., :3]
             else:
                 result_bgr = result
 
@@ -81,6 +90,18 @@ class Image(commands.Cog):
 
         except Exception as e:
             await ctx.reply(f"Terjadi kesalahan saat memproses gambar: `{str(e)}`")
+
+    @image_group.command(description="Lihat status akselerasi GPU.")
+    @check_blacklist()
+    async def gpu(self, ctx: commands.Context):
+        """Lihat status akselerasi GPU."""
+        status = "Aktif 🚀" if gpu_available() else "Nonaktif 💤"
+        device = _GPU_NAME or "N/A"
+        embed = discord.Embed(title="Status GPU", color=discord.Color.blue())
+        embed.add_field(name="Akselerasi", value=status, inline=True)
+        embed.add_field(name="Device", value=device, inline=True)
+        embed.set_footer(text="Menggunakan CuPy untuk pengolahan array skala besar.")
+        await ctx.reply(embed=embed)
 
     @commands.hybrid_group(name='image')
     @check_blacklist()
@@ -480,6 +501,206 @@ class Image(commands.Cog):
                 await ctx.reply(str(e))
             except Exception as e:
                 await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
+
+    @image_group.command(description="Binarisasi gambar (threshold).")
+    @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit", threshold_value="Nilai threshold (0-255)", method="Metode (binary/otsu)")
+    @check_blacklist()
+    async def threshold(self, ctx: commands.Context, threshold_value: int = 127, method: str = "binary", user: discord.User = None, attachment: discord.Attachment = None):
+        if method not in ["binary", "otsu"]:
+            return await ctx.reply("Metode harus 'binary' atau 'otsu'!")
+        async with ctx.typing():
+            try:
+                bytes_data = await self._get_image_bytes(ctx, user, attachment)
+                use_otsu = (method == "otsu")
+                await self._process_and_reply(ctx, bytes_data, "threshold.png", Image_Ops.threshold, threshold_value, use_otsu)
+            except ValueError as e:
+                await ctx.reply(str(e))
+
+    @image_group.command(description="Potong border hitam/putih otomatis (autocrop).")
+    @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit", tolerance="Toleransi warna (default: 0)")
+    @check_blacklist()
+    async def autocrop(self, ctx: commands.Context, tolerance: int = 0, user: discord.User = None, attachment: discord.Attachment = None):
+        async with ctx.typing():
+            try:
+                bytes_data = await self._get_image_bytes(ctx, user, attachment)
+                await self._process_and_reply(ctx, bytes_data, "autocrop.png", Image_Ops.autocrop, tolerance)
+            except ValueError as e:
+                await ctx.reply(str(e))
+
+    @image_group.command(description="Gabungkan dua gambar dengan mode masking (composite).")
+    @app_commands.describe(user1="User pertama", user2="User kedua", attachment1="Gambar pertama (background)", attachment2="Gambar kedua (overlay)", mode="Mode blend (normal/add/multiply/screen/overlay)", match_mode="Mode penyesuaian ukuran (resize/crop/pad)")
+    @check_blacklist()
+    async def composite(self, ctx: commands.Context, user1: discord.User = None, user2: discord.User = None, attachment1: discord.Attachment = None, attachment2: discord.Attachment = None, mode: str = "normal", match_mode: str = "resize"):
+        modes = ["normal", "add", "multiply", "screen", "overlay"]
+        match_modes = ["resize", "crop", "pad"]
+        if mode not in modes: return await ctx.reply(f"Mode tidak valid! Pilihan: {', '.join(modes)}")
+        if match_mode not in match_modes: return await ctx.reply(f"Match mode tidak valid! Pilihan: {', '.join(match_modes)}")
+        async with ctx.typing():
+            try:
+                # Load Image 1
+                if attachment1: img1_bytes = await attachment1.read()
+                else:
+                    target1 = user1 or ctx.author
+                    if target1.avatar is None: raise ValueError(f"{target1.display_name} tidak memiliki avatar!")
+                    img1_bytes = await target1.display_avatar.with_format("png").read()
+                # Load Image 2
+                if attachment2: img2_bytes = await attachment2.read()
+                elif user2:
+                    if user2.avatar is None: raise ValueError(f"{user2.display_name} tidak memiliki avatar!")
+                    img2_bytes = await user2.display_avatar.with_format("png").read()
+                else: raise ValueError("Harus memberikan gambar kedua (user2 atau attachment2)!")
+
+                img1 = cv2.cvtColor(cv2.imdecode(np.frombuffer(img1_bytes, np.uint8), cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
+                img2 = cv2.cvtColor(cv2.imdecode(np.frombuffer(img2_bytes, np.uint8), cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
+
+                result = Image_Ops.composite(img1, img2, mode=mode, match_mode=match_mode)
+                _, buffer = cv2.imencode('.png', cv2.cvtColor(result, cv2.COLOR_RGB2BGR))
+                await ctx.reply(file=discord.File(io.BytesIO(buffer), "composite.png"))
+            except ValueError as e: await ctx.reply(str(e))
+            except Exception as e: await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
+
+    @image_group.command(description="Gabungkan dua gambar secara bersebelahan (concat).")
+    @app_commands.describe(user1="User pertama", user2="User kedua", attachment1="Gambar kiri/atas", attachment2="Gambar kanan/bawah", axis="Sumbu gabung (horizontal/vertical)")
+    @check_blacklist()
+    async def concat(self, ctx: commands.Context, user1: discord.User = None, user2: discord.User = None, attachment1: discord.Attachment = None, attachment2: discord.Attachment = None, axis: str = "horizontal"):
+        if axis not in ["horizontal", "vertical"]: return await ctx.reply("Axis harus 'horizontal' atau 'vertical'!")
+        async with ctx.typing():
+            try:
+                # Load Image 1
+                if attachment1: img1_bytes = await attachment1.read()
+                else:
+                    target1 = user1 or ctx.author
+                    if target1.avatar is None: raise ValueError(f"{target1.display_name} tidak memiliki avatar!")
+                    img1_bytes = await target1.display_avatar.with_format("png").read()
+                # Load Image 2
+                if attachment2: img2_bytes = await attachment2.read()
+                elif user2:
+                    if user2.avatar is None: raise ValueError(f"{user2.display_name} tidak memiliki avatar!")
+                    img2_bytes = await user2.display_avatar.with_format("png").read()
+                else: raise ValueError("Harus memberikan gambar kedua (user2 atau attachment2)!")
+
+                img1 = cv2.cvtColor(cv2.imdecode(np.frombuffer(img1_bytes, np.uint8), cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
+                img2 = cv2.cvtColor(cv2.imdecode(np.frombuffer(img2_bytes, np.uint8), cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
+
+                result = Image_Ops.concat(img1, img2, axis=axis)
+                _, buffer = cv2.imencode('.png', cv2.cvtColor(result, cv2.COLOR_RGB2BGR))
+                await ctx.reply(file=discord.File(io.BytesIO(buffer), "concat.png"))
+            except ValueError as e: await ctx.reply(str(e))
+            except Exception as e: await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
+
+    @commands.hybrid_group(name='morph')
+    @check_blacklist()
+    async def morph_group(self, ctx: commands.Context):
+        """Kumpulan command untuk operasi morfologi gambar."""
+        if ctx.invoked_subcommand is None:
+            await ctx.send_help(ctx.command)
+
+    @morph_group.command(description="Erosi gambar (menguruskan fitur).")
+    @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit", iterations="Jumlah iterasi (default: 1)", kernel_size="Ukuran kernel (default: 3)")
+    @check_blacklist()
+    async def erode(self, ctx: commands.Context, iterations: int = 1, kernel_size: int = 3, user: discord.User = None, attachment: discord.Attachment = None):
+        async with ctx.typing():
+            try:
+                bytes_data = await self._get_image_bytes(ctx, user, attachment)
+                await self._process_and_reply(ctx, bytes_data, "erode.png", Morphology.erode, kernel_size, iterations)
+            except ValueError as e: await ctx.reply(str(e))
+            except Exception as e: await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
+
+    @morph_group.command(description="Dilasi gambar (menebalkan fitur).")
+    @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit", iterations="Jumlah iterasi (default: 1)", kernel_size="Ukuran kernel (default: 3)")
+    @check_blacklist()
+    async def dilate(self, ctx: commands.Context, iterations: int = 1, kernel_size: int = 3, user: discord.User = None, attachment: discord.Attachment = None):
+        async with ctx.typing():
+            try:
+                bytes_data = await self._get_image_bytes(ctx, user, attachment)
+                await self._process_and_reply(ctx, bytes_data, "dilate.png", Morphology.dilate, kernel_size, iterations)
+            except ValueError as e: await ctx.reply(str(e))
+            except Exception as e: await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
+
+    @morph_group.command(description="Ekstrak skeleton/kerangka gambar (hanya untuk grayscale/binary).")
+    @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit")
+    @check_blacklist()
+    async def skeleton(self, ctx: commands.Context, user: discord.User = None, attachment: discord.Attachment = None):
+        async with ctx.typing():
+            try:
+                bytes_data = await self._get_image_bytes(ctx, user, attachment)
+                def apply_skeleton(img):
+                    # Skeleton requires binary image, so we convert it first
+                    if img.ndim == 3:
+                        gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+                    else:
+                        gray = img
+                    _, binary = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+                    # Use morphological skeleton
+                    skel = Morphology.skeleton(binary)
+                    # Convert back to RGB format for saving
+                    return cv2.cvtColor(skel, cv2.COLOR_GRAY2RGB)
+                await self._process_and_reply(ctx, bytes_data, "skeleton.png", apply_skeleton)
+            except ValueError as e: await ctx.reply(str(e))
+            except Exception as e: await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
+
+    @image_group.command(description="Bandingkan dua gambar menggunakan histogram.")
+    @app_commands.describe(user1="User pertama", user2="User kedua", attachment1="Gambar pertama", attachment2="Gambar kedua", method="Metode perbandingan (correl/chisqr/intersect/bhattacharyya)")
+    @check_blacklist()
+    async def hist_compare(self, ctx: commands.Context, user1: discord.User = None, user2: discord.User = None, attachment1: discord.Attachment = None, attachment2: discord.Attachment = None, method: str = "correl"):
+        methods = ["correl", "chisqr", "intersect", "bhattacharyya"]
+        if method not in methods: return await ctx.reply(f"Metode tidak valid! Pilihan: {', '.join(methods)}")
+        async with ctx.typing():
+            try:
+                # Load Image 1
+                if attachment1: img1_bytes = await attachment1.read()
+                else:
+                    target1 = user1 or ctx.author
+                    if target1.avatar is None: raise ValueError(f"{target1.display_name} tidak memiliki avatar!")
+                    img1_bytes = await target1.display_avatar.with_format("png").read()
+                # Load Image 2
+                if attachment2: img2_bytes = await attachment2.read()
+                elif user2:
+                    if user2.avatar is None: raise ValueError(f"{user2.display_name} tidak memiliki avatar!")
+                    img2_bytes = await user2.display_avatar.with_format("png").read()
+                else: raise ValueError("Harus memberikan gambar referensi (user2 atau attachment2)!")
+
+                img1 = cv2.cvtColor(cv2.imdecode(np.frombuffer(img1_bytes, np.uint8), cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
+                img2 = cv2.cvtColor(cv2.imdecode(np.frombuffer(img2_bytes, np.uint8), cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
+
+                score = Histogram.compare(img1, img2, method=method)
+                
+                embed = discord.Embed(title="Perbandingan Histogram", color=discord.Color.green())
+                embed.add_field(name="Metode", value=method.upper(), inline=True)
+                embed.add_field(name="Skor Kecocokan", value=f"`{score:.4f}`", inline=True)
+                await ctx.reply(embed=embed)
+            except ValueError as e: await ctx.reply(str(e))
+            except Exception as e: await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
+
+    @image_group.command(description="Tampilkan grafik CDF (Cumulative Distribution Function).")
+    @app_commands.describe(user="User yang avatar-nya ingin dilihat", attachment="Gambar yang ingin dilihat")
+    @check_blacklist()
+    async def hist_cdf(self, ctx: commands.Context, user: discord.User = None, attachment: discord.Attachment = None):
+        async with ctx.typing():
+            try:
+                bytes_data = await self._get_image_bytes(ctx, user, attachment)
+                img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
+                img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                
+                plt.figure(figsize=(10, 5))
+                plt.title(f"CDF Histogram - {user.display_name if user else ctx.author.display_name}")
+                colors = ('r', 'g', 'b')
+                for i, color in enumerate(colors):
+                    hist, bins = np.histogram(img_rgb[:, :, i].flatten(), 256, [0, 256])
+                    cdf = hist.cumsum()
+                    cdf_normalized = cdf * float(hist.max()) / cdf.max()
+                    plt.plot(cdf_normalized, color=color, linestyle='dashed')
+                plt.xlim([0, 256])
+                plt.xlabel("Pixel Value")
+                plt.ylabel("Cumulative Frequency")
+                
+                buf = io.BytesIO()
+                plt.savefig(buf, format='png')
+                plt.close()
+                buf.seek(0)
+                await ctx.reply(file=discord.File(buf, "cdf.png"))
+            except ValueError as e: await ctx.reply(str(e))
+            except Exception as e: await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Image(bot))

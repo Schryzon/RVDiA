@@ -25,24 +25,43 @@
         <div class="sparkle sp-6"></div>
         <div class="sparkle sp-7"></div>
     </div>
+    <!-- Page Loader Overlay -->
+    <div id="page-loader" class="page-loader">
+        <div class="loader-content">
+            <span class="loader-text" id="loader-text">RVDiA</span>
+        </div>
+    </div>
+
     <nav>
         <a href="/?lang={{ lang }}" class="logo">RVDiA</a>
+        <div class="menu-toggle" id="mobile-menu">
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+        </div>
         <ul class="nav-links">
             <li><a href="/?lang={{ lang }}">{{ i18n.home }}</a></li>
             <li><a href="/commands?lang={{ lang }}">{{ i18n.commands }}</a></li>
             <li><a href="/privacy?lang={{ lang }}">{{ i18n.privacy }}</a></li>
             <li><a href="/terms?lang={{ lang }}">{{ i18n.terms }}</a></li>
+            <li><a href="/license?lang={{ lang }}">{{ i18n.license_title }}</a></li>
+            <li class="mobile-only lang-switch-mobile">
+                <a href="?lang=id">ID</a>
+                <a href="?lang=en">EN</a>
+            </li>
         </ul>
-        <div class="lang-switch">
+        <div class="lang-switch desktop-only">
             <a href="?lang=id">ID</a>
             <a href="?lang=en">EN</a>
         </div>
     </nav>
 
-    {% block content %}{% endblock %}
+    <main id="main-content">
+        {% block content %}{% endblock %}
+    </main>
 
     <footer>
-        <p>{{ i18n.footer_made_with }} | <a href="/privacy?lang={{ lang }}" style="color:var(--accent-color);">{{ i18n.privacy }}</a> | <a href="/terms?lang={{ lang }}" style="color:var(--accent-color);">{{ i18n.terms }}</a></p>
+        <p>{{ i18n.footer_made_with }} | <a href="/privacy?lang={{ lang }}" style="color:var(--accent-color);">{{ i18n.privacy }}</a> | <a href="/terms?lang={{ lang }}" style="color:var(--accent-color);">{{ i18n.terms }}</a> | <a href="/license?lang={{ lang }}" style="color:var(--accent-color);">{{ i18n.license_title }}</a></p>
     </footer>
 
     <script src="/static/js/script.js"></script>
