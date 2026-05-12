@@ -675,7 +675,7 @@ class GameInstance():
                         if inv_data and inv_data.items:
                             items_text = ""
                             for item in inv_data.items:
-                                items_text += f"• **{item['name']}** x{item['count']}\n"
+                                items_text += f"• **{item.get('name', 'Barang')}** x{item.get('owned', 0)}\n"
                             embed.add_field(name="Barang Milikmu", value=items_text or "Tidak ada barang.", inline=False)
                         
                         embed.set_author(name='Info Musuh:')
@@ -769,7 +769,7 @@ class GameInstance():
                         if inv_data and inv_data.items:
                             items_text = ""
                             for item in inv_data.items:
-                                items_text += f"• **{item['name']}** x{item['count']}\n"
+                                items_text += f"• **{item.get('name', 'Barang')}** x{item.get('owned', 0)}\n"
                             embed.add_field(name="Barang Milikmu", value=items_text or "Tidak ada barang.", inline=False)
                             
                         embed.set_author(name='Info Lawan:')
@@ -1191,19 +1191,31 @@ class ItemDropdown(discord.ui.Select):
     def __init__(self, items:list, user1, type) -> None:
         options = []
         for item in items:
-            if '0-' in item['_id'] and item['usefor'] == 'battle' and not item['owned'] <= 0 and type == 'item':
+            # Truncate description to 100 characters max (Discord limit)
+            desc = item.get('desc', 'Tidak ada deskripsi.')
+            func = item.get('func', '???').upper()
+            full_desc = f"{desc} ({func})"
+            if len(full_desc) > 100:
+                full_desc = full_desc[:97] + "..."
+
+            if '0-' in item['_id'] and item['usefor'] == 'battle' and not item.get('owned', 0) <= 0 and type == 'item':
                 options.append(discord.SelectOption(
                     label=f"{item['name']}",
                     value=item['_id'],
-                    description=f"{item['desc']} ({item['func'].upper()})"
+                    description=full_desc
                 ))
-            elif '2-' in item['_id'] and item['usefor'] == 'battle' and not item['owned'] <= 0 and type == 'skill':
+            elif '2-' in item['_id'] and item['usefor'] == 'battle' and not item.get('owned', 0) <= 0 and type == 'skill':
                 options.append(discord.SelectOption(
                     label=f"{item['name']}",
                     value=item['_id'],
-                    description=f"{item['desc']} ({item['func'].upper()})"
+                    description=full_desc
                 ))
-        if options == [] or options == None:
+        
+        # Limit options to 25 max (Discord limit)
+        if len(options) > 25:
+            options = options[:25]
+
+        if not options:
             options.append(discord.SelectOption(
                     label=f"Tidak ada item/skill!",
                     value="none",

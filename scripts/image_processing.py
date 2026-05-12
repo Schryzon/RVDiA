@@ -377,8 +377,53 @@ class Histogram:
 
     @staticmethod
     def compare(img1: ArrayLike, img2: ArrayLike, title1: str = "Image 1", title2: str = "Image 2", normalize: bool = False) -> None:
-        """Side-by-side histogram comparison of two images."""
+        """Side-by-side histogram comparison of two images (plots side-by-side)."""
         Histogram.show_multi([img1, img2], titles=[title1, title2], normalize=normalize, ncols=2)
+
+    @staticmethod
+    def match_score(img1: ArrayLike, img2: ArrayLike, method: str = "correl") -> float:
+        """Mathematical histogram comparison of two images and return a similarity score.
+        
+        Methods:
+            - correl: Correlation (1.0 = perfect match)
+            - chisqr: Chi-Square (0.0 = perfect match)
+            - intersect: Intersection (higher = better match)
+            - bhattacharyya: Bhattacharyya distance (0.0 = perfect match)
+        """
+        img1_cpu = to_cpu(_validate_image(img1))
+        img2_cpu = to_cpu(_validate_image(img2))
+        
+        # Convert to grayscale for consistent 1D histogram comparison
+        if img1_cpu.ndim == 3:
+            img1_gray = cv2.cvtColor(img1_cpu, cv2.COLOR_RGB2GRAY)
+        else:
+            img1_gray = img1_cpu
+            
+        if img2_cpu.ndim == 3:
+            img2_gray = cv2.cvtColor(img2_cpu, cv2.COLOR_RGB2GRAY)
+        else:
+            img2_gray = img2_cpu
+            
+        # Compute histograms
+        hist1 = cv2.calcHist([img1_gray], [0], None, [256], [0, 256])
+        hist2 = cv2.calcHist([img2_gray], [0], None, [256], [0, 256])
+        
+        # Normalize histograms
+        cv2.normalize(hist1, hist1, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
+        cv2.normalize(hist2, hist2, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
+        
+        # Map method string to OpenCV constants
+        method_map = {
+            "correl": cv2.HISTCMP_CORREL,
+            "chisqr": cv2.HISTCMP_CHISQR,
+            "intersect": cv2.HISTCMP_INTERSECT,
+            "bhattacharyya": cv2.HISTCMP_BHATTACHARYYA
+        }
+        
+        compare_method = method_map.get(method.lower(), cv2.HISTCMP_CORREL)
+        score = cv2.compareHist(hist1, hist2, compare_method)
+        
+        return float(score)
 
     @staticmethod
     def show_combined(

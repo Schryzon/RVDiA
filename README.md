@@ -9,6 +9,12 @@
   <a href="https://discord.gg/QqWCnk6zxw">
     <img alt="Discord" src="https://img.shields.io/discord/877009215271604275?style=for-the-badge&logo=discord&logoColor=white">
   </a>
+  <a href="https://github.com/sponsors/Schryzon">
+    <img alt="Sponsor" src="https://img.shields.io/badge/Sponsor-RVDIA-ea4aaa?style=for-the-badge&logo=github-sponsors&logoColor=white">
+  </a>
+  <a href="https://saweria.co/Schryzon">
+    <img alt="Saweria" src="https://img.shields.io/badge/Saweria-Support-faae2b?style=for-the-badge&logo=ko-fi&logoColor=white">
+  </a>
 </p>
 
 <p align="center">
@@ -35,10 +41,13 @@ This bot is in Indonesian and has special commands for members of the G-Tech Re'
 - **RPG Battle System**: A deep, turn-based combat system with levels, stats, and skills.
     - **Massive Content**: Over **100+ items and skills** available in the paginated Shop.
     - **Elite Challenges**: New **FINAL BOSS** tier featuring multi-phase threats like Demi-fiend and Nahobino.
-    - **Persona Integration**: Added legendary protagonists Makoto Yuki, Yu Narukami, and Ren Amamiya as high-stakes Bonus Enemies.
-    - **Tactical UI**: Enhanced in-battle UI with real-time stat checking and detailed enemy skill analysis.
-- **Local AI Architecture**: Decoupled from proprietary cloud services for enhanced privacy and cost-efficiency.
-    - **Multilingual Search**: Optimized for English and Indonesian casual chat behaviors.
+    - **Tactical UI**: Enhanced in-battle UI with real-time stat checking and **Select Menu optimizations** (paginated items/skills) to comply with Discord API limits.
+- **Advanced Image Analysis**: Professional-grade image processing toolkit powered by OpenCV and Matplotlib.
+    - **Visual Histogram Comparison**: Compare two images with mathematical precision (`correl`, `chisqr`, etc.) and receive a **side-by-side visual plot**.
+    - **Paginated Image Lookup**: Search for images directly in Discord with an interactive navigation system (Next/Prev buttons).
+- **AI Memory & Logic**: Persistent personality driven by Google Gemini and Prisma.
+    - **Smart Memory**: Efficient memory management using Prisma with optimized query logic.
+    - **Smart Title Casing**: Intelligent text formatting handler that respects linguistic rules for both Indonesian and English.
 - **Dynamic Web Dashboard**: Built with `aiohttp` and `Jinja2` featuring premium Glassmorphism aesthetics and multilingual support (ID/EN).
 
 ## Want to Tinker with It Yourself?

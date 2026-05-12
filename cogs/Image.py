@@ -7,12 +7,56 @@ import os
 import io
 from discord.ext import commands
 from discord import app_commands
-from scripts.main import check_blacklist, has_pfp
+from scripts.main import check_blacklist, has_pfp, smart_title_case
+from scripts.search import search_images
 from scripts.image_processing import (
     Image_Ops, Convolution, Histogram, Equalization, 
     Enhancement, Specialization, Edge_Detection, 
     Morphology, gpu_available, gpu_info, _GPU_NAME
 )
+
+class ImageLookupView(discord.ui.View):
+    """
+    View for paginated image search results.
+    """
+    def __init__(self, query: str, results: list, author_id: int):
+        super().__init__(timeout=60)
+        self.query = query
+        self.results = results
+        self.author_id = author_id
+        self.current_index = 0
+
+    def create_embed(self):
+        data = self.results[self.current_index]
+        # Use smart_title_case for the query as the main title
+        title = smart_title_case(self.query)
+        
+        embed = discord.Embed(title=title, color=discord.Color.blue())
+        embed.set_image(url=data['image'])
+        
+        # Truncate source title if it's too long
+        source_title = data.get('title', 'Gambar')
+        if len(source_title) > 60:
+            source_title = source_title[:57] + "..."
+            
+        embed.set_footer(text=f"Hasil {self.current_index + 1}/{len(self.results)} | Sumber: {source_title}")
+        return embed
+
+    @discord.ui.button(label="Sebelumnya", style=discord.ButtonStyle.gray, emoji="◀️")
+    async def prev_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self.author_id:
+            return await interaction.response.send_message("Hey! Ini bukan sesi pencarianmu!", ephemeral=True)
+        
+        self.current_index = (self.current_index - 1) % len(self.results)
+        await interaction.response.edit_message(embed=self.create_embed(), view=self)
+
+    @discord.ui.button(label="Selanjutnya", style=discord.ButtonStyle.gray, emoji="▶️")
+    async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self.author_id:
+            return await interaction.response.send_message("Hey! Ini bukan sesi pencarianmu!", ephemeral=True)
+        
+        self.current_index = (self.current_index + 1) % len(self.results)
+        await interaction.response.edit_message(embed=self.create_embed(), view=self)
 
 class Image(commands.Cog):
     """
@@ -50,6 +94,35 @@ class Image(commands.Cog):
         plt.xlabel("Pixel Value")
         plt.ylabel("Frequency")
         
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png')
+        plt.close()
+        buf.seek(0)
+        return buf
+
+    async def _generate_comparison_plot(self, img1_rgb, img2_rgb, title1="Gambar 1", title2="Gambar 2"):
+        """Generate a side-by-side histogram comparison plot and return bytes."""
+        plt.figure(figsize=(12, 5))
+        
+        # Helper to plot a single histogram on a specific subplot
+        def plot_hist(img, title, pos):
+            plt.subplot(1, 2, pos)
+            if img.ndim == 2:
+                plt.hist(img.ravel(), bins=256, range=(0, 256), color="black", alpha=0.7)
+            else:
+                colors = ("r", "g", "b")
+                for i, col in enumerate(colors):
+                    hist = cv2.calcHist([img], [i], None, [256], [0, 256])
+                    plt.plot(hist, color=col)
+                    plt.xlim([0, 256])
+            plt.title(title)
+            plt.xlabel("Pixel Value")
+            plt.ylabel("Frequency")
+
+        plot_hist(img1_rgb, title1, 1)
+        plot_hist(img2_rgb, title2, 2)
+        
+        plt.tight_layout()
         buf = io.BytesIO()
         plt.savefig(buf, format='png')
         plt.close()
@@ -111,6 +184,24 @@ class Image(commands.Cog):
         embed.add_field(name="Device", value=device, inline=True)
         embed.set_footer(text="Menggunakan CuPy untuk pengolahan array skala besar.")
         await ctx.reply(embed=embed)
+        
+    @image_group.command(name="lookup", description="Cari gambar di internet dengan navigasi hasil.")
+    @app_commands.describe(query="Query pencarian gambar")
+    @check_blacklist()
+    async def lookup(self, ctx: commands.Context, query: str):
+        """Cari gambar di internet dan tampilkan hasilnya dengan navigasi."""
+        async with ctx.typing():
+            try:
+                # Fetch up to 10 results for pagination
+                results = await search_images(query, max_results=10)
+                if not results:
+                    return await ctx.reply("Waduh! Tidak ada gambar yang ditemukan untuk query tersebut.")
+                
+                view = ImageLookupView(query, results, ctx.author.id)
+                await ctx.reply(embed=view.create_embed(), view=view)
+                
+            except Exception as e:
+                await ctx.reply(f"Terjadi kesalahan saat mencari gambar: `{str(e)}`")
 
     @image_group.command(description="Ubah gambar menjadi hitam putih (grayscale).")
     @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit")
@@ -670,12 +761,19 @@ class Image(commands.Cog):
                 img1 = cv2.cvtColor(cv2.imdecode(np.frombuffer(img1_bytes, np.uint8), cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
                 img2 = cv2.cvtColor(cv2.imdecode(np.frombuffer(img2_bytes, np.uint8), cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
 
-                score = Histogram.compare(img1, img2, method=method)
+                score = Histogram.match_score(img1, img2, method=method)
                 
+                # Generate visual comparison plot
+                name1 = user1.display_name if user1 else "Gambar 1"
+                name2 = user2.display_name if user2 else "Gambar 2"
+                plot_buf = await self._generate_comparison_plot(img1, img2, title1=f"Histogram {name1}", title2=f"Histogram {name2}")
+
                 embed = discord.Embed(title="Perbandingan Histogram", color=discord.Color.green())
                 embed.add_field(name="Metode", value=method.upper(), inline=True)
                 embed.add_field(name="Skor Kecocokan", value=f"`{score:.4f}`", inline=True)
-                await ctx.reply(embed=embed)
+                embed.set_image(url="attachment://comparison.png")
+                
+                await ctx.reply(embed=embed, file=discord.File(plot_buf, "comparison.png"))
             except ValueError as e: await ctx.reply(str(e))
             except Exception as e: await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
 

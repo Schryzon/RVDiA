@@ -241,7 +241,8 @@ class MemoryManagerView(View):
             options.append(discord.SelectOption(
                 label=f"{i+1}. {label}",
                 value=str(mem.id),
-                description=f"Type: {mem.role} | {mem.created_at.strftime('%d/%m/%Y')}"
+                # Memory model doesn't have a 'role' field, but it only stores user messages.
+                description=f"Type: Memory | {mem.createdAt.strftime('%d/%m/%Y')}"
             ))
             
         self.select = discord.ui.Select(
@@ -450,7 +451,7 @@ class Conversation(commands.Cog):
         """
         memories = await db.memory.find_many(
             where={'userId': ctx.author.id},
-            order={'created_at': 'desc'},
+            order={'createdAt': 'desc'},
             take=25
         )
         

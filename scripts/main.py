@@ -149,8 +149,37 @@ def is_premium():
 def titlecase(word):
     if word.isupper():
         return word
-    else:
-        return word[0].upper() + word[1:].lower() if len(word) > 1 else word.upper()
+    if len(word) == 0:
+        return word
+    return word[0].upper() + word[1:].lower() if len(word) > 1 else word.upper()
+
+def smart_title_case(text: str) -> str:
+    """
+    Title cases a string while keeping common conjunctions and prepositions in lowercase,
+    unless they are the first or last word.
+    """
+    conjunctions = {
+        # Indonesian
+        'dan', 'atau', 'tetapi', 'namun', 'ke', 'di', 'dari', 'pada', 'untuk', 'oleh', 'dengan', 
+        'sebagai', 'adalah', 'yang', 'itu', 'ini', 'oleh',
+        # English
+        'and', 'or', 'but', 'nor', 'the', 'a', 'an', 'of', 'to', 'in', 'on', 'for', 'by', 'with', 'as', 'is', 'at'
+    }
+    words = text.split()
+    if not words:
+        return ""
+    
+    result = []
+    for i, word in enumerate(words):
+        # Always capitalize first and last word
+        if i == 0 or i == len(words) - 1:
+            result.append(titlecase(word))
+        elif word.lower() in conjunctions:
+            result.append(word.lower())
+        else:
+            result.append(titlecase(word))
+            
+    return " ".join(result)
 
 
 def heading(direction:int):

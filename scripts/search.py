@@ -1,6 +1,7 @@
 import asyncio
 from ddgs import DDGS
 import logging
+from scripts.main import smart_title_case
 
 async def search_images(query: str, max_results: int = 3):
     """
@@ -51,7 +52,9 @@ def format_search_results(results):
     
     formatted = "Web Search Results:\n"
     for i, res in enumerate(results, 1):
-        formatted += f"{i}. {res['title']}\n   Snippet: {res['snippet']}\n   Link: {res['link']}\n"
+        # Use smart_title_case for search result titles
+        title = smart_title_case(res['title'])
+        formatted += f"{i}. {title}\n   Snippet: {res['snippet']}\n   Link: {res['link']}\n"
     return formatted
 
 # Quick test if run directly

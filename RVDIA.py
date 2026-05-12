@@ -1,12 +1,14 @@
 """
 Schryzon (Widiyasa Jayananda)
 G-Tech Re'sman Programming Division
+University of Mataram Informatics
 RVDiA (Revolutionary Virtual Discord Assistant)
 Feel free to modify and do other stuff.
 Contributions are welcome.
-Licensed under the MIT LICENSE.
-* Note: Now that RVDiA is verified, I own the rights to the name.
-        Making public clones of her under the same name is a big no no, okay sweetie?
+Licensed under the AGPL-3.0 License.
+* Note: Now that RVDiA is verified, 
+        making public clones of her under the same name (especially for fraudulent purposes) 
+        is a big no no, okay sweetie?
 """
 
 import asyncio
@@ -40,7 +42,7 @@ class RVDIA(commands.AutoShardedBot):
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "Rebirth v2.1.0"
+    self.__version__ = "Rebirth v2.1.67" # Hehe 67 funny number
     self.event_mode = True
     self.color = 0x86273d
     self.runtime = time() # UNIX float
