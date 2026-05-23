@@ -160,9 +160,20 @@ class Regenerate_Answer_Button(View):
                     # To keep it simple and "implemented ourselves", 
                     # we'll look for keywords or just always provide a "search" option.
                     
-                    # Check if the query might need search
+                    # Check if the query might need search or game lore
                     search_context = ""
                     needs_search = any(kw in message.lower() for kw in ["kapan", "siapa", "dimana", "berita", "terbaru", "harga", "cek", "apa itu", "kenapa", "bagaimana", "tutorial", "cara", "rekomendasi", "info", "lokasi", "jadwal", "skor", "cuaca", "trending", "viral", "cari", "search"])
+                    
+                    game_keywords = ["revolution", "re:volution", "rpg", "stats", "boss", "enemy", "musuh", "skill", "karma", "fight", "battle", "combat system"]
+                    needs_game_lore = any(kw in message.lower() for kw in game_keywords)
+                    
+                    if needs_game_lore:
+                        try:
+                            with open("game_manual.md", "r", encoding="utf-8") as f:
+                                lore = f.read()
+                            search_context += f"\n[Game Manual Reference:\n{lore}]\n"
+                        except Exception as ex:
+                            logging.error(f"Failed to load game manual: {ex}")
                     
                     image_url = None
                     needs_image = any(kw in message.lower() for kw in ["tunjukkan gambar", "lihat foto", "show me", "cari gambar", "lihatkan foto", "lihatkan gambar"])
@@ -330,6 +341,17 @@ class Conversation(commands.Cog):
 
                     search_context = ""
                     needs_search = any(kw in message.lower() for kw in search_keywords)
+                    
+                    game_keywords = ["revolution", "re:volution", "rpg", "stats", "boss", "enemy", "musuh", "skill", "karma", "fight", "battle"]
+                    needs_game_lore = any(kw in message.lower() for kw in game_keywords)
+                    
+                    if needs_game_lore:
+                        try:
+                            with open("game_manual.md", "r", encoding="utf-8") as f:
+                                lore = f.read()
+                            search_context += f"\n[Game Manual Reference:\n{lore}]\n"
+                        except Exception as ex:
+                            logging.error(f"Failed to load game manual: {ex}")
                     image_url = None
                     needs_image = any(kw in message.lower() for kw in image_keywords)
                     

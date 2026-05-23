@@ -202,11 +202,8 @@ class GameInstance():
         # Ratio-based damage calculation ensures scaling for late-game/uncapped stats
         base_atk = user_1_atk * (random.randint(85, 115) / 100)
         
-        # Scaling for high HP pools (mostly for PvE bosses, but applies to high-HP players)
-        scaling = max(1, self.user2_max_hp / 500) if self.user2_max_hp > 500 else 1
-        
-        damage = round((base_atk * (120 / (120 + user_2_def))) / scaling)
-        damage = max(damage, round(user_1_atk * 0.05)) # Min damage 5% of Atk
+        damage = round(base_atk * (120 / (120 + user_2_def)))
+        damage = max(damage, round(user_1_atk * 0.10)) # Min damage 10% of Atk
         
         miss_chance = min(40, max(0, (user_2_agl - user_1_agl) * 1.5 + 5 - (dealer_karma / 50)))
         dodge_chance = min(12, taker_karma / 120)
@@ -1030,6 +1027,13 @@ class AI():
         user2_stats = self.user2_stats
         user_1_atk, user_1_def, user_1_agl = user1_stats[0], user1_stats[1], user1_stats[2]
         user_2_atk, user_2_def, user_2_agl = user2_stats[0], user2_stats[1], user2_stats[2]
+
+        # Puny Attack Detection: If basic attacks are too weak, force skills
+        expected_damage = round(user_2_atk * (120 / (120 + user_1_def)))
+        if expected_damage < 30 and "skill" in self.actions:
+            if "attack" in self.actions:
+                self.actions.remove("attack")
+            self.skill_mood += 100
 
         # Psychological Scaling if AI knows the user
         if self.instance.ai_knows_user:
@@ -2794,7 +2798,7 @@ class Game(commands.Cog):
     @check_blacklist()
     async def premium_claim(self, ctx: commands.Context, bukti: discord.Attachment):
         """
-        Kirim bukti pembayaranmu untuk diverifikasi oleh Xelvie!
+        Kirim bukti pembayaranmu untuk diverifikasi oleh admin!
         """
         staff_channel_id = getenv('STAFF_CHANNEL_ID')
         if not staff_channel_id:
@@ -2804,10 +2808,35 @@ class Game(commands.Cog):
         if not staff_channel:
             return await ctx.reply("Terjadi kesalahan konfigurasi, silahkan hubungi admin.", ephemeral=True)
             
-        # Send raw notification for Xelvie to catch
-        await staff_channel.send(f"[CLAIM_PREMIUM] {ctx.author.id} {bukti.url}")
+        embed = discord.Embed(title="💎 Klaim Premium Baru!", color=0x00ffff)
+        embed.set_author(name=ctx.author.name, icon_url=ctx.author.display_avatar.url)
+        embed.add_field(name="User ID", value=f"`{ctx.author.id}`", inline=True)
+        embed.add_field(name="User Mention", value=ctx.author.mention, inline=True)
+        embed.set_image(url=bukti.url)
+        embed.set_footer(text=f"Gunakan approve_premium {ctx.author.id} untuk menyetujui.")
+        await staff_channel.send(embed=embed)
         
-        await ctx.reply("✅ Bukti pembayaranmu telah dikirim! Mohon tunggu verifikasi dari admin (Xelvie akan memberitahumu!).", ephemeral=True)
+        await ctx.reply("✅ Bukti pembayaranmu telah dikirim! Mohon tunggu verifikasi dari admin.", ephemeral=True)
+
+    @commands.command(name="approve_premium", description="[ADMIN] Setujui klaim premium seseorang")
+    @commands.is_owner()
+    async def approve_premium(self, ctx: commands.Context, user: discord.User):
+        user_record = await db.user.find_unique(where={'id': user.id})
+        if not user_record:
+            return await ctx.reply("User tidak ditemukan di database!")
+            
+        now = datetime.now()
+        if user_record.premiumUntil and user_record.premiumUntil > now:
+            new_expiry = user_record.premiumUntil + timedelta(days=30)
+        else:
+            new_expiry = now + timedelta(days=30)
+            
+        await db.user.update(where={'id': user.id}, data={'premiumUntil': new_expiry})
+        await ctx.reply(f"✅ Klaim premium untuk **{user.name}** disetujui! Berlaku sampai: <t:{int(new_expiry.timestamp())}:F>")
+        try:
+            await user.send(f"💎 **Klaim Premium Berhasil!** Selamat, kamu telah menjadi Dream Weaver selama 30 hari!\nBerlaku sampai: <t:{int(new_expiry.timestamp())}:F>")
+        except:
+            pass
 
 class GuildInviteView(View):
     def __init__(self, guild, target_user):
