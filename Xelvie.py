@@ -50,9 +50,9 @@ async def trigger_alert(url, reason):
 async def monitor_websites():
     targets = [
         "https://3dex.studio",
-        "https://api.3dex.studio",
-        "https://storage.3dex.studio",
-        "https://rvdia.up.railway.app" # REPLACE THIS with actual RVDIA domain if different
+        "https://api.3dex.studio/health",
+        "https://storage.3dex.studio/minio/health/live",
+        "https://rvdia.up.railway.app" 
     ]
     
     async with aiohttp.ClientSession() as session:
