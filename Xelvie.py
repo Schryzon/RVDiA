@@ -12,7 +12,7 @@ import re
 import aiohttp
 from os import getenv
 from dotenv import load_dotenv
-from discord.ext import commands
+from discord.ext import commands, tasks
 from datetime import datetime, timedelta
 from prisma import Prisma, Json
 
@@ -99,10 +99,52 @@ async def on_connect():
         await db.connect()
     logging.info('XLV connected!')
 
+async def trigger_alert(url, reason):
+    logging.warning(f"ALERT: {url} is down! Reason: {reason}")
+    
+    # NTFY Out-of-discord alert
+    try:
+        async with aiohttp.ClientSession() as session:
+            await session.post(
+                "https://ntfy.sh/schryzon_3dex_alerts",
+                data=f"🚨 3Dex Alert 🚨\n{url} is DOWN!\nReason: {reason}".encode('utf-8')
+            )
+    except:
+        pass
+        
+    # Discord alert
+    try:
+        channel = xlv.get_channel(int(getenv("statuschannel")))
+        if channel:
+            await channel.send(f"<@{getenv('schryzonid')}>\n🚨 **URGENT**: `{url}` is down!\n**Reason:** {reason}")
+    except:
+        pass
+
+@tasks.loop(minutes=5)
+async def monitor_websites():
+    targets = [
+        "https://3dex.studio",
+        "https://api.3dex.studio",
+        "https://storage.3dex.studio",
+        "https://rvdia.up.railway.app" # REPLACE THIS with actual RVDIA domain if different
+    ]
+    
+    async with aiohttp.ClientSession() as session:
+        for url in targets:
+            try:
+                async with session.get(url, timeout=10) as resp:
+                    if resp.status != 200:
+                        await trigger_alert(url, f"HTTP {resp.status}")
+            except Exception as e:
+                # Optimistic error handling: if it dies, just alert
+                await trigger_alert(url, str(e))
+
 @xlv.event
 async def on_ready():
   await xlv.wait_until_ready()
   logging.info('XLV is ready!')
+  if not monitor_websites.is_running():
+      monitor_websites.start()
 
 @xlv.event
 async def on_presence_update(before, after):
