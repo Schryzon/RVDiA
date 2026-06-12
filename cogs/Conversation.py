@@ -429,7 +429,13 @@ class Conversation(commands.Cog):
                 embed.set_image(url=img_match.group(0))
 
             regenerate_button = Regenerate_Answer_Button(user_id, message, AI_response)
-            return await ctx.reply(embed=embed, view=regenerate_button)
+            try:
+                return await ctx.reply(embed=embed, view=regenerate_button)
+            except discord.HTTPException as e:
+                # If webhook token is invalid or unauthorized, fall back to channel send
+                if e.code == 50027 or e.status == 401:
+                    return await ctx.send(embed=embed, view=regenerate_button)
+                raise e
 
     @commands.hybrid_group(
         name="memory",

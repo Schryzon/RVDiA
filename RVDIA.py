@@ -400,7 +400,22 @@ async def on_message(msg:discord.Message):
 
     if msg.reference:
         try:
-          fetched_message = await msg.channel.fetch_message(msg.reference.message_id)
+          fetched_message = None
+          for attempt in range(3):
+              try:
+                  fetched_message = await msg.channel.fetch_message(msg.reference.message_id)
+                  break
+              except discord.DiscordServerError as dse:
+                  if attempt < 2:
+                      await asyncio.sleep(1 + attempt)
+                      continue
+                  raise dse
+              except discord.HTTPException as he:
+                  if he.status in (502, 503, 504) and attempt < 2:
+                      await asyncio.sleep(1 + attempt)
+                      continue
+                  raise he
+
           match fetched_message.author.id:
               case rvdia.user.id:
                   pass
@@ -485,6 +500,11 @@ async def on_message(msg:discord.Message):
                   return await msg.author.send("Aku kekurangan `permission` untuk menjalankan fitur ini!\nPastikan aku bisa mengirim pesan dan embed di channel itu!")
                 except:
                   return
+
+          elif any(err in str(e).lower() for err in ["502", "503", "504", "service unavailable", "upstream connect error", "disconnect/reset"]):
+            # Handle temporary Discord API/Gateway issues without spamming logs
+            logging.warning(f"Discord temporary server error caught in on_message: {e}")
+            return await msg.channel.send("Aduh, sepertinya koneksi ke Discord sedang mengalami gangguan. Silakan coba lagi sebentar lagi! 🌐", delete_after=5.0)
                  
           await msg.channel.send('Ada yang bermasalah dengan fitur ini, aku sudah mengirimkan laporan ke developer!')
           channel = rvdia.get_channel(int(os.getenv("errorchannel")))
