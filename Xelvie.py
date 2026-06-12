@@ -112,6 +112,43 @@ async def on_member_remove(user:discord.Member):
         channel = user.guild.get_channel(int(getenv("welcomechannel")))
         await channel.send(f"**`{user}`** has left CyroN. {random.choice(left)}")
     else: return
+@xlv.command(aliases=['purgeuser', 'cleanuser'])
+@commands.has_permissions(manage_messages=True)
+@commands.bot_has_permissions(manage_messages=True, read_message_history=True)
+async def clearuser(ctx: commands.Context, user_id: str, limit: int = 100):
+    try:
+        target_id = int(user_id)
+    except ValueError:
+        return await ctx.reply("ID Pengguna tidak valid! Pastikan berupa deretan angka ID Discord.")
+
+    if limit <= 0 or limit > 2000:
+        return await ctx.reply("Batas jumlah pesan yang diperiksa harus di antara 1 dan 2000!")
+
+    # Delete the command message to keep channel clean
+    try:
+        await ctx.message.delete()
+    except:
+        pass
+
+    async with ctx.channel.typing():
+        def check(message):
+            return message.author.id == target_id
+
+        try:
+            # Purge messages matching the check
+            deleted = await ctx.channel.purge(limit=limit, check=check)
+            
+            # Fetch username if possible
+            user_display = f"User ID `{target_id}`"
+            try:
+                user = await xlv.fetch_user(target_id)
+                user_display = f"**`{user}`** (`{target_id}`)"
+            except:
+                pass
+                
+            await ctx.send(f"✅ Berhasil menghapus {len(deleted)} pesan dari {user_display} di channel ini.", delete_after=10.0)
+        except Exception as e:
+            await ctx.send(f"❌ Gagal menghapus pesan: `{str(e)}`", delete_after=10.0)
 
 
 xlv.run(token=str(getenv('xlvtoken')))
