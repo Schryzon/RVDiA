@@ -193,8 +193,14 @@ class Image(commands.Cog):
         """Cari gambar di internet dan tampilkan hasilnya dengan navigasi."""
         async with ctx.typing():
             try:
+                # Enable NSFW results only if the channel is NSFW
+                is_nsfw = False
+                if hasattr(ctx.channel, 'is_nsfw') and callable(ctx.channel.is_nsfw):
+                    is_nsfw = ctx.channel.is_nsfw()
+                safesearch = 'off' if is_nsfw else 'on'
+                
                 # Fetch up to 10 results for pagination
-                results = await search_images(query, max_results=10)
+                results = await search_images(query, max_results=10, safesearch=safesearch)
                 if not results:
                     return await ctx.reply("Waduh! Tidak ada gambar yang ditemukan untuk query tersebut.")
                 

@@ -3,7 +3,7 @@ from ddgs import DDGS
 import logging
 from scripts.main import smart_title_case
 
-async def search_images(query: str, max_results: int = 3):
+async def search_images(query: str, max_results: int = 3, safesearch: str = 'on'):
     """
     Performs an image search using DuckDuckGo and returns image links.
     (Non-NSFW by default with safesearch='on')
@@ -11,7 +11,7 @@ async def search_images(query: str, max_results: int = 3):
     try:
         results = []
         with DDGS() as ddgs:
-            search_results = ddgs.images(query, max_results=max_results, safesearch='on')
+            search_results = ddgs.images(query, max_results=max_results, safesearch=safesearch)
             for r in search_results:
                 results.append({
                     "title": r.get("title", ""),
@@ -24,7 +24,7 @@ async def search_images(query: str, max_results: int = 3):
         logging.error(f"Error in image search: {e}")
         return []
 
-async def search_web(query: str, max_results: int = 5):
+async def search_web(query: str, max_results: int = 5, safesearch: str = 'on'):
     """
     Performs a web search using DuckDuckGo and returns snippets and links.
     """
@@ -33,7 +33,7 @@ async def search_web(query: str, max_results: int = 5):
         with DDGS() as ddgs:
             # Using as_iter to get results in a more modern way if needed, 
             # but text() is the standard for general search.
-            search_results = ddgs.text(query, max_results=max_results)
+            search_results = ddgs.text(query, max_results=max_results, safesearch=safesearch)
             for r in search_results:
                 results.append({
                     "title": r.get("title", ""),

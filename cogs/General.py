@@ -401,7 +401,14 @@ class Utilities(commands.Cog):
         async with ctx.typing():
             try:
                 from scripts.search import search_web
-                results = await search_web(query, max_results=5)
+                
+                # Enable NSFW results only if the channel is NSFW
+                is_nsfw = False
+                if hasattr(ctx.channel, 'is_nsfw') and callable(ctx.channel.is_nsfw):
+                    is_nsfw = ctx.channel.is_nsfw()
+                safesearch = 'off' if is_nsfw else 'on'
+                
+                results = await search_web(query, max_results=5, safesearch=safesearch)
                 if not results:
                     return await ctx.reply("Waduh! Tidak ada hasil pencarian yang ditemukan.")
                 
@@ -410,14 +417,20 @@ class Utilities(commands.Cog):
                     title = res['title']
                     snippet = res['snippet']
                     link = res['link']
-                    # Truncate title/snippet if too long
+                    
+                    # Truncate title if too long
                     if len(title) > 256:
                         title = title[:253] + "..."
-                    if len(snippet) > 1024:
-                        snippet = snippet[:1021] + "..."
+                        
+                    # Calculate safe snippet truncation to prevent exceeding 1024 chars total field value
+                    suffix = f"\n[Baca selengkapnya...]({link})"
+                    max_snippet_len = 1024 - len(suffix)
+                    if len(snippet) > max_snippet_len:
+                        snippet = snippet[:max_snippet_len - 3] + "..."
+                        
                     embed.add_field(
                         name=f"{idx}. {title}",
-                        value=f"{snippet}\n[Baca selengkapnya...]({link})",
+                        value=f"{snippet}{suffix}",
                         inline=False
                     )
                 embed.set_footer(text=f"Dicari oleh {ctx.author}", icon_url=ctx.author.display_avatar.url)
