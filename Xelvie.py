@@ -46,7 +46,7 @@ async def trigger_alert(url, reason):
     except:
         pass
 
-@tasks.loop(minutes=5)
+@tasks.loop(minutes=15)
 async def monitor_websites():
     targets = [
         "https://3dex.studio",
@@ -58,7 +58,8 @@ async def monitor_websites():
     async with aiohttp.ClientSession() as session:
         for url in targets:
             try:
-                async with session.get(url, timeout=10) as resp:
+                # increased timeout to 30s to avoid classifying slow/no response as down
+                async with session.get(url, timeout=30) as resp:
                     if resp.status != 200:
                         await trigger_alert(url, f"HTTP {resp.status}")
             except Exception as e:

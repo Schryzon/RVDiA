@@ -12,10 +12,11 @@ from scripts.search import search_images
 from scripts.image_processing import (
     Image_Ops, Convolution, Histogram, Equalization, 
     Enhancement, Specialization, Edge_Detection, 
-    Morphology, gpu_available, gpu_info, _GPU_NAME
+    Morphology, gpu_available, gpu_info, _GPU_NAME,
+    Wavelet, Stego, FreqFilter
 )
 
-class ImageLookupView(discord.ui.View):
+class ImageSearchView(discord.ui.View):
     """
     View for paginated image search results.
     """
@@ -185,10 +186,10 @@ class Image(commands.Cog):
         embed.set_footer(text="Menggunakan CuPy untuk pengolahan array skala besar.")
         await ctx.reply(embed=embed)
         
-    @image_group.command(name="lookup", description="Cari gambar di internet dengan navigasi hasil.")
+    @image_group.command(name="search", description="Cari gambar di internet dengan navigasi hasil.")
     @app_commands.describe(query="Query pencarian gambar")
     @check_blacklist()
-    async def lookup(self, ctx: commands.Context, query: str):
+    async def search(self, ctx: commands.Context, query: str):
         """Cari gambar di internet dan tampilkan hasilnya dengan navigasi."""
         async with ctx.typing():
             try:
@@ -197,7 +198,7 @@ class Image(commands.Cog):
                 if not results:
                     return await ctx.reply("Waduh! Tidak ada gambar yang ditemukan untuk query tersebut.")
                 
-                view = ImageLookupView(query, results, ctx.author.id)
+                view = ImageSearchView(query, results, ctx.author.id)
                 await ctx.reply(embed=view.create_embed(), view=view)
                 
             except Exception as e:
@@ -806,6 +807,250 @@ class Image(commands.Cog):
                 await ctx.reply(file=discord.File(buf, "cdf.png"))
             except ValueError as e: await ctx.reply(str(e))
             except Exception as e: await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
+
+    @commands.hybrid_group(name='wavelet')
+    @check_blacklist()
+    async def wavelet_group(self, ctx: commands.Context):
+        """
+        Kumpulan command untuk pemrosesan gambar berbasis Wavelet. [GROUP]
+        """
+        if ctx.invoked_subcommand is None:
+            await ctx.send_help(ctx.command)
+
+    @wavelet_group.command(name="decomp", description="Dekomposisi wavelet Haar 2D pada gambar.")
+    @app_commands.describe(user="User yang avatar-nya ingin didekomposisi", attachment="Gambar yang ingin didekomposisi", level="Tingkat dekomposisi (1-4, default: 2)")
+    @check_blacklist()
+    async def wavelet_decomp(self, ctx: commands.Context, level: int = 2, user: discord.User = None, attachment: discord.Attachment = None):
+        if not (1 <= level <= 4):
+            return await ctx.reply("Tingkat dekomposisi harus di antara 1 dan 4!")
+        async with ctx.typing():
+            try:
+                bytes_data = await self._get_image_bytes(ctx, user, attachment)
+                
+                def apply_wavelet(img, lvl):
+                    # Convert to grayscale
+                    if img.ndim == 3:
+                        gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+                    else:
+                        gray = img
+                    
+                    coeffs = Wavelet.wavedec2(gray, level=lvl)
+                    
+                    # Normalize LL band (coeffs[0])
+                    ll = coeffs[0]
+                    ll_min, ll_max = ll.min(), ll.max()
+                    if ll_max != ll_min:
+                        ll_norm = (ll - ll_min) / (ll_max - ll_min) * 255.0
+                    else:
+                        ll_norm = np.zeros_like(ll)
+                    
+                    norm_coeffs = [ll_norm]
+                    
+                    # Normalize detail bands (LH, HL, HH) to be centered around 128
+                    for i in range(1, len(coeffs)):
+                        cH, cV, cD = coeffs[i]
+                        def _map_detail(arr):
+                            mx = np.max(np.abs(arr))
+                            if mx == 0:
+                                return np.full_like(arr, 128.0)
+                            return (arr / mx) * 127.0 + 128.0
+                        norm_coeffs.append((_map_detail(cH), _map_detail(cV), _map_detail(cD)))
+                    
+                    grid = Wavelet.assemble_wavedec2_grid(norm_coeffs)
+                    return np.clip(grid, 0, 255).astype(np.uint8)
+
+                await self._process_and_reply(ctx, bytes_data, "wavelet_decomposition.png", apply_wavelet, level)
+            except ValueError as e:
+                await ctx.reply(str(e))
+
+    @wavelet_group.command(name="denoise", description="Denoise gambar menggunakan wavelet thresholding.")
+    @app_commands.describe(user="User yang avatar-nya ingin didenoise", attachment="Gambar yang ingin didenoise", level="Tingkat dekomposisi (1-4, default: 2)", mode="Mode thresholding (hard/soft)")
+    @check_blacklist()
+    async def wavelet_denoise(self, ctx: commands.Context, level: int = 2, mode: str = "soft", user: discord.User = None, attachment: discord.Attachment = None):
+        if not (1 <= level <= 4):
+            return await ctx.reply("Tingkat dekomposisi harus di antara 1 dan 4!")
+        if mode not in ["hard", "soft"]:
+            return await ctx.reply("Mode thresholding harus 'hard' atau 'soft'!")
+        async with ctx.typing():
+            try:
+                bytes_data = await self._get_image_bytes(ctx, user, attachment)
+                await self._process_and_reply(ctx, bytes_data, "denoised.png", Wavelet.denoise, level, None, mode)
+            except ValueError as e:
+                await ctx.reply(str(e))
+
+    @wavelet_group.command(name="compress", description="Kompresi gambar menggunakan wavelet thresholding.")
+    @app_commands.describe(user="User yang avatar-nya ingin dikompres", attachment="Gambar yang ingin dikompres", level="Tingkat dekomposisi (1-4, default: 3)", keep_ratio="Persentase koefisien yang disimpan (0.01 - 1.0, default: 0.1)")
+    @check_blacklist()
+    async def wavelet_compress(self, ctx: commands.Context, level: int = 3, keep_ratio: float = 0.1, user: discord.User = None, attachment: discord.Attachment = None):
+        if not (1 <= level <= 4):
+            return await ctx.reply("Tingkat dekomposisi harus di antara 1 dan 4!")
+        if not (0.01 <= keep_ratio <= 1.0):
+            return await ctx.reply("Rasio penyimpanan (keep_ratio) harus di antara 0.01 dan 1.0!")
+        async with ctx.typing():
+            try:
+                bytes_data = await self._get_image_bytes(ctx, user, attachment)
+                await self._process_and_reply(ctx, bytes_data, "compressed.png", Wavelet.compress, level, keep_ratio)
+            except ValueError as e:
+                await ctx.reply(str(e))
+
+    @commands.hybrid_group(name='stego')
+    @check_blacklist()
+    async def stego_group(self, ctx: commands.Context):
+        """
+        Kumpulan command LSB Steganografi (menyembunyikan teks di gambar). [GROUP]
+        """
+        if ctx.invoked_subcommand is None:
+            await ctx.send_help(ctx.command)
+
+    @stego_group.command(name="hide", description="Sembunyikan pesan rahasia di dalam gambar.")
+    @app_commands.describe(message="Pesan rahasia yang ingin disembunyikan", user="User yang avatar-nya ingin digunakan", attachment="Gambar yang ingin digunakan")
+    @check_blacklist()
+    async def stego_hide(self, ctx: commands.Context, message: str, user: discord.User = None, attachment: discord.Attachment = None):
+        if not message:
+            return await ctx.reply("Pesan rahasia tidak boleh kosong!")
+        async with ctx.typing():
+            try:
+                bytes_data = await self._get_image_bytes(ctx, user, attachment)
+                
+                nparr = np.frombuffer(bytes_data, np.uint8)
+                img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                if img is None:
+                    return await ctx.reply("Gagal membaca gambar!")
+                
+                img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                
+                # Stego encode
+                stego_img = Stego.encode(img_rgb, message)
+                
+                stego_bgr = cv2.cvtColor(stego_img, cv2.COLOR_RGB2BGR)
+                _, buffer = cv2.imencode('.png', stego_bgr)
+                
+                await ctx.reply(content="Pesan rahasia berhasil disembunyikan! Gunakan `/stego reveal` pada gambar ini untuk membacanya.", file=discord.File(io.BytesIO(buffer), "stego_image.png"))
+            except ValueError as e:
+                await ctx.reply(str(e))
+            except Exception as e:
+                await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
+
+    @stego_group.command(name="reveal", description="Ekstrak dan baca pesan rahasia dari gambar stego.")
+    @app_commands.describe(user="User yang avatar-nya ingin dibaca pesannya", attachment="Gambar yang ingin dibaca pesannya")
+    @check_blacklist()
+    async def stego_reveal(self, ctx: commands.Context, user: discord.User = None, attachment: discord.Attachment = None):
+        async with ctx.typing():
+            try:
+                bytes_data = await self._get_image_bytes(ctx, user, attachment)
+                nparr = np.frombuffer(bytes_data, np.uint8)
+                img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                if img is None:
+                    return await ctx.reply("Gagal membaca gambar!")
+                
+                img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                
+                # Stego decode
+                message = Stego.decode(img_rgb)
+                
+                if not message:
+                    await ctx.reply("Tidak ada pesan rahasia yang ditemukan pada gambar ini!")
+                else:
+                    escaped_message = discord.utils.escape_markdown(message)
+                    await ctx.reply(f"🕵️‍♂️ **Pesan Rahasia Ditemukan:**\n{escaped_message}")
+            except Exception as e:
+                await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
+
+    @commands.hybrid_group(name='fourier')
+    @check_blacklist()
+    async def fourier_group(self, ctx: commands.Context):
+        """
+        Kumpulan filter pemrosesan domain frekuensi (DFT). [GROUP]
+        """
+        if ctx.invoked_subcommand is None:
+            await ctx.send_help(ctx.command)
+
+    @fourier_group.command(name="lpf", description="Terapkan Low-Pass Filter (LPF) di domain frekuensi untuk memburamkan/menghaluskan gambar.")
+    @app_commands.describe(
+        cutoff="Frekuensi cutoff (default: 30)", 
+        type="Jenis filter (ideal/butterworth/gaussian, default: gaussian)",
+        order="Orde filter untuk Butterworth (default: 2)",
+        user="User yang avatar-nya ingin difilter", 
+        attachment="Gambar yang ingin difilter"
+    )
+    @check_blacklist()
+    async def fourier_lpf(self, ctx: commands.Context, cutoff: float = 30.0, type: str = "gaussian", order: int = 2, user: discord.User = None, attachment: discord.Attachment = None):
+        types = ["ideal", "butterworth", "gaussian"]
+        if type not in types:
+            return await ctx.reply(f"Jenis filter tidak valid! Pilihan: {', '.join(types)}")
+        if cutoff <= 0:
+            return await ctx.reply("Cutoff harus lebih besar dari 0!")
+        
+        async with ctx.typing():
+            try:
+                bytes_data = await self._get_image_bytes(ctx, user, attachment)
+                
+                def apply_lpf(img):
+                    if type == "ideal":
+                        return FreqFilter.ideal_lpf(img, cutoff)
+                    elif type == "butterworth":
+                        return FreqFilter.butterworth_lpf(img, cutoff, order)
+                    else:
+                        return FreqFilter.gaussian_lpf(img, cutoff)
+                        
+                await self._process_and_reply(ctx, bytes_data, "lpf.png", apply_lpf)
+            except ValueError as e:
+                await ctx.reply(str(e))
+            except Exception as e:
+                await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
+
+    @fourier_group.command(name="hpf", description="Terapkan High-Pass Filter (HPF) di domain frekuensi untuk mendeteksi tepi/detail gambar.")
+    @app_commands.describe(
+        cutoff="Frekuensi cutoff (default: 30)", 
+        type="Jenis filter (ideal/butterworth/gaussian, default: gaussian)",
+        order="Orde filter untuk Butterworth (default: 2)",
+        user="User yang avatar-nya ingin difilter", 
+        attachment="Gambar yang ingin difilter"
+    )
+    @check_blacklist()
+    async def fourier_hpf(self, ctx: commands.Context, cutoff: float = 30.0, type: str = "gaussian", order: int = 2, user: discord.User = None, attachment: discord.Attachment = None):
+        types = ["ideal", "butterworth", "gaussian"]
+        if type not in types:
+            return await ctx.reply(f"Jenis filter tidak valid! Pilihan: {', '.join(types)}")
+        if cutoff <= 0:
+            return await ctx.reply("Cutoff harus lebih besar dari 0!")
+        
+        async with ctx.typing():
+            try:
+                bytes_data = await self._get_image_bytes(ctx, user, attachment)
+                
+                def apply_hpf(img):
+                    if type == "ideal":
+                        return FreqFilter.ideal_hpf(img, cutoff)
+                    elif type == "butterworth":
+                        return FreqFilter.butterworth_hpf(img, cutoff, order)
+                    else:
+                        return FreqFilter.gaussian_hpf(img, cutoff)
+                        
+                await self._process_and_reply(ctx, bytes_data, "hpf.png", apply_hpf)
+            except ValueError as e:
+                await ctx.reply(str(e))
+            except Exception as e:
+                await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
+
+    @fourier_group.command(name="homomorphic", description="Terapkan filter homomorphic untuk menyeimbangkan pencahayaan gambar.")
+    @app_commands.describe(
+        gamma_l="Gain frekuensi rendah (pencahayaan, default: 0.5)",
+        gamma_h="Gain frekuensi tinggi (reflektansi/tepi, default: 2.0)",
+        cutoff="Frekuensi cutoff (default: 30)",
+        user="User yang avatar-nya ingin difilter", 
+        attachment="Gambar yang ingin difilter"
+    )
+    @check_blacklist()
+    async def fourier_homomorphic(self, ctx: commands.Context, gamma_l: float = 0.5, gamma_h: float = 2.0, cutoff: float = 30.0, user: discord.User = None, attachment: discord.Attachment = None):
+        async with ctx.typing():
+            try:
+                bytes_data = await self._get_image_bytes(ctx, user, attachment)
+                await self._process_and_reply(ctx, bytes_data, "homomorphic.png", FreqFilter.homomorphic, gamma_l, gamma_h, cutoff)
+            except ValueError as e:
+                await ctx.reply(str(e))
+            except Exception as e:
+                await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Image(bot))

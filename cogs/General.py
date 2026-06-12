@@ -393,6 +393,38 @@ class Utilities(commands.Cog):
         hex_value = '{:02x}{:02x}{:02x}'.format(red, green, blue)
         await self.hex(ctx, hex_value) # Cheat
 
+    @commands.hybrid_command(aliases=['search'], description="Cari info/website di internet menggunakan DuckDuckGo.")
+    @app_commands.describe(query="Kata kunci yang ingin dicari")
+    @check_blacklist()
+    async def google(self, ctx: commands.Context, *, query: str):
+        """Cari info/website di internet menggunakan DuckDuckGo."""
+        async with ctx.typing():
+            try:
+                from scripts.search import search_web
+                results = await search_web(query, max_results=5)
+                if not results:
+                    return await ctx.reply("Waduh! Tidak ada hasil pencarian yang ditemukan.")
+                
+                embed = discord.Embed(title=f"Hasil Pencarian: {query}", color=0x34a853) # Google Green
+                for idx, res in enumerate(results, 1):
+                    title = res['title']
+                    snippet = res['snippet']
+                    link = res['link']
+                    # Truncate title/snippet if too long
+                    if len(title) > 256:
+                        title = title[:253] + "..."
+                    if len(snippet) > 1024:
+                        snippet = snippet[:1021] + "..."
+                    embed.add_field(
+                        name=f"{idx}. {title}",
+                        value=f"{snippet}\n[Baca selengkapnya...]({link})",
+                        inline=False
+                    )
+                embed.set_footer(text=f"Dicari oleh {ctx.author}", icon_url=ctx.author.display_avatar.url)
+                await ctx.reply(embed=embed)
+            except Exception as e:
+                await ctx.reply(f"Terjadi kesalahan saat mencari: `{str(e)}`")
+
 class Support(commands.GroupCog, group_name='support'):
     """
     Kumpulan command khusus untuk memperoleh bantuan dan pemberian saran/kritik.

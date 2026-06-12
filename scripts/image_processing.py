@@ -1,9 +1,11 @@
 from typing import Literal, Sequence, Any
 import numpy as np
 import cv2
+from pathlib import Path
+import csv
 import matplotlib.pyplot as plt
 import os
-
+import functools
 # ═══════════════════════════════════════════════════════════════════════════════
 #  GPU Backend — Automatic CuPy dispatch with CPU fallback
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -97,6 +99,22 @@ def _smart(image):
     return image
 
 
+def gpu_accelerated(func):
+    """
+    Decorator that auto-transfers the first argument (usually `image`) to the GPU
+    if available, executes the function on GPU, and automatically transfers the result
+    back to CPU (NumPy) to ensure downstream compatibility with OpenCV/Matplotlib.
+    """
+    @functools.wraps(func)
+    def wrapper(image, *args, **kwargs):
+        gpu_image = _smart(image)
+        result = func(gpu_image, *args, **kwargs)
+        if isinstance(result, tuple):
+            return tuple(to_cpu(r) for r in result)
+        return to_cpu(result)
+    return wrapper
+
+
 # print status on import
 if _GPU_AVAILABLE:
     _thr = int(GPU_MIN_PIXELS ** 0.5)
@@ -175,6 +193,30 @@ def _interp_flag(mode: InterpMode) -> int:
         "cubic": cv2.INTER_CUBIC,
         "lanczos": cv2.INTER_LANCZOS4,
     }[mode]
+
+
+def _resolve_ratio(value: int | float, dimension: int) -> int:
+    """Convert a ratio (float in [0.0, 1.0]) to pixel count, or pass through raw int.
+
+    Rules
+    -----
+    - int                     → returned as-is (pixel value)
+    - float in [0.0, 1.0]    → int(round(value * dimension))
+    - float outside [0.0,1.0]→ truncated to int (treated as a pixel value)
+    """
+    if isinstance(value, float):
+        if 0.0 <= value <= 1.0:
+            return int(round(value * dimension))
+        return int(value)
+    return int(value)
+
+
+def _resolve_ratio_pair(
+    x: int | float, y: int | float,
+    dim_x: int, dim_y: int,
+) -> tuple[int, int]:
+    """Resolve a (x, y) pair where each element may be a ratio or raw pixel."""
+    return _resolve_ratio(x, dim_x), _resolve_ratio(y, dim_y)
 
 
 def _center_crop_or_pad(image: ArrayLike, target_h: int, target_w: int) -> ArrayLike:
@@ -325,11 +367,11 @@ class Histogram:
             else:
                 if isinstance(color_cfg, (list, tuple)):
                     ch_colors = list(color_cfg)
-                    for ch in range(min(img.shape[2], len(ch_colors))):
-                        plt.hist(img[..., ch].ravel(), bins=bins, range=value_range, color=ch_colors[ch], alpha=0.5, density=normalize)
                 else:
-                    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-                    plt.hist(gray.ravel(), bins=bins, range=value_range, color=str(color_cfg), density=normalize)
+                    ch_colors = [color_cfg] * img.shape[2] if color_cfg != "black" else ["r", "g", "b"]
+                
+                for ch in range(min(img.shape[2], len(ch_colors))):
+                    plt.hist(img[..., ch].ravel(), bins=bins, range=value_range, color=ch_colors[ch], alpha=0.5, density=normalize)
         plt.tight_layout()
         plt.show()
 
@@ -462,6 +504,257 @@ class Histogram:
         plt.show()
 
 
+class CSV:
+    """Generic CSV reader with configurable header skipping.
+
+    Designed for loading tabular data from CSV files where a variable
+    number of header/metadata rows may precede the actual data.
+    Also retains histogram-specific helpers from the old TargetHistogram class.
+    """
+
+    @staticmethod
+    def read(
+        path: str | Path,
+        *,
+        base_dir: str | Path | None = None,
+        skip_rows: int = 0,
+        has_header: bool = True,
+        delimiter: str = ",",
+        encoding: str = "utf-8",
+        dtype: type = str,
+    ) -> tuple[list[str] | None, list[list]]:
+        """Read a CSV file with optional row skipping.
+
+        Parameters
+        ----------
+        path : str | Path
+            Path to the CSV file (absolute or relative to base_dir).
+        base_dir : str | Path | None
+            Base directory for relative paths. Defaults to script directory.
+        skip_rows : int
+            Number of leading rows to skip before the header/data (metadata, blank rows, etc.).
+        has_header : bool
+            If True, the first non-skipped row is treated as the column header.
+        delimiter : str
+            Column delimiter character.
+        encoding : str
+            File encoding.
+        dtype : type
+            Cast each cell to this type (default str, use float/int for numeric data).
+
+        Returns
+        -------
+        (header, rows)
+            header is a list of column names (or None if has_header=False).
+            rows is a list of lists, one per data row.
+        """
+        base = Path(base_dir) if base_dir is not None else Path(__file__).resolve().parent
+        p = Path(path)
+        if not p.is_absolute():
+            p = base / p
+
+        with p.open("r", newline="", encoding=encoding) as f:
+            # skip leading rows
+            for _ in range(skip_rows):
+                next(f, None)
+
+            reader = csv.reader(f, delimiter=delimiter)
+            header = None
+            if has_header:
+                header = next(reader, None)
+
+            rows: list[list] = []
+            for raw_row in reader:
+                if dtype is str:
+                    rows.append(raw_row)
+                else:
+                    rows.append([dtype(cell) for cell in raw_row])
+
+        return header, rows
+
+    @staticmethod
+    def read_dict(
+        path: str | Path,
+        *,
+        base_dir: str | Path | None = None,
+        skip_rows: int = 0,
+        delimiter: str = ",",
+        encoding: str = "utf-8",
+    ) -> list[dict[str, str]]:
+        """Read a CSV file into a list of dicts (one per row).
+
+        The first non-skipped row is always treated as the header.
+
+        Parameters
+        ----------
+        skip_rows : int
+            Number of leading rows to skip before the header.
+        """
+        base = Path(base_dir) if base_dir is not None else Path(__file__).resolve().parent
+        p = Path(path)
+        if not p.is_absolute():
+            p = base / p
+
+        with p.open("r", newline="", encoding=encoding) as f:
+            for _ in range(skip_rows):
+                next(f, None)
+
+            reader = csv.DictReader(f, delimiter=delimiter)
+            if reader.fieldnames is None:
+                raise ValueError(f"CSV has no header row (after skipping {skip_rows} rows): {p}")
+            return list(reader)
+
+    # --- histogram-specific helpers (migrated from TargetHistogram) ---
+
+    @staticmethod
+    def load_histogram(
+        path: str | Path,
+        *,
+        bins: int = 256,
+        base_dir: str | Path | None = None,
+        skip_rows: int = 0,
+        intensity_col: str = "Intensity",
+        count_col: str = "Sum of Pixel",
+        dtype=np.float64,
+        strict: bool = True,
+    ) -> np.ndarray:
+        """Load a histogram from a CSV file.
+
+        Parameters
+        ----------
+        skip_rows : int
+            Number of leading rows to skip before the header row.
+        intensity_col : str
+            Column name for the intensity/bin index.
+        count_col : str
+            Column name for the pixel count.
+        """
+        base = Path(base_dir) if base_dir is not None else Path(__file__).resolve().parent
+        p = Path(path)
+        if not p.is_absolute():
+            p = base / p
+
+        hist = np.zeros((bins,), dtype=dtype)
+
+        with p.open("r", newline="", encoding="utf-8") as f:
+            # skip leading metadata rows
+            for _ in range(skip_rows):
+                next(f, None)
+
+            reader = csv.DictReader(f)
+            if reader.fieldnames is None:
+                raise ValueError(f"CSV has no header row (after skipping {skip_rows} rows): {p}")
+
+            for row_idx, row in enumerate(reader, start=2 + skip_rows):
+                try:
+                    i = int(float(row[intensity_col]))
+                    v = float(row[count_col])
+                except KeyError as e:
+                    raise KeyError(
+                        f"Missing column {e} in {p}. Found columns: {reader.fieldnames}"
+                    ) from e
+                except Exception as e:
+                    raise ValueError(f"Bad row at line {row_idx} in {p}: {row}") from e
+
+                if 0 <= i < bins:
+                    hist[i] = v
+                elif strict:
+                    raise ValueError(f"Intensity {i} out of range [0,{bins-1}] at line {row_idx} in {p}")
+
+        return hist
+
+    @staticmethod
+    def normalize(hist: np.ndarray, eps: float = 1e-12) -> np.ndarray:
+        hist = np.asarray(hist, dtype=np.float64)
+        s = hist.sum()
+        return hist / (s + eps)
+
+    @staticmethod
+    def plot_histogram(
+        hist: np.ndarray,
+        *,
+        title: str = "Target Histogram (CSV)",
+        color: str = "black",
+        figsize: tuple[int, int] = (6, 4),
+    ) -> None:
+        """Plot histogram counts directly from a (bins,) array."""
+        h = np.asarray(hist).ravel()
+        x = np.arange(h.size)
+        plt.figure(figsize=figsize)
+        plt.bar(x, h, color=color, width=1.0)
+        plt.title(title)
+        plt.xlabel("Intensity")
+        plt.ylabel("Sum of Pixel")
+        plt.xlim(0, h.size - 1)
+        plt.tight_layout()
+        plt.show()
+
+    @staticmethod
+    def histogram_to_image(
+        hist: np.ndarray,
+        *,
+        shape: tuple[int, int] | None = None,
+        total_pixels: int = 256 * 256,
+        bins: int = 256,
+        dtype=np.uint8,
+    ) -> np.ndarray:
+        """
+        Build a synthetic grayscale image whose histogram approximately matches `hist`.
+
+        - If `shape` is given, uses total_pixels = shape[0]*shape[1].
+        - Deterministic (no randomness).
+        """
+        h = np.asarray(hist, dtype=np.float64).ravel()
+        if h.size != bins:
+            raise ValueError(f"Expected hist with {bins} bins, got {h.size}")
+
+        if shape is not None:
+            H, W = int(shape[0]), int(shape[1])
+            if H <= 0 or W <= 0:
+                raise ValueError("shape must be positive")
+            total_pixels = H * W
+        else:
+            if total_pixels <= 0:
+                raise ValueError("total_pixels must be positive")
+            H = int(np.sqrt(total_pixels))
+            W = int(np.ceil(total_pixels / max(H, 1)))
+            total_pixels = H * W
+
+        p = CSV.normalize(h)
+        expected = p * total_pixels
+
+        base = np.floor(expected).astype(np.int64)
+        remainder = int(total_pixels - base.sum())
+        if remainder > 0:
+            frac = expected - base
+            idx = np.argsort(frac)[::-1][:remainder]
+            base[idx] += 1
+        elif remainder < 0:
+            # remove from the largest bins first (rare, due to float issues)
+            idx = np.argsort(base)[::-1][:(-remainder)]
+            base[idx] = np.maximum(0, base[idx] - 1)
+
+        values = np.repeat(np.arange(bins, dtype=np.int64), base)
+        if values.size != total_pixels:
+            # final safety fix (crop/pad)
+            if values.size > total_pixels:
+                values = values[:total_pixels]
+            else:
+                values = np.pad(values, (0, total_pixels - values.size), mode="edge")
+
+        img = values.reshape(H, W).astype(dtype, copy=False)
+        return img
+
+
+# backward compat alias
+class TargetHistogram:
+    """Backward-compatible alias for CSV histogram methods."""
+    load_csv = CSV.load_histogram
+    normalize = CSV.normalize
+    plot = CSV.plot_histogram
+    to_image = CSV.histogram_to_image
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 #  Convolution
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -501,13 +794,13 @@ class Convolution:
             return np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=np.float32)
         @staticmethod
         def sobel_y() -> ArrayLike:
-            return np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]], dtype=np.float32)
+            return np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]], dtype=np.float32)
         @staticmethod
         def prewitt_x() -> ArrayLike:
             return np.array([[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]], dtype=np.float32)
         @staticmethod
         def prewitt_y() -> ArrayLike:
-            return np.array([[-1, -1, -1], [0, 0, 0], [1, 1, 1]], dtype=np.float32)
+            return np.array([[1, 1, 1], [0, 0, 0], [-1, -1, -1]], dtype=np.float32)
         @staticmethod
         def scharr_x() -> ArrayLike:
             return np.array([[-3, 0, 3], [-10, 0, 10], [-3, 0, 3]], dtype=np.float32)
@@ -526,6 +819,121 @@ class Convolution:
         @staticmethod
         def edge_detect() -> ArrayLike:
             return np.array([[-1, -1, -1], [-1, 8, -1], [-1, -1, -1]], dtype=np.float32)
+        @staticmethod
+        def identity_n(n: int = 5) -> ArrayLike:
+            """NxN identity kernel (center = 1, rest = 0)."""
+            if n < 1:
+                raise ValueError("n must be a positive integer.")
+            k = np.zeros((n, n), dtype=np.float32)
+            k[n // 2, n // 2] = 1.0
+            return k
+        @staticmethod
+        def sharpen_n(n: int = 5) -> ArrayLike:
+            """NxN sharpening kernel (center = n*n, rest = -1, then normalized)."""
+            if n < 3 or n % 2 == 0:
+                raise ValueError("n must be an odd integer >= 3.")
+            k = -np.ones((n, n), dtype=np.float32)
+            k[n // 2, n // 2] = n * n
+            return k
+        @staticmethod
+        def laplacian_n(n: int = 5) -> ArrayLike:
+            """NxN laplacian kernel (center = -(n*n-1), rest = 1)."""
+            if n < 3 or n % 2 == 0:
+                raise ValueError("n must be an odd integer >= 3.")
+            k = np.ones((n, n), dtype=np.float32)
+            k[n // 2, n // 2] = -(n * n - 1)
+            return k
+        @staticmethod
+        def high_pass(n: int = 3) -> ArrayLike:
+            """NxN high-pass filter: identity minus box blur."""
+            if n < 1 or n % 2 == 0:
+                raise ValueError("n must be an odd positive integer.")
+            lp = np.ones((n, n), dtype=np.float32) / (n * n)
+            hp = -lp.copy()
+            hp[n // 2, n // 2] += 1.0
+            return hp
+        @staticmethod
+        def low_pass(n: int = 3) -> ArrayLike:
+            """NxN low-pass filter (box blur). Alias for box_blur."""
+            return Convolution.Kernels.box_blur(n)
+        @staticmethod
+        def smoothing(n: int = 3) -> ArrayLike:
+            """NxN smoothing kernel (weighted center, uniform edges).
+
+            The center pixel gets double weight relative to its neighbors.
+            """
+            if n < 3 or n % 2 == 0:
+                raise ValueError("n must be an odd integer >= 3.")
+            k = np.ones((n, n), dtype=np.float32)
+            k[n // 2, n // 2] = 2.0
+            return (k / k.sum()).astype(np.float32)
+        @staticmethod
+        def sharpening(n: int = 3) -> ArrayLike:
+            """NxN sharpening kernel (center-boosted identity).
+
+            Center = (n*n - 1) / (n*n), rest = -1/(n*n), then center += 1.
+            This is original + high_pass.
+            """
+            if n < 3 or n % 2 == 0:
+                raise ValueError("n must be an odd integer >= 3.")
+            hp = Convolution.Kernels.high_pass(n)
+            ident = np.zeros((n, n), dtype=np.float32)
+            ident[n // 2, n // 2] = 1.0
+            return ident + hp
+        @staticmethod
+        def diamond(n: int = 5) -> ArrayLike:
+            """NxN diamond-shaped structuring element (1s form a diamond, 0s elsewhere).
+
+            Default 5x5:
+            [[0,0,1,0,0],
+             [0,1,1,1,0],
+             [1,1,1,1,1],
+             [0,1,1,1,0],
+             [0,0,1,0,0]]
+            """
+            if n < 3 or n % 2 == 0:
+                raise ValueError("n must be an odd integer >= 3.")
+            center = n // 2
+            k = np.zeros((n, n), dtype=np.uint8)
+            for r in range(n):
+                dist = abs(r - center)
+                for c in range(center - (center - dist), center + (center - dist) + 1):
+                    k[r, c] = 1
+            return k
+        @staticmethod
+        def cross(n: int = 3) -> ArrayLike:
+            """NxN cross-shaped structuring element (1s on center row and column).
+
+            Default 3x3:
+            [[0,1,0],
+             [1,1,1],
+             [0,1,0]]
+            """
+            if n < 3 or n % 2 == 0:
+                raise ValueError("n must be an odd integer >= 3.")
+            k = np.zeros((n, n), dtype=np.uint8)
+            center = n // 2
+            k[center, :] = 1
+            k[:, center] = 1
+            return k
+        @staticmethod
+        def x_shape(n: int = 5) -> ArrayLike:
+            """NxN X-shaped structuring element (1s on both diagonals).
+
+            Default 5x5:
+            [[1,0,0,0,1],
+             [0,1,0,1,0],
+             [0,0,1,0,0],
+             [0,1,0,1,0],
+             [1,0,0,0,1]]
+            """
+            if n < 3 or n % 2 == 0:
+                raise ValueError("n must be an odd integer >= 3.")
+            k = np.zeros((n, n), dtype=np.uint8)
+            for i in range(n):
+                k[i, i] = 1
+                k[i, n - 1 - i] = 1
+            return k
 
     @staticmethod
     def apply(image: ArrayLike, kernel: Sequence[Sequence[float]], clip: bool = True, pad_mode: PadMode = "zero") -> ArrayLike:
@@ -639,6 +1047,209 @@ class Convolution:
         return xp_mod.clip(out, 0, 255).astype(image.dtype)
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+#  Filter (Mean / Median / Mode / Smoothing / Sharpening / LPF / HPF)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class Filter:
+    """Sliding-window spatial filters and frequency-domain filter helpers.
+
+    All sliding-window methods accept an arbitrary odd window size (3, 5, 7, 9, …).
+    GPU-accelerated when CuPy is available.
+    """
+
+    # --- sliding window core ---
+
+    @staticmethod
+    def mean(image: ArrayLike, size: int = 3) -> ArrayLike:
+        """Mean (average) filter using a sliding window.
+
+        Each output pixel = average of the NxN neighborhood.
+        This is equivalent to convolution with a box kernel.
+
+        Parameters
+        ----------
+        image : ArrayLike
+            Input image (grayscale or color).
+        size : int
+            Window size (must be odd, e.g. 3, 5, 7, 9).
+        """
+        if size < 1 or size % 2 == 0:
+            raise ValueError("size must be an odd positive integer.")
+        return Convolution.apply(image, Convolution.Kernels.box_blur(size), clip=True)
+
+    @staticmethod
+    def median(image: ArrayLike, size: int = 3) -> ArrayLike:
+        """Median filter using a sliding window.
+
+        Each output pixel = median of the NxN neighborhood.
+        Excellent at removing salt-and-pepper noise while preserving edges.
+
+        GPU path uses cupyx.scipy.ndimage.median_filter.
+        CPU path uses a manual sliding window.
+
+        Parameters
+        ----------
+        image : ArrayLike
+            Input image (grayscale or color).
+        size : int
+            Window size (must be odd, e.g. 3, 5, 7, 9).
+        """
+        if size < 1 or size % 2 == 0:
+            raise ValueError("size must be an odd positive integer.")
+        image = _validate_image(image)
+        image = _smart(image)
+        xp_mod = _xp(image)
+        orig_dtype = image.dtype
+
+        # GPU fast path
+        if _GPU_AVAILABLE and xp_mod is cp:
+            from cupyx.scipy.ndimage import median_filter as _gpu_median
+            if image.ndim == 2:
+                out = _gpu_median(image.astype(cp.float32), size=size)
+            else:
+                channels = [_gpu_median(image[..., i].astype(cp.float32), size=size)
+                            for i in range(image.shape[2])]
+                out = cp.stack(channels, axis=-1)
+            return cp.clip(out, 0, 255).astype(orig_dtype)
+
+        # CPU path — manual sliding window
+        cpu_img = to_cpu(image)
+        pad = size // 2
+
+        def _median_channel(ch):
+            padded = np.pad(ch.astype(np.float32), pad, mode="edge")
+            h, w = ch.shape
+            out = np.zeros_like(ch, dtype=np.float32)
+            for y in range(h):
+                for x in range(w):
+                    window = padded[y:y + size, x:x + size]
+                    out[y, x] = np.median(window)
+            return out
+
+        if cpu_img.ndim == 2:
+            out = _median_channel(cpu_img)
+        else:
+            channels = [_median_channel(cpu_img[..., i]) for i in range(cpu_img.shape[2])]
+            out = np.stack(channels, axis=-1)
+        return np.clip(out, 0, 255).astype(orig_dtype)
+
+    @staticmethod
+    def mode(image: ArrayLike, size: int = 3) -> ArrayLike:
+        """Mode (most frequent value) filter using a sliding window.
+
+        Each output pixel = most common value in the NxN neighborhood.
+        Useful for removing noise in images with few distinct intensity levels.
+
+        Parameters
+        ----------
+        image : ArrayLike
+            Input image (grayscale or color).
+        size : int
+            Window size (must be odd, e.g. 3, 5, 7, 9).
+        """
+        if size < 1 or size % 2 == 0:
+            raise ValueError("size must be an odd positive integer.")
+        image = _validate_image(image)
+        cpu_img = to_cpu(image)
+        orig_dtype = cpu_img.dtype
+        pad = size // 2
+
+        def _mode_channel(ch):
+            padded = np.pad(ch.astype(np.uint8), pad, mode="edge")
+            h, w = ch.shape
+            out = np.zeros_like(ch, dtype=np.uint8)
+            for y in range(h):
+                for x in range(w):
+                    window = padded[y:y + size, x:x + size].ravel()
+                    # find mode via bincount (fast for uint8)
+                    counts = np.bincount(window, minlength=256)
+                    out[y, x] = np.argmax(counts)
+            return out
+
+        if cpu_img.ndim == 2:
+            out = _mode_channel(cpu_img)
+        else:
+            channels = [_mode_channel(cpu_img[..., i]) for i in range(cpu_img.shape[2])]
+            out = np.stack(channels, axis=-1)
+        return out.astype(orig_dtype)
+
+    # --- high-level filter wrappers ---
+
+    @staticmethod
+    def smooth(image: ArrayLike, size: int = 3) -> ArrayLike:
+        """Smoothing filter — weighted center box kernel.
+
+        Applies the smoothing kernel where the center pixel gets
+        double weight relative to its neighbors.
+        """
+        if size < 3 or size % 2 == 0:
+            raise ValueError("size must be an odd integer >= 3.")
+        return Convolution.apply(image, Convolution.Kernels.smoothing(size), clip=True)
+
+    @staticmethod
+    def sharpen(image: ArrayLike, size: int = 3) -> ArrayLike:
+        """Sharpening filter — enhances edges and fine detail.
+
+        Uses identity + high-pass kernel of the given size.
+        """
+        if size < 3 or size % 2 == 0:
+            raise ValueError("size must be an odd integer >= 3.")
+        return Convolution.apply(image, Convolution.Kernels.sharpening(size), clip=True)
+
+    @staticmethod
+    def low_pass(image: ArrayLike, size: int = 3, method: Literal["box", "gaussian"] = "box", sigma: float = 1.0) -> ArrayLike:
+        """Low-pass filter — removes high-frequency noise / smooths the image.
+
+        Parameters
+        ----------
+        size : int
+            Kernel size (must be odd).
+        method : 'box' | 'gaussian'
+            'box': uniform averaging (box blur).
+            'gaussian': Gaussian-weighted averaging.
+        sigma : float
+            Standard deviation for Gaussian method.
+        """
+        if size < 1 or size % 2 == 0:
+            raise ValueError("size must be an odd positive integer.")
+        if method == "gaussian":
+            kernel = Convolution.Kernels.gaussian(size, sigma)
+        else:
+            kernel = Convolution.Kernels.box_blur(size)
+        return Convolution.apply(image, kernel, clip=True)
+
+    @staticmethod
+    def high_pass(image: ArrayLike, size: int = 3) -> ArrayLike:
+        """High-pass filter — isolates edges and high-frequency detail.
+
+        Computed as identity - low_pass (box blur of given size).
+        """
+        if size < 3 or size % 2 == 0:
+            raise ValueError("size must be an odd integer >= 3.")
+        return Convolution.apply(image, Convolution.Kernels.high_pass(size), clip=True)
+
+    @staticmethod
+    def band_pass(image: ArrayLike, low_size: int = 3, high_size: int = 9) -> ArrayLike:
+        """Band-pass filter — keeps frequencies between low and high cutoffs.
+
+        Applies a low-pass filter at high_size (keeps lower freqs),
+        then subtracts a low-pass filter at low_size (removes lowest freqs).
+
+        Parameters
+        ----------
+        low_size : int
+            Smaller kernel size (removes lowest frequencies).
+        high_size : int
+            Larger kernel size (keeps up to these frequencies).
+        """
+        if low_size >= high_size:
+            raise ValueError("low_size must be smaller than high_size.")
+        lp_low = Filter.low_pass(image, size=low_size)
+        lp_high = Filter.low_pass(image, size=high_size)
+        # band = low_pass(big) - low_pass(small)
+        return Image_Ops.subtract(lp_high, lp_low)
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  Image_Ops
@@ -673,7 +1284,7 @@ class Image_Ops:
         return img
 
     @staticmethod
-    def show(image: ArrayLike, title: str = "Image", show_axis: bool = False, mode: Literal["rgb", "bgr"] = "rgb") -> None:
+    def show(image: ArrayLike, title: str = "Image", show_axis: bool = False, mode: Literal["rgb", "bgr"] = "rgb", channel_color: Literal["red", "green", "blue", "gray", None] = None, keep_grays: bool = True) -> None:
         """Display an image. Set show_axis=True to see pixel coordinates.
         
         Parameters
@@ -687,13 +1298,57 @@ class Image_Ops:
         mode : 'rgb' | 'bgr'
             'rgb' (default): Standard color order for matplotlib.
             'bgr': OpenCV color order (will be converted to RGB for display).
+        channel_color : 'red' | 'green' | 'blue' | 'gray' | None
+            Display a 2D grayscale channel in a specific color. Grays remain gray if 'gray' or None.
+        keep_grays : bool
+            If True, keeps baseline gray components gray. If False, displays pure isolated channels.
         """
         image = to_cpu(_validate_image(image))
         if image.ndim == 3 and mode == "bgr":
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             
+        if channel_color and image.ndim == 3 and channel_color in ("red", "green", "blue"):
+            R_ch = image[:, :, 0]
+            G_ch = image[:, :, 1]
+            B_ch = image[:, :, 2]
+            if keep_grays:
+                gray_ch = np.minimum(np.minimum(R_ch, G_ch), B_ch)
+            else:
+                gray_ch = np.zeros_like(R_ch)
+            if channel_color == "red":
+                image = np.stack([R_ch, gray_ch, gray_ch], axis=-1)
+            elif channel_color == "green":
+                image = np.stack([gray_ch, G_ch, gray_ch], axis=-1)
+            elif channel_color == "blue":
+                image = np.stack([gray_ch, gray_ch, B_ch], axis=-1)
+        elif channel_color and image.ndim == 2 and channel_color in ("red", "green", "blue"):
+            colored = np.zeros((image.shape[0], image.shape[1], 3), dtype=image.dtype)
+            if channel_color == "red":
+                colored[:, :, 0] = image
+            elif channel_color == "green":
+                colored[:, :, 1] = image
+            elif channel_color == "blue":
+                colored[:, :, 2] = image
+            image = colored
+            
+        # Auto-cast float images that use 0-255 scale to prevent matplotlib 0-1 clipping artifacts
+        if image.dtype in (np.float32, np.float64) and np.max(image) > 1.0:
+            image = np.clip(np.round(image), 0, 255).astype(np.uint8)
+            
         plt.figure(figsize=(6, 6))
-        plt.imshow(image, cmap="gray" if image.ndim == 2 else None)
+        
+        # Enforce correct vmin/vmax so pure white images do not normalize to black
+        kwargs = {}
+        if image.ndim == 2:
+            kwargs["cmap"] = "gray"
+            if image.dtype == bool:
+                kwargs["vmin"], kwargs["vmax"] = 0, 1
+            elif image.dtype == np.uint8:
+                kwargs["vmin"], kwargs["vmax"] = 0, 255
+            elif image.dtype in (np.float32, np.float64):
+                kwargs["vmin"], kwargs["vmax"] = 0.0, 1.0
+                
+        plt.imshow(image, **kwargs)
         plt.title(title)
         if not show_axis:
             plt.axis("off")
@@ -736,6 +1391,15 @@ class Image_Ops:
         """Creates a solid-color image with the same properties as the reference image."""
         image = _validate_image(image)
         return np.full(image.shape, color, dtype=image.dtype)
+    
+    @staticmethod
+    def create_white_like(image: ArrayLike) -> ArrayLike:
+        """Creates a pure-white image with the same shape/dtype as the reference image."""
+        image = _validate_image(image)
+        if image.ndim == 2:
+            return np.full(image.shape, 255, dtype=image.dtype)
+        # assume last dim is channels
+        return np.full(image.shape, (255,) * image.shape[2], dtype=image.dtype)
 
     @staticmethod
     def create_blanks_like(images: Sequence[ArrayLike], color: int | tuple[int, ...] = 0) -> list[ArrayLike]:
@@ -944,7 +1608,9 @@ class Image_Ops:
         figsize: tuple[int, int] | None = None,
         show_axis: bool = False,
         cmap: str | None = "auto",
-        mode: Literal["rgb", "bgr"] = "rgb"
+        mode: Literal["rgb", "bgr"] = "rgb",
+        channel_colors: Sequence[str | None] | str | None = None,
+        keep_grays: bool = True
     ) -> None:
         """Static grid display of multiple images.
 
@@ -963,6 +1629,10 @@ class Image_Ops:
             Whether to show pixel coordinates.
         cmap : str | None
             Colormap name. "auto" uses "gray" for 2D and None for color.
+        channel_colors : Sequence[str | None] | str | None
+            Color to use for 2D images. 'red', 'green', 'blue', 'gray', or None.
+        keep_grays : bool
+            If True, keeps baseline gray components gray. If False, displays pure isolated channels.
         """
         if not images:
             return
@@ -978,6 +1648,28 @@ class Image_Ops:
         if figsize is None:
             figsize = (4 * ncols, 4 * nrows)
         
+        # Check if we can reconstruct the color channels to keep grays gray
+        can_reconstruct = False
+        if (
+            keep_grays
+            and isinstance(channel_colors, (list, tuple))
+            and len(images) == 3
+            and all(to_cpu(img).ndim == 2 for img in images)
+            and set(c for c in channel_colors if c) == {"red", "green", "blue"}
+        ):
+            try:
+                r_idx = channel_colors.index("red")
+                g_idx = channel_colors.index("green")
+                b_idx = channel_colors.index("blue")
+                R_rec = to_cpu(images[r_idx])
+                G_rec = to_cpu(images[g_idx])
+                B_rec = to_cpu(images[b_idx])
+                if R_rec.shape == G_rec.shape == B_rec.shape:
+                    gray_rec = np.minimum(np.minimum(R_rec, G_rec), B_rec)
+                    can_reconstruct = True
+            except Exception:
+                pass
+
         plt.figure(figsize=figsize)
         for i, img in enumerate(images):
             plt.subplot(nrows, ncols, i + 1)
@@ -985,6 +1677,39 @@ class Image_Ops:
             img_cpu = to_cpu(_validate_image(img, name=f"images[{i}]"))
             if mode == "bgr" and img_cpu.ndim == 3:
                 img_cpu = cv2.cvtColor(img_cpu, cv2.COLOR_BGR2RGB)
+            
+            c_color = channel_colors[i] if isinstance(channel_colors, (list, tuple)) else channel_colors
+            
+            if can_reconstruct:
+                if i == r_idx:
+                    img_cpu = np.stack([R_rec, gray_rec, gray_rec], axis=-1)
+                elif i == g_idx:
+                    img_cpu = np.stack([gray_rec, G_rec, gray_rec], axis=-1)
+                elif i == b_idx:
+                    img_cpu = np.stack([gray_rec, gray_rec, B_rec], axis=-1)
+            elif c_color and img_cpu.ndim == 3 and c_color in ("red", "green", "blue"):
+                R_ch = img_cpu[:, :, 0]
+                G_ch = img_cpu[:, :, 1]
+                B_ch = img_cpu[:, :, 2]
+                if keep_grays:
+                    gray_ch = np.minimum(np.minimum(R_ch, G_ch), B_ch)
+                else:
+                    gray_ch = np.zeros_like(R_ch)
+                if c_color == "red":
+                    img_cpu = np.stack([R_ch, gray_ch, gray_ch], axis=-1)
+                elif c_color == "green":
+                    img_cpu = np.stack([gray_ch, G_ch, gray_ch], axis=-1)
+                elif c_color == "blue":
+                    img_cpu = np.stack([gray_ch, gray_ch, B_ch], axis=-1)
+            elif c_color and img_cpu.ndim == 2 and c_color in ("red", "green", "blue"):
+                colored = np.zeros((img_cpu.shape[0], img_cpu.shape[1], 3), dtype=img_cpu.dtype)
+                if c_color == "red":
+                    colored[:, :, 0] = img_cpu
+                elif c_color == "green":
+                    colored[:, :, 1] = img_cpu
+                elif c_color == "blue":
+                    colored[:, :, 2] = img_cpu
+                img_cpu = colored
             
             # Dynamic cmap logic
             current_cmap = cmap
@@ -1044,11 +1769,22 @@ class Image_Ops:
         return cv2.warpAffine(image, M, (new_w, new_h))
 
     @staticmethod
-    def crop(image: ArrayLike, top: int = 0, bottom: int = 0, left: int = 0, right: int = 0) -> ArrayLike:
+    def crop(image: ArrayLike, top: int | float = 0, bottom: int | float = 0, left: int | float = 0, right: int | float = 0) -> ArrayLike:
+        """Crop image by removing pixels from each edge.
+
+        Parameters accept **ratios** (float 0.0–1.0 = fraction of that axis)
+        or raw pixel counts (int).
+
+        Examples: ``crop(img, top=0.1)`` removes the top 10% of rows.
+        """
         image = to_cpu(_validate_image(image))
+        h, w = image.shape[:2]
+        top    = _resolve_ratio(top, h)
+        bottom = _resolve_ratio(bottom, h)
+        left   = _resolve_ratio(left, w)
+        right  = _resolve_ratio(right, w)
         if min(top, bottom, left, right) < 0:
             raise ValueError("Crop values must be >= 0.")
-        h, w = image.shape[:2]
         y1, y2 = top, h - bottom
         x1, x2 = left, w - right
         if y1 >= y2 or x1 >= x2:
@@ -1056,14 +1792,23 @@ class Image_Ops:
         return image[y1:y2, x1:x2]
 
     @staticmethod
-    def crop_circle(image: ArrayLike, center: tuple[int, int] | None = None, radius: int | None = None, crop_to_box: bool = True) -> ArrayLike:
-        """Crops an image into a circle. Areas outside the circle are black."""
+    def crop_circle(image: ArrayLike, center: tuple[int | float, int | float] | None = None, radius: int | float | None = None, crop_to_box: bool = True) -> ArrayLike:
+        """Crops an image into a circle. Areas outside the circle are black.
+
+        Parameters accept **ratios** (float 0.0–1.0):
+        - center: fraction of (width, height)
+        - radius: fraction of min(width, height)
+        """
         image = to_cpu(_validate_image(image))
         h, w = image.shape[:2]
         if center is None:
             center = (w // 2, h // 2)
+        else:
+            center = _resolve_ratio_pair(center[0], center[1], w, h)
         if radius is None:
             radius = min(h, w) // 2
+        else:
+            radius = _resolve_ratio(radius, min(h, w))
         mask = np.zeros(image.shape[:2], dtype=np.uint8)
         cv2.circle(mask, center, radius, 255, -1)
         if image.ndim == 3:
@@ -1081,14 +1826,23 @@ class Image_Ops:
         return out
 
     @staticmethod
-    def rotate_circle(image: ArrayLike, center: tuple[int, int] | None = None, radius: int | None = None, angle: float = 0) -> ArrayLike:
-        """Rotates only the pixels within a circular region."""
+    def rotate_circle(image: ArrayLike, center: tuple[int | float, int | float] | None = None, radius: int | float | None = None, angle: float = 0) -> ArrayLike:
+        """Rotates only the pixels within a circular region.
+
+        Parameters accept **ratios** (float 0.0–1.0):
+        - center: fraction of (width, height)
+        - radius: fraction of min(width, height)
+        """
         image = to_cpu(_validate_image(image))
         h, w = image.shape[:2]
         if center is None:
             center = (w // 2, h // 2)
+        else:
+            center = _resolve_ratio_pair(center[0], center[1], w, h)
         if radius is None:
             radius = min(h, w) // 2
+        else:
+            radius = _resolve_ratio(radius, min(h, w))
         mask = np.zeros(image.shape[:2], dtype=np.uint8)
         cv2.circle(mask, center, radius, 255, -1)
         center_f = (float(center[0]), float(center[1]))
@@ -1101,9 +1855,23 @@ class Image_Ops:
         return np.where(mask_bool, rotated_img, image)
 
     @staticmethod
-    def translate(image: ArrayLike, shift_x: int = 0, shift_y: int = 0) -> ArrayLike:
+    def translate(image: ArrayLike, shift_x: int | float = 0, shift_y: int | float = 0) -> ArrayLike:
+        """Translate (shift) an image.
+
+        Parameters accept **ratios** (float 0.0–1.0 = fraction of width/height).
+        Negative ratios shift left/up.
+        """
         image = to_cpu(_validate_image(image))
         h, w = image.shape[:2]
+        # resolve ratios — allow negative floats for direction
+        if isinstance(shift_x, float) and -1.0 <= shift_x <= 1.0:
+            shift_x = int(round(shift_x * w))
+        else:
+            shift_x = int(shift_x)
+        if isinstance(shift_y, float) and -1.0 <= shift_y <= 1.0:
+            shift_y = int(round(shift_y * h))
+        else:
+            shift_y = int(shift_y)
         out = np.zeros_like(image)
         src_x1, src_x2 = max(0, -shift_x), min(w, w - shift_x)
         src_y1, src_y2 = max(0, -shift_y), min(h, h - shift_y)
@@ -1129,9 +1897,19 @@ class Image_Ops:
         return cv2.resize(image, (new_w, new_h), interpolation=_interp_flag(interpolation))
 
     @staticmethod
-    def pad(image: ArrayLike, top: int = 0, bottom: int = 0, left: int = 0, right: int = 0, mode: PadMode = "constant", value: int = 0) -> ArrayLike:
-        """Pad image borders."""
+    def pad(image: ArrayLike, top: int | float = 0, bottom: int | float = 0, left: int | float = 0, right: int | float = 0, mode: PadMode = "constant", value: int = 0) -> ArrayLike:
+        """Pad image borders.
+
+        Parameters accept **ratios** (float 0.0–1.0 = fraction of height/width).
+
+        Example: ``pad(img, top=0.1)`` adds 10%-of-height padding to the top.
+        """
         image = to_cpu(_validate_image(image))
+        h, w = image.shape[:2]
+        top    = _resolve_ratio(top, h)
+        bottom = _resolve_ratio(bottom, h)
+        left   = _resolve_ratio(left, w)
+        right  = _resolve_ratio(right, w)
         if mode in ("zero", "constant"):
             if image.ndim == 2:
                 return np.pad(image, ((top, bottom), (left, right)), mode="constant", constant_values=value)
@@ -1142,16 +1920,29 @@ class Image_Ops:
         return np.pad(image, ((top, bottom), (left, right), (0, 0)), mode=np_mode)
 
     @staticmethod
-    def slice(image: ArrayLike, start: int, end: int, axis: AxisMode = "horizontal") -> ArrayLike:
+    def slice(image: ArrayLike, start: int | float, end: int | float, axis: AxisMode = "horizontal") -> ArrayLike:
+        """Slice a horizontal or vertical strip from an image.
+
+        Parameters accept **ratios** (float 0.0–1.0 = fraction of that axis).
+
+        Examples
+        --------
+        ``slice(img, 0.0, 0.5)``          → top half (horizontal)
+        ``slice(img, 0.25, 0.75, 'vertical')`` → middle 50% columns
+        """
         image = to_cpu(_validate_image(image))
         h, w = image.shape[:2]
         if axis == "horizontal":
+            start = _resolve_ratio(start, h)
+            end   = _resolve_ratio(end, h)
             if not (0 <= start < end <= h):
-                raise ValueError(f"For horizontal slicing, use 0 <= start < end <= {h}.")
+                raise ValueError(f"For horizontal slicing, use 0 <= start < end <= {h}. Got start={start}, end={end}.")
             return image[start:end, ...]
         if axis == "vertical":
+            start = _resolve_ratio(start, w)
+            end   = _resolve_ratio(end, w)
             if not (0 <= start < end <= w):
-                raise ValueError(f"For vertical slicing, use 0 <= start < end <= {w}.")
+                raise ValueError(f"For vertical slicing, use 0 <= start < end <= {w}. Got start={start}, end={end}.")
             return image[:, start:end, ...]
         raise ValueError("axis must be 'horizontal' or 'vertical'.")
 
@@ -1201,6 +1992,92 @@ class Image_Ops:
         out_rows = [_pad_to(rr, rr.shape[0], target_w) if rr.shape[1] != target_w else rr for rr in out_rows]
         return np.concatenate(out_rows, axis=0)
 
+
+    @staticmethod
+    def add(image1: ArrayLike, image2: ArrayLike | int | float) -> ArrayLike:
+        """Adds an image and another image or scalar, bounding to max values."""
+        i1 = to_cpu(_validate_image(image1, name="image1"))
+        
+        if isinstance(image2, (int, float)):
+            res = i1.astype(np.float32) + float(image2)
+            if i1.dtype == np.uint8:
+                return np.clip(np.round(res), 0, 255).astype(np.uint8)
+            return np.clip(res, 0, None).astype(i1.dtype)
+            
+        i2 = to_cpu(_validate_image(image2, name="image2"))
+        i1, i2 = _match_channels(i1, i2)
+        if i1.shape[:2] != i2.shape[:2]:
+            i2 = _resize_to(i2, i1.shape[0], i1.shape[1])
+        if i1.dtype == np.uint8:
+            return cv2.add(i1, i2)
+        return np.clip(i1 + i2, 0, None).astype(i1.dtype)
+
+    @staticmethod
+    def subtract(image1: ArrayLike, image2: ArrayLike | int | float) -> ArrayLike:
+        """Subtracts an image or scalar from image1, bounding to 0."""
+        i1 = to_cpu(_validate_image(image1, name="image1"))
+        
+        if isinstance(image2, (int, float)):
+            res = i1.astype(np.float32) - float(image2)
+            if i1.dtype == np.uint8:
+                return np.clip(np.round(res), 0, 255).astype(np.uint8)
+            return np.clip(res, 0, None).astype(i1.dtype)
+            
+        i2 = to_cpu(_validate_image(image2, name="image2"))
+        i1, i2 = _match_channels(i1, i2)
+        if i1.shape[:2] != i2.shape[:2]:
+            i2 = _resize_to(i2, i1.shape[0], i1.shape[1])
+        if i1.dtype == np.uint8:
+            return cv2.subtract(i1, i2)
+        return np.clip(i1 - i2, 0, None).astype(i1.dtype)
+
+    @staticmethod
+    def multiply(image1: ArrayLike, image2: ArrayLike | int | float) -> ArrayLike:
+        """Multiplies an image by another image or scalar."""
+        i1 = to_cpu(_validate_image(image1, name="image1"))
+        
+        if isinstance(image2, (int, float)):
+            res = i1.astype(np.float32) * float(image2)
+            if i1.dtype == np.uint8:
+                return np.clip(np.round(res), 0, 255).astype(np.uint8)
+            return res.astype(i1.dtype)
+            
+        i2 = to_cpu(_validate_image(image2, name="image2"))
+        i1, i2 = _match_channels(i1, i2)
+        if i1.shape[:2] != i2.shape[:2]:
+            i2 = _resize_to(i2, i1.shape[0], i1.shape[1])
+        
+        if i1.dtype == np.uint8:
+            return cv2.multiply(i1, i2, scale=1/255.0)
+        return np.multiply(i1, i2)
+
+    @staticmethod
+    def divide(image1: ArrayLike, image2: ArrayLike | int | float) -> ArrayLike:
+        """Divides image1 by another image or scalar. Avoids division by zero."""
+        i1 = to_cpu(_validate_image(image1, name="image1"))
+        
+        if isinstance(image2, (int, float)):
+            val = float(image2)
+            if val == 0.0:
+                val = 1e-5
+            res = i1.astype(np.float32) / val
+            if i1.dtype == np.uint8:
+                return np.clip(np.round(res), 0, 255).astype(np.uint8)
+            return res.astype(i1.dtype)
+            
+        i2 = to_cpu(_validate_image(image2, name="image2"))
+        i1, i2 = _match_channels(i1, i2)
+        if i1.shape[:2] != i2.shape[:2]:
+            i2 = _resize_to(i2, i1.shape[0], i1.shape[1])
+        
+        if i1.dtype == np.uint8:
+            return cv2.divide(i1, i2, scale=255.0)
+        
+        with np.errstate(divide='ignore', invalid='ignore'):
+            res = np.divide(i1, i2)
+            res = np.nan_to_num(res, nan=0.0, posinf=0.0, neginf=0.0)
+        return res.astype(i1.dtype)
+
     @staticmethod
     def blend(image1: ArrayLike, image2: ArrayLike, alpha: float = 0.5, beta: float | None = None, gamma: float = 0.0, match: MatchMode = "resize") -> ArrayLike:
         image1 = to_cpu(_validate_image(image1, name="image1"))
@@ -1245,7 +2122,7 @@ class Image_Ops:
         return out.astype(image1.dtype)
 
     @staticmethod
-    def overlay(bg: ArrayLike, fg: ArrayLike, position: tuple[int, int] = (0, 0)) -> ArrayLike:
+    def overlay(bg: ArrayLike, fg: ArrayLike, position: tuple[int | float, int | float] = (0, 0)) -> ArrayLike:
         """Slaps the foreground image on top of the background at a specific (x, y) position.
         
         Parameters
@@ -1254,8 +2131,9 @@ class Image_Ops:
             Background image.
         fg : ArrayLike
             Foreground image to be placed on top.
-        position : tuple[int, int]
+        position : tuple[int | float, int | float]
             (x, y) coordinates for the top-left corner of the foreground.
+            Accepts **ratios** (float 0.0–1.0 = fraction of background width/height).
         """
         bg = _validate_image(bg, name="bg")
         fg = _validate_image(fg, name="fg")
@@ -1271,7 +2149,7 @@ class Image_Ops:
         out = bg.copy()
         bh, bw = bg.shape[:2]
         fh, fw = fg.shape[:2]
-        x, y = position
+        x, y = _resolve_ratio_pair(position[0], position[1], bw, bh)
         
         # Calculate valid intersection boundaries
         y1, y2 = max(0, y), min(bh, y + fh)
@@ -1585,25 +2463,45 @@ class Image_Ops:
         return cv2.cvtColor(image, code)
 
     @staticmethod
-    def channel_split(image: ArrayLike) -> list[ArrayLike]:
+    def channel_split(image: ArrayLike, as_3d: bool = False) -> list[ArrayLike]:
         image = to_cpu(_validate_image(image))
         if image.ndim == 2:
-            return [image.copy()]
+            return [image[..., np.newaxis] if as_3d else image.copy()]
+        
+        if as_3d:
+            return [image[..., i:i+1] for i in range(image.shape[2])]
         return [image[..., i] for i in range(image.shape[2])]
 
     @staticmethod
-    def rgb_split(image: ArrayLike) -> tuple[ArrayLike, ArrayLike, ArrayLike]:
+    def rgb_split(image: ArrayLike, as_3d: bool = False) -> tuple[ArrayLike, ArrayLike, ArrayLike]:
         """Extracts R, G, B channels from a color image."""
         image = _validate_image(image)
         if image.ndim != 3 or image.shape[2] < 3:
             raise ValueError("rgb_split requires a 3-channel color image.")
+        
+        if as_3d:
+            return image[..., 0:1], image[..., 1:2], image[..., 2:3]
         return image[..., 0], image[..., 1], image[..., 2]
 
     @staticmethod
     def channel_merge(channels: Sequence[ArrayLike]) -> ArrayLike:
         if len(channels) == 0:
             raise ValueError("channels must be non-empty.")
-        return np.stack(channels, axis=-1)
+        
+        first = _validate_image(channels[0])
+        xp_mod = _xp(first)
+        
+        processed = []
+        for i, c in enumerate(channels):
+            c = _validate_image(c, name=f"channels[{i}]")
+            if c.ndim == 3 and c.shape[2] == 1:
+                processed.append(c[..., 0])
+            elif c.ndim == 2:
+                processed.append(c)
+            else:
+                raise ValueError(f"Each channel must be 2D (H,W) or 3D single-channel (H,W,1). Got shape {c.shape}")
+                
+        return xp_mod.stack(processed, axis=-1)
 
     @staticmethod
     def rgb_merge(r: ArrayLike, g: ArrayLike, b: ArrayLike) -> ArrayLike:
@@ -1612,7 +2510,16 @@ class Image_Ops:
         g = _validate_image(g, name="g")
         b = _validate_image(b, name="b")
         xp_mod = _xp(r)
-        return xp_mod.stack([r, g, b], axis=-1)
+        
+        def _to_2d(ch):
+            if ch.ndim == 3 and ch.shape[2] == 1:
+                return ch[..., 0]
+            elif ch.ndim == 2:
+                return ch
+            else:
+                raise ValueError(f"Channel must be 2D (H,W) or 3D single-channel (H,W,1). Got shape {ch.shape}")
+                
+        return xp_mod.stack([_to_2d(r), _to_2d(g), _to_2d(b)], axis=-1)
 
     @staticmethod
     def show_rgb_channels(image: ArrayLike, title: str = "RGB Channels", figsize: tuple[int, int] = (15, 5), mode: Literal["rgb", "bgr"] = "rgb") -> None:
@@ -1669,10 +2576,16 @@ class Image_Ops:
         return cv2.bitwise_xor(img1, img2)
 
     @staticmethod
-    def overlay_text(image: ArrayLike, text: str, position: tuple[int, int] = (10, 30), font_scale: float = 1.0, color: tuple[int, ...] = (255, 255, 255), thickness: int = 2) -> ArrayLike:
+    def overlay_text(image: ArrayLike, text: str, position: tuple[int | float, int | float] = (10, 30), font_scale: float = 1.0, color: tuple[int, ...] = (255, 255, 255), thickness: int = 2) -> ArrayLike:
+        """Overlay text on an image.
+
+        position accepts **ratios** (float 0.0–1.0 = fraction of width/height).
+        """
         image = to_cpu(_validate_image(image))
+        h, w = image.shape[:2]
+        pos = _resolve_ratio_pair(position[0], position[1], w, h)
         out = image.copy()
-        cv2.putText(out, text, position, cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, thickness, cv2.LINE_AA)
+        cv2.putText(out, text, pos, cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, thickness, cv2.LINE_AA)
         return out
 
     # --- Arithmetic (GPU-accelerated) ---
@@ -1683,6 +2596,11 @@ class Image_Ops:
         xp_mod = _xp(image)
         if isinstance(val, (np.ndarray,)) or (_GPU_AVAILABLE and isinstance(val, cp.ndarray)):
             val = _validate_image(val, name="val")
+            if _GPU_AVAILABLE and xp_mod == cp:
+                if isinstance(val, np.ndarray):
+                    val = cp.asarray(val)
+            else:
+                val = to_cpu(val)
             image, val = _match_channels(image, val)
             if image.shape[:2] != val.shape[:2]:
                 raise ValueError("Image sizes must match exactly for addition.")
@@ -1698,6 +2616,11 @@ class Image_Ops:
         xp_mod = _xp(image)
         if isinstance(val, (np.ndarray,)) or (_GPU_AVAILABLE and isinstance(val, cp.ndarray)):
             val = _validate_image(val, name="val")
+            if _GPU_AVAILABLE and xp_mod == cp:
+                if isinstance(val, np.ndarray):
+                    val = cp.asarray(val)
+            else:
+                val = to_cpu(val)
             image, val = _match_channels(image, val)
             if image.shape[:2] != val.shape[:2]:
                 raise ValueError("Image sizes must match exactly for subtraction.")
@@ -1713,6 +2636,11 @@ class Image_Ops:
         xp_mod = _xp(image)
         if isinstance(val, (np.ndarray,)) or (_GPU_AVAILABLE and isinstance(val, cp.ndarray)):
             val = _validate_image(val, name="val")
+            if _GPU_AVAILABLE and xp_mod == cp:
+                if isinstance(val, np.ndarray):
+                    val = cp.asarray(val)
+            else:
+                val = to_cpu(val)
             image, val = _match_channels(image, val)
             if image.shape[:2] != val.shape[:2]:
                 raise ValueError("Image sizes must match exactly for multiplication.")
@@ -1728,6 +2656,11 @@ class Image_Ops:
         xp_mod = _xp(image)
         if isinstance(val, (np.ndarray,)) or (_GPU_AVAILABLE and isinstance(val, cp.ndarray)):
             val = _validate_image(val, name="val")
+            if _GPU_AVAILABLE and xp_mod == cp:
+                if isinstance(val, np.ndarray):
+                    val = cp.asarray(val)
+            else:
+                val = to_cpu(val)
             image, val = _match_channels(image, val)
             if image.shape[:2] != val.shape[:2]:
                 raise ValueError("Image sizes must match exactly for division.")
@@ -1765,10 +2698,16 @@ class Image_Ops:
         return noisy
 
     @staticmethod
-    def intensity_threshold_mask(image1: ArrayLike, image2: ArrayLike, threshold: float, match: MatchMode = "resize") -> ArrayLike:
+    def intensity_threshold_mask(
+        image1: ArrayLike,
+        image2: ArrayLike,
+        threshold: float,
+        match: MatchMode = "resize",
+        channel: Literal["intensity", "r", "g", "b"] = "intensity"
+    ) -> ArrayLike:
         """
         Replaces elements of image1 with elements of image2 exactly at that location 
-        if image1's intensity is above the threshold.
+        if image1's intensity or target color channel is above the threshold.
         
         Supports both grayscale and colored images.
         
@@ -1782,6 +2721,8 @@ class Image_Ops:
             Intensity threshold (X).
         match : MatchMode
             How to handle size mismatches ('resize' or 'pad').
+        channel : Literal['intensity', 'r', 'g', 'b']
+            Target channel to threshold (default is 'intensity').
         """
         image1 = _validate_image(image1, name="image1")
         image2 = _validate_image(image2, name="image2")
@@ -1842,16 +2783,23 @@ class Image_Ops:
         # Match channels before processing
         image1, image2 = _match_channels(image1, image2)
         
-        # Calculate intensity
+        # Calculate comparison channel or intensity
         if image1.ndim == 2:
-            intensity = image1
+            val_to_compare = image1
         else:
-            # Manual intensity: 0.299R + 0.587G + 0.114B
             img_f = image1.astype(xp_mod.float32)
-            intensity = 0.299 * img_f[..., 0] + 0.587 * img_f[..., 1] + 0.114 * img_f[..., 2]
+            if channel == "r":
+                val_to_compare = img_f[..., 0] # Red channel in RGB
+            elif channel == "g":
+                val_to_compare = img_f[..., 1] # Green channel in RGB
+            elif channel == "b":
+                val_to_compare = img_f[..., 2] # Blue channel in RGB
+            else:
+                # Manual intensity: 0.299R + 0.587G + 0.114B (RGB standard)
+                val_to_compare = 0.299 * img_f[..., 0] + 0.587 * img_f[..., 1] + 0.114 * img_f[..., 2]
             
         # Create mask
-        mask = intensity > threshold
+        mask = val_to_compare > threshold
         
         # Apply mask
         if image1.ndim == 3:
@@ -1859,6 +2807,667 @@ class Image_Ops:
             
         return xp_mod.where(mask, image2, image1)
 
+    @staticmethod
+    def color_intensity_threshold_mask(
+        image1: ArrayLike,
+        image2: ArrayLike,
+        threshold: float,
+        match: MatchMode = "resize",
+        channel: Literal["intensity", "r", "g", "b"] = "intensity"
+    ) -> ArrayLike:
+        """
+        Replaces elements of color image1 with elements of image2 if the intensity
+        or target color channel (r, g, b) is above the threshold. Specifically optimized for BGR color images.
+        """
+        return Image_Ops.intensity_threshold_mask(image1, image2, threshold, match, channel)
+
+    @staticmethod
+    def intensity_threshold_mask_inv(
+        image1: ArrayLike,
+        image2: ArrayLike,
+        threshold: float,
+        match: MatchMode = "resize",
+        channel: Literal["intensity", "r", "g", "b"] = "intensity"
+    ) -> ArrayLike:
+        """
+        Replaces elements of image1 with elements of image2 exactly at that location
+        if image1's intensity or target color channel is BELOW or equal to the threshold.
+
+        Inverse of intensity_threshold_mask (mask = intensity <= threshold).
+
+        Parameters
+        ----------
+        image1 : ArrayLike
+            Base image. Intensity is calculated from this image.
+        image2 : ArrayLike
+            Replacement image.
+        threshold : float
+            Intensity threshold (X).
+        match : MatchMode
+            How to handle size mismatches ('resize' or 'pad').
+        channel : Literal['intensity', 'r', 'g', 'b']
+            Target channel to threshold (default is 'intensity').
+        """
+        image1 = _validate_image(image1, name="image1")
+        image2 = _validate_image(image2, name="image2")
+
+        image1 = _smart(image1)
+        image2 = _smart(image2)
+        xp_mod = _xp(image1)
+
+        # ensure spatial dimensions match
+        h1, w1 = image1.shape[:2]
+        h2, w2 = image2.shape[:2]
+        if (h1, w1) != (h2, w2):
+            if match == "resize":
+                image2 = _resize_to(image2, h1, w1)
+                if xp_mod is cp:
+                    image2 = cp.asarray(image2)
+            elif match == "pad+resize":
+                image2 = _center_crop_or_pad(image2, h1, w1)
+                if xp_mod is cp and not isinstance(image2, cp.ndarray):
+                    image2 = cp.asarray(image2)
+            elif match == "cover":
+                if h1 * w1 <= h2 * w2:
+                    image2 = _fit_cover(image2, h1, w1)
+                    if xp_mod is cp and not isinstance(image2, cp.ndarray):
+                        image2 = cp.asarray(image2)
+                else:
+                    image1 = _fit_cover(image1, h2, w2)
+                    if xp_mod is cp and not isinstance(image1, cp.ndarray):
+                        image1 = cp.asarray(image1)
+            elif match == "crop":
+                if h1 * w1 <= h2 * w2:
+                    image2 = _center_crop_or_pad(image2, h1, w1)
+                    if xp_mod is cp and not isinstance(image2, cp.ndarray):
+                        image2 = cp.asarray(image2)
+                else:
+                    image1 = _center_crop_or_pad(image1, h2, w2)
+                    if xp_mod is cp and not isinstance(image1, cp.ndarray):
+                        image1 = cp.asarray(image1)
+            elif match == "tl-crop":
+                if h1 * w1 <= h2 * w2:
+                    image2 = _tl_crop(image2, h1, w1)
+                    if xp_mod is cp and not isinstance(image2, cp.ndarray):
+                        image2 = cp.asarray(image2)
+                else:
+                    image1 = _tl_crop(image1, h2, w2)
+                    if xp_mod is cp and not isinstance(image1, cp.ndarray):
+                        image1 = cp.asarray(image1)
+            elif match == "contain":
+                image2 = _fit_contain(image2, h1, w1)
+                if xp_mod is cp and not isinstance(image2, cp.ndarray):
+                    image2 = cp.asarray(image2)
+            else:
+                image2 = _pad_to(image2, h1, w1) if (h2 <= h1 and w2 <= w1) else _resize_to(image2, h1, w1)
+                if xp_mod is cp and not isinstance(image2, cp.ndarray):
+                    image2 = cp.asarray(image2)
+
+        image1, image2 = _match_channels(image1, image2)
+
+        # calculate comparison channel or intensity
+        if image1.ndim == 2:
+            val_to_compare = image1
+        else:
+            img_f = image1.astype(xp_mod.float32)
+            if channel == "r":
+                val_to_compare = img_f[..., 0] # Red channel in RGB
+            elif channel == "g":
+                val_to_compare = img_f[..., 1] # Green channel in RGB
+            elif channel == "b":
+                val_to_compare = img_f[..., 2] # Blue channel in RGB
+            else:
+                # Manual intensity: 0.299R + 0.587G + 0.114B (RGB standard)
+                val_to_compare = 0.299 * img_f[..., 0] + 0.587 * img_f[..., 1] + 0.114 * img_f[..., 2]
+
+        # inverted mask: val_to_compare <= threshold
+        mask = val_to_compare <= threshold
+
+        if image1.ndim == 3:
+            mask = mask[..., xp_mod.newaxis]
+
+        return xp_mod.where(mask, image2, image1)
+
+    @staticmethod
+    def intensity_range_mask(
+        image1: ArrayLike,
+        image2: ArrayLike,
+        low: float,
+        high: float,
+        match: MatchMode = "resize",
+        channel: Literal["intensity", "r", "g", "b"] = "intensity"
+    ) -> ArrayLike:
+        """
+        Replaces elements of image1 with elements of image2 exactly at that location
+        if image1's intensity or target color channel falls within [low, high] (inclusive).
+
+        Parameters
+        ----------
+        image1 : ArrayLike
+            Base image. Intensity is calculated from this image.
+        image2 : ArrayLike
+            Replacement image.
+        low : float
+            Lower bound of intensity range (inclusive).
+        high : float
+            Upper bound of intensity range (inclusive).
+        match : MatchMode
+            How to handle size mismatches ('resize' or 'pad').
+        channel : Literal['intensity', 'r', 'g', 'b']
+            Target channel to threshold (default is 'intensity').
+        """
+        if low > high:
+            raise ValueError(f"low ({low}) must be <= high ({high}).")
+
+        image1 = _validate_image(image1, name="image1")
+        image2 = _validate_image(image2, name="image2")
+
+        image1 = _smart(image1)
+        image2 = _smart(image2)
+        xp_mod = _xp(image1)
+
+        # ensure spatial dimensions match
+        h1, w1 = image1.shape[:2]
+        h2, w2 = image2.shape[:2]
+        if (h1, w1) != (h2, w2):
+            if match == "resize":
+                image2 = _resize_to(image2, h1, w1)
+                if xp_mod is cp:
+                    image2 = cp.asarray(image2)
+            elif match == "pad+resize":
+                image2 = _center_crop_or_pad(image2, h1, w1)
+                if xp_mod is cp and not isinstance(image2, cp.ndarray):
+                    image2 = cp.asarray(image2)
+            elif match == "cover":
+                if h1 * w1 <= h2 * w2:
+                    image2 = _fit_cover(image2, h1, w1)
+                    if xp_mod is cp and not isinstance(image2, cp.ndarray):
+                        image2 = cp.asarray(image2)
+                else:
+                    image1 = _fit_cover(image1, h2, w2)
+                    if xp_mod is cp and not isinstance(image1, cp.ndarray):
+                        image1 = cp.asarray(image1)
+            elif match == "crop":
+                if h1 * w1 <= h2 * w2:
+                    image2 = _center_crop_or_pad(image2, h1, w1)
+                    if xp_mod is cp and not isinstance(image2, cp.ndarray):
+                        image2 = cp.asarray(image2)
+                else:
+                    image1 = _center_crop_or_pad(image1, h2, w2)
+                    if xp_mod is cp and not isinstance(image1, cp.ndarray):
+                        image1 = cp.asarray(image1)
+            elif match == "tl-crop":
+                if h1 * w1 <= h2 * w2:
+                    image2 = _tl_crop(image2, h1, w1)
+                    if xp_mod is cp and not isinstance(image2, cp.ndarray):
+                        image2 = cp.asarray(image2)
+                else:
+                    image1 = _tl_crop(image1, h2, w2)
+                    if xp_mod is cp and not isinstance(image1, cp.ndarray):
+                        image1 = cp.asarray(image1)
+            elif match == "contain":
+                image2 = _fit_contain(image2, h1, w1)
+                if xp_mod is cp and not isinstance(image2, cp.ndarray):
+                    image2 = cp.asarray(image2)
+            else:
+                image2 = _pad_to(image2, h1, w1) if (h2 <= h1 and w2 <= w1) else _resize_to(image2, h1, w1)
+                if xp_mod is cp and not isinstance(image2, cp.ndarray):
+                    image2 = cp.asarray(image2)
+
+        image1, image2 = _match_channels(image1, image2)
+
+        # calculate comparison channel or intensity
+        if image1.ndim == 2:
+            val_to_compare = image1
+        else:
+            img_f = image1.astype(xp_mod.float32)
+            if channel == "r":
+                val_to_compare = img_f[..., 0] # Red channel in RGB
+            elif channel == "g":
+                val_to_compare = img_f[..., 1] # Green channel in RGB
+            elif channel == "b":
+                val_to_compare = img_f[..., 2] # Blue channel in RGB
+            else:
+                # Manual intensity: 0.299R + 0.587G + 0.114B (RGB standard)
+                val_to_compare = 0.299 * img_f[..., 0] + 0.587 * img_f[..., 1] + 0.114 * img_f[..., 2]
+
+        # in-range mask: low <= val_to_compare <= high
+        mask = (val_to_compare >= low) & (val_to_compare <= high)
+
+        if image1.ndim == 3:
+            mask = mask[..., xp_mod.newaxis]
+
+        return xp_mod.where(mask, image2, image1)
+
+    @staticmethod
+    def fill_enclosed_from_edges(
+        edge_image: ArrayLike,
+        *,
+        threshold: int = 1,
+        close_size: int = 5,
+        close_iter: int = 1,
+        include_edges: bool = True,
+    ) -> np.ndarray:
+        """Fill enclosed regions (inside edges) with white (255), return a binary mask (0/255).
+
+        Steps:
+        1) threshold edge magnitude -> binary edges
+        2) (optional) close gaps with morphology close
+        3) flood-fill from border to mark background
+        4) invert background-marked result => enclosed regions
+        """
+        edge_image = _validate_image(edge_image)
+        edge_cpu = to_cpu(edge_image)
+
+        # ensure 2D uint8
+        if edge_cpu.ndim == 3:
+            edge_cpu = cv2.cvtColor(edge_cpu, cv2.COLOR_BGR2GRAY)
+
+        if edge_cpu.dtype != np.uint8:
+            edge_u8 = cv2.normalize(edge_cpu, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+        else:
+            edge_u8 = edge_cpu
+
+        edges = np.where(edge_u8 > threshold, 255, 0).astype(np.uint8)
+
+        if close_size and close_size > 1:
+            k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (close_size, close_size))
+            edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, k, iterations=close_iter)
+
+        h, w = edges.shape[:2]
+        
+        # Clear 1-pixel boundary to prevent border artifacts from blocking flood fill
+        edges[0, :] = 0
+        edges[-1, :] = 0
+        edges[:, 0] = 0
+        edges[:, -1] = 0
+        
+        # Pad with 1-pixel border of 0s to guarantee (0,0) is a background pixel and 
+        # all border-adjacent background components are connected to it
+        padded = np.pad(edges, pad_width=1, mode='constant', constant_values=0)
+        hp, wp = padded.shape[:2]
+        ff_mask = np.zeros((hp + 2, wp + 2), dtype=np.uint8)
+
+        # Flood fill from the padded corner (0, 0)
+        cv2.floodFill(padded, ff_mask, (0, 0), 128)
+
+        # Crop back to the original size
+        work = padded[1:-1, 1:-1]
+
+        filled = (work == 0).astype(np.uint8) * 255  # enclosed regions remain 0, so they become white
+        if include_edges:
+            filled = cv2.bitwise_or(filled, edges)
+
+        return filled
+
+    @staticmethod
+    def paint_white(image: ArrayLike, mask: ArrayLike) -> np.ndarray:
+        """Paint pixels where mask>0 to pure white on the given image."""
+        image = _validate_image(image)
+        mask = _validate_image(mask)
+
+        img = to_cpu(image).copy()
+        m = to_cpu(mask)
+        if m.ndim == 3:
+            m = m[..., 0]
+        m = m > 0
+
+        if np.issubdtype(img.dtype, np.integer):
+            white = np.iinfo(img.dtype).max
+        else:
+            white = 1.0
+
+        if img.ndim == 2:
+            img[m] = white
+        else:
+            img[m, :] = white
+
+        return img
+
+    @staticmethod
+    def apply_binary_mask(
+        image: ArrayLike,
+        mask: ArrayLike,
+        *,
+        threshold: int = 0,
+        background: int | tuple[int, ...] = 0,
+        match: MatchMode = "resize",
+    ) -> np.ndarray:
+        """Apply a BW mask to an image.
+
+        mask > threshold  -> keep original pixel
+        mask <= threshold -> set to `background`
+
+        Works for grayscale or color images. Returns CPU numpy array.
+        """
+        image = _validate_image(image, name="image")
+        mask = _validate_image(mask, name="mask")
+
+        img = to_cpu(image)
+        m = to_cpu(mask)
+
+        if m.ndim == 3:
+            # mask might be RGB; use first channel (or you can cvtColor)
+            m = m[..., 0]
+
+        # ensure uint8-like range for thresholding
+        if m.dtype != np.uint8:
+            m = cv2.normalize(m, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+
+        # match spatial sizes if needed
+        if img.shape[:2] != m.shape[:2]:
+            h, w = img.shape[:2]
+            if match == "resize":
+                m = cv2.resize(m, (w, h), interpolation=cv2.INTER_NEAREST)
+            else:
+                # fallback: resize (keeps behavior simple)
+                m = cv2.resize(m, (w, h), interpolation=cv2.INTER_NEAREST)
+
+        keep = m > threshold  # bool mask (H,W)
+
+        out = img.copy()
+
+        # decide background "color"
+        if img.ndim == 2:
+            bg = int(background) if not isinstance(background, tuple) else int(background[0])
+            out[~keep] = bg
+            return out
+
+        # color image
+        if isinstance(background, tuple):
+            bg_tuple = background
+        else:
+            bg_tuple = (int(background),) * img.shape[2]
+
+        out[~keep, :] = np.array(bg_tuple, dtype=out.dtype)
+        return out
+    
+    @staticmethod
+    def rect_mask_like(
+        image: ArrayLike,
+        x0: int | float,
+        y0: int | float,
+        x1: int | float,
+        y1: int | float,
+        *,
+        inside_value: int = 255,
+        outside_value: int = 0,
+    ) -> np.ndarray:
+        """Create a rectangular binary mask (H,W) for `image`.
+
+        x/y can be ints (pixels) or floats in [0..1] meaning ratio of width/height.
+        The ROI uses NumPy slicing semantics: [y0:y1, x0:x1] (end is exclusive).
+        """
+        img = to_cpu(_validate_image(image))
+        h, w = img.shape[:2]
+
+        # allow ratio coordinates
+        def _coord(v, dim):
+            if isinstance(v, float):
+                return int(round(v * dim))
+            return int(v)
+
+        x0i = _coord(x0, w); x1i = _coord(x1, w)
+        y0i = _coord(y0, h); y1i = _coord(y1, h)
+
+        # normalize & clamp
+        xa, xb = sorted((x0i, x1i))
+        ya, yb = sorted((y0i, y1i))
+        xa = max(0, min(w, xa)); xb = max(0, min(w, xb))
+        ya = max(0, min(h, ya)); yb = max(0, min(h, yb))
+
+        mask = np.full((h, w), outside_value, dtype=np.uint8)
+        mask[ya:yb, xa:xb] = inside_value
+        return mask
+
+    @staticmethod
+    def apply_rect_mask(
+        image: ArrayLike,
+        x0: int | float,
+        y0: int | float,
+        x1: int | float,
+        y1: int | float,
+        *,
+        keep: Literal["inside", "outside"] = "inside",
+        background: int | tuple[int, ...] = 0,
+    ) -> np.ndarray:
+        """Keep pixels inside/outside a rectangle; set the rest to `background`."""
+        img = _validate_image(image)
+        mask = Image_Ops.rect_mask_like(img, x0, y0, x1, y1)
+
+        if keep == "outside":
+            mask = 255 - mask
+
+        # reuse your binary-mask applicator if present; otherwise do it inline
+        if hasattr(Image_Ops, "apply_binary_mask"):
+            return Image_Ops.apply_binary_mask(img, mask, threshold=0, background=background)
+
+        out = to_cpu(img).copy()
+        m = mask > 0
+
+        if out.ndim == 2:
+            bg = int(background) if not isinstance(background, tuple) else int(background[0])
+            out[~m] = bg
+            return out
+
+        if not isinstance(background, tuple):
+            bg_tuple = (int(background),) * out.shape[2]
+        else:
+            bg_tuple = background
+        out[~m, :] = np.array(bg_tuple, dtype=out.dtype)
+        return out
+
+    # --- Mask manipulation utilities ---
+
+    @staticmethod
+    def zero_border(
+        mask: ArrayLike, *,
+        top: int | float = 0.0,
+        bottom: int | float = 0.0,
+        left: int | float = 0.0,
+        right: int | float = 0.0,
+    ) -> ArrayLike:
+        """Zero out border regions of an image or mask.
+
+        Useful for removing edge artifacts, boundary gradients, or
+        constraining a mask to a central region of interest.
+
+        Parameters accept **ratios** (float 0.0–1.0 = fraction of height/width)
+        or raw pixel counts (int).
+
+        Parameters
+        ----------
+        mask : ArrayLike
+            Input image or mask (2D or 3D).
+        top, bottom : int | float
+            Rows to zero from the top / bottom edge.
+        left, right : int | float
+            Columns to zero from the left / right edge.
+        """
+        mask = _validate_image(mask)
+        out = to_cpu(mask).copy()
+        h, w = out.shape[:2]
+        t = _resolve_ratio(top, h)
+        b = _resolve_ratio(bottom, h)
+        l = _resolve_ratio(left, w)
+        r = _resolve_ratio(right, w)
+        if t > 0:
+            out[:t, ...] = 0
+        if b > 0:
+            out[h - b:, ...] = 0
+        if l > 0:
+            out[:, :l, ...] = 0
+        if r > 0:
+            out[:, w - r:, ...] = 0
+        return out
+
+    @staticmethod
+    def zero_ellipse(
+        mask: ArrayLike,
+        center: tuple[int | float, int | float],
+        radii: tuple[int | float, int | float],
+    ) -> ArrayLike:
+        """Zero out pixels inside an elliptical region.
+
+        Useful for removing isolated noise clusters or excluding
+        known artifact zones from a binary mask.
+
+        Parameters accept **ratios** (float 0.0–1.0 = fraction of height/width).
+
+        Parameters
+        ----------
+        mask : ArrayLike
+            Input image or mask (2D or 3D).
+        center : (cy, cx)
+            Ellipse center as (row, col). Ratios resolve against (height, width).
+        radii : (ry, rx)
+            Ellipse semi-axes as (row-radius, col-radius).
+            Ratios resolve against (height, width).
+        """
+        mask = _validate_image(mask)
+        out = to_cpu(mask).copy()
+        h, w = out.shape[:2]
+        cy = _resolve_ratio(center[0], h)
+        cx = _resolve_ratio(center[1], w)
+        ry = _resolve_ratio(radii[0], h)
+        rx = _resolve_ratio(radii[1], w)
+        yy, xx = np.ogrid[:h, :w]
+        ellipse = ((yy - cy) ** 2 / max(ry, 1) ** 2 +
+                   (xx - cx) ** 2 / max(rx, 1) ** 2) <= 1
+        out[ellipse] = 0
+        return out
+
+    @staticmethod
+    def fade_border(
+        mask: ArrayLike, *,
+        side: Literal["left", "right", "top", "bottom"] = "left",
+        margin: int | float = 0.2,
+        fade_width: int | float = 0.05,
+    ) -> ArrayLike:
+        """Apply a gradient fade from a specified edge of a mask.
+
+        Pixels before ``margin`` are fully zeroed; between ``margin``
+        and ``margin + fade_width`` they linearly ramp from 0 to 1.
+        Useful for smooth boundary refinement and anti-aliasing hard
+        segmentation edges.
+
+        Parameters accept **ratios** (float 0.0–1.0).
+
+        Parameters
+        ----------
+        mask : ArrayLike
+            Input mask (2D grayscale, uint8).
+        side : 'left' | 'right' | 'top' | 'bottom'
+            Edge to fade from.
+        margin : int | float
+            Dead zone width (fully zeroed).
+        fade_width : int | float
+            Transition zone width (linear ramp).
+        """
+        mask = _validate_image(mask)
+        out = to_cpu(mask).copy()
+        h, w = out.shape[:2]
+
+        if side in ("left", "right"):
+            m = _resolve_ratio(margin, w)
+            fw = _resolve_ratio(fade_width, w)
+        else:
+            m = _resolve_ratio(margin, h)
+            fw = _resolve_ratio(fade_width, h)
+
+        fw = max(fw, 1)  # avoid zero-length linspace
+
+        gradient: np.ndarray
+        if side == "left":
+            gradient = np.ones((h, w), dtype=np.float32)
+            gradient[:, :m] = 0
+            gradient[:, m:m + fw] = np.linspace(0, 1, fw, dtype=np.float32)
+        elif side == "right":
+            gradient = np.ones((h, w), dtype=np.float32)
+            gradient[:, w - m:] = 0
+            end = w - m
+            gradient[:, end - fw:end] = np.linspace(1, 0, fw, dtype=np.float32)
+        elif side == "top":
+            gradient = np.ones((h, w), dtype=np.float32)
+            gradient[:m, :] = 0
+            gradient[m:m + fw, :] = np.linspace(0, 1, fw, dtype=np.float32).reshape(-1, 1)
+        elif side == "bottom":
+            gradient = np.ones((h, w), dtype=np.float32)
+            gradient[h - m:, :] = 0
+            end = h - m
+            gradient[end - fw:end, :] = np.linspace(1, 0, fw, dtype=np.float32).reshape(-1, 1)
+        else:
+            raise ValueError("side must be 'left', 'right', 'top', or 'bottom'.")
+
+        result = (out.astype(np.float32) * gradient).astype(np.uint8)
+        return result
+
+    @staticmethod
+    def seal_mask(
+        mask: ArrayLike,
+        size: int = 21,
+        threshold_dilate: int = 50,
+        threshold_erode: int = 160,
+    ) -> ArrayLike:
+        """Seal internal gaps in a binary mask using spatial averaging.
+
+        Approximates a closing operation (dilate → erode) by applying
+        a mean filter and re-thresholding at each step. Useful for
+        filling discontinuities in segmentation masks (e.g. face gaps,
+        clothing fold shadows).
+
+        Parameters
+        ----------
+        mask : ArrayLike
+            Binary mask (0/255).
+        size : int
+            Mean filter kernel size (must be odd).
+        threshold_dilate : int
+            Threshold after dilation step (lower = more aggressive fill).
+        threshold_erode : int
+            Threshold after erosion step (higher = tighter boundary).
+        """
+        mask = _validate_image(mask)
+        # dilate step
+        dilated = to_cpu(Filter.mean(mask, size=size))
+        dilated = (dilated > threshold_dilate).astype(np.uint8) * 255
+        # erode back
+        eroded = to_cpu(Filter.mean(dilated, size=size))
+        closed = (eroded > threshold_erode).astype(np.uint8) * 255
+        return closed
+
+    @staticmethod
+    def prune_mask(
+        mask: ArrayLike,
+        size: int = 45,
+        threshold_erode: int = 230,
+        threshold_restore: int = 15,
+    ) -> ArrayLike:
+        """Remove thin protrusions from a binary mask using spatial averaging.
+
+        Approximates an opening operation (erode → dilate) by applying
+        a mean filter and re-thresholding. Preserves the primary body
+        mass while eliminating small stray regions.
+
+        Parameters
+        ----------
+        mask : ArrayLike
+            Binary mask (0/255).
+        size : int
+            Mean filter kernel size (must be odd).
+        threshold_erode : int
+            Threshold for erosion step (higher = more aggressive pruning).
+        threshold_restore : int
+            Threshold for restoration step (lower = more generous restore).
+        """
+        mask = _validate_image(mask)
+        # erode step
+        eroded = to_cpu(Filter.mean(mask, size=size))
+        eroded = (eroded > threshold_erode).astype(np.uint8) * 255
+        # restore (dilate back)
+        restored = to_cpu(Filter.mean(eroded, size=size))
+        opened = (restored > threshold_restore).astype(np.uint8) * 255
+        return opened
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1931,12 +3540,17 @@ class Specialization:
             src_hist, _ = np.histogram(src.ravel(), bins=256, range=(0, 256))
             ref_hist, _ = np.histogram(ref.ravel(), bins=256, range=(0, 256))
             src_cdf = np.cumsum(src_hist).astype(np.float64)
-            src_cdf = src_cdf / (src_cdf[-1] + 1e-8)
+            src_cdf /= (src_cdf[-1] + 1e-8)
             ref_cdf = np.cumsum(ref_hist).astype(np.float64)
-            ref_cdf = ref_cdf / (ref_cdf[-1] + 1e-8)
-            lut = np.interp(src_cdf, ref_cdf, np.arange(256))
-            matched = np.interp(src.ravel(), np.arange(256), lut).reshape(src.shape)
-            return np.clip(matched, 0, 255).astype(np.uint8)
+            ref_cdf /= (ref_cdf[-1] + 1e-8)
+
+            # Robust mapping: Find the nearest neighbor in the reference CDF
+            # We use broadcasting to create a 256x256 distance matrix
+            diff = np.abs(ref_cdf[:, None] - src_cdf[None, :])
+            lut = np.argmin(diff, axis=0).astype(np.uint8)
+
+            matched = lut[src.astype(np.uint8)]
+            return matched.reshape(src.shape)
 
         if image.ndim == 2 and reference.ndim == 2:
             return _match_channel(image, reference)
@@ -2107,7 +3721,7 @@ class Enhancement:
         return xp_mod.clip(noisy, 0, 255).astype(image.dtype)
 
     @staticmethod
-    def denoise_nlmeans(image: ArrayLike, h: float = 10, template_window: int = 7, search_window: int = 21) -> ArrayLike:
+    def denoise_nlmeans(image: ArrayLike, h: float = 10, template_window: int = 7, search_window: int = 11) -> ArrayLike:
         image = to_cpu(_validate_image(image))
         if image.dtype != np.uint8:
             image = np.clip(image, 0, 255).astype(np.uint8)
@@ -2115,6 +3729,86 @@ class Enhancement:
             return cv2.fastNlMeansDenoising(image, None, h, template_window, search_window)
         return cv2.fastNlMeansDenoisingColored(image, None, h, h, template_window, search_window)
 
+    @staticmethod
+    def contrast_stretch(image: ArrayLike, low_pct: float = 2.0, high_pct: float = 98.0) -> ArrayLike:
+        """Percentile-based contrast stretching.
+
+        Maps pixel values so that `low_pct`-th percentile → 0
+        and `high_pct`-th percentile → 255.
+
+        Parameters
+        ----------
+        low_pct : float
+            Lower percentile (default 2%).
+        high_pct : float
+            Upper percentile (default 98%).
+        """
+        image = _validate_image(image)
+        image = _smart(image)
+        xp_mod = _xp(image)
+        img_f = image.astype(xp_mod.float64)
+
+        if image.ndim == 2:
+            lo = float(xp_mod.percentile(img_f, low_pct))
+            hi = float(xp_mod.percentile(img_f, high_pct))
+            if hi - lo < 1e-6:
+                return image.copy()
+            out = (img_f - lo) / (hi - lo) * 255.0
+            return xp_mod.clip(out, 0, 255).astype(image.dtype)
+
+        channels = []
+        for ch in range(image.shape[2]):
+            ch_f = img_f[..., ch]
+            lo = float(xp_mod.percentile(ch_f, low_pct))
+            hi = float(xp_mod.percentile(ch_f, high_pct))
+            if hi - lo < 1e-6:
+                channels.append(ch_f)
+            else:
+                channels.append((ch_f - lo) / (hi - lo) * 255.0)
+        out = xp_mod.stack(channels, axis=-1)
+        return xp_mod.clip(out, 0, 255).astype(image.dtype)
+
+    @staticmethod
+    def piecewise_linear(image: ArrayLike, breakpoints: Sequence[tuple[int, int]]) -> ArrayLike:
+        """Piecewise linear intensity transform via breakpoints.
+
+        Parameters
+        ----------
+        breakpoints : Sequence[tuple[int, int]]
+            List of (input, output) pairs defining the transfer function.
+            Must be sorted by input value. Implicitly includes (0,0) and (255,255)
+            if not provided.
+
+        Example
+        -------
+        >>> # stretch midtones, crush shadows and highlights
+        >>> Enhancement.piecewise_linear(img, [(50, 0), (100, 128), (200, 255)])
+        """
+        image = to_cpu(_validate_image(image))
+
+        # build full breakpoint list
+        pts = list(breakpoints)
+        if pts[0][0] != 0:
+            pts.insert(0, (0, 0))
+        if pts[-1][0] != 255:
+            pts.append((255, 255))
+
+        # build LUT
+        lut = np.zeros(256, dtype=np.uint8)
+        for i in range(len(pts) - 1):
+            x0, y0 = pts[i]
+            x1, y1 = pts[i + 1]
+            for x in range(x0, x1 + 1):
+                if x1 == x0:
+                    lut[x] = y0
+                else:
+                    lut[x] = int(np.clip(y0 + (y1 - y0) * (x - x0) / (x1 - x0), 0, 255))
+
+        if image.dtype != np.uint8:
+            image = np.clip(image, 0, 255).astype(np.uint8)
+        if image.ndim == 2:
+            return cv2.LUT(image, lut)
+        return cv2.LUT(image, lut)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  Edge_Detection
@@ -2131,59 +3825,120 @@ class Edge_Detection:
         return cv2.Canny(image, threshold1, threshold2)
 
     @staticmethod
-    def sobel(image: ArrayLike, dx: int = 1, dy: int = 0, ksize: int = 3, combine: bool = True) -> ArrayLike:
+    def sobel(image: ArrayLike, dx: int = 1, dy: int = 0, ksize: int = 3, combine: bool = True, method: str = "opencv") -> ArrayLike:
         image = to_cpu(_validate_image(image))
         if image.ndim == 3:
             image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-        if combine and dx == 1 and dy == 0:
-            gx = cv2.Sobel(image, cv2.CV_64F, 1, 0, ksize=ksize)
-            gy = cv2.Sobel(image, cv2.CV_64F, 0, 1, ksize=ksize)
+            
+        if method == "opencv":
+            if combine and dx == 1 and dy == 0:
+                gx = cv2.Sobel(image, cv2.CV_64F, 1, 0, ksize=ksize)
+                gy = cv2.Sobel(image, cv2.CV_64F, 0, 1, ksize=ksize)
+                return Image_Ops.magnitude(gx, gy).astype(np.uint8)
+            return np.clip(np.abs(cv2.Sobel(image, cv2.CV_64F, dx, dy, ksize=ksize)), 0, 255).astype(np.uint8)
+        elif method == "kernel":
+            if ksize != 3:
+                raise ValueError("Kernel method currently only supports ksize=3 for Sobel.")
+            if combine and dx == 1 and dy == 0:
+                gx = Convolution.apply(image, Convolution.Kernels.sobel_x(), clip=False)
+                gy = Convolution.apply(image, Convolution.Kernels.sobel_y(), clip=False)
+                return Image_Ops.magnitude(gx, gy)
+            kernel = Convolution.Kernels.sobel_x() if dx == 1 else Convolution.Kernels.sobel_y()
+            return np.clip(np.abs(Convolution.apply(image, kernel, clip=False)), 0, 255).astype(np.uint8)
+        else:
+            raise ValueError(f"Unknown method '{method}'. Use 'opencv' or 'kernel'.")
+
+    @staticmethod
+    def prewitt(image: ArrayLike, method: str = "kernel") -> ArrayLike:
+        image = to_cpu(_validate_image(image))
+        if image.ndim == 3:
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+            
+        kx, ky = Convolution.Kernels.prewitt_x(), Convolution.Kernels.prewitt_y()
+        if method == "opencv":
+            gx = cv2.filter2D(image.astype(np.float64), -1, kx)
+            gy = cv2.filter2D(image.astype(np.float64), -1, ky)
             return Image_Ops.magnitude(gx, gy)
-        return np.clip(np.abs(cv2.Sobel(image, cv2.CV_64F, dx, dy, ksize=ksize)), 0, 255).astype(np.uint8)
+        elif method == "kernel":
+            gx = Convolution.apply(image, kx, clip=False)
+            gy = Convolution.apply(image, ky, clip=False)
+            return Image_Ops.magnitude(gx, gy)
+        else:
+            raise ValueError(f"Unknown method '{method}'. Use 'opencv' or 'kernel'.")
 
     @staticmethod
-    def prewitt(image: ArrayLike) -> ArrayLike:
+    def laplacian(image: ArrayLike, ksize: int = 3, method: str = "opencv") -> ArrayLike:
         image = to_cpu(_validate_image(image))
         if image.ndim == 3:
             image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-        gx = Convolution.apply(image, Convolution.Kernels.prewitt_x(), clip=False)
-        gy = Convolution.apply(image, Convolution.Kernels.prewitt_y(), clip=False)
-        return Image_Ops.magnitude(gx, gy)
+            
+        if method == "opencv":
+            return np.clip(np.abs(cv2.Laplacian(image, cv2.CV_64F, ksize=ksize)), 0, 255).astype(np.uint8)
+        elif method == "kernel":
+            if ksize == 3:
+                kernel = Convolution.Kernels.laplacian()
+            else:
+                kernel = Convolution.Kernels.laplacian_n(ksize)
+            return np.clip(np.abs(Convolution.apply(image, kernel, clip=False)), 0, 255).astype(np.uint8)
+        else:
+            raise ValueError(f"Unknown method '{method}'. Use 'opencv' or 'kernel'.")
 
     @staticmethod
-    def laplacian(image: ArrayLike, ksize: int = 3) -> ArrayLike:
+    def laplacian_of_gaussian(image: ArrayLike, sigma: float = 1.0, ksize: int = 5, method: str = "opencv") -> ArrayLike:
         image = to_cpu(_validate_image(image))
         if image.ndim == 3:
             image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-        return np.clip(np.abs(cv2.Laplacian(image, cv2.CV_64F, ksize=ksize)), 0, 255).astype(np.uint8)
+            
+        if method == "opencv":
+            blurred = cv2.GaussianBlur(image, (ksize, ksize), sigma)
+            return np.clip(np.abs(cv2.Laplacian(blurred, cv2.CV_64F)), 0, 255).astype(np.uint8)
+        elif method == "kernel":
+            blurred = cv2.GaussianBlur(image, (ksize, ksize), sigma)
+            kernel = Convolution.Kernels.laplacian() if ksize == 3 else Convolution.Kernels.laplacian_n(ksize)
+            return np.clip(np.abs(Convolution.apply(blurred, kernel, clip=False)), 0, 255).astype(np.uint8)
+        else:
+            raise ValueError(f"Unknown method '{method}'. Use 'opencv' or 'kernel'.")
 
     @staticmethod
-    def laplacian_of_gaussian(image: ArrayLike, sigma: float = 1.0, ksize: int = 5) -> ArrayLike:
+    def roberts(image: ArrayLike, method: str = "kernel") -> ArrayLike:
         image = to_cpu(_validate_image(image))
         if image.ndim == 3:
             image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-        blurred = cv2.GaussianBlur(image, (ksize, ksize), sigma)
-        return np.clip(np.abs(cv2.Laplacian(blurred, cv2.CV_64F)), 0, 255).astype(np.uint8)
+            
+        kx, ky = Convolution.Kernels.roberts_x(), Convolution.Kernels.roberts_y()
+        if method == "opencv":
+            gx = cv2.filter2D(image.astype(np.float64), -1, kx)
+            gy = cv2.filter2D(image.astype(np.float64), -1, ky)
+            return np.clip(np.sqrt(gx**2 + gy**2), 0, 255).astype(np.uint8)
+        elif method == "kernel":
+            gx = Convolution.apply(image, kx, clip=False, pad_mode="zero")
+            gy = Convolution.apply(image, ky, clip=False, pad_mode="zero")
+            return np.clip(np.sqrt(gx.astype(np.float64) ** 2 + gy.astype(np.float64) ** 2), 0, 255).astype(np.uint8)
+        else:
+            raise ValueError(f"Unknown method '{method}'. Use 'opencv' or 'kernel'.")
 
     @staticmethod
-    def roberts(image: ArrayLike) -> ArrayLike:
+    def scharr(image: ArrayLike, dx: int = 1, dy: int = 0, combine: bool = True, method: str = "opencv") -> ArrayLike:
         image = to_cpu(_validate_image(image))
         if image.ndim == 3:
             image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-        gx = Convolution.apply(image, Convolution.Kernels.roberts_x(), clip=False, pad_mode="zero")
-        gy = Convolution.apply(image, Convolution.Kernels.roberts_y(), clip=False, pad_mode="zero")
-        return np.clip(np.sqrt(gx.astype(np.float64) ** 2 + gy.astype(np.float64) ** 2), 0, 255).astype(np.uint8)
-
-    @staticmethod
-    def scharr(image: ArrayLike, dx: int = 1, dy: int = 0, combine: bool = True) -> ArrayLike:
-        image = to_cpu(_validate_image(image))
-        if image.ndim == 3:
-            image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-        if combine and dx == 1 and dy == 0:
-            gx = cv2.Scharr(image, cv2.CV_64F, 1, 0)
-            gy = cv2.Scharr(image, cv2.CV_64F, 0, 1)
-            return np.clip(np.sqrt(gx ** 2 + gy ** 2), 0, 255).astype(np.uint8)
-        return np.clip(np.abs(cv2.Scharr(image, cv2.CV_64F, dx, dy)), 0, 255).astype(np.uint8)
+            
+        if method == "opencv":
+            if combine and dx == 1 and dy == 0:
+                gx = cv2.Scharr(image, cv2.CV_64F, 1, 0)
+                gy = cv2.Scharr(image, cv2.CV_64F, 0, 1)
+                return np.clip(np.sqrt(gx ** 2 + gy ** 2), 0, 255).astype(np.uint8)
+            return np.clip(np.abs(cv2.Scharr(image, cv2.CV_64F, dx, dy)), 0, 255).astype(np.uint8)
+        elif method == "kernel":
+            if combine and dx == 1 and dy == 0:
+                gx = Convolution.apply(image, Convolution.Kernels.scharr_x(), clip=False)
+                gy = Convolution.apply(image, Convolution.Kernels.scharr_y(), clip=False)
+                return np.clip(np.sqrt(gx.astype(np.float64) ** 2 + gy.astype(np.float64) ** 2), 0, 255).astype(np.uint8)
+            
+            kernel = Convolution.Kernels.scharr_x() if dx == 1 else Convolution.Kernels.scharr_y()
+            return np.clip(np.abs(Convolution.apply(image, kernel, clip=False)), 0, 255).astype(np.uint8)
+        else:
+            raise ValueError(f"Unknown method '{method}'. Use 'opencv' or 'kernel'.")
 
     @staticmethod
     def zero_crossing(image: ArrayLike, threshold: float = 0.0) -> ArrayLike:
@@ -2201,6 +3956,288 @@ class Edge_Detection:
                     out[y, x] = 255
         return out
 
+    @staticmethod
+    def double_outline(image: ArrayLike, thickness: int = 1, separation: int = 2) -> ArrayLike:
+        """
+        Extracts a double contour (outline of an outline) from an image.
+        
+        It finds the initial contours, draws them thickly, and then extracts
+        the contours of that drawing to produce a crisp double-line effect.
+        """
+        image = to_cpu(_validate_image(image))
+        if image.ndim == 3:
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+            
+        _, binary = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY)
+        
+        # 1. Find initial contours
+        contours, _ = cv2.findContours(binary, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        
+        # 2. Draw thick contours
+        blank = np.zeros_like(binary)
+        cv2.drawContours(blank, contours, -1, 255, thickness=thickness + separation)
+        
+        # 3. Find contours of the thick contours
+        contours_double, _ = cv2.findContours(blank, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        
+        # 4. Draw the final double outline
+        out = np.zeros_like(binary)
+        cv2.drawContours(out, contours_double, -1, 255, thickness=thickness)
+        
+        return out
+
+    @staticmethod
+    def silhouette_outline(
+        mask: ArrayLike, 
+        base_image: ArrayLike, 
+        threshold: float = 10, 
+        outline_color: tuple[int, ...] = (255, 255, 255), 
+        background_color: tuple[int, ...] = (0, 0, 0), 
+        size: int = 5
+    ) -> ArrayLike:
+        """
+        Extracts a silhouette outline from a binary mask using gradient magnitude.
+        
+        Parameters
+        ----------
+        mask : ArrayLike
+            The binary mask image to extract the outline from.
+        base_image : ArrayLike
+            The base image to create a similarly sized and typed blank canvas.
+        threshold : float
+            The gradient magnitude threshold to consider as an edge.
+        outline_color : tuple[int, ...]
+            The color of the drawn outline.
+        background_color : tuple[int, ...]
+            The background color of the new image.
+        size : int
+            The size of the mean filter kernel applied before edge detection.
+            
+        Returns
+        -------
+        ArrayLike
+            The standalone outline image.
+        """
+        mask = to_cpu(_validate_image(mask))
+        mask_f = mask.astype(np.float64)
+        soft_mask = Filter.mean(mask_f, size=size)
+        
+        gx_o = Convolution.apply(soft_mask, Convolution.Kernels.sobel_x(), clip=False)
+        gy_o = Convolution.apply(soft_mask, Convolution.Kernels.sobel_y(), clip=False)
+        
+        silhouette_outline_mask = (to_cpu(Image_Ops.magnitude(gx_o, gy_o)) > threshold).astype(bool)
+        
+        outline_standalone = Image_Ops.create_blank_like(base_image, color=background_color)
+        outline_standalone[silhouette_outline_mask] = outline_color
+        
+        return outline_standalone
+
+    @staticmethod
+    def canny_gpu(
+        image: ArrayLike,
+        low: float = 50,
+        high: float = 150,
+        sigma: float = 1.4,
+        ksize: int = 5,
+        gradient: Literal["sobel", "scharr"] = "sobel",
+    ) -> ArrayLike:
+        """Full GPU-accelerated Canny edge detection via CuPy + custom CUDA kernels.
+
+        Runs the entire 5-stage pipeline on GPU VRAM with zero CPU round-trips
+        between stages.  Falls back to cv2.Canny when CuPy/CUDA is unavailable.
+
+        Pipeline
+        --------
+        1. Gaussian blur            — cupyx.scipy.ndimage.correlate
+        2. Gradient (Sobel/Scharr)  — cupyx.scipy.ndimage.correlate
+        3. Non-Maximum Suppression  — custom CUDA RawKernel
+        4. Double thresholding      — vectorized CuPy
+        5. Hysteresis edge tracking — iterative CUDA RawKernel
+
+        Parameters
+        ----------
+        image : ArrayLike
+            Input image (grayscale or color, uint8 or float).
+        low : float
+            Low hysteresis threshold (gradient magnitude units, same scale as
+            pixel values — typically 0–255 for uint8 images).
+        high : float
+            High hysteresis threshold.
+        sigma : float
+            Gaussian blur sigma.  Higher → more smoothing → fewer noisy edges.
+        ksize : int
+            Gaussian kernel size (auto-adjusted to odd if even).
+        gradient : 'sobel' | 'scharr'
+            Gradient operator.  'scharr' gives better rotational accuracy at
+            the cost of slightly higher magnitude values.
+
+        Returns
+        -------
+        ArrayLike
+            Binary edge map (0 | 255), dtype uint8.
+        """
+        image = _validate_image(image)
+
+        # ── CPU fallback ────────────────────────────────────────────────
+        if not _GPU_AVAILABLE:
+            cpu_img = to_cpu(image)
+            if cpu_img.ndim == 3:
+                cpu_img = cv2.cvtColor(cpu_img, cv2.COLOR_RGB2GRAY)
+            return cv2.Canny(cpu_img, int(low), int(high))
+
+        # ── GPU path ────────────────────────────────────────────────────
+        from cupyx.scipy.ndimage import correlate as _gpu_correlate
+
+        # transfer to GPU + float32 grayscale
+        img = cp.asarray(to_cpu(image)) if not isinstance(image, cp.ndarray) else image
+        if img.ndim == 3:
+            img_f = img.astype(cp.float32)
+            img = 0.299 * img_f[..., 0] + 0.587 * img_f[..., 1] + 0.114 * img_f[..., 2]
+        else:
+            img = img.astype(cp.float32)
+
+        h, w = img.shape
+
+        # ── Stage 1: Gaussian blur ──────────────────────────────────────
+        if ksize % 2 == 0:
+            ksize += 1
+        half = ksize // 2
+        ax = cp.arange(-half, half + 1, dtype=cp.float32)
+        g1d = cp.exp(-(ax ** 2) / (2.0 * sigma ** 2))
+        g2d = g1d[:, None] * g1d[None, :]
+        g2d /= g2d.sum()
+
+        blurred = _gpu_correlate(img, g2d, mode="reflect")
+
+        # ── Stage 2: gradient computation ───────────────────────────────
+        if gradient == "scharr":
+            kx = cp.array([[-3, 0, 3], [-10, 0, 10], [-3, 0, 3]], dtype=cp.float32)
+            ky = cp.array([[-3, -10, -3], [0, 0, 0], [3, 10, 3]], dtype=cp.float32)
+        else:
+            kx = cp.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=cp.float32)
+            ky = cp.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]], dtype=cp.float32)
+
+        gx = _gpu_correlate(blurred, kx, mode="reflect")
+        gy = _gpu_correlate(blurred, ky, mode="reflect")
+
+        mag = cp.sqrt(gx ** 2 + gy ** 2)
+        direction = cp.arctan2(gy, gx) * (180.0 / cp.pi)
+
+        # ── Stage 3: Non-Maximum Suppression (CUDA kernel) ──────────────
+        nms_out = cp.zeros_like(mag)
+
+        _nms_code = r'''
+        extern "C" __global__
+        void nms_kernel(
+            const float* __restrict__ mag,
+            const float* __restrict__ dir,
+            float* __restrict__ out,
+            const int H,
+            const int W
+        ) {
+            int x = blockIdx.x * blockDim.x + threadIdx.x;
+            int y = blockIdx.y * blockDim.y + threadIdx.y;
+            if (x >= W || y >= H) return;
+
+            if (x == 0 || x == W - 1 || y == 0 || y == H - 1) {
+                out[y * W + x] = 0.0f;
+                return;
+            }
+
+            int i = y * W + x;
+            float m = mag[i];
+            float a = dir[i];
+            if (a < 0.0f) a += 180.0f;
+
+            float q, r;
+
+            if (a < 22.5f || a >= 157.5f) {
+                q = mag[i + 1];     r = mag[i - 1];
+            } else if (a < 67.5f) {
+                q = mag[i - W + 1]; r = mag[i + W - 1];
+            } else if (a < 112.5f) {
+                q = mag[i - W];     r = mag[i + W];
+            } else {
+                q = mag[i - W - 1]; r = mag[i + W + 1];
+            }
+
+            out[i] = (m >= q && m >= r) ? m : 0.0f;
+        }
+        '''
+
+        _nms_kern = cp.RawKernel(_nms_code, 'nms_kernel')
+        block = (16, 16)
+        grid = ((w + 15) // 16, (h + 15) // 16)
+        _nms_kern(grid, block, (mag, direction, nms_out, np.int32(h), np.int32(w)))
+
+        # ── Stage 4: double thresholding ────────────────────────────────
+        edges = cp.zeros((h, w), dtype=cp.uint8)
+        edges[nms_out >= high] = 255
+        edges[(nms_out >= low) & (nms_out < high)] = 128
+
+        # ── Stage 5: hysteresis edge tracking (connected components) ────
+        from cupyx.scipy import ndimage as _gpu_ndimage
+        
+        possible_edges = edges > 0
+        strong_edges = edges == 255
+        
+        labels, num_features = _gpu_ndimage.label(possible_edges, structure=cp.ones((3,3), dtype=bool))
+        
+        if int(num_features) > 0:
+            has_strong = cp.zeros(int(num_features) + 1, dtype=cp.bool_)
+            has_strong[labels[strong_edges]] = True
+            edges = has_strong[labels].astype(cp.uint8) * 255
+        else:
+            edges = cp.zeros((h, w), dtype=cp.uint8)
+
+        return edges
+
+    @staticmethod
+    def auto_canny(image: ArrayLike, sigma: float = 0.33, gpu: bool = False, **kwargs) -> ArrayLike:
+        """
+        Automatically calculates the lower and upper thresholds for Canny based on the median
+        pixel intensity of the image, then applies Canny edge detection.
+
+        Parameters
+        ----------
+        image : ArrayLike
+            Input image.
+        sigma : float
+            Percentage variance from the median (default is 0.33, allowing 33% variance).
+        gpu : bool
+            If True, uses canny_gpu instead of cv2.Canny.
+        kwargs : dict
+            Additional arguments passed to the underlying canny function.
+
+        Returns
+        -------
+        ArrayLike
+            Binary edge map.
+        """
+        image_val = _validate_image(image)
+        img_cpu = to_cpu(image_val)
+        if img_cpu.ndim == 3:
+            img_cpu = cv2.cvtColor(img_cpu, cv2.COLOR_RGB2GRAY)
+            
+        v = np.median(img_cpu)
+        lower = int(max(0, (1.0 - sigma) * v))
+        upper = int(min(255, (1.0 + sigma) * v))
+        
+        if gpu:
+            # canny_gpu takes low and high
+            if 'low' not in kwargs:
+                kwargs['low'] = lower
+            if 'high' not in kwargs:
+                kwargs['high'] = upper
+            return Edge_Detection.canny_gpu(image, **kwargs)
+        else:
+            # cv2.Canny takes threshold1 and threshold2
+            if 'threshold1' not in kwargs:
+                kwargs['threshold1'] = lower
+            if 'threshold2' not in kwargs:
+                kwargs['threshold2'] = upper
+            return Edge_Detection.canny(image, **kwargs)
+
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -2211,10 +4248,17 @@ class Morphology:
     """Static helpers for morphological operations."""
 
     @staticmethod
-    def get_structuring_element(shape: str = "rect", ksize: int = 3) -> ArrayLike:
+    def get_structuring_element(shape: str | ArrayLike = "rect", ksize: int = 3) -> ArrayLike:
+        if not isinstance(shape, str):
+            # Treat it as a custom kernel of 1s and 0s
+            kernel = to_cpu(shape)
+            if not isinstance(kernel, np.ndarray):
+                kernel = np.array(kernel, dtype=np.uint8)
+            return kernel.astype(np.uint8)
+            
         shapes = {"rect": cv2.MORPH_RECT, "cross": cv2.MORPH_CROSS, "ellipse": cv2.MORPH_ELLIPSE}
         if shape not in shapes:
-            raise ValueError(f"shape must be one of {list(shapes.keys())}.")
+            raise ValueError(f"shape must be a string {list(shapes.keys())} or a custom ArrayLike kernel.")
         return cv2.getStructuringElement(shapes[shape], (ksize, ksize))
 
     @staticmethod
@@ -2253,11 +4297,32 @@ class Morphology:
         return cv2.morphologyEx(image, cv2.MORPH_BLACKHAT, Morphology.get_structuring_element(element_shape, ksize))
 
     @staticmethod
-    def skeleton(image: ArrayLike) -> ArrayLike:
-        image = to_cpu(_validate_image(image))
-        if image.ndim == 3:
-            image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-        _, binary = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY)
+    def skeleton(image: ArrayLike, gpu: bool | None = None) -> ArrayLike:
+        image = _validate_image(image)
+        cpu_img = to_cpu(image)
+        if cpu_img.ndim == 3:
+            cpu_img = cv2.cvtColor(cpu_img, cv2.COLOR_RGB2GRAY)
+        _, binary_cpu = cv2.threshold(cpu_img, 127, 255, cv2.THRESH_BINARY)
+        
+        use_gpu = _should_gpu(binary_cpu) if gpu is None else gpu
+        if use_gpu and _GPU_AVAILABLE:
+            from cupyx.scipy import ndimage as _gpu_ndimage
+            binary = cp.asarray(binary_cpu)
+            skel = cp.zeros_like(binary)
+            element = cp.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]], dtype=cp.uint8)
+            while True:
+                eroded = _gpu_ndimage.grey_erosion(binary, footprint=element)
+                opened = _gpu_ndimage.grey_dilation(eroded, footprint=element)
+                # Avoid int16 allocation and clip by using bitwise operations
+                temp = cp.bitwise_and(binary, cp.bitwise_not(opened))
+                skel = cp.bitwise_or(skel, temp)
+                binary = eroded
+                if not cp.any(binary):
+                    break
+            return cp.asnumpy(skel)
+
+        # CPU Fallback
+        binary = binary_cpu
         skel = np.zeros_like(binary)
         element = cv2.getStructuringElement(cv2.MORPH_CROSS, (3, 3))
         while True:
@@ -2271,27 +4336,166 @@ class Morphology:
         return skel
 
     @staticmethod
-    def hit_or_miss(image: ArrayLike, kernel: ArrayLike | None = None) -> ArrayLike:
-        image = to_cpu(_validate_image(image))
-        if image.ndim == 3:
-            image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-        _, binary = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY)
+    def hit_or_miss(image: ArrayLike, kernel: ArrayLike | None = None, gpu: bool | None = None) -> ArrayLike:
+        image = _validate_image(image)
+        cpu_img = to_cpu(image)
+        if cpu_img.ndim == 3:
+            cpu_img = cv2.cvtColor(cpu_img, cv2.COLOR_RGB2GRAY)
+        _, binary_cpu = cv2.threshold(cpu_img, 127, 255, cv2.THRESH_BINARY)
+        
         if kernel is None:
             kernel = np.array([[-1, -1, -1], [-1, 1, -1], [-1, -1, -1]], dtype=np.int32)
-        return cv2.morphologyEx(binary, cv2.MORPH_HITMISS, kernel)
+            
+        use_gpu = _should_gpu(binary_cpu) if gpu is None else gpu
+        if use_gpu and _GPU_AVAILABLE:
+            from cupyx.scipy import ndimage as _gpu_ndimage
+            binary = cp.asarray(binary_cpu)
+            k1 = cp.asarray(kernel == 1).astype(cp.uint8)
+            k2 = cp.asarray(kernel == -1).astype(cp.uint8)
+            e1 = _gpu_ndimage.grey_erosion(binary, footprint=k1) if cp.any(k1) else binary
+            e2 = _gpu_ndimage.grey_erosion(cp.bitwise_not(binary), footprint=k2) if cp.any(k2) else cp.bitwise_not(binary)
+            return cp.asnumpy(cp.bitwise_and(e1, e2))
+            
+        return cv2.morphologyEx(binary_cpu, cv2.MORPH_HITMISS, kernel)
 
     @staticmethod
-    def thinning(image: ArrayLike, max_iterations: int = 100) -> ArrayLike:
+    def thinning(image: ArrayLike, kernels: list[ArrayLike] | None = None, max_iterations: int = 100, gpu: bool | None = None) -> ArrayLike:
         """Morphological thinning — reduces objects to 1-pixel-wide skeletons.
+        If `kernels` are provided, uses a custom sequence of hit-or-miss kernels."""
+        image = _validate_image(image)
+        cpu_img = to_cpu(image)
+        if cpu_img.ndim == 3:
+            cpu_img = cv2.cvtColor(cpu_img, cv2.COLOR_RGB2GRAY)
+        _, binary_cpu = cv2.threshold(cpu_img, 127, 255, cv2.THRESH_BINARY)
 
-        Uses iterative hit-or-miss with 8 structuring element rotations.
-        """
-        image = to_cpu(_validate_image(image))
-        if image.ndim == 3:
-            image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-        _, binary = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY)
-        # 8 thinning structuring elements (Guo-Hall / standard rotations)
-        kernels = [
+        use_gpu = _should_gpu(binary_cpu) if gpu is None else gpu
+        
+        # --- Custom kernels provided ---
+        if kernels is not None:
+            if use_gpu and _GPU_AVAILABLE:
+                from cupyx.scipy import ndimage as _gpu_ndimage
+                binary = cp.asarray(binary_cpu)
+                
+                gpu_kernels = []
+                for k in kernels:
+                    k1 = cp.asarray(k == 1).astype(cp.uint8)
+                    k2 = cp.asarray(k == -1).astype(cp.uint8)
+                    gpu_kernels.append((k1, k2))
+                    
+                prev = cp.zeros_like(binary)
+                for _ in range(max_iterations):
+                    for k1, k2 in gpu_kernels:
+                        e1 = _gpu_ndimage.grey_erosion(binary, footprint=k1) if cp.any(k1) else binary
+                        e2 = _gpu_ndimage.grey_erosion(cp.bitwise_not(binary), footprint=k2) if cp.any(k2) else cp.bitwise_not(binary)
+                        hitmiss = cp.bitwise_and(e1, e2)
+                        binary = cp.bitwise_and(binary, cp.bitwise_not(hitmiss))
+                    
+                    if cp.array_equal(binary, prev):
+                        break
+                    prev = binary.copy()
+                return cp.asnumpy(binary)
+                
+            # CPU Fallback for custom kernels
+            binary = binary_cpu.copy()
+            prev = np.zeros_like(binary)
+            
+            cv_kernels = [np.asarray(k, dtype=np.int32) for k in kernels]
+            
+            for _ in range(max_iterations):
+                for k in cv_kernels:
+                    hitmiss = cv2.morphologyEx(binary, cv2.MORPH_HITMISS, k)
+                    binary = cv2.subtract(binary, hitmiss)
+                if np.array_equal(binary, prev):
+                    break
+                prev = binary.copy()
+            return binary
+
+        # --- No custom kernels provided (Standard Zhang-Suen or Default CPU Kernels) ---
+        if use_gpu and _GPU_AVAILABLE:
+            thinning_code = r'''
+            extern "C" __global__
+            void zhang_suen_kernel(
+                const unsigned char* __restrict__ img,
+                unsigned char* __restrict__ out,
+                unsigned char* __restrict__ diff,
+                const int H,
+                const int W,
+                const int step
+            ) {
+                int x = blockIdx.x * blockDim.x + threadIdx.x;
+                int y = blockIdx.y * blockDim.y + threadIdx.y;
+                
+                if (x >= W || y >= H) return;
+                
+                int i = y * W + x;
+                out[i] = img[i]; // copy original by default
+                diff[i] = 0;
+                
+                // Ignore boundary pixels for simplicity
+                if (x == 0 || x == W - 1 || y == 0 || y == H - 1) return;
+                if (img[i] == 0) return; // already background
+                
+                // 8-neighborhood
+                int p2 = img[(y - 1) * W + x]     > 0 ? 1 : 0;
+                int p3 = img[(y - 1) * W + x + 1] > 0 ? 1 : 0;
+                int p4 = img[y * W + x + 1]       > 0 ? 1 : 0;
+                int p5 = img[(y + 1) * W + x + 1] > 0 ? 1 : 0;
+                int p6 = img[(y + 1) * W + x]     > 0 ? 1 : 0;
+                int p7 = img[(y + 1) * W + x - 1] > 0 ? 1 : 0;
+                int p8 = img[y * W + x - 1]       > 0 ? 1 : 0;
+                int p9 = img[(y - 1) * W + x - 1] > 0 ? 1 : 0;
+                
+                // A(P1): number of 0->1 transitions
+                int A = (p2 == 0 && p3 == 1) + (p3 == 0 && p4 == 1) + 
+                        (p4 == 0 && p5 == 1) + (p5 == 0 && p6 == 1) + 
+                        (p6 == 0 && p7 == 1) + (p7 == 0 && p8 == 1) + 
+                        (p8 == 0 && p9 == 1) + (p9 == 0 && p2 == 1);
+                        
+                // B(P1): number of non-zero neighbors
+                int B = p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9;
+                
+                int m1 = 0;
+                int m2 = 0;
+                
+                if (step == 0) {
+                    m1 = p2 * p4 * p6;
+                    m2 = p4 * p6 * p8;
+                } else {
+                    m1 = p2 * p4 * p8;
+                    m2 = p2 * p6 * p8;
+                }
+                
+                if (A == 1 && (B >= 2 && B <= 6) && m1 == 0 && m2 == 0) {
+                    out[i] = 0; // mark for deletion
+                    diff[i] = 1; // something changed
+                }
+            }
+            '''
+            thin_kern = cp.RawKernel(thinning_code, 'zhang_suen_kernel')
+            
+            d_img = cp.asarray(binary_cpu)
+            h, w = d_img.shape
+            d_out = cp.empty_like(d_img)
+            d_diff = cp.empty_like(d_img)
+            
+            block = (16, 16)
+            grid = ((w + 15) // 16, (h + 15) // 16)
+            
+            for _ in range(max_iterations):
+                thin_kern(grid, block, (d_img, d_out, d_diff, np.int32(h), np.int32(w), np.int32(0)))
+                has_changes_1 = int(cp.sum(d_diff)) > 0
+                
+                thin_kern(grid, block, (d_out, d_img, d_diff, np.int32(h), np.int32(w), np.int32(1)))
+                has_changes_2 = int(cp.sum(d_diff)) > 0
+                
+                if not has_changes_1 and not has_changes_2:
+                    break
+                    
+            return cp.asnumpy(d_img)
+            
+        # CPU Fallback for no custom kernels
+        binary = binary_cpu.copy()
+        kernels_default = [
             np.array([[-1, -1, -1], [0, 1, 0], [1, 1, 1]], dtype=np.int32),
             np.array([[0, -1, -1], [1, 1, -1], [0, 1, 0]], dtype=np.int32),
             np.array([[1, 0, -1], [1, 1, -1], [1, 0, -1]], dtype=np.int32),
@@ -2302,14 +4506,107 @@ class Morphology:
             np.array([[-1, -1, 0], [-1, 1, 1], [0, 1, 0]], dtype=np.int32),
         ]
         prev = np.zeros_like(binary)
-        current = binary.copy()
         for _ in range(max_iterations):
-            for k in kernels:
-                hitmiss = cv2.morphologyEx(current, cv2.MORPH_HITMISS, k)
-                current = cv2.subtract(current, hitmiss)
-            if np.array_equal(current, prev):
+            for k in kernels_default:
+                hitmiss = cv2.morphologyEx(binary, cv2.MORPH_HITMISS, k)
+                binary = cv2.subtract(binary, hitmiss)
+            if np.array_equal(binary, prev):
                 break
-            prev = current.copy()
+            prev = binary.copy()
+        return binary
+
+    @staticmethod
+    def thickening(image: ArrayLike, kernels: list[ArrayLike] | None = None, max_iterations: int = 100, gpu: bool | None = None) -> ArrayLike:
+        """Morphological thickening — adds pixels to the boundaries of objects.
+        If `kernels` are provided, uses a custom sequence of hit-or-miss kernels."""
+        image = _validate_image(image)
+        cpu_img = to_cpu(image)
+        if cpu_img.ndim == 3:
+            cpu_img = cv2.cvtColor(cpu_img, cv2.COLOR_RGB2GRAY)
+            
+        _, binary = cv2.threshold(cpu_img, 127, 255, cv2.THRESH_BINARY)
+        
+        # --- Custom kernels provided ---
+        if kernels is not None:
+            use_gpu = _should_gpu(binary) if gpu is None else gpu
+            if use_gpu and _GPU_AVAILABLE:
+                from cupyx.scipy import ndimage as _gpu_ndimage
+                binary_gpu = cp.asarray(binary)
+                
+                gpu_kernels = []
+                for k in kernels:
+                    k1 = cp.asarray(k == 1).astype(cp.uint8)
+                    k2 = cp.asarray(k == -1).astype(cp.uint8)
+                    gpu_kernels.append((k1, k2))
+                    
+                prev = cp.zeros_like(binary_gpu)
+                for _ in range(max_iterations):
+                    for k1, k2 in gpu_kernels:
+                        e1 = _gpu_ndimage.grey_erosion(binary_gpu, footprint=k1) if cp.any(k1) else binary_gpu
+                        e2 = _gpu_ndimage.grey_erosion(cp.bitwise_not(binary_gpu), footprint=k2) if cp.any(k2) else cp.bitwise_not(binary_gpu)
+                        hitmiss = cp.bitwise_and(e1, e2)
+                        binary_gpu = cp.bitwise_or(binary_gpu, hitmiss)
+                    
+                    if cp.array_equal(binary_gpu, prev):
+                        break
+                    prev = binary_gpu.copy()
+                return cp.asnumpy(binary_gpu)
+                
+            # CPU Fallback for custom kernels
+            binary_cpu = binary.copy()
+            prev = np.zeros_like(binary_cpu)
+            cv_kernels = [np.asarray(k, dtype=np.int32) for k in kernels]
+            
+            for _ in range(max_iterations):
+                for k in cv_kernels:
+                    hitmiss = cv2.morphologyEx(binary_cpu, cv2.MORPH_HITMISS, k)
+                    binary_cpu = cv2.bitwise_or(binary_cpu, hitmiss)
+                if np.array_equal(binary_cpu, prev):
+                    break
+                prev = binary_cpu.copy()
+            return binary_cpu
+            
+        # --- No custom kernels provided ---
+        inverted = cv2.bitwise_not(binary)
+        
+        # apply thinning on the inverted image (relies on standard thinning)
+        thinned_inverted = Morphology.thinning(inverted, kernels=None, max_iterations=max_iterations, gpu=gpu)
+        
+        return cv2.bitwise_not(thinned_inverted)
+
+    @staticmethod
+    def reconstruct(marker: ArrayLike, mask: ArrayLike, method: Literal["dilation", "erosion"] = "dilation", ksize: int = 3, element_shape: str = "rect") -> ArrayLike:
+        """Morphological reconstruction (Geodesic).
+
+        Reconstructs the `marker` image under the `mask` image.
+        If method is "dilation" (default), marker is iteratively dilated and masked via element-wise minimum.
+        If method is "erosion", marker is iteratively eroded and masked via element-wise maximum.
+
+        Both marker and mask must be of the same shape and datatype.
+        """
+        marker = to_cpu(_validate_image(marker))
+        mask = to_cpu(_validate_image(mask))
+        
+        if marker.shape != mask.shape:
+            raise ValueError("Marker and mask must have the same shape.")
+            
+        element = Morphology.get_structuring_element(element_shape, ksize)
+        current = marker.copy()
+        
+        while True:
+            if method == "dilation":
+                dilated = cv2.dilate(current, element)
+                nxt = np.minimum(dilated, mask)
+            elif method == "erosion":
+                eroded = cv2.erode(current, element)
+                nxt = np.maximum(eroded, mask)
+            else:
+                raise ValueError("Method must be 'dilation' or 'erosion'.")
+                
+            if np.array_equal(nxt, current):
+                break
+            current = nxt
+            
         return current
 
 
@@ -2319,6 +4616,68 @@ class Morphology:
 
 class Wavelet:
     """2D wavelet transforms using a manual Haar filter-bank. Pure numpy."""
+
+    @staticmethod
+    def show_level(cA: ArrayLike, cH: ArrayLike, cV: ArrayLike, cD: ArrayLike, title: str = "1-Level Decomposition") -> None:
+        """Visualize a single-level wavelet decomposition as a 2x2 grid."""
+        def _map_to_gray(img):
+            max_val = np.max(np.abs(img))
+            if max_val == 0:
+                return np.full_like(img, 128.0)
+            return (img / max_val) * 127.0 + 128.0
+
+        fig, axes = plt.subplots(2, 2, figsize=(10, 10))
+        axes[0, 0].imshow(cA, cmap='gray')
+        axes[0, 0].set_title("LL (Approximation)")
+        axes[0, 1].imshow(_map_to_gray(cH), cmap='gray')
+        axes[0, 1].set_title("LH (Horizontal Detail)")
+        axes[1, 0].imshow(_map_to_gray(cV), cmap='gray')
+        axes[1, 0].set_title("HL (Vertical Detail)")
+        axes[1, 1].imshow(_map_to_gray(cD), cmap='gray')
+        axes[1, 1].set_title("HH (Diagonal detail)")
+        plt.tight_layout()
+        plt.show()
+
+    @staticmethod
+    def show_dynamic(coeffs: list, title: str = "Dynamic Decomposition", figsize: tuple[int, int] = (10, 10)) -> None:
+        """Visualize a multi-level wavelet decomposition as a single stitched image."""
+        def _map_to_gray(img):
+            max_val = np.max(np.abs(img))
+            if max_val == 0:
+                return np.full_like(img, 128.0)
+            return (img / max_val) * 127.0 + 128.0
+
+        def _map_approx(img):
+            mn, mx = img.min(), img.max()
+            if mx == mn:
+                return np.zeros_like(img)
+            return (img - mn) / (mx - mn) * 255.0
+
+        stitched = _map_approx(coeffs[0])
+        for detail in coeffs[1:]:
+            cH, cV, cD = detail
+            cH_n = _map_to_gray(cH)
+            cV_n = _map_to_gray(cV)
+            cD_n = _map_to_gray(cD)
+            
+            h, w = stitched.shape
+            h_det, w_det = cH_n.shape
+            
+            if stitched.shape != (h_det, w_det):
+                stitched_resized = np.zeros((h_det, w_det), dtype=np.float64)
+                mh, mw = min(h, h_det), min(w, w_det)
+                stitched_resized[:mh, :mw] = stitched[:mh, :mw]
+                stitched = stitched_resized
+
+            top = np.concatenate((stitched, cH_n), axis=1)
+            bottom = np.concatenate((cV_n, cD_n), axis=1)
+            stitched = np.concatenate((top, bottom), axis=0)
+
+        plt.figure(figsize=figsize)
+        plt.imshow(stitched, cmap='gray')
+        plt.title(title)
+        plt.axis("off")
+        plt.show()
 
     @staticmethod
     def _haar_forward_1d(signal: ArrayLike) -> tuple[ArrayLike, ArrayLike]:
@@ -2368,8 +4727,32 @@ class Wavelet:
         return cA, cH, cV, cD
 
     @staticmethod
-    def idwt2(cA: ArrayLike, cH: ArrayLike, cV: ArrayLike, cD: ArrayLike) -> ArrayLike:
-        """Inverse single-level 2D Haar DWT."""
+    def idwt2(cA: ArrayLike, cH: ArrayLike, cV: ArrayLike, cD: ArrayLike, match_mode: MatchMode | Literal["strict"] = "strict") -> ArrayLike:
+        """Inverse single-level 2D Haar DWT.
+        If match_mode is provided, detail subbands will be auto-adjusted to match cA's shape."""
+        
+        if match_mode != "strict":
+            target_h, target_w = cA.shape
+            def _match_shape(arr: ArrayLike) -> ArrayLike:
+                if arr.shape == (target_h, target_w):
+                    return arr
+                if match_mode == "resize":
+                    return _resize_to(arr, target_h, target_w)
+                elif match_mode in ("crop", "pad+resize"):
+                    return _center_crop_or_pad(arr, target_h, target_w)
+                elif match_mode == "tl-crop":
+                    return _tl_crop(arr, target_h, target_w)
+                elif match_mode == "pad":
+                    return _pad_to(arr, target_h, target_w)
+                elif match_mode == "cover":
+                    return _fit_cover(arr, target_h, target_w)
+                elif match_mode == "contain":
+                    return _fit_contain(arr, target_h, target_w)
+                return arr
+                
+            cH = _match_shape(cH)
+            cV = _match_shape(cV)
+            cD = _match_shape(cD)
         half_h, half_w = cA.shape
         h, w = half_h * 2, half_w * 2
         row_L = np.zeros((h, half_w), dtype=np.float64)
@@ -2399,6 +4782,53 @@ class Wavelet:
         coeffs.append(current)
         coeffs.reverse()
         return coeffs
+
+    @staticmethod
+    def max_wavelet_level(image_shape: tuple[int, ...], min_size: int = 16) -> int:
+        """Calculates the maximum wavelet decomposition level before the subband size drops below min_size."""
+        h, w = image_shape[:2]
+        smallest_dim = min(h, w)
+        level = 0
+        while smallest_dim > min_size:
+            smallest_dim //= 2
+            level += 1
+        return max(1, level)
+
+    @staticmethod
+    def wavedec2_dynamic(image: ArrayLike, min_size: int = 16) -> list:
+        """Dynamically decomposes the image using DWT until the subband size is <= min_size."""
+        image_val = _validate_image(image)
+        level = Wavelet.max_wavelet_level(image_val.shape, min_size=min_size)
+        return Wavelet.wavedec2(image_val, level=level)
+
+    @staticmethod
+    def assemble_wavedec2_grid(coeffs: list) -> ArrayLike:
+        """Assembles a multi-level DWT decomposition into a single classic 2D grid image for visualization."""
+        grid = coeffs[0].copy()
+        
+        for i in range(1, len(coeffs)):
+            cH, cV, cD = coeffs[i]
+            
+            # Ensure dimensions match before stacking (due to odd shape padding in DWT)
+            h, w = grid.shape
+            th, tw = cH.shape
+            if h != th or w != tw:
+                grid = cv2.resize(grid, (tw, th), interpolation=cv2.INTER_NEAREST)
+                
+            top = np.hstack([grid, cH])
+            bottom = np.hstack([cV, cD])
+            grid = np.vstack([top, bottom])
+            
+        return grid
+
+    @staticmethod
+    def high_frequency_energy(coeffs: list) -> float:
+        """Calculates the total high-frequency energy across all levels using: sum(LH^2 + HL^2 + HH^2)."""
+        energy = 0.0
+        for i in range(1, len(coeffs)):
+            cH, cV, cD = coeffs[i]
+            energy += np.sum(np.square(cH)) + np.sum(np.square(cV)) + np.sum(np.square(cD))
+        return float(energy)
 
     @staticmethod
     def waverec2(coeffs: list) -> ArrayLike:
@@ -2480,6 +4910,76 @@ class Wavelet:
         return np.clip(Wavelet.waverec2(coeffs)[:h, :w], 0, 255).astype(np.uint8)
 
     @staticmethod
+    def process_rgb_wavelet(rgb_img: ArrayLike, title: str, cmap: str | None = None) -> ArrayLike:
+        """Decompose & reconstruct a 3D RGB image channel-by-channel with optional colormap visualization."""
+        import matplotlib.pyplot as plt
+        
+        rgb_img_cpu = to_cpu(rgb_img)
+        cAs, cHs, cVs, cDs = [], [], [], []
+        for i in range(3):
+            cA, cH, cV, cD = Wavelet.dwt2(rgb_img_cpu[..., i])
+            cAs.append(cA)
+            cHs.append(cH)
+            cVs.append(cV)
+            cDs.append(cD)
+        
+        def norm_approx(img): return np.clip(img / np.sqrt(2), 0, 255).astype(np.uint8)
+        def norm_detail(img): 
+            mx = np.max(np.abs(img))
+            if mx == 0: return np.full_like(img, 128, dtype=np.uint8)
+            return np.clip((img / mx) * 127 + 128, 0, 255).astype(np.uint8)
+            
+        fig, axes = plt.subplots(2, 2, figsize=(6, 4))
+        
+        if cmap is not None:
+            # For 2D colormap visualization, find the most active channel for details
+            energies = [np.sum(np.abs(cHs[i])) for i in range(3)]
+            active_ch = np.argmax(energies)
+            
+            # Use full RGB for LL, but use the active channel's detail for colormap display
+            cA_rgb = np.stack(cAs, axis=-1)
+            disp_cA = norm_approx(cA_rgb)
+            
+            disp_cH = norm_detail(cHs[active_ch])
+            disp_cV = norm_detail(cVs[active_ch])
+            disp_cD = norm_detail(cDs[active_ch])
+            
+            # Note: cmap is ignored by imshow if the input is RGB
+            axes[0,0].imshow(disp_cA)
+            axes[0,1].imshow(disp_cH, cmap=cmap)
+            axes[1,0].imshow(disp_cV, cmap=cmap)
+            axes[1,1].imshow(disp_cD, cmap=cmap)
+        else:
+            # Default RGB visualization
+            cA_rgb = np.stack(cAs, axis=-1)
+            cH_rgb = np.stack(cHs, axis=-1)
+            cV_rgb = np.stack(cVs, axis=-1)
+            cD_rgb = np.stack(cDs, axis=-1)
+            
+            axes[0,0].imshow(norm_approx(cA_rgb))
+            axes[0,1].imshow(norm_detail(cH_rgb))
+            axes[1,0].imshow(norm_detail(cV_rgb))
+            axes[1,1].imshow(norm_detail(cD_rgb))
+            
+        axes[0,0].set_title("LL (Approximation)", fontsize=8)
+        axes[0,1].set_title("LH (Horizontal Detail)", fontsize=8)
+        axes[1,0].set_title("HL (Vertical Detail)", fontsize=8)
+        axes[1,1].set_title("HH (Diagonal Detail)", fontsize=8)
+        
+        for ax in axes.flat: ax.axis('off')
+        fig.suptitle(f"{title} Channel Decomposition", fontsize=12)
+        plt.tight_layout()
+        plt.show()
+        
+        recs = []
+        for i in range(3):
+            rec = Wavelet.idwt2(cAs[i], cHs[i], cVs[i], cDs[i])
+            recs.append(rec)
+            
+        rec_rgb = np.clip(np.stack(recs, axis=-1), 0, 255).astype(np.uint8)
+        return rec_rgb
+
+    @staticmethod
     def list_wavelets() -> None:
         print("Available wavelets: haar")
         print("  Filters: Lo=[1/sqrt2, 1/sqrt2], Hi=[1/sqrt2, -1/sqrt2]")
@@ -2493,6 +4993,345 @@ class Wavelet:
 
 class Feature_Extraction:
     """Static helpers for feature detection, description, and matching."""
+
+    @staticmethod
+    def extract_human(
+        image: ArrayLike,
+        clothing_lower: tuple[int, ...] | int | None = 10,
+        clothing_upper: tuple[int, ...] | int | None = 90,
+        clothing_color_space: int | None = None,
+        detect_skin: bool = True,
+        spatial_constraint: int = 81,
+        cleanup_size: int = 7
+    ) -> ArrayLike:
+        """
+        Generic human figure extraction combining skin detection and clothing color targeting.
+        
+        Parameters
+        ----------
+        image : ArrayLike
+            The RGB image to process.
+        clothing_lower : tuple or int or None
+            The lower bound for clothing color. If int, treated as grayscale intensity.
+        clothing_upper : tuple or int or None
+            The upper bound for clothing color. If int, treated as grayscale intensity.
+        clothing_color_space : int or None
+            OpenCV conversion code (e.g. cv2.COLOR_RGB2HSV). If None, grayscale is used.
+        detect_skin : bool
+            If True, automatically fuses a robust YCrCb skin mask into the final extraction.
+        spatial_constraint : int
+            Heavy low-pass filter kernel size to spatially constrain the clothing mask (removes background noise).
+        cleanup_size : int
+            Median filter kernel size for cleaning the binary masks.
+            
+        Returns
+        -------
+        ArrayLike
+            A unified binary mask of the detected subject.
+        """
+        image = to_cpu(_validate_image(image))
+        h, w = image.shape[:2]
+        final_mask = np.zeros((h, w), dtype=np.uint8)
+        
+        # 1. Skin Detection Path (Robust YCrCb method)
+        if detect_skin and image.ndim == 3:
+            ycrcb = cv2.cvtColor(image, cv2.COLOR_RGB2YCrCb)
+            # Standard human skin bounds in YCrCb
+            lower_skin = np.array([0, 133, 77], dtype=np.uint8)
+            upper_skin = np.array([255, 173, 127], dtype=np.uint8)
+            skin_mask = cv2.inRange(ycrcb, lower_skin, upper_skin)
+            if cleanup_size > 0:
+                skin_mask = to_cpu(Filter.median(skin_mask, size=cleanup_size))
+            final_mask = np.maximum(final_mask, skin_mask)
+            
+        # 2. Clothing / Color Path
+        if clothing_lower is not None and clothing_upper is not None:
+            # Convert to target color space
+            if clothing_color_space is not None and image.ndim == 3:
+                target_img = cv2.cvtColor(image, clothing_color_space)
+            else:
+                target_img = image if image.ndim == 2 else cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+                
+            # Direct thresholding
+            if isinstance(clothing_lower, (int, float)):
+                clothing_lower = np.array([clothing_lower], dtype=np.float64)
+                clothing_upper = np.array([clothing_upper], dtype=np.float64)
+            else:
+                clothing_lower = np.array(clothing_lower, dtype=np.float64)
+                clothing_upper = np.array(clothing_upper, dtype=np.float64)
+                
+            clothes_mask = cv2.inRange(target_img, clothing_lower, clothing_upper)
+            
+            # Spatial Constraint (Background suppression)
+            if spatial_constraint > 0:
+                blurred = to_cpu(Filter.low_pass(target_img, size=spatial_constraint, method='gaussian'))
+                blur_mask = cv2.inRange(blurred, clothing_lower, clothing_upper)
+                clothes_mask = np.minimum(clothes_mask, blur_mask)
+                
+            if cleanup_size > 0:
+                clothes_mask = to_cpu(Filter.median(clothes_mask, size=cleanup_size + 2))
+                
+            final_mask = np.maximum(final_mask, clothes_mask)
+            
+        return final_mask
+
+    @staticmethod
+    def extract_by_shape(
+        mask_or_image: ArrayLike,
+        target_vertices: int = 4,
+        min_aspect_ratio: float = 2.0,
+        max_aspect_ratio: float = 5.0,
+        min_area: int = 500
+    ) -> list[tuple[ArrayLike, tuple[int, int, int, int]]]:
+        """
+        Extracts regions matching specific geometric properties (e.g. rectangular license plates).
+        
+        Parameters
+        ----------
+        mask_or_image : ArrayLike
+            Input image or binary mask.
+        target_vertices : int
+            Number of vertices to look for (4 = rectangle, 3 = triangle).
+        min_aspect_ratio : float
+            Minimum bounding box aspect ratio (width/height).
+        max_aspect_ratio : float
+            Maximum bounding box aspect ratio.
+        min_area : int
+            Minimum contour area to consider (filters out noise).
+            
+        Returns
+        -------
+        list[tuple[ArrayLike, tuple[int, int, int, int]]]
+            A list of (cropped_image, bounding_box) tuples.
+        """
+        img = to_cpu(_validate_image(mask_or_image))
+        if img.ndim == 3:
+            gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+            _, thresh = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+        else:
+            thresh = img if img.dtype == np.uint8 else (img * 255).astype(np.uint8)
+
+        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        results = []
+        
+        for cnt in contours:
+            area = cv2.contourArea(cnt)
+            if area < min_area:
+                continue
+                
+            peri = cv2.arcLength(cnt, True)
+            approx = cv2.approxPolyDP(cnt, 0.04 * peri, True)
+            
+            if len(approx) == target_vertices:
+                x, y, w, h = cv2.boundingRect(approx)
+                aspect_ratio = float(w) / h
+                
+                if min_aspect_ratio <= aspect_ratio <= max_aspect_ratio:
+                    cropped = img[y:y+h, x:x+w]
+                    results.append((cropped, (x, y, w, h)))
+                    
+        return results
+
+    @staticmethod
+    def extract_by_texture(
+        image: ArrayLike,
+        kernel_size: tuple[int, int] = (21, 5),
+        edge_threshold: int = 50
+    ) -> ArrayLike:
+        """
+        Extracts regions with high spatial frequency (dense edges), such as text blocks or plates.
+        
+        Parameters
+        ----------
+        image : ArrayLike
+            Input image.
+        kernel_size : tuple[int, int]
+            Morphological closing kernel size. Wide kernels (e.g. 21x5) fuse horizontal text lines.
+        edge_threshold : int
+            Minimum gradient magnitude to consider as a strong edge.
+            
+        Returns
+        -------
+        ArrayLike
+            A binary mask highlighting dense texture blobs.
+        """
+        image = to_cpu(_validate_image(image))
+        gray = image if image.ndim == 2 else cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        
+        # 1. Edge Density (Scharr gives strong response to text edges)
+        gx = cv2.Scharr(gray, cv2.CV_64F, 1, 0)
+        gy = cv2.Scharr(gray, cv2.CV_64F, 0, 1)
+        magnitude = np.clip(np.sqrt(gx**2 + gy**2), 0, 255).astype(np.uint8)
+        
+        _, edge_mask = cv2.threshold(magnitude, edge_threshold, 255, cv2.THRESH_BINARY)
+        
+        # 2. Morphological Closing to fuse dense edges into a solid blob
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, kernel_size)
+        fused = cv2.morphologyEx(edge_mask, cv2.MORPH_CLOSE, kernel)
+        
+        return fused
+
+    @staticmethod
+    def extract_by_template(
+        image: ArrayLike,
+        template: ArrayLike,
+        match_threshold: float = 0.8
+    ) -> list[tuple[int, int, int, int]]:
+        """
+        Locates exact objects (logos, signs, stationary vehicles) using Normalized Cross-Correlation.
+        
+        Parameters
+        ----------
+        image : ArrayLike
+            The scene image.
+        template : ArrayLike
+            The template image to search for.
+        match_threshold : float
+            Similarity threshold (0.0 to 1.0).
+            
+        Returns
+        -------
+        list[tuple[int, int, int, int]]
+            List of bounding boxes (x, y, w, h) where the template was found.
+        """
+        image = to_cpu(_validate_image(image))
+        template = to_cpu(_validate_image(template))
+        
+        if image.ndim == 3:
+            img_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        else:
+            img_gray = image
+            
+        if template.ndim == 3:
+            temp_gray = cv2.cvtColor(template, cv2.COLOR_RGB2GRAY)
+        else:
+            temp_gray = template
+            
+        h, w = temp_gray.shape[:2]
+        res = cv2.matchTemplate(img_gray, temp_gray, cv2.TM_CCOEFF_NORMED)
+        loc = np.where(res >= match_threshold)
+        
+        results = []
+        for pt in zip(*loc[::-1]): # Switch (row, col) to (x, y)
+            results.append((pt[0], pt[1], w, h))
+            
+        # Basic Non-Maximum Suppression
+        final_boxes = []
+        for box in results:
+            x, y, bw, bh = box
+            overlap = False
+            for fx, fy, fw, fh in final_boxes:
+                if abs(x - fx) < bw/2 and abs(y - fy) < bh/2:
+                    overlap = True
+                    break
+            if not overlap:
+                final_boxes.append(box)
+                
+        return final_boxes
+
+    @staticmethod
+    def extract_by_motion(
+        current_frame: ArrayLike,
+        background_frame: ArrayLike,
+        threshold: int = 25,
+        blur_size: int = 21
+    ) -> ArrayLike:
+        """
+        Extracts moving objects by subtracting a background frame (or T-1 frame).
+        
+        Parameters
+        ----------
+        current_frame : ArrayLike
+            The current video frame.
+        background_frame : ArrayLike
+            The reference background model or previous frame.
+        threshold : int
+            Pixel difference threshold to trigger motion.
+        blur_size : int
+            Gaussian blur size to remove camera sensor noise before differencing.
+            
+        Returns
+        -------
+        ArrayLike
+            A binary mask of moving objects.
+        """
+        curr = to_cpu(_validate_image(current_frame))
+        bg = to_cpu(_validate_image(background_frame))
+        
+        if curr.ndim == 3:
+            curr = cv2.cvtColor(curr, cv2.COLOR_RGB2GRAY)
+        if bg.ndim == 3:
+            bg = cv2.cvtColor(bg, cv2.COLOR_RGB2GRAY)
+            
+        # Blur to remove minor noise
+        if blur_size > 0:
+            if blur_size % 2 == 0:
+                blur_size += 1 # Must be odd
+            curr = cv2.GaussianBlur(curr, (blur_size, blur_size), 0)
+            bg = cv2.GaussianBlur(bg, (blur_size, blur_size), 0)
+            
+        # Frame difference
+        diff = cv2.absdiff(bg, curr)
+        _, thresh = cv2.threshold(diff, threshold, 255, cv2.THRESH_BINARY)
+        
+        # Dilate to fill holes in the moving object
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+        return cv2.dilate(thresh, kernel, iterations=2)
+
+    @staticmethod
+    def apply_overlay(
+        image: ArrayLike,
+        mask: ArrayLike,
+        outline_mask: ArrayLike | None = None,
+        tint_color: tuple[int, ...] = (255, 255, 0),
+        outline_color: tuple[int, ...] | None = None,
+        alpha: float = 0.3
+    ) -> ArrayLike:
+        """
+        Applies a semi-transparent colored highlight and an optional solid outline over a region.
+        
+        Parameters
+        ----------
+        image : ArrayLike
+            The original color image (background).
+        mask : ArrayLike
+            The binary mask indicating the region to tint.
+        outline_mask : ArrayLike, optional
+            A boolean or binary mask of the region's outline. If None, no outline is drawn.
+        tint_color : tuple[int, ...]
+            The highlight tint color (e.g., yellow = (255, 255, 0)).
+        outline_color : tuple[int, ...], optional
+            The color of the outline. If None, defaults to tint_color.
+        alpha : float
+            The blending alpha (opacity) for the colored tint overlay.
+            
+        Returns
+        -------
+        ArrayLike
+            The composite highlighted image.
+        """
+        image = to_cpu(_validate_image(image)).copy()
+        mask = to_cpu(_validate_image(mask))
+        
+        if outline_color is None:
+            outline_color = tint_color
+            
+        # Create the colored tint layer
+        highlight_layer = Image_Ops.create_blank_like(image, color=tint_color)
+        highlight_blend = to_cpu(Image_Ops.blend(image, highlight_layer, alpha=alpha))
+        
+        # Apply the highlight where the mask is active
+        mask_bool = mask > 128
+        image[mask_bool] = highlight_blend[mask_bool]
+        
+        # Apply outline if provided
+        if outline_mask is not None:
+            outline_mask = to_cpu(_validate_image(outline_mask))
+            if outline_mask.dtype != bool:
+                outline_mask = outline_mask > 128
+            image[outline_mask] = outline_color
+            
+        return image
 
     @staticmethod
     def harris_corners(image: ArrayLike, block_size: int = 2, ksize: int = 3, k: float = 0.04, threshold: float = 0.01) -> tuple[ArrayLike, ArrayLike]:
@@ -2548,28 +5387,43 @@ class Feature_Extraction:
         gy[1:-1, :] = img[2:, :] - img[:-2, :]
         magnitude = np.sqrt(gx ** 2 + gy ** 2)
         orientation = np.rad2deg(np.arctan2(gy, gx)) % 180
-        n_cells_y = h // pixels_per_cell
-        n_cells_x = w // pixels_per_cell
-        cell_hists = np.zeros((n_cells_y, n_cells_x, orientations), dtype=np.float64)
+
+        ppc = pixels_per_cell
+        n_cells_y = h // ppc
+        n_cells_x = w // ppc
         bin_width = 180.0 / orientations
-        for cy in range(n_cells_y):
-            for cx in range(n_cells_x):
-                y0, x0 = cy * pixels_per_cell, cx * pixels_per_cell
-                mag_cell = magnitude[y0:y0 + pixels_per_cell, x0:x0 + pixels_per_cell]
-                ori_cell = orientation[y0:y0 + pixels_per_cell, x0:x0 + pixels_per_cell]
-                for b in range(orientations):
-                    mask = (ori_cell >= b * bin_width) & (ori_cell < (b + 1) * bin_width)
-                    cell_hists[cy, cx, b] = np.sum(mag_cell[mask])
-        blocks_y = n_cells_y - cells_per_block + 1
-        blocks_x = n_cells_x - cells_per_block + 1
+
+        # vectorized cell histogram: reshape into (n_cells_y, ppc, n_cells_x, ppc)
+        # then transpose to (n_cells_y, n_cells_x, ppc, ppc) and flatten pixels per cell
+        h_crop = n_cells_y * ppc
+        w_crop = n_cells_x * ppc
+        mag_cells = magnitude[:h_crop, :w_crop].reshape(n_cells_y, ppc, n_cells_x, ppc).transpose(0, 2, 1, 3).reshape(n_cells_y, n_cells_x, -1)
+        ori_cells = orientation[:h_crop, :w_crop].reshape(n_cells_y, ppc, n_cells_x, ppc).transpose(0, 2, 1, 3).reshape(n_cells_y, n_cells_x, -1)
+
+        # bin orientations and scatter-accumulate magnitudes via one-hot broadcasting
+        bin_idx = np.clip((ori_cells / bin_width).astype(np.int32), 0, orientations - 1)
+        one_hot = (bin_idx[..., np.newaxis] == np.arange(orientations)).astype(np.float64)
+        cell_hists = np.sum(mag_cells[..., np.newaxis] * one_hot, axis=2)
+
+        # vectorized block normalization
+        cpb = cells_per_block
+        blocks_y = n_cells_y - cpb + 1
+        blocks_x = n_cells_x - cpb + 1
         if blocks_y < 1 or blocks_x < 1:
             return cell_hists.ravel()
-        hog_features = []
-        for by in range(blocks_y):
-            for bx in range(blocks_x):
-                block = cell_hists[by:by + cells_per_block, bx:bx + cells_per_block, :].ravel()
-                hog_features.append(block / (np.sqrt(np.sum(block ** 2) + 1e-6)))
-        return np.concatenate(hog_features)
+
+        block_size = cpb * cpb * orientations
+        blocks = np.zeros((blocks_y, blocks_x, block_size), dtype=np.float64)
+        by_idx = np.arange(blocks_y)[:, None]
+        bx_idx = np.arange(blocks_x)[None, :]
+        for dy in range(cpb):
+            for dx in range(cpb):
+                offset = (dy * cpb + dx) * orientations
+                blocks[:, :, offset:offset + orientations] = cell_hists[by_idx + dy, bx_idx + dx, :]
+
+        norms = np.sqrt(np.sum(blocks ** 2, axis=-1, keepdims=True) + 1e-6)
+        normalized = blocks / norms
+        return normalized.reshape(-1)
 
     @staticmethod
     def lbp(image: ArrayLike, radius: int = 1, n_points: int = 8) -> ArrayLike:
@@ -2875,15 +5729,23 @@ class GLCM:
         angle_rad = np.deg2rad(angle)
         dx = int(round(distance * np.cos(angle_rad)))
         dy = int(round(-distance * np.sin(angle_rad)))
-        glcm = np.zeros((levels, levels), dtype=np.int64)
-        for y in range(h):
-            for x in range(w):
-                ny, nx = y + dy, x + dx
-                if 0 <= ny < h and 0 <= nx < w:
-                    i_val = img[y, x]
-                    j_val = img[ny, nx]
-                    if i_val < levels and j_val < levels:
-                        glcm[i_val, j_val] += 1
+        
+        y_start, y_end = max(0, -dy), min(h, h - dy)
+        x_start, x_end = max(0, -dx), min(w, w - dx)
+        
+        if y_start < y_end and x_start < x_end:
+            i_vals = img[y_start:y_end, x_start:x_end].ravel()
+            j_vals = img[y_start + dy:y_end + dy, x_start + dx:x_end + dx].ravel()
+            
+            mask = (i_vals < levels) & (j_vals < levels)
+            if not mask.all():
+                i_vals = i_vals[mask]
+                j_vals = j_vals[mask]
+                
+            glcm = np.bincount(i_vals * levels + j_vals, minlength=levels * levels).reshape(levels, levels).astype(np.int64)
+        else:
+            glcm = np.zeros((levels, levels), dtype=np.int64)
+
         if symmetric:
             glcm = glcm + glcm.T
         return glcm
@@ -2899,30 +5761,36 @@ class GLCM:
     @staticmethod
     def features(image: ArrayLike, distances: Sequence[int] = (1,),
                  angles: Sequence[float] = (0, 45, 90, 135),
-                 levels: int = 256, symmetric: bool = True) -> dict:
+                 levels: int = 256, symmetric: bool = True,
+                 extract_asm: bool = True) -> dict:
         """Compute GLCM texture features for multiple distances and angles.
 
         For each (distance, angle) pair, computes:
-        contrast, dissimilarity, homogeneity, energy (ASM), entropy, correlation.
+        contrast, dissimilarity, homogeneity, energy, entropy, correlation.
+        If extract_asm is True (default), separately provides "asm" (sum of squared probabilities)
+        and defines "energy" as the square root of ASM. Otherwise "energy" is raw ASM.
 
         Returns dict mapping feature names to arrays of shape (n_distances, n_angles).
         """
         nd, na = len(distances), len(angles)
         feat_names = ["contrast", "dissimilarity", "homogeneity",
                        "energy", "entropy", "correlation"]
+        if extract_asm:
+            feat_names.append("asm")
+            
         result = {name: np.zeros((nd, na), dtype=np.float64) for name in feat_names}
         for di, d in enumerate(distances):
             for ai, a in enumerate(angles):
                 g = GLCM.compute(image, distance=d, angle=a,
                                  levels=levels, symmetric=symmetric)
                 p = GLCM.normalize(g)
-                feats = GLCM._compute_features(p)
+                feats = GLCM._compute_features(p, extract_asm=extract_asm)
                 for name in feat_names:
                     result[name][di, ai] = feats[name]
         return result
 
     @staticmethod
-    def _compute_features(p: ArrayLike) -> dict:
+    def _compute_features(p: ArrayLike, extract_asm: bool = True) -> dict:
         """Compute texture features from a normalized GLCM matrix *p*."""
         levels = p.shape[0]
         i_idx, j_idx = np.meshgrid(np.arange(levels), np.arange(levels), indexing="ij")
@@ -2932,7 +5800,9 @@ class GLCM:
         contrast = np.sum(p * diff ** 2)
         dissimilarity = np.sum(p * diff)
         homogeneity = np.sum(p / (1.0 + diff ** 2))
-        energy = np.sum(p ** 2)
+        
+        raw_asm = np.sum(p ** 2)
+        
         log_p = np.log2(p + 1e-12)
         entropy = -np.sum(p * log_p)
         mu_i = np.sum(i_f * p)
@@ -2940,9 +5810,18 @@ class GLCM:
         sigma_i = np.sqrt(np.sum(((i_f - mu_i) ** 2) * p) + 1e-8)
         sigma_j = np.sqrt(np.sum(((j_f - mu_j) ** 2) * p) + 1e-8)
         correlation = np.sum(((i_f - mu_i) * (j_f - mu_j) * p)) / (sigma_i * sigma_j)
-        return {"contrast": contrast, "dissimilarity": dissimilarity,
-                "homogeneity": homogeneity, "energy": energy,
-                "entropy": entropy, "correlation": correlation}
+        
+        out = {"contrast": contrast, "dissimilarity": dissimilarity,
+               "homogeneity": homogeneity, "entropy": entropy, 
+               "correlation": correlation}
+               
+        if extract_asm:
+            out["asm"] = raw_asm
+            out["energy"] = np.sqrt(raw_asm)
+        else:
+            out["energy"] = raw_asm
+            
+        return out
 
     @staticmethod
     def show(image: ArrayLike, distance: int = 1, angle: float = 0.0,
@@ -2961,6 +5840,126 @@ class GLCM:
         plt.tight_layout()
         plt.show()
 
+    @staticmethod
+    def display_matrix(image: ArrayLike, distance: int = 1, angle: float = 0.0,
+                       levels: int = 8, symmetric: bool = True):
+        """Compute and display the GLCM numerically as a styled Pandas DataFrame matrix.
+        
+        Note: It is highly recommended to use a smaller `levels` (e.g., 8 or 16) 
+        when displaying the numerical matrix to avoid massive 256x256 console output.
+        """
+        import pandas as pd
+        g = GLCM.compute(image, distance=distance, angle=angle,
+                         levels=levels, symmetric=symmetric)
+        df = pd.DataFrame(g)
+        df.index.name = "i (Row)"
+        df.columns.name = "j (Col)"
+        
+        try:
+            from IPython.display import display
+            # We apply a background gradient for better visualization in notebooks
+            display(df.style.background_gradient(cmap='hot'))
+        except ImportError:
+            print(df)
+            
+        return df
+
+    @staticmethod
+    def batch_extract(image_folder: str, output_csv: str | None = None, 
+                      distances: Sequence[int] = (1,), angles: Sequence[float] = (0, 45, 90, 135),
+                      levels: int = 256, symmetric: bool = True, extract_asm: bool = True):
+        """Batch extract GLCM features from a directory of images.
+        
+        Iterates over all valid images in `image_folder`, computes the specified GLCM features 
+        for each image efficiently, and formats the output into a flattened Pandas DataFrame.
+        If `output_csv` is provided, saves the DataFrame to the given path.
+        """
+        import os
+        import pandas as pd
+        
+        all_rows = []
+        valid_exts = ('.jpg', '.jpeg', '.png', '.bmp', '.tif', '.tiff')
+        try:
+            image_files = [f for f in os.listdir(image_folder) if f.lower().endswith(valid_exts)]
+        except FileNotFoundError:
+            print(f"Directory not found: {image_folder}")
+            return pd.DataFrame()
+        
+        if not image_files:
+            print(f"No valid images found in {image_folder}.")
+            return pd.DataFrame()
+            
+        print(f"Batch extracting GLCM features for {len(image_files)} images...")
+        
+        feature_map = [("contrast", "Contrast"), ("homogeneity", "Homogeneity"), 
+                       ("correlation", "Correlation"), ("dissimilarity", "Dissimilarity"), 
+                       ("entropy", "Entropy")]
+                       
+        if extract_asm:
+            feature_map.extend([("asm", "ASM"), ("energy", "Energy")])
+        else:
+            feature_map.append(("energy", "Energy"))
+            
+        for filename in image_files:
+            filepath = os.path.join(image_folder, filename)
+            img = cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)
+            if img is None:
+                continue
+                
+            features_dict = GLCM.features(img, distances=distances, angles=angles, 
+                                          levels=levels, symmetric=symmetric, 
+                                          extract_asm=extract_asm)
+                                          
+            row_data = {"Filename": filename}
+            
+            for feat, out_feat in feature_map:
+                for d_idx, d in enumerate(distances):
+                    for a_idx, angle in enumerate(angles):
+                        # Format column names based on whether there are multiple distances
+                        col_name = f"{out_feat}_d{d}_a{angle}" if len(distances) > 1 else f"{out_feat}{angle}"
+                        row_data[col_name] = features_dict[feat][d_idx][a_idx]
+                        
+            all_rows.append(row_data)
+            
+        df = pd.DataFrame(all_rows)
+        
+        if output_csv:
+            df.to_csv(output_csv, index=False)
+            print(f"Successfully saved batch extraction to {output_csv}")
+            
+        return df
+
+    @staticmethod
+    def extract_batch(images, distances=(1,), angles=(0, 45, 90, 135), levels=256, symmetric=True):
+        """Batch extract features from a list of images and return a dictionary of feature arrays."""
+        import numpy as np
+        n_imgs = len(images)
+        feat_names = ["contrast", "dissimilarity", "homogeneity", "energy", "entropy", "correlation", "asm"]
+        mapping = {
+            "contrast": "Contrast",
+            "homogeneity": "Homogeneity",
+            "correlation": "Correlation",
+            "dissimilarity": "Dissimilarity",
+            "entropy": "Entropy",
+            "asm": "ASM",
+            "energy": "Energy"
+        }
+        
+        results = {}
+        for feat in feat_names:
+            for angle in angles:
+                results[f"{mapping[feat]}{angle}"] = np.zeros(n_imgs, dtype=np.float64)
+                
+        for i in range(n_imgs):
+            img = images[i]
+            feats = GLCM.features(img, distances=distances, angles=angles, levels=levels, symmetric=symmetric)
+            for feat in feat_names:
+                for a_idx, angle in enumerate(angles):
+                    results[f"{mapping[feat]}{angle}"][i] = feats[feat][0, a_idx]
+                    
+        return results
+
+
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -2969,6 +5968,87 @@ class GLCM:
 
 class Segmentation:
     """Static helpers for image segmentation."""
+
+    @staticmethod
+    def watershed_segmentation(image: ArrayLike, markers: ArrayLike | None = None) -> tuple[ArrayLike, ArrayLike]:
+        """
+        Separates overlapping objects using the Watershed algorithm.
+        
+        Returns:
+            (segmented_image, markers)
+        """
+        image = to_cpu(_validate_image(image))
+        if image.ndim == 2:
+            image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+            
+        if markers is None:
+            gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+            _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+            
+            kernel = np.ones((3,3), np.uint8)
+            opening = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=2)
+            
+            sure_bg = cv2.dilate(opening, kernel, iterations=3)
+            
+            dist_transform = cv2.distanceTransform(opening, cv2.DIST_L2, 5)
+            _, sure_fg = cv2.threshold(dist_transform, 0.7*dist_transform.max(), 255, 0)
+            
+            sure_fg = np.uint8(sure_fg)
+            unknown = cv2.subtract(sure_bg, sure_fg)
+            
+            _, markers = cv2.connectedComponents(sure_fg)
+            markers = markers + 1
+            markers[unknown == 255] = 0
+            
+        markers = cv2.watershed(image, markers)
+        result = image.copy()
+        result[markers == -1] = [255, 0, 0]
+        return result, markers
+
+    @staticmethod
+    def grab_cut(image: ArrayLike, rect: tuple[int, int, int, int], iterCount: int = 5) -> ArrayLike:
+        """
+        Interactive foreground extraction using GrabCut algorithm.
+        """
+        image = to_cpu(_validate_image(image))
+        if image.ndim == 2:
+            image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+            
+        mask = np.zeros(image.shape[:2], np.uint8)
+        bgdModel = np.zeros((1,65), np.float64)
+        fgdModel = np.zeros((1,65), np.float64)
+        
+        cv2.grabCut(image, mask, rect, bgdModel, fgdModel, iterCount, cv2.GC_INIT_WITH_RECT)
+        
+        mask2 = np.where((mask==2)|(mask==0), 0, 1).astype('uint8')
+        image = image * mask2[:,:,np.newaxis]
+        return image
+
+    @staticmethod
+    def slic_superpixels(image: ArrayLike, num_segments: int = 100, compactness: float = 10.0) -> ArrayLike:
+        """
+        Groups pixels into larger 'superpixels' based on color and proximity using SLIC.
+        Requires opencv-contrib-python.
+        """
+        image = to_cpu(_validate_image(image))
+        if image.ndim == 2:
+            image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+            
+        try:
+            # Calculate region size based on requested segments
+            region_size = int(np.sqrt((image.shape[0]*image.shape[1])/num_segments))
+            slic = cv2.ximgproc.createSuperpixelSLIC(image, cv2.ximgproc.SLIC, 
+                                                    region_size=region_size, 
+                                                    ruler=compactness)
+            slic.iterate(10)
+            slic.enforceLabelConnectivity(min_element_size=10)
+            
+            mask = slic.getLabelContourMask()
+            result = image.copy()
+            result[mask == 255] = [255, 255, 0] # Highlight borders in yellow
+            return result
+        except AttributeError:
+            raise NotImplementedError("cv2.ximgproc is required for SLIC superpixels. Install opencv-contrib-python.")
 
     @staticmethod
     def otsu_threshold(image: ArrayLike) -> tuple[int, ArrayLike]:
@@ -3091,6 +6171,91 @@ class Segmentation:
         markers = cv2.watershed(image, markers.astype(np.int32))
         return markers
 
+    @staticmethod
+    def multi_otsu(image: ArrayLike, classes: int = 3) -> tuple[ArrayLike, list[int]]:
+        """Multi-level Otsu thresholding for K-class segmentation.
+
+        Parameters
+        ----------
+        classes : int
+            Number of classes (2, 3, or 4 are typical).
+
+        Returns
+        -------
+        (segmented_image, thresholds)
+        """
+        image = to_cpu(_validate_image(image))
+        if image.ndim == 3:
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        hist, _ = np.histogram(image.ravel(), bins=256, range=(0, 256))
+        total = image.size
+        prob = hist.astype(np.float64) / total
+
+        # exhaustive search for optimal thresholds (brute force for small K)
+        best_var = -1.0
+        best_thresholds: list[int] = []
+        num_thresholds = classes - 1
+
+        if num_thresholds == 1:
+            # standard Otsu
+            _, result = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            thresh = int(cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[0])
+            return result, [thresh]
+
+        # for 3-class (2 thresholds)
+        if num_thresholds == 2:
+            for t1 in range(1, 254):
+                for t2 in range(t1 + 1, 255):
+                    w0 = prob[:t1].sum()
+                    w1 = prob[t1:t2].sum()
+                    w2 = prob[t2:].sum()
+                    if w0 < 1e-10 or w1 < 1e-10 or w2 < 1e-10:
+                        continue
+                    m0 = np.sum(np.arange(t1) * prob[:t1]) / w0
+                    m1 = np.sum(np.arange(t1, t2) * prob[t1:t2]) / w1
+                    m2 = np.sum(np.arange(t2, 256) * prob[t2:]) / w2
+                    mt = np.sum(np.arange(256) * prob)
+                    var = w0 * (m0 - mt) ** 2 + w1 * (m1 - mt) ** 2 + w2 * (m2 - mt) ** 2
+                    if var > best_var:
+                        best_var = var
+                        best_thresholds = [t1, t2]
+        else:
+            # fallback: use quantiles for K > 3
+            quantiles = np.linspace(0, 1, classes + 1)[1:-1]
+            cdf = np.cumsum(prob)
+            best_thresholds = [int(np.searchsorted(cdf, q)) for q in quantiles]
+
+        out = np.zeros_like(image)
+        thresholds = sorted(best_thresholds)
+        for i, t in enumerate(thresholds):
+            out[image >= t] = int(255 * (i + 1) / (len(thresholds)))
+        return out, thresholds
+
+    @staticmethod
+    def iterative_threshold(image: ArrayLike, epsilon: float = 0.5) -> tuple[ArrayLike, int]:
+        """Iterative optimal thresholding.
+
+        Converges to a threshold where the mean of foreground and background
+        classes are equidistant from the threshold.
+
+        Returns (binary_image, threshold).
+        """
+        image = to_cpu(_validate_image(image))
+        if image.ndim == 3:
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        t = float(image.mean())
+        while True:
+            fg = image[image >= t]
+            bg = image[image < t]
+            m_fg = fg.mean() if fg.size > 0 else t
+            m_bg = bg.mean() if bg.size > 0 else t
+            t_new = (m_fg + m_bg) / 2.0
+            if abs(t_new - t) < epsilon:
+                break
+            t = t_new
+        t_int = int(round(t))
+        _, result = cv2.threshold(image, t_int, 255, cv2.THRESH_BINARY)
+        return result, t_int
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  Transforms (Geometric & Accumulator)
@@ -3098,6 +6263,106 @@ class Segmentation:
 
 class Transforms:
     """Static helpers for advanced image transforms."""
+
+    @staticmethod
+    def find_homography(image1: ArrayLike, image2: ArrayLike, method: Literal["sift", "orb"] = "sift") -> tuple[np.ndarray | None, ArrayLike]:
+        """
+        Finds the homography matrix to align image1 to image2 using feature matching.
+        
+        Returns
+        -------
+        tuple[np.ndarray | None, ArrayLike]
+            The 3x3 homography matrix (or None if failed), and a visualization image of the matches.
+        """
+        img1 = to_cpu(_validate_image(image1))
+        img2 = to_cpu(_validate_image(image2))
+        
+        gray1 = cv2.cvtColor(img1, cv2.COLOR_RGB2GRAY) if img1.ndim == 3 else img1
+        gray2 = cv2.cvtColor(img2, cv2.COLOR_RGB2GRAY) if img2.ndim == 3 else img2
+        
+        if method == "sift":
+            detector = cv2.SIFT_create()
+            # FLANN matcher
+            FLANN_INDEX_KDTREE = 1
+            index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
+            search_params = dict(checks=50)
+            matcher = cv2.FlannBasedMatcher(index_params, search_params)
+        else:
+            detector = cv2.ORB_create()
+            matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+            
+        kp1, des1 = detector.detectAndCompute(gray1, None)
+        kp2, des2 = detector.detectAndCompute(gray2, None)
+        
+        if des1 is None or des2 is None:
+            return None, img1
+            
+        if method == "sift":
+            matches = matcher.knnMatch(des1, des2, k=2)
+            good_matches = []
+            for m, n in matches:
+                if m.distance < 0.7 * n.distance:
+                    good_matches.append(m)
+        else:
+            matches = matcher.match(des1, des2)
+            good_matches = sorted(matches, key=lambda x: x.distance)[:50] # top 50
+            
+        vis = cv2.drawMatches(img1, kp1, img2, kp2, good_matches, None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+        
+        if len(good_matches) > 4:
+            pts1 = np.float32([kp1[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
+            pts2 = np.float32([kp2[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
+            H, _ = cv2.findHomography(pts1, pts2, cv2.RANSAC, 5.0)
+            return H, vis
+        return None, vis
+
+    @staticmethod
+    def warp_perspective(image: ArrayLike, H: np.ndarray, output_shape: tuple[int, int]) -> ArrayLike:
+        """
+        Warps an image using a given homography matrix.
+        output_shape is (width, height).
+        """
+        image = to_cpu(_validate_image(image))
+        return cv2.warpPerspective(image, H, output_shape)
+
+    @staticmethod
+    def stitch_images(image_left: ArrayLike, image_right: ArrayLike) -> ArrayLike:
+        """
+        Automatically aligns and stitches two overlapping images into a single panorama.
+        Assumes image_right is to the right of image_left.
+        """
+        imgL = to_cpu(_validate_image(image_left))
+        imgR = to_cpu(_validate_image(image_right))
+        
+        H, vis = Transforms.find_homography(imgR, imgL, method="sift")
+        if H is None:
+            raise ValueError("Not enough matching features found to stitch images.")
+            
+        # Warp right image to left image's perspective, expanding the canvas
+        hL, wL = imgL.shape[:2]
+        hR, wR = imgR.shape[:2]
+        
+        # Determine corner points of right image to find the new canvas size
+        corners = np.float32([[0,0], [0,hR], [wR,hR], [wR,0]]).reshape(-1,1,2)
+        warped_corners = cv2.perspectiveTransform(corners, H)
+        
+        all_corners = np.concatenate((warped_corners, np.float32([[0,0], [0,hL], [wL,hL], [wL,0]]).reshape(-1,1,2)), axis=0)
+        [xmin, ymin] = np.int32(all_corners.min(axis=0).ravel() - 0.5)
+        [xmax, ymax] = np.int32(all_corners.max(axis=0).ravel() + 0.5)
+        
+        # Translation matrix to shift the image into the positive coordinate space
+        t = [-xmin, -ymin]
+        Ht = np.array([[1, 0, t[0]], [0, 1, t[1]], [0, 0, 1]])
+        
+        result = cv2.warpPerspective(imgR, Ht.dot(H), (xmax-xmin, ymax-ymin))
+        
+        # Overlay the left image
+        if imgL.ndim == 3:
+            result[t[1]:hL+t[1], t[0]:wL+t[0]] = imgL
+        else:
+            result[t[1]:hL+t[1], t[0]:wL+t[0]] = imgL
+            
+        return result
 
     @staticmethod
     def hough_lines(image: ArrayLike, threshold: int = 100, 
@@ -3263,6 +6528,96 @@ class Restoration:
     """Techniques for recovering degraded images."""
 
     @staticmethod
+    def wiener_filter(image: ArrayLike, kernel: ArrayLike, K: float = 0.01) -> ArrayLike:
+        """
+        Wiener deconvolution for removing blur and noise simultaneously.
+        
+        Parameters
+        ----------
+        image : ArrayLike
+            Degraded image.
+        kernel : ArrayLike
+            Point Spread Function (PSF) that caused the blur.
+        K : float
+            Noise-to-signal power ratio.
+        """
+        image = to_cpu(_validate_image(image))
+        if image.ndim == 3:
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+            
+        img_f = np.fft.fft2(image)
+        
+        # Pad kernel
+        h, w = image.shape
+        kh, kw = kernel.shape
+        kernel_padded = np.zeros((h, w))
+        kernel_padded[:kh, :kw] = kernel
+        kernel_padded = np.fft.ifftshift(kernel_padded) # Align center
+        
+        H = np.fft.fft2(kernel_padded)
+        H_conj = np.conj(H)
+        
+        # Wiener filter formula
+        G = H_conj / (np.abs(H)**2 + K)
+        
+        restored_f = img_f * G
+        restored = np.real(np.fft.ifft2(restored_f))
+        
+        return np.clip(restored, 0, 255).astype(np.uint8)
+
+    @staticmethod
+    def lucy_richardson_deconvolution(image: ArrayLike, kernel: ArrayLike, iterations: int = 15) -> ArrayLike:
+        """
+        Lucy-Richardson deconvolution (iterative method) for deblurring.
+        Requires skimage.restoration.
+        """
+        image = to_cpu(_validate_image(image))
+        kernel = to_cpu(_validate_image(kernel))
+        
+        if image.ndim == 3:
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+            
+        try:
+            from skimage import restoration
+            # skimage expects float images 0-1
+            image_float = image.astype(np.float64) / 255.0
+            kernel_float = kernel.astype(np.float64) / np.sum(kernel)
+            
+            deconvolved = restoration.richardson_lucy(image_float, kernel_float, num_iter=iterations)
+            return np.clip(deconvolved * 255, 0, 255).astype(np.uint8)
+        except ImportError:
+            raise NotImplementedError("scikit-image is required for Lucy-Richardson deconvolution. Install scikit-image.")
+
+    @staticmethod
+    def inpaint(image: ArrayLike, mask: ArrayLike, radius: int = 3, method: Literal["telea", "ns"] = "telea") -> ArrayLike:
+        """
+        Removes unwanted objects or scratches from an image.
+        
+        Parameters
+        ----------
+        image : ArrayLike
+            Original image.
+        mask : ArrayLike
+            Binary mask indicating pixels to be inpainted (white = to be removed).
+        radius : int
+            Radius of a circular neighborhood of each point inpainted.
+        method : 'telea' | 'ns'
+            Algorithm choice (Telea or Navier-Stokes).
+        """
+        image = to_cpu(_validate_image(image))
+        mask = to_cpu(_validate_image(mask))
+        
+        if mask.dtype != np.uint8:
+            mask = (mask * 255).astype(np.uint8) if mask.dtype == bool else mask.astype(np.uint8)
+            
+        if mask.ndim == 3:
+            mask = cv2.cvtColor(mask, cv2.COLOR_RGB2GRAY)
+            
+        flags = cv2.INPAINT_TELEA if method == "telea" else cv2.INPAINT_NS
+        
+        return cv2.inpaint(image, mask, radius, flags)
+
+    @staticmethod
     def inverse_filter(image: ArrayLike, kernel: ArrayLike, epsilon: float = 1e-3) -> ArrayLike:
         """Simple inverse filtering in frequency domain. GPU-accelerated."""
         image = _validate_image(image)
@@ -3333,12 +6688,12 @@ class Fourier:
     """
 
     @staticmethod
+    @gpu_accelerated
     def dft2(image: ArrayLike) -> ArrayLike:
         """Compute the 2D DFT (shifted so DC is centered). GPU-accelerated."""
         image = _validate_image(image)
         if image.ndim == 3:
-            image = cv2.cvtColor(to_cpu(image), cv2.COLOR_RGB2GRAY)
-        image = _smart(image)
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
         xp_mod = _xp(image)
         return xp_mod.fft.fftshift(xp_mod.fft.fft2(image.astype(xp_mod.float64)))
 
@@ -3402,25 +6757,19 @@ class Fourier:
         img = image.astype(np.float64)
         M, N = img.shape
 
-        def _dct1d(x):
-            n = len(x)
-            result = np.zeros(n, dtype=np.float64)
-            for k in range(n):
-                s = 0.0
-                for i in range(n):
-                    s += x[i] * np.cos(np.pi * k * (2 * i + 1) / (2 * n))
-                alpha = np.sqrt(1.0 / n) if k == 0 else np.sqrt(2.0 / n)
-                result[k] = alpha * s
-            return result
+        m_k = np.arange(M)[:, None]
+        m_n = np.arange(M)[None, :]
+        D_M = np.cos(np.pi * m_k * (2 * m_n + 1) / (2 * M))
+        D_M[0, :] *= np.sqrt(1.0 / M)
+        D_M[1:, :] *= np.sqrt(2.0 / M)
 
-        # Apply 1D DCT along rows, then columns
-        temp = np.zeros_like(img)
-        for i in range(M):
-            temp[i, :] = _dct1d(img[i, :])
-        result = np.zeros_like(img)
-        for j in range(N):
-            result[:, j] = _dct1d(temp[:, j])
-        return result
+        n_k = np.arange(N)[:, None]
+        n_n = np.arange(N)[None, :]
+        D_N = np.cos(np.pi * n_k * (2 * n_n + 1) / (2 * N))
+        D_N[0, :] *= np.sqrt(1.0 / N)
+        D_N[1:, :] *= np.sqrt(2.0 / N)
+
+        return D_M @ img @ D_N.T
 
     @staticmethod
     def idct2(coeffs: ArrayLike) -> ArrayLike:
@@ -3428,29 +6777,673 @@ class Fourier:
         coeffs = np.asarray(coeffs, dtype=np.float64)
         M, N = coeffs.shape
 
-        def _idct1d(X):
-            n = len(X)
-            result = np.zeros(n, dtype=np.float64)
-            for i in range(n):
-                s = 0.0
-                for k in range(n):
-                    alpha = np.sqrt(1.0 / n) if k == 0 else np.sqrt(2.0 / n)
-                    s += alpha * X[k] * np.cos(np.pi * k * (2 * i + 1) / (2 * n))
-                result[i] = s
-            return result
+        m_k = np.arange(M)[:, None]
+        m_n = np.arange(M)[None, :]
+        D_M = np.cos(np.pi * m_k * (2 * m_n + 1) / (2 * M))
+        D_M[0, :] *= np.sqrt(1.0 / M)
+        D_M[1:, :] *= np.sqrt(2.0 / M)
 
-        temp = np.zeros_like(coeffs)
-        for i in range(M):
-            temp[i, :] = _idct1d(coeffs[i, :])
-        result = np.zeros_like(coeffs)
-        for j in range(N):
-            result[:, j] = _idct1d(temp[:, j])
-        return result
+        n_k = np.arange(N)[:, None]
+        n_n = np.arange(N)[None, :]
+        D_N = np.cos(np.pi * n_k * (2 * n_n + 1) / (2 * N))
+        D_N[0, :] *= np.sqrt(1.0 / N)
+        D_N[1:, :] *= np.sqrt(2.0 / N)
+
+        return D_M.T @ coeffs @ D_N
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  Channel (permutation / reorder)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class Channel:
+    """Channel permutation, swapping, and reordering utilities."""
+
+    # all 6 permutations of 3-channel images
+    PERMUTATIONS_3CH = {
+        "RGB": (0, 1, 2), "RBG": (0, 2, 1),
+        "GRB": (1, 0, 2), "GBR": (1, 2, 0),
+        "BRG": (2, 0, 1), "BGR": (2, 1, 0),
+    }
+
+    @staticmethod
+    def permute(image: ArrayLike, order: str) -> ArrayLike:
+        """Reorder channels by name. e.g. 'GBR', 'BRG', 'BGR', etc."""
+        image = _validate_image(image)
+        if image.ndim != 3:
+            raise ValueError("permute requires a 3-channel color image.")
+        order = order.upper()
+        if order not in Channel.PERMUTATIONS_3CH:
+            raise ValueError(f"Unknown order '{order}'. Must be one of {list(Channel.PERMUTATIONS_3CH.keys())}.")
+        idx = Channel.PERMUTATIONS_3CH[order]
+        xp_mod = _xp(image)
+        return xp_mod.stack([image[..., i] for i in idx], axis=-1)
+
+    @staticmethod
+    def reorder(image: ArrayLike, indices: Sequence[int]) -> ArrayLike:
+        """Reorder channels by arbitrary index tuple. e.g. (2, 0, 1)."""
+        image = _validate_image(image)
+        if image.ndim != 3:
+            raise ValueError("reorder requires a multi-channel image.")
+        xp_mod = _xp(image)
+        return xp_mod.stack([image[..., i] for i in indices], axis=-1)
+
+    @staticmethod
+    def swap(image: ArrayLike, ch_a: int, ch_b: int) -> ArrayLike:
+        """Swap two channels in-place. e.g. swap(img, 0, 2) swaps R and B."""
+        image = _validate_image(image)
+        if image.ndim != 3:
+            raise ValueError("swap requires a multi-channel image.")
+        xp_mod = _xp(image)
+        out = image.copy()
+        out[..., ch_a] = image[..., ch_b]
+        out[..., ch_b] = image[..., ch_a]
+        return out
+
+    @staticmethod
+    def isolate(image: ArrayLike, channel: int, as_color: bool = True) -> ArrayLike:
+        """Isolate a single channel. If as_color, other channels are zeroed."""
+        image = _validate_image(image)
+        if image.ndim != 3:
+            raise ValueError("isolate requires a multi-channel image.")
+        xp_mod = _xp(image)
+        if as_color:
+            out = xp_mod.zeros_like(image)
+            out[..., channel] = image[..., channel]
+            return out
+        return image[..., channel].copy()
+
+    @staticmethod
+    def complement_split(image: ArrayLike) -> tuple[ArrayLike, ArrayLike, ArrayLike]:
+        """Splits an RGB image into complementary color visualizations (comp_red, comp_green, comp_blue)."""
+        image = _validate_image(image)
+        xp_mod = _xp(image)
+        
+        if image.ndim != 3 or image.shape[2] < 3:
+            raise ValueError("complement_split requires a 3-channel color image.")
+            
+        r = image[..., 0]
+        g = image[..., 1]
+        b = image[..., 2]
+        
+        r_inv = 255 - r
+        g_inv = 255 - g
+        b_inv = 255 - b
+        
+        comp_red = xp_mod.stack([xp_mod.full_like(r_inv, 255), r_inv, r_inv], axis=-1)
+        comp_green = xp_mod.stack([g_inv, xp_mod.full_like(g_inv, 255), g_inv], axis=-1)
+        comp_blue = xp_mod.stack([b_inv, b_inv, xp_mod.full_like(b_inv, 255)], axis=-1)
+        
+        return comp_red, comp_green, comp_blue
+
+    @staticmethod
+    def complement_merge(comp_red: ArrayLike, comp_green: ArrayLike, comp_blue: ArrayLike) -> ArrayLike:
+        """Merges complementary color visualizations back into the original RGB image."""
+        comp_red = _validate_image(comp_red, name="comp_red")
+        comp_green = _validate_image(comp_green, name="comp_green")
+        comp_blue = _validate_image(comp_blue, name="comp_blue")
+        xp_mod = _xp(comp_red)
+        
+        if comp_red.ndim != 3 or comp_red.shape[2] != 3:
+            raise ValueError("All input arrays must be 3-channel color images.")
+            
+        masked_r = 255 - comp_red[..., 1]
+        masked_g = 255 - comp_green[..., 0]
+        masked_b = 255 - comp_blue[..., 0]
+        
+        return xp_mod.stack([masked_r, masked_g, masked_b], axis=-1)
+
+    @staticmethod
+    def show_permutations(image: ArrayLike) -> None:
+        """Show all 6 RGB permutations side-by-side."""
+        image = to_cpu(_validate_image(image))
+        if image.ndim != 3:
+            raise ValueError("show_permutations requires a 3-channel image.")
+        images = [Channel.permute(image, k) for k in Channel.PERMUTATIONS_3CH]
+        titles = list(Channel.PERMUTATIONS_3CH.keys())
+        Image_Ops.show_collection(images, titles=titles, ncols=3)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  Info (deep image inspection)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class Info:
+    """One-call deep inspection of image properties."""
+
+    @staticmethod
+    def summary(image: ArrayLike, name: str = "Image") -> dict:
+        """Print and return detailed image information.
+
+        Returns dict with: shape, dtype, channels, min, max, mean, std,
+        dynamic_range, entropy, estimated_size_kb per channel.
+        """
+        image = to_cpu(_validate_image(image))
+        info: dict = {}
+        h, w = image.shape[:2]
+        ch = image.shape[2] if image.ndim == 3 else 1
+        info["name"] = name
+        info["shape"] = image.shape
+        info["height"] = h
+        info["width"] = w
+        info["channels"] = ch
+        info["dtype"] = str(image.dtype)
+        info["total_pixels"] = h * w
+        info["size_bytes"] = image.nbytes
+        info["size_kb"] = round(image.nbytes / 1024, 2)
+
+        img_f = image.astype(np.float64)
+        if image.ndim == 2:
+            info["min"] = int(image.min())
+            info["max"] = int(image.max())
+            info["mean"] = round(float(img_f.mean()), 2)
+            info["std"] = round(float(img_f.std()), 2)
+            info["dynamic_range"] = int(image.max()) - int(image.min())
+            hist, _ = np.histogram(image.ravel(), bins=256, range=(0, 256))
+            prob = hist.astype(np.float64) / (hist.sum() + 1e-12)
+            info["entropy"] = round(float(-np.sum(prob[prob > 0] * np.log2(prob[prob > 0]))), 4)
+        else:
+            ch_names = ["R", "G", "B", "A"] if ch <= 4 else [f"ch{i}" for i in range(ch)]
+            for i in range(ch):
+                c = image[..., i]
+                cf = img_f[..., i]
+                info[f"{ch_names[i]}_min"] = int(c.min())
+                info[f"{ch_names[i]}_max"] = int(c.max())
+                info[f"{ch_names[i]}_mean"] = round(float(cf.mean()), 2)
+                info[f"{ch_names[i]}_std"] = round(float(cf.std()), 2)
+            info["dynamic_range"] = int(image.max()) - int(image.min())
+
+        # print summary
+        print(f"╔══ {name} ═══════════════════════════════")
+        print(f"║ Shape     : {info['shape']}  ({info['dtype']})")
+        print(f"║ Pixels    : {info['total_pixels']:,}  ({info['size_kb']} KB)")
+        if image.ndim == 2:
+            print(f"║ Range     : [{info['min']}, {info['max']}]  (dynamic: {info['dynamic_range']})")
+            print(f"║ Mean±Std  : {info['mean']} ± {info['std']}")
+            print(f"║ Entropy   : {info['entropy']} bits")
+        else:
+            for i in range(ch):
+                n = ch_names[i]
+                print(f"║ {n:2s}        : [{info[f'{n}_min']}, {info[f'{n}_max']}]  mean={info[f'{n}_mean']}  std={info[f'{n}_std']}")
+        print(f"╚{'═' * 42}")
+        return info
+
+    @staticmethod
+    def compare(img1: ArrayLike, img2: ArrayLike, name1: str = "Image 1", name2: str = "Image 2") -> None:
+        """Print side-by-side summary of two images."""
+        Info.summary(img1, name=name1)
+        Info.summary(img2, name=name2)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  BitPlane (bit-plane slicing)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class BitPlane:
+    """Extract, reconstruct, and visualize individual bit planes."""
+
+    @staticmethod
+    def extract(image: ArrayLike, bit: int) -> ArrayLike:
+        """Extract a single bit plane (0=LSB, 7=MSB). Returns binary image."""
+        image = to_cpu(_validate_image(image))
+        if image.ndim == 3:
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        if not 0 <= bit <= 7:
+            raise ValueError("bit must be in [0, 7].")
+        return ((image >> bit) & 1).astype(np.uint8) * 255
+
+    @staticmethod
+    def extract_all(image: ArrayLike) -> list[ArrayLike]:
+        """Extract all 8 bit planes. Returns list[0..7] (LSB to MSB)."""
+        return [BitPlane.extract(image, b) for b in range(8)]
+
+    @staticmethod
+    def reconstruct(image: ArrayLike, bits: Sequence[int]) -> ArrayLike:
+        """Reconstruct image from selected bit planes only.
+
+        Parameters
+        ----------
+        bits : Sequence[int]
+            Which bit planes to keep (e.g. [7, 6, 5] for top 3 bits).
+        """
+        image = to_cpu(_validate_image(image))
+        if image.ndim == 3:
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        out = np.zeros_like(image, dtype=np.uint8)
+        for b in bits:
+            if not 0 <= b <= 7:
+                raise ValueError(f"bit {b} must be in [0, 7].")
+            out |= ((image >> b) & 1).astype(np.uint8) << b
+        return out
+
+    @staticmethod
+    def show_all(image: ArrayLike, figsize: tuple[int, int] = (16, 8)) -> None:
+        """Display all 8 bit planes in a grid."""
+        planes = BitPlane.extract_all(image)
+        titles = [f"Bit {i} ({'MSB' if i == 7 else 'LSB' if i == 0 else ''})" for i in range(8)]
+        Image_Ops.show_collection(planes, titles=titles, ncols=4, figsize=figsize)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  Metrics (image quality comparison)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class Metrics:
+    """Image quality metrics: MSE, PSNR, SSIM, MAE."""
+
+    @staticmethod
+    def mse(img1: ArrayLike, img2: ArrayLike) -> float:
+        """Mean Squared Error between two images."""
+        img1 = to_cpu(_validate_image(img1)).astype(np.float64)
+        img2 = to_cpu(_validate_image(img2)).astype(np.float64)
+        return float(np.mean((img1 - img2) ** 2))
+
+    @staticmethod
+    def mae(img1: ArrayLike, img2: ArrayLike) -> float:
+        """Mean Absolute Error between two images."""
+        img1 = to_cpu(_validate_image(img1)).astype(np.float64)
+        img2 = to_cpu(_validate_image(img2)).astype(np.float64)
+        return float(np.mean(np.abs(img1 - img2)))
+
+    @staticmethod
+    def psnr(img1: ArrayLike, img2: ArrayLike, max_val: float = 255.0) -> float:
+        """Peak Signal-to-Noise Ratio (dB). Higher = better."""
+        mse_val = Metrics.mse(img1, img2)
+        if mse_val < 1e-10:
+            return float("inf")
+        return float(10.0 * np.log10(max_val ** 2 / mse_val))
+
+    @staticmethod
+    def ssim(img1: ArrayLike, img2: ArrayLike, window_size: int = 7) -> float:
+        """Structural Similarity Index (SSIM). Range [-1, 1], 1 = identical.
+
+        Manual implementation — no external dependencies.
+        """
+        img1 = to_cpu(_validate_image(img1)).astype(np.float64)
+        img2 = to_cpu(_validate_image(img2)).astype(np.float64)
+        if img1.ndim == 3:
+            img1 = cv2.cvtColor(img1.astype(np.uint8), cv2.COLOR_RGB2GRAY).astype(np.float64)
+        if img2.ndim == 3:
+            img2 = cv2.cvtColor(img2.astype(np.uint8), cv2.COLOR_RGB2GRAY).astype(np.float64)
+
+        c1 = (0.01 * 255) ** 2
+        c2 = (0.03 * 255) ** 2
+        k = cv2.getGaussianKernel(window_size, 1.5)
+        window = k @ k.T
+
+        mu1 = cv2.filter2D(img1, -1, window)
+        mu2 = cv2.filter2D(img2, -1, window)
+        mu1_sq = mu1 ** 2
+        mu2_sq = mu2 ** 2
+        mu12 = mu1 * mu2
+        sigma1_sq = cv2.filter2D(img1 ** 2, -1, window) - mu1_sq
+        sigma2_sq = cv2.filter2D(img2 ** 2, -1, window) - mu2_sq
+        sigma12 = cv2.filter2D(img1 * img2, -1, window) - mu12
+
+        num = (2 * mu12 + c1) * (2 * sigma12 + c2)
+        den = (mu1_sq + mu2_sq + c1) * (sigma1_sq + sigma2_sq + c2)
+        ssim_map = num / den
+        return float(np.mean(ssim_map))
+
+    @staticmethod
+    def report(img1: ArrayLike, img2: ArrayLike, name1: str = "Original", name2: str = "Processed") -> dict:
+        """Print a full quality report comparing two images."""
+        results = {
+            "MSE": Metrics.mse(img1, img2),
+            "MAE": Metrics.mae(img1, img2),
+            "PSNR": Metrics.psnr(img1, img2),
+            "SSIM": Metrics.ssim(img1, img2),
+        }
+        print(f"╔══ Quality Report: {name1} vs {name2} ═══")
+        print(f"║ MSE  : {results['MSE']:.4f}")
+        print(f"║ MAE  : {results['MAE']:.4f}")
+        print(f"║ PSNR : {results['PSNR']:.2f} dB")
+        print(f"║ SSIM : {results['SSIM']:.4f}")
+        print(f"╚{'═' * 45}")
+        return results
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  FreqFilter (frequency-domain filtering)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class FreqFilter:
+    """Frequency-domain filters: Ideal, Butterworth, Gaussian LPF/HPF + Homomorphic."""
+
+    @staticmethod
+    def _make_distance_grid(h: int, w: int) -> np.ndarray:
+        """Create a distance-from-center grid for frequency domain."""
+        cy, cx = h // 2, w // 2
+        Y, X = np.ogrid[:h, :w]
+        return np.sqrt((X - cx) ** 2 + (Y - cy) ** 2).astype(np.float64)
+
+    @staticmethod
+    def ideal_lpf(image: ArrayLike, cutoff: float = 30) -> ArrayLike:
+        """Ideal low-pass filter in frequency domain."""
+        image = to_cpu(_validate_image(image))
+        if image.ndim == 3:
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        h, w = image.shape
+        dist = FreqFilter._make_distance_grid(h, w)
+        mask = (dist <= cutoff).astype(np.float64)
+        dft = np.fft.fftshift(np.fft.fft2(image.astype(np.float64)))
+        result = np.real(np.fft.ifft2(np.fft.ifftshift(dft * mask)))
+        return np.clip(result, 0, 255).astype(np.uint8)
+
+    @staticmethod
+    def ideal_hpf(image: ArrayLike, cutoff: float = 30) -> ArrayLike:
+        """Ideal high-pass filter in frequency domain."""
+        image = to_cpu(_validate_image(image))
+        if image.ndim == 3:
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        h, w = image.shape
+        dist = FreqFilter._make_distance_grid(h, w)
+        mask = (dist > cutoff).astype(np.float64)
+        dft = np.fft.fftshift(np.fft.fft2(image.astype(np.float64)))
+        result = np.real(np.fft.ifft2(np.fft.ifftshift(dft * mask)))
+        return np.clip(result, 0, 255).astype(np.uint8)
+
+    @staticmethod
+    def butterworth_lpf(image: ArrayLike, cutoff: float = 30, order: int = 2) -> ArrayLike:
+        """Butterworth low-pass filter. Smoother transition than ideal."""
+        image = to_cpu(_validate_image(image))
+        if image.ndim == 3:
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        h, w = image.shape
+        dist = FreqFilter._make_distance_grid(h, w)
+        mask = 1.0 / (1.0 + (dist / (cutoff + 1e-8)) ** (2 * order))
+        dft = np.fft.fftshift(np.fft.fft2(image.astype(np.float64)))
+        result = np.real(np.fft.ifft2(np.fft.ifftshift(dft * mask)))
+        return np.clip(result, 0, 255).astype(np.uint8)
+
+    @staticmethod
+    def butterworth_hpf(image: ArrayLike, cutoff: float = 30, order: int = 2) -> ArrayLike:
+        """Butterworth high-pass filter."""
+        image = to_cpu(_validate_image(image))
+        if image.ndim == 3:
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        h, w = image.shape
+        dist = FreqFilter._make_distance_grid(h, w)
+        mask = 1.0 / (1.0 + ((cutoff + 1e-8) / (dist + 1e-8)) ** (2 * order))
+        dft = np.fft.fftshift(np.fft.fft2(image.astype(np.float64)))
+        result = np.real(np.fft.ifft2(np.fft.ifftshift(dft * mask)))
+        return np.clip(result, 0, 255).astype(np.uint8)
+
+    @staticmethod
+    def gaussian_lpf(image: ArrayLike, cutoff: float = 30) -> ArrayLike:
+        """Gaussian low-pass filter in frequency domain."""
+        image = to_cpu(_validate_image(image))
+        if image.ndim == 3:
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        h, w = image.shape
+        dist = FreqFilter._make_distance_grid(h, w)
+        mask = np.exp(-(dist ** 2) / (2 * cutoff ** 2))
+        dft = np.fft.fftshift(np.fft.fft2(image.astype(np.float64)))
+        result = np.real(np.fft.ifft2(np.fft.ifftshift(dft * mask)))
+        return np.clip(result, 0, 255).astype(np.uint8)
+
+    @staticmethod
+    def gaussian_hpf(image: ArrayLike, cutoff: float = 30) -> ArrayLike:
+        """Gaussian high-pass filter in frequency domain."""
+        image = to_cpu(_validate_image(image))
+        if image.ndim == 3:
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        h, w = image.shape
+        dist = FreqFilter._make_distance_grid(h, w)
+        mask = 1.0 - np.exp(-(dist ** 2) / (2 * cutoff ** 2))
+        dft = np.fft.fftshift(np.fft.fft2(image.astype(np.float64)))
+        result = np.real(np.fft.ifft2(np.fft.ifftshift(dft * mask)))
+        return np.clip(result, 0, 255).astype(np.uint8)
+
+    @staticmethod
+    def homomorphic(image: ArrayLike, gamma_l: float = 0.5, gamma_h: float = 2.0,
+                    cutoff: float = 30, c: float = 1.0) -> ArrayLike:
+        """Homomorphic filter for illumination/reflectance separation.
+
+        Parameters
+        ----------
+        gamma_l : float
+            Low-frequency gain (< 1 compresses illumination).
+        gamma_h : float
+            High-frequency gain (> 1 enhances reflectance/edges).
+        cutoff : float
+            Cutoff frequency for the Gaussian filter.
+        c : float
+            Sharpness of the transition.
+        """
+        image = to_cpu(_validate_image(image))
+        if image.ndim == 3:
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        img_log = np.log1p(image.astype(np.float64))
+        h, w = img_log.shape
+        dist = FreqFilter._make_distance_grid(h, w)
+        # Gaussian-based homomorphic filter
+        H = (gamma_h - gamma_l) * (1 - np.exp(-c * (dist ** 2) / (cutoff ** 2 + 1e-8))) + gamma_l
+        dft = np.fft.fftshift(np.fft.fft2(img_log))
+        filtered = np.real(np.fft.ifft2(np.fft.ifftshift(dft * H)))
+        result = np.expm1(filtered)
+        # normalize to 0-255
+        result = (result - result.min()) / (result.max() - result.min() + 1e-8) * 255
+        return np.clip(result, 0, 255).astype(np.uint8)
+
+    @staticmethod
+    def show_filter(image: ArrayLike, title: str = "Frequency Filter") -> None:
+        """Show original, magnitude spectrum, and filtered result."""
+        mag = to_cpu(Fourier.magnitude_spectrum(image))
+        plt.figure(figsize=(12, 5))
+        plt.subplot(1, 2, 1)
+        plt.imshow(to_cpu(_validate_image(image)), cmap="gray")
+        plt.title(f"{title} — Spatial")
+        plt.axis("off")
+        plt.subplot(1, 2, 2)
+        plt.imshow(mag, cmap="gray")
+        plt.title(f"{title} — Magnitude Spectrum")
+        plt.axis("off")
+        plt.tight_layout()
+        plt.show()
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  Pyramid (Gaussian / Laplacian image pyramids)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class Pyramid:
+    """Gaussian and Laplacian image pyramids with seamless blending."""
+
+    @staticmethod
+    def gaussian(image: ArrayLike, levels: int = 4) -> list[ArrayLike]:
+        """Build a Gaussian pyramid (progressively downsampled).
+
+        Returns list of images from original resolution to smallest.
+        """
+        image = to_cpu(_validate_image(image))
+        pyramid = [image.copy()]
+        current = image
+        for _ in range(levels - 1):
+            current = cv2.pyrDown(current)
+            pyramid.append(current)
+        return pyramid
+
+    @staticmethod
+    def laplacian(image: ArrayLike, levels: int = 4) -> list[ArrayLike]:
+        """Build a Laplacian pyramid (detail at each scale).
+
+        Returns list of detail images + the smallest approximation.
+        """
+        gauss = Pyramid.gaussian(image, levels)
+        lap = []
+        for i in range(len(gauss) - 1):
+            h, w = gauss[i].shape[:2]
+            expanded = cv2.pyrUp(gauss[i + 1], dstsize=(w, h))
+            detail = cv2.subtract(gauss[i], expanded)
+            lap.append(detail)
+        lap.append(gauss[-1])  # smallest approximation
+        return lap
+
+    @staticmethod
+    def reconstruct(laplacian_pyramid: list[ArrayLike]) -> ArrayLike:
+        """Reconstruct image from a Laplacian pyramid."""
+        current = laplacian_pyramid[-1]
+        for i in range(len(laplacian_pyramid) - 2, -1, -1):
+            h, w = laplacian_pyramid[i].shape[:2]
+            expanded = cv2.pyrUp(current, dstsize=(w, h))
+            current = cv2.add(expanded, laplacian_pyramid[i])
+        return current
+
+    @staticmethod
+    def blend(img1: ArrayLike, img2: ArrayLike, mask: ArrayLike, levels: int = 6) -> ArrayLike:
+        """Seamless pyramid blending of two images using a mask.
+
+        Parameters
+        ----------
+        img1, img2 : ArrayLike
+            Images to blend (same size).
+        mask : ArrayLike
+            Grayscale mask (0 = img2, 255 = img1). Same spatial dims.
+        levels : int
+            Number of pyramid levels.
+        """
+        img1 = to_cpu(_validate_image(img1))
+        img2 = to_cpu(_validate_image(img2))
+        mask = to_cpu(_validate_image(mask))
+        if mask.ndim == 2 and img1.ndim == 3:
+            mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2RGB)
+        mask_f = mask.astype(np.float64) / 255.0
+
+        lap1 = Pyramid.laplacian(img1, levels)
+        lap2 = Pyramid.laplacian(img2, levels)
+        gauss_mask = Pyramid.gaussian(mask_f.astype(np.uint8), levels)
+
+        blended_lap = []
+        for l1, l2, gm in zip(lap1, lap2, gauss_mask):
+            gm_f = gm.astype(np.float64) / 255.0
+            if gm_f.ndim == 2 and l1.ndim == 3:
+                gm_f = gm_f[..., np.newaxis]
+            blended = (l1.astype(np.float64) * gm_f + l2.astype(np.float64) * (1 - gm_f))
+            blended_lap.append(np.clip(blended, 0, 255).astype(np.uint8))
+        return Pyramid.reconstruct(blended_lap)
+
+    @staticmethod
+    def show(pyramid: list[ArrayLike], title: str = "Pyramid") -> None:
+        """Display all levels of a pyramid."""
+        titles = [f"{title} L{i}" for i in range(len(pyramid))]
+        Image_Ops.show_collection(pyramid, titles=titles, ncols=min(4, len(pyramid)))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  Stego (LSB steganography)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class Stego:
+    """LSB steganography — hide and extract text messages in images."""
+
+    @staticmethod
+    def encode(image: ArrayLike, message: str, delimiter: str = "###END###") -> ArrayLike:
+        """Encode a text message into the LSB of an image.
+
+        Parameters
+        ----------
+        image : ArrayLike
+            Cover image (will be modified).
+        message : str
+            Secret text to hide.
+        delimiter : str
+            End-of-message marker.
+        """
+        image = to_cpu(_validate_image(image)).copy()
+        msg_bin = ''.join(format(ord(c), '08b') for c in (message + delimiter))
+        flat = image.ravel()
+        if len(msg_bin) > len(flat):
+            raise ValueError(f"Message too long ({len(msg_bin)} bits) for image ({len(flat)} pixels).")
+        for i, bit in enumerate(msg_bin):
+            flat[i] = (flat[i] & 0xFE) | int(bit)
+        return flat.reshape(image.shape).astype(image.dtype)
+
+    @staticmethod
+    def decode(image: ArrayLike, delimiter: str = "###END###") -> str:
+        """Extract a hidden text message from the LSB of an image."""
+        image = to_cpu(_validate_image(image))
+        flat = image.ravel()
+        bits = ""
+        message = ""
+        for pixel in flat:
+            bits += str(pixel & 1)
+            if len(bits) >= 8:
+                char = chr(int(bits[:8], 2))
+                message += char
+                bits = bits[8:]
+                if message.endswith(delimiter):
+                    return message[:-len(delimiter)]
+        return message
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  Components (connected component labeling)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class Components:
+    """Connected component labeling and region properties."""
+
+    @staticmethod
+    def label(image: ArrayLike, connectivity: int = 8) -> tuple[int, ArrayLike]:
+        """Label connected components in a binary image.
+
+        Returns (num_labels, labeled_image).
+        """
+        image = to_cpu(_validate_image(image))
+        if image.ndim == 3:
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        _, binary = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY)
+        num, labels = cv2.connectedComponents(binary, connectivity=connectivity)
+        return num, labels
+
+    @staticmethod
+    def properties(labeled: ArrayLike) -> list[dict]:
+        """Compute region properties for each labeled component.
+
+        Returns list of dicts with: label, area, centroid, bbox.
+        """
+        labeled = to_cpu(labeled)
+        props = []
+        for lbl in range(1, labeled.max() + 1):
+            mask = (labeled == lbl).astype(np.uint8)
+            area = int(mask.sum())
+            if area == 0:
+                continue
+            ys, xs = np.where(mask)
+            cy = float(np.mean(ys))
+            cx = float(np.mean(xs))
+            y_min, y_max = int(ys.min()), int(ys.max())
+            x_min, x_max = int(xs.min()), int(xs.max())
+            props.append({
+                "label": lbl,
+                "area": area,
+                "centroid": (cy, cx),
+                "bbox": (y_min, x_min, y_max, x_max),
+                "width": x_max - x_min + 1,
+                "height": y_max - y_min + 1,
+            })
+        return props
+
+    @staticmethod
+    def show(image: ArrayLike, connectivity: int = 8) -> None:
+        """Visualize connected components with random colors."""
+        num, labels = Components.label(image, connectivity)
+        colored = np.zeros((*labels.shape, 3), dtype=np.uint8)
+        for lbl in range(1, num):
+            colored[labels == lbl] = np.random.randint(50, 255, size=3, dtype=np.uint8)
+        plt.figure(figsize=(8, 6))
+        plt.imshow(colored)
+        plt.title(f"Connected Components ({num - 1} found)")
+        plt.axis("off")
+        plt.tight_layout()
+        plt.show()
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  Backward Compatibility Aliases
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 read_image = Image_Ops.read
 show_image = Image_Ops.show
@@ -3469,6 +7462,9 @@ slice_image = Image_Ops.slice
 pad_image = Image_Ops.pad
 overlay_image = Image_Ops.overlay
 intensity_threshold_mask = Image_Ops.intensity_threshold_mask
+color_intensity_threshold_mask = Image_Ops.color_intensity_threshold_mask
+intensity_threshold_mask_inv = Image_Ops.intensity_threshold_mask_inv
+intensity_range_mask = Image_Ops.intensity_range_mask
 save_image = Image_Ops.save
 create_blank_image = Image_Ops.create_blank
 create_blank_like = Image_Ops.create_blank_like
@@ -3526,8 +7522,25 @@ blur_image = Enhancement.blur_gaussian
 erode_image = Morphology.erode
 
 detect_edges = Edge_Detection.canny
+detect_edges_gpu = Edge_Detection.canny_gpu
+auto_canny = Edge_Detection.auto_canny
+
+apply_binary_mask = Image_Ops.apply_binary_mask
 
 thin_image = Morphology.thinning
+thick_image = Morphology.thickening
+reconstruct_image = Morphology.reconstruct
+
+# --- Wavelet Aliases ---
+dwt2 = Wavelet.dwt2
+idwt2 = Wavelet.idwt2
+wavedec2 = Wavelet.wavedec2
+wavedec2_dynamic = Wavelet.wavedec2_dynamic
+waverec2 = Wavelet.waverec2
+assemble_wavedec2_grid = Wavelet.assemble_wavedec2_grid
+high_frequency_energy = Wavelet.high_frequency_energy
+process_rgb_wavelet = Wavelet.process_rgb_wavelet
+
 glcm_features = GLCM.features
 glcm_compute = GLCM.compute
 
@@ -3542,3 +7555,88 @@ dft2 = Fourier.dft2
 idft2 = Fourier.idft2
 dct2 = Fourier.dct2
 idct2 = Fourier.idct2
+
+mean_filter = Filter.mean
+median_filter = Filter.median
+mode_filter = Filter.mode
+smooth_filter = Filter.smooth
+sharpen_filter = Filter.sharpen
+low_pass_filter = Filter.low_pass
+high_pass_filter = Filter.high_pass
+band_pass_filter = Filter.band_pass
+
+load_csv = CSV.read
+load_csv_dict = CSV.read_dict
+load_histogram_csv = CSV.load_histogram
+
+channel_permute = Channel.permute
+channel_reorder = Channel.reorder
+channel_swap = Channel.swap
+channel_isolate = Channel.isolate
+
+image_info = Info.summary
+image_compare = Info.compare
+
+extract_bitplane = BitPlane.extract
+reconstruct_bitplane = BitPlane.reconstruct
+show_bitplanes = BitPlane.show_all
+
+compute_mse = Metrics.mse
+compute_mae = Metrics.mae
+compute_psnr = Metrics.psnr
+compute_ssim = Metrics.ssim
+quality_report = Metrics.report
+
+ideal_lpf = FreqFilter.ideal_lpf
+ideal_hpf = FreqFilter.ideal_hpf
+butterworth_lpf = FreqFilter.butterworth_lpf
+butterworth_hpf = FreqFilter.butterworth_hpf
+gaussian_lpf = FreqFilter.gaussian_lpf
+gaussian_hpf = FreqFilter.gaussian_hpf
+homomorphic_filter = FreqFilter.homomorphic
+
+gaussian_pyramid = Pyramid.gaussian
+laplacian_pyramid = Pyramid.laplacian
+pyramid_blend = Pyramid.blend
+
+stego_encode = Stego.encode
+stego_decode = Stego.decode
+
+label_components = Components.label
+component_properties = Components.properties
+
+multi_otsu = Segmentation.multi_otsu
+iterative_threshold = Segmentation.iterative_threshold
+contrast_stretch = Enhancement.contrast_stretch
+piecewise_linear = Enhancement.piecewise_linear
+
+zero_border = Image_Ops.zero_border
+zero_ellipse = Image_Ops.zero_ellipse
+fade_border = Image_Ops.fade_border
+seal_mask = Image_Ops.seal_mask
+prune_mask = Image_Ops.prune_mask
+
+
+def resize(image: ArrayLike, new_width: int, new_height: int, interpolation: InterpMode = "linear") -> ArrayLike:
+    """Resize an image to the given (new_width, new_height).
+
+    Convenience wrapper around Image_Ops.resize that takes explicit
+    width and height as positional arguments.
+
+    Parameters
+    ----------
+    image : ArrayLike
+        Input image (grayscale or color).
+    new_width : int
+        Target width in pixels.
+    new_height : int
+        Target height in pixels.
+    interpolation : InterpMode
+        Interpolation method ('nearest', 'linear', 'area', 'cubic', 'lanczos').
+
+    Returns
+    -------
+    ArrayLike
+        Resized image.
+    """
+    return Image_Ops.resize(image, width=new_width, height=new_height, interpolation=interpolation)
