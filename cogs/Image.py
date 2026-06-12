@@ -195,8 +195,16 @@ class Image(commands.Cog):
             try:
                 # Enable NSFW results only if the channel is NSFW
                 is_nsfw = False
-                if hasattr(ctx.channel, 'is_nsfw') and callable(ctx.channel.is_nsfw):
-                    is_nsfw = ctx.channel.is_nsfw()
+                channel = ctx.channel
+                if ctx.guild and not hasattr(channel, 'is_nsfw'):
+                    cached_channel = ctx.guild.get_channel(channel.id)
+                    if cached_channel:
+                        channel = cached_channel
+                
+                if hasattr(channel, 'is_nsfw') and callable(channel.is_nsfw):
+                    is_nsfw = channel.is_nsfw()
+                elif hasattr(channel, 'nsfw'):
+                    is_nsfw = bool(channel.nsfw)
                 safesearch = 'off' if is_nsfw else 'on'
                 
                 # Fetch up to 10 results for pagination

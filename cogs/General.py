@@ -19,7 +19,7 @@ from PIL import Image
 from io import BytesIO
 from discord.ui import View, Button, button
 from scripts.main import heading, Url_Buttons, has_pfp, AIClient
-from scripts.main import event_available, titlecase, check_blacklist, check_vote
+from scripts.main import event_available, titlecase, check_blacklist, check_vote, smart_title_case
     
 day_of_week = {
     '1':"Senin",
@@ -30,6 +30,57 @@ day_of_week = {
     '6':"Sabtu",
     '0':"Minggu"
 }
+
+
+class WebSearchView(discord.ui.View):
+    """
+    View for paginated web search results.
+    """
+    def __init__(self, query: str, results: list, author_id: int):
+        super().__init__(timeout=60)
+        self.query = query
+        self.results = results
+        self.author_id = author_id
+        self.current_index = 0
+
+    def create_embed(self):
+        data = self.results[self.current_index]
+        title = smart_title_case(self.query)
+        res_title = data['title']
+        snippet = data['snippet']
+        link = data['link']
+        
+        # Truncate title if too long
+        if len(res_title) > 256:
+            res_title = res_title[:253] + "..."
+            
+        # Truncate snippet if too long to prevent embed limits
+        if len(snippet) > 1000:
+            snippet = snippet[:997] + "..."
+            
+        embed = discord.Embed(
+            title=f"Hasil Pencarian: {title}",
+            color=0x34a853
+        )
+        embed.description = f"### [{res_title}]({link})\n{snippet}"
+        embed.set_footer(text=f"Hasil {self.current_index + 1}/{len(self.results)}")
+        return embed
+
+    @discord.ui.button(label="Sebelumnya", style=discord.ButtonStyle.gray, emoji="◀️")
+    async def prev_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self.author_id:
+            return await interaction.response.send_message("Hey! Ini bukan sesi pencarianmu!", ephemeral=True)
+        
+        self.current_index = (self.current_index - 1) % len(self.results)
+        await interaction.response.edit_message(embed=self.create_embed(), view=self)
+
+    @discord.ui.button(label="Selanjutnya", style=discord.ButtonStyle.gray, emoji="▶️")
+    async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self.author_id:
+            return await interaction.response.send_message("Hey! Ini bukan sesi pencarianmu!", ephemeral=True)
+        
+        self.current_index = (self.current_index + 1) % len(self.results)
+        await interaction.response.edit_message(embed=self.create_embed(), view=self)
 
 
 class General(commands.Cog):
@@ -404,37 +455,25 @@ class Utilities(commands.Cog):
                 
                 # Enable NSFW results only if the channel is NSFW
                 is_nsfw = False
-                if hasattr(ctx.channel, 'is_nsfw') and callable(ctx.channel.is_nsfw):
-                    is_nsfw = ctx.channel.is_nsfw()
+                channel = ctx.channel
+                if ctx.guild and not hasattr(channel, 'is_nsfw'):
+                    cached_channel = ctx.guild.get_channel(channel.id)
+                    if cached_channel:
+                        channel = cached_channel
+                
+                if hasattr(channel, 'is_nsfw') and callable(channel.is_nsfw):
+                    is_nsfw = channel.is_nsfw()
+                elif hasattr(channel, 'nsfw'):
+                    is_nsfw = bool(channel.nsfw)
                 safesearch = 'off' if is_nsfw else 'on'
                 
-                results = await search_web(query, max_results=5, safesearch=safesearch)
+                # Fetch up to 10 results for pagination
+                results = await search_web(query, max_results=10, safesearch=safesearch)
                 if not results:
                     return await ctx.reply("Waduh! Tidak ada hasil pencarian yang ditemukan.")
                 
-                embed = discord.Embed(title=f"Hasil Pencarian: {query}", color=0x34a853) # Google Green
-                for idx, res in enumerate(results, 1):
-                    title = res['title']
-                    snippet = res['snippet']
-                    link = res['link']
-                    
-                    # Truncate title if too long
-                    if len(title) > 256:
-                        title = title[:253] + "..."
-                        
-                    # Calculate safe snippet truncation to prevent exceeding 1024 chars total field value
-                    suffix = f"\n[Baca selengkapnya...]({link})"
-                    max_snippet_len = 1024 - len(suffix)
-                    if len(snippet) > max_snippet_len:
-                        snippet = snippet[:max_snippet_len - 3] + "..."
-                        
-                    embed.add_field(
-                        name=f"{idx}. {title}",
-                        value=f"{snippet}{suffix}",
-                        inline=False
-                    )
-                embed.set_footer(text=f"Dicari oleh {ctx.author}", icon_url=ctx.author.display_avatar.url)
-                await ctx.reply(embed=embed)
+                view = WebSearchView(query, results, ctx.author.id)
+                await ctx.reply(embed=view.create_embed(), view=view)
             except Exception as e:
                 await ctx.reply(f"Terjadi kesalahan saat mencari: `{str(e)}`")
 

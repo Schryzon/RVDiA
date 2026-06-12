@@ -11,7 +11,7 @@ from discord import app_commands
 from discord.ext import commands
 from discord.ui import View, Button, button
 from PIL import Image
-from scripts.main import titlecase, check_blacklist, AIClient, db
+from scripts.main import smart_title_case, check_blacklist, AIClient, db
 from scripts.memory import memory_manager
 from scripts.error_logger import format_error_report
 from scripts.search import search_web, search_images, format_search_results
@@ -79,7 +79,7 @@ class Regenerate_Answer_Button(View):
             display_message = display_message[:253] + '...'
 
         embed = discord.Embed(
-            title=' '.join((titlecase(word) for word in display_message.split(' '))), 
+            title=smart_title_case(display_message), 
             color=interaction.user.color, 
             timestamp=interaction.message.created_at
         )
@@ -414,7 +414,7 @@ class Conversation(commands.Cog):
                 display_message = display_message[:253] + '...'
 
             embed = discord.Embed(
-                title=' '.join((titlecase(word) for word in display_message.split(' '))), 
+                title=smart_title_case(display_message), 
                 color=ctx.author.color, 
                 timestamp=ctx.message.created_at
             )

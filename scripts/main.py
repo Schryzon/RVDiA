@@ -156,8 +156,10 @@ def titlecase(word):
 def smart_title_case(text: str) -> str:
     """
     Title cases a string while keeping common conjunctions and prepositions in lowercase,
-    unless they are the first or last word.
+    unless they are the first or last word. Always preserves "RVDiA" case-insensitively.
     """
+    import re
+    
     conjunctions = {
         # Indonesian
         'dan', 'atau', 'tetapi', 'namun', 'ke', 'di', 'dari', 'pada', 'untuk', 'oleh', 'dengan', 
@@ -179,7 +181,9 @@ def smart_title_case(text: str) -> str:
         else:
             result.append(titlecase(word))
             
-    return " ".join(result)
+    res_str = " ".join(result)
+    res_str = re.sub(r'(?i)\brvdia\b', 'RVDiA', res_str)
+    return res_str
 
 
 def heading(direction:int):
