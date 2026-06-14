@@ -13,7 +13,8 @@ Error handlers, it's where the ifs and elifs go crazy!
 
 from scripts.errors import (
     NotGTechMember, NotInGTechServer, NotGTechAdmin, NoProfilePicture,
-    Blacklisted, NoEventAvailable, NotVoted, NoGameAccount, AccountIncompatible
+    Blacklisted, NoEventAvailable, NotVoted, NoGameAccount, AccountIncompatible,
+    ArtistOffline, GenerationDeclined, GenerationFailed, NSFWBlocked, GenerationTimeout
 )
 from scripts.error_logger import format_error_report
 
@@ -182,6 +183,21 @@ class Error(commands.Cog):
 
     elif isinstance(error, AccountIncompatible):
       await ctx.reply(f"Sepertinya akunmu tidak sesuai dengan versi terbaru Re:Volution!\nJalankan **`{ctx.clean_prefix}game register`** untuk mengupdate akunmu!")
+
+    elif isinstance(error, ArtistOffline):
+      await ctx.reply("Aduh, maaf ya... Senimanku sedang offline atau tidak terjangkau saat ini. 🎨 Coba lagi nanti ketika laptopnya aktif!")
+
+    elif isinstance(error, GenerationDeclined):
+      await ctx.reply("Maaf, permintaannya ditolak oleh senimanku! 😔")
+
+    elif isinstance(error, GenerationFailed):
+      await ctx.reply("Aduh, terjadi kesalahan saat menggambar gambar tersebut! 😭")
+
+    elif isinstance(error, NSFWBlocked):
+      await ctx.reply("Aduh! Konten NSFW tidak diperbolehkan di channel SFW! ❌")
+
+    elif isinstance(error, GenerationTimeout):
+      await ctx.reply("Aduh, permintaannya didiamkan terlalu lama... Aku batalkan saja ya! 🥺")
 
     else:
       error_channel_id = os.getenv("errorchannel")

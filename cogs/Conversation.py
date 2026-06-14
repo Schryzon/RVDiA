@@ -17,11 +17,13 @@ from scripts.error_logger import format_error_report
 from scripts.search import search_web, search_images, format_search_results
 
 class Regenerate_Answer_Button(View):
-    def __init__(self, user_id: int, last_question: str, initial_response: str):
+    def __init__(self, user_id: int, last_question: str, initial_response: str, image_bytes: bytes = None, mime_type: str = None):
         super().__init__(timeout=None)
         self.user_id = user_id
         self.last_question = last_question
         self.responses = [initial_response]
+        self.image_bytes = image_bytes
+        self.mime_type = mime_type
         self.current_page = 0
         self.show_vote = random.random() < 0.1  # 10% chance to show vote button
         
@@ -193,9 +195,24 @@ class Regenerate_Answer_Button(View):
                     if search_context:
                         current_sys_inst += f"\n\nAdditional Search Context:\n{search_context}"
 
+                    # Construct contents list if image parts are present
+                    image_parts = []
+                    if self.image_bytes and self.mime_type:
+                        image_parts.append(
+                            types.Part.from_bytes(
+                                data=self.image_bytes,
+                                mime_type=self.mime_type
+                            )
+                        )
+
+                    if image_parts:
+                        contents_payload = image_parts + [message]
+                    else:
+                        contents_payload = message
+
                     result = await client.aio.models.generate_content(
                         model='gemini-3-flash-preview',
-                        contents=message,
+                        contents=contents_payload,
                         config=types.GenerateContentConfig(
                             system_instruction=current_sys_inst
                         )
@@ -292,11 +309,11 @@ class Conversation(commands.Cog):
         aliases=['ask', 'chatbot', 'tanya'],
         description='Tanyakan atau perhintahkan aku untuk melakukan sesuatu!'
     )
-    @app_commands.rename(message='pesan')
-    @app_commands.describe(message='Apa yang ingin kamu tanyakan?')
+    @app_commands.rename(message='pesan', attachment='lampiran')
+    @app_commands.describe(message='Apa yang ingin kamu tanyakan?', attachment='Lampirkan file (PDF, gambar, atau teks)')
     @commands.cooldown(type=commands.BucketType.user, per=2, rate=1)
     @check_blacklist()
-    async def chat(self, ctx: commands.Context, *, message: str):
+    async def chat(self, ctx: commands.Context, message: str = "", attachment: discord.Attachment = None):
         """
         Tanyakan atau perhintahkan aku untuk melakukan sesuatu!
         """
@@ -308,12 +325,51 @@ class Conversation(commands.Cog):
         async with ctx.channel.typing():
             user_id = ctx.author.id
             
+            # Resolve attachment (slash command arg or prefix message attachment)
+            target_attachment = attachment
+            if not target_attachment and ctx.message and ctx.message.attachments:
+                target_attachment = ctx.message.attachments[0]
+                
+            if not message and not target_attachment:
+                try:
+                    return await ctx.reply("Ada yang bisa kubantu? Silakan ketik pesan atau lampirkan file ya! 🌸")
+                except discord.HTTPException:
+                    return await ctx.send("Ada yang bisa kubantu? Silakan ketik pesan atau lampirkan file ya! 🌸")
+
+            # Resolve DB message placeholder for memory database
+            db_message = message if message else f"[Mengirim file: {target_attachment.filename}]"
+
             # 1. Retrieve context (generates query embedding)
-            context = await memory_manager.get_context(user_id, message)
+            context = await memory_manager.get_context(user_id, db_message)
             
             # 2. Save user message to memory, REUSING embedding
-            await memory_manager.add_memory(user_id, "user", message, embedding=context['embedding'])
+            await memory_manager.add_memory(user_id, "user", db_message, embedding=context['embedding'])
             
+            # Parse attachments
+            attachment_text = ""
+            image_parts = []
+            image_raw_bytes = None
+            image_mime_type = None
+            
+            if target_attachment:
+                from scripts.attachment_handler import handle_attachment
+                att_res = await handle_attachment(target_attachment)
+                if att_res["text"]:
+                    attachment_text = att_res["text"]
+                if att_res["image_bytes"]:
+                    image_raw_bytes = att_res["image_bytes"]
+                    image_mime_type = att_res["mime_type"]
+                    image_parts.append(
+                        types.Part.from_bytes(
+                            data=image_raw_bytes,
+                            mime_type=image_mime_type
+                        )
+                    )
+
+            full_message = message
+            if attachment_text:
+                full_message = f"{attachment_text}\nUser message: {message}"
+
             currentTime = datetime.now(pytz.utc).astimezone(pytz.timezone("Asia/Jakarta"))
             date = currentTime.strftime("%d/%m/%Y")
             hour = currentTime.strftime("%H:%M:%S")
@@ -340,10 +396,14 @@ class Conversation(commands.Cog):
                     image_keywords = ["tunjukkan gambar", "lihat foto", "cari gambar", "lihatkan", "mana gambar", "mana foto", "liat dong", "spill", "pap", "poto", "gambar dari", "kek gimana", "show me", "pics", "photos", "image", "look like", "picture of", "let me see", "can i see", "send me", "view"]
 
                     search_context = ""
-                    needs_search = any(kw in message.lower() for kw in search_keywords)
+                    needs_search = False
+                    if message:
+                        needs_search = any(kw in message.lower() for kw in search_keywords)
                     
                     game_keywords = ["revolution", "re:volution", "rpg", "stats", "boss", "enemy", "musuh", "skill", "karma", "fight", "battle"]
-                    needs_game_lore = any(kw in message.lower() for kw in game_keywords)
+                    needs_game_lore = False
+                    if message:
+                        needs_game_lore = any(kw in message.lower() for kw in game_keywords)
                     
                     if needs_game_lore:
                         try:
@@ -353,7 +413,9 @@ class Conversation(commands.Cog):
                         except Exception as ex:
                             logging.error(f"Failed to load game manual: {ex}")
                     image_url = None
-                    needs_image = any(kw in message.lower() for kw in image_keywords)
+                    needs_image = False
+                    if message:
+                        needs_image = any(kw in message.lower() for kw in image_keywords)
                     
                     if needs_search or needs_image:
                         if needs_image:
@@ -370,9 +432,15 @@ class Conversation(commands.Cog):
                     if search_context:
                         current_sys_inst += f"\n\nAdditional Search Context:\n{search_context}"
 
+                    # Construct contents list if image parts are present
+                    if image_parts:
+                        contents_payload = image_parts + [full_message]
+                    else:
+                        contents_payload = full_message
+
                     result = await client.aio.models.generate_content(
                         model='gemini-3-flash-preview',
-                        contents=message,
+                        contents=contents_payload,
                         config=types.GenerateContentConfig(
                             system_instruction=current_sys_inst
                         )
@@ -409,10 +477,10 @@ class Conversation(commands.Cog):
             # 3. Save AI response to memory (Optimized: skips embedding)
             await memory_manager.add_memory(user_id, "model", AI_response)
             
-            display_message = message
+            display_message = db_message
             if len(display_message) > 256:
                 display_message = display_message[:253] + '...'
-
+ 
             embed = discord.Embed(
                 title=smart_title_case(display_message), 
                 color=ctx.author.color, 
@@ -427,8 +495,8 @@ class Conversation(commands.Cog):
             img_match = re.search(r'https?://\S+\.(?:jpg|jpeg|png|gif|webp)', AI_response)
             if img_match:
                 embed.set_image(url=img_match.group(0))
-
-            regenerate_button = Regenerate_Answer_Button(user_id, message, AI_response)
+ 
+            regenerate_button = Regenerate_Answer_Button(user_id, full_message, AI_response, image_raw_bytes, image_mime_type)
             try:
                 return await ctx.reply(embed=embed, view=regenerate_button)
             except discord.HTTPException as e:
@@ -500,9 +568,129 @@ class Conversation(commands.Cog):
         """
         Ciptakan sebuah karya seni dua dimensi dengan perintah!
         """
-        from scripts.main import disable_command
-        return await disable_command(ctx)
-        # (Implementation omitted for brevity, keeping existing logic)
+        import io
+        import aiohttp
+        from scripts.errors import ArtistOffline, GenerationDeclined, GenerationFailed, NSFWBlocked, GenerationTimeout
+        
+        api_url = os.getenv("LAPTOP_API_URL")
+        api_key = os.getenv("LAPTOP_API_KEY")
+        
+        if not api_url or not api_key:
+            return await ctx.reply("Aduh, maaf ya, fiturnya belum terkonfigurasi dengan benar oleh developermu! 🛠️")
+            
+        try:
+            await ctx.defer()
+        except discord.NotFound:
+            pass
+            
+        headers = {
+            "X-API-Key": api_key
+        }
+        
+        # 1. Ping the server
+        async with aiohttp.ClientSession(headers=headers) as session:
+            try:
+                async with session.get(f"{api_url}/ping", timeout=3.0) as resp:
+                    if resp.status != 200:
+                        raise ArtistOffline()
+            except Exception:
+                raise ArtistOffline()
+                
+            # 2. Request generation
+            payload = {
+                "prompt": prompt,
+                "username": str(ctx.author),
+                "is_nsfw": ctx.channel.nsfw if hasattr(ctx.channel, "nsfw") else False
+            }
+            try:
+                async with session.post(f"{api_url}/generate", json=payload, timeout=5.0) as resp:
+                    if resp.status == 400:
+                        err_data = await resp.json()
+                        err_msg = err_data.get('error', '')
+                        if "nsfw" in err_msg.lower():
+                            raise NSFWBlocked()
+                        raise GenerationFailed(err_msg)
+                    elif resp.status != 200:
+                        raise GenerationFailed("Gagal membuat permintaan ke laptop!")
+                    data = await resp.json()
+                    request_id = data.get("request_id")
+            except Exception as e:
+                if isinstance(e, (NSFWBlocked, GenerationFailed)):
+                    raise e
+                raise GenerationFailed(f"Gagal mengirim permintaan ke laptop: {str(e)}")
+                
+            # 3. Polling loop
+            status = "pending"
+            msg = await ctx.reply("Mengirim permintaan ke laptop... 🖥️")
+            
+            last_status = None
+            max_loops = 48  # 120 seconds max (48 * 2.5)
+            for i in range(max_loops):
+                await asyncio.sleep(2.5)
+                try:
+                    async with session.get(f"{api_url}/status/{request_id}", timeout=3.0) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            status = data.get("status")
+                        else:
+                            continue
+                except Exception:
+                    continue
+                    
+                if status == "pending" and last_status != "pending":
+                    await msg.edit(content="Menunggu persetujuan pada laptop senimanku... (Tolong klik Approve di Toast ya! 🌸)")
+                    last_status = "pending"
+                elif status == "generating" and last_status != "generating":
+                    await msg.edit(content="Permintaan disetujui! Sedang menggambar menggunakan GPU (AnythingV5)... 🎨")
+                    last_status = "generating"
+                elif status == "completed":
+                    await msg.edit(content="Selesai! Mengambil gambar... 📥")
+                    try:
+                        async with session.get(f"{api_url}/image/{request_id}", timeout=15.0) as resp:
+                            if resp.status == 200:
+                                img_bytes = await resp.read()
+                                file = discord.File(io.BytesIO(img_bytes), filename="generated.png")
+                                embed = discord.Embed(title=f"🎨 {prompt}", color=ctx.author.color, timestamp=datetime.now())
+                                embed.set_image(url="attachment://generated.png")
+                                embed.set_footer(text=f"Requested by {ctx.author} | Powered by AnythingV5")
+                                await ctx.reply(embed=embed, file=file)
+                                try:
+                                    await msg.delete()
+                                except:
+                                    pass
+                                return
+                            else:
+                                try:
+                                    await msg.delete()
+                                except:
+                                    pass
+                                raise GenerationFailed("Gagal mengambil gambar yang dihasilkan!")
+                    except Exception as e:
+                        try:
+                            await msg.delete()
+                        except:
+                            pass
+                        if isinstance(e, GenerationFailed):
+                            raise e
+                        raise GenerationFailed(f"Gagal mengunduh gambar: {str(e)}")
+                elif status == "declined":
+                    try:
+                        await msg.delete()
+                    except:
+                        pass
+                    raise GenerationDeclined()
+                elif status == "failed":
+                    try:
+                        await msg.delete()
+                    except:
+                        pass
+                    raise GenerationFailed()
+            
+            try:
+                await msg.delete()
+            except:
+                pass
+            raise GenerationTimeout()
 
     @commands.hybrid_command(
         aliases=['edit', 'imageedit'],

@@ -39,3 +39,24 @@ class AccountIncompatible(commands.CommandError):
 class NoPremiumStatus(commands.CommandError):
   """Raised when a user doesn't have premium status"""
   pass
+
+class ArtistOffline(commands.CommandError):
+  """Raised when the local GPU generation server is offline or unreachable"""
+  pass
+
+class GenerationDeclined(commands.CommandError):
+  """Raised when the image generation request is declined by the artist"""
+  pass
+
+class GenerationFailed(commands.CommandError):
+  """Raised when the image generation fails on the laptop"""
+  pass
+
+class NSFWBlocked(commands.CommandError):
+  """Raised when an NSFW prompt is blocked in a SFW channel"""
+  pass
+
+class GenerationTimeout(commands.CommandError):
+  """Raised when the request times out waiting for approval"""
+  pass
+

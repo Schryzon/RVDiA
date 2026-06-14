@@ -323,6 +323,26 @@ async def send_reply_message(msg:discord.Message, message_embed:discord.Embed):
         # 2. Save user message to memory, REUSING the embedding from context
         await memory_manager.add_memory(user_id, "user", message, embedding=context['embedding'])
         
+        # Parse attachments if any
+        from scripts.attachment_handler import handle_attachment
+        attachment_text = ""
+        image_parts = []
+        for att in msg.attachments:
+            att_res = await handle_attachment(att)
+            if att_res["text"]:
+                attachment_text += att_res["text"]
+            if att_res["image_bytes"]:
+                image_parts.append(
+                    types.Part.from_bytes(
+                        data=att_res["image_bytes"],
+                        mime_type=att_res["mime_type"]
+                    )
+                )
+
+        full_message = message
+        if attachment_text:
+            full_message = f"{attachment_text}\nUser message: {message}"
+
         currentTime = datetime.now(pytz.utc).astimezone(pytz.timezone("Asia/Jakarta"))
         date = currentTime.strftime("%d/%m/%Y")
         hour = currentTime.strftime("%H:%M:%S")
@@ -340,9 +360,15 @@ async def send_reply_message(msg:discord.Message, message_embed:discord.Embed):
             f"\nRemember to stay in character as RVDiA (a talented digital artist and gamer, loving, cute, informal)."
         )
         
+        # Construct contents list if image parts are present
+        if image_parts:
+            contents_payload = image_parts + [full_message]
+        else:
+            contents_payload = full_message
+
         result = await client.aio.models.generate_content(
             model='gemini-3-flash-preview',
-            contents=message,
+            contents=contents_payload,
             config=types.GenerateContentConfig(
                 system_instruction=sys_inst
             )
