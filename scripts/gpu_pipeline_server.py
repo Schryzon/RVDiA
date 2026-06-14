@@ -9,7 +9,7 @@ Instructions to Run:
    pip install flask Pillow diffusers transformers accelerate winotify python-dotenv
 3. Create a local '.env' file in the bot root or run this script with env variables:
    LAPTOP_API_KEY=your_secure_shared_key
-   PORT=XXXXX
+   LAPTOP_PORT=XXXXX
    MODEL_ID_OR_PATH=genai-archive/anything-v5
 4. Run:
    python312 scripts/gpu_pipeline_server.py
@@ -33,11 +33,11 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 load_dotenv()
 
 # Strict environment requirements (No default fallbacks for key and port)
-PORT_ENV = os.getenv("PORT")
+PORT_ENV = os.getenv("LAPTOP_PORT")
 API_KEY = os.getenv("LAPTOP_API_KEY")
 
 if not PORT_ENV:
-    raise ValueError("ERROR: Environment variable 'PORT' is not set! Please define it in your .env file.")
+    raise ValueError("ERROR: Environment variable 'LAPTOP_PORT' is not set! Please define it in your .env file.")
 if not API_KEY:
     raise ValueError("ERROR: Environment variable 'LAPTOP_API_KEY' is not set! Please define it in your .env file.")
 

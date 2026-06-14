@@ -50,6 +50,58 @@ This bot is in Indonesian and has special commands for members of the G-Tech Re'
     - **Smart Title Casing**: Intelligent text formatting handler that respects linguistic rules for both Indonesian and English.
 - **Dynamic Web Dashboard**: Built with `aiohttp` and `Jinja2` featuring premium Glassmorphism aesthetics and multilingual support (ID/EN).
 
+## Gated Local GPU Image Generation Pipeline
+To run Stable Diffusion (`genai-archive/anything-v5`) on a low-VRAM laptop (e.g. RTX 3050 4GB) without interrupting web browsing, RVDiA offloads image generation to a local server gated by interactive Windows notification prompts.
+
+```mermaid
+sequenceDiagram
+    actor User as Discord User
+    participant Bot as RVDiA Bot (Railway)
+    participant Server as GPU Server (Local Laptop)
+    actor Owner as Laptop Owner (Schryzon)
+
+    User->>Bot: Slash Command /generate [prompt]
+    Bot->>Server: GET /ping (X-API-Key)
+    alt Server Offline
+        Bot-->>User: Reply: "Artist Offline"
+    else Server Online
+        Bot->>Server: POST /generate [prompt, username, is_nsfw]
+        Note over Server: Check NSFW blacklist (if SFW channel)
+        alt NSFW Blocked
+            Server-->>Bot: 400 Bad Request (NSFW Blocked)
+            Bot-->>User: Reply: "NSFW content blocked!"
+        else Allowed
+            Server-->>Bot: 200 OK (request_id)
+            Bot->>User: Defer response (loading...)
+            Server->>Owner: Winotify / Tkinter gated approval prompt
+            alt Owner Declines
+                Owner->>Server: Click "Decline"
+                Server->>Server: Update status: declined
+            else Owner Approves
+                Owner->>Server: Click "Approve"
+                Server->>Server: Update status: generating
+                Note over Server: Load SD model & Move CPU -> CUDA GPU
+                Server->>Server: Generate Image (512x512 PNG)
+                Note over Server: Move CUDA -> CPU & Aggressive VRAM Clear
+                Server->>Server: Save image & Update status: completed
+            end
+            loop Poll Status (Every 2s, max 15m)
+                Bot->>Server: GET /status/[request_id]
+                Server-->>Bot: Status (pending/generating/declined/completed)
+            end
+            alt Status: Completed
+                Bot->>Server: GET /image/[request_id]
+                Server-->>Bot: Image File
+                Bot-->>User: Send generated image!
+            else Status: Declined
+                Bot-->>User: Reply: "Generation declined by artist."
+            else Status: Failed / Timeout
+                Bot-->>User: Reply: "Generation failed."
+            end
+        end
+    end
+```
+
 ## Want to Tinker with It Yourself?
 1. Clone this repo or download the latest release from tags;
 2. Get a Discord bot token & Top.gg token;
