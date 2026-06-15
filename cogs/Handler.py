@@ -182,7 +182,8 @@ class Error(commands.Cog):
       await ctx.reply("Maaf, permintaannya ditolak oleh senimanku! 😔")
 
     elif isinstance(error, GenerationFailed):
-      await ctx.reply("Aduh, terjadi kesalahan saat menggambar gambar tersebut! 😭")
+      error_msg = str(error) if str(error) else "Aduh, terjadi kesalahan saat menggambar gambar tersebut! 😭"
+      await ctx.reply(error_msg)
 
     elif isinstance(error, NSFWBlocked):
       await ctx.reply("Aduh! Konten NSFW tidak diperbolehkan di channel SFW! ❌")

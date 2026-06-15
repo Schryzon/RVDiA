@@ -42,7 +42,7 @@ class RVDIA(commands.AutoShardedBot):
   """
   def __init__(self, **kwargs):
     self.synced = False
-    self.__version__ = "Rebirth v2.1.67" # Hehe 67 funny number
+    self.__version__ = "Rebirth v2.2.0" # Hehe 67 funny number
     self.event_mode = True
     self.color = 0x86273d
     self.runtime = time() # UNIX float
@@ -135,7 +135,7 @@ async def change_status():
     users += guilds.member_count -1
   user_count_status = f'{users} users'
   all_status=['in my room', 'in front of a mirror', '"How to be cute"', 'you', 'everyone!',
-                  '@RVDiA', f"{user_count_status} people", f'v{rvdia.__version__}',
+                  '@RVDiA', f"{user_count_status}", f'{rvdia.__version__}',
                   '/help', 'in my dream world', 'Add me!', is_event, '~♪',
                   'Re:Volution'
                 ]

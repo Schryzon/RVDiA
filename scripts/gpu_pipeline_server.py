@@ -187,14 +187,20 @@ def generate_callback_token(request_id: str) -> str:
 
 def show_notification(request_id: str, username: str, prompt: str):
     """Triggers Windows toast notification with action buttons or falls back to Tkinter dialog."""
+    method = os.getenv("LAPTOP_NOTIFICATION_METHOD", "toast").lower()
     
+    if method == "tkinter":
+        logging.info("Bypassing toast notification. Using Tkinter dialog as requested.")
+        run_tkinter_fallback(request_id, username, prompt)
+        return
+
     # Try winotify first (native Windows Toast Notifications with Actions)
     try:
         from winotify import Notification
         
         token = generate_callback_token(request_id)
         toast = Notification(
-            app_id="RVDiA GPU Pipeline",
+            app_id="Windows PowerShell",
             title="Image Generation Request",
             msg=f"User: {username}\nPrompt: {prompt}",
             duration="long"
@@ -210,11 +216,15 @@ def show_notification(request_id: str, username: str, prompt: str):
         )
         toast.show()
         logging.info(f"Sent Winotify Toast notification for request {request_id}.")
+        logging.info("Tip: If the toast did not appear, check your Windows Notification/Focus settings, or set LAPTOP_NOTIFICATION_METHOD=tkinter in .env")
         return
     except Exception as win_err:
         logging.info(f"winotify failed or not installed ({win_err}). Falling back to Tkinter dialog.")
 
-    # Fallback: Tkinter Dialog Box in a background thread
+    run_tkinter_fallback(request_id, username, prompt)
+
+def run_tkinter_fallback(request_id: str, username: str, prompt: str):
+    """Fallback: Tkinter Dialog Box in a background thread"""
     def run_tkinter():
         try:
             import tkinter as tk
@@ -286,6 +296,11 @@ def generate():
         
     data = request.json or {}
     
+    # Check if there is already an active job (pending or generating)
+    active_jobs = [r for r in REQUESTS.values() if r["status"] in ("pending", "generating")]
+    if active_jobs:
+        return jsonify({"error": "Maaf, senimanku sedang menggambar/menunggu persetujuan untuk permintaan lain saat ini! Tolong tunggu sebentar ya. 🎨"}), 400
+    
     # Clean up old requests if registry grows too large
     if len(REQUESTS) >= 100:
         now = datetime.now()
@@ -353,6 +368,18 @@ def generate():
         "request_id": request_id
     }), 200
 
+DEVICE_NAME = None
+
+def get_device_name():
+    global DEVICE_NAME
+    if DEVICE_NAME is None:
+        try:
+            import torch
+            DEVICE_NAME = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU"
+        except Exception:
+            DEVICE_NAME = "CPU"
+    return DEVICE_NAME
+
 @app.route("/status/<request_id>", methods=["GET"])
 def status(request_id):
     if not check_auth():
@@ -364,7 +391,8 @@ def status(request_id):
         
     return jsonify({
         "status": req["status"],
-        "error": req["error"]
+        "error": req["error"],
+        "device": get_device_name()
     }), 200
 
 @app.route("/image/<request_id>", methods=["GET"])

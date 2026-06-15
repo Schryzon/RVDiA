@@ -659,7 +659,7 @@ class Conversation(commands.Cog):
 
     @commands.hybrid_command(
         aliases=['create'],
-        description='Ciptakan sebuah karya seni!'
+        description='Ciptakan sebuah karya seni anime menggunakan model AnythingV5!'
     )
     @app_commands.describe(
         prompt='Apa yang ingin diciptakan?',
@@ -710,7 +710,7 @@ class Conversation(commands.Cog):
         prompt: str
     ):
         """
-        Ciptakan sebuah karya seni dua dimensi dengan perintah!
+        Ciptakan sebuah karya seni anime menggunakan model AnythingV5!
         """
         import io
         import aiohttp
@@ -805,6 +805,7 @@ class Conversation(commands.Cog):
                 
             # 3. Polling loop
             status = "pending"
+            device_name = "AnythingV5"
             msg = await ctx.reply("Mengirim permintaan ke laptop... 🖥️")
             
             last_status = None
@@ -816,13 +817,15 @@ class Conversation(commands.Cog):
                         if resp.status == 200:
                             data = await resp.json()
                             status = data.get("status")
+                            if data.get("device"):
+                                device_name = data.get("device")
                         else:
                             continue
                 except Exception:
                     continue
                     
                 if status == "pending" and last_status != "pending":
-                    await msg.edit(content="Menunggu persetujuan pada laptop senimanku... (Tolong klik Approve di Toast ya! 🌸)")
+                    await msg.edit(content="Menunggu persetujuan pada laptop senimanku... (Tolong klik Approve di Dialog Box/Toast ya! 🌸)")
                     last_status = "pending"
                 elif status == "generating" and last_status != "generating":
                     await msg.edit(content="Permintaan disetujui! Sedang menggambar menggunakan GPU (AnythingV5)... 🎨")
@@ -834,7 +837,13 @@ class Conversation(commands.Cog):
                             if resp.status == 200:
                                 img_bytes = await resp.read()
                                 file = discord.File(io.BytesIO(img_bytes), filename="generated.png")
-                                embed = discord.Embed(title=f"🎨 {prompt}", color=ctx.author.color, timestamp=datetime.now())
+                                prompt_display = prompt if len(prompt) <= 3900 else prompt[:3897] + "..."
+                                embed = discord.Embed(
+                                    title="🎨 Hasil Generasi Gambar",
+                                    description=f"**Prompt:** {prompt_display}",
+                                    color=ctx.author.color,
+                                    timestamp=datetime.now()
+                                )
                                 embed.set_image(url="attachment://generated.png")
                                 scheduler_display = {
                                     "dpm++_2m_karras": "DPM++ 2M Karras",
@@ -843,7 +852,7 @@ class Conversation(commands.Cog):
                                     "ddim": "DDIM"
                                 }.get(scheduler, scheduler)
                                 footer_text = (
-                                    f"Requested by {ctx.author} | Powered by AnythingV5 | "
+                                    f"Requested by {ctx.author} | Model: AnythingV5 | GPU: {device_name} | "
                                     f"Ratio: {aspect_ratio} ({width}x{height}) | Steps: {steps} | CFG: {cfg_scale} | Sampler: {scheduler_display}"
                                 )
                                 embed.set_footer(text=footer_text)
