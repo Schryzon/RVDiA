@@ -23,7 +23,9 @@ import io
 import uuid
 import logging
 import threading
-from datetime import datetime
+import hmac
+import hashlib
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify, send_file
 
@@ -111,17 +113,41 @@ def run_stable_diffusion(request_id: str):
         prompt = req["prompt"]
         logging.info(f"Starting generation for request {request_id} with prompt: '{prompt}'")
         
-        # We can add a default anime negative prompt to AnythingV5 for optimal quality
-        negative_prompt = "lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry"
+        # Configure the sampler scheduler dynamically
+        scheduler_name = req.get("scheduler", "dpm++_2m_karras")
+        logging.info(f"Configuring noise scheduler to: {scheduler_name}")
+        
+        from diffusers import EulerAncestralDiscreteScheduler, DPMSolverMultistepScheduler, DDIMScheduler
+        
+        if scheduler_name == "euler_a":
+            pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config)
+        elif scheduler_name == "dpm++_2m_karras":
+            pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config, use_karras_sigmas=True)
+        elif scheduler_name == "dpm++_sde_karras":
+            pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="sde-dpmsolver++")
+        elif scheduler_name == "ddim":
+            pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config)
+            
+        # Set up negative prompt
+        default_neg = "lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry"
+        custom_neg = req.get("negative_prompt")
+        negative_prompt = f"{default_neg}, {custom_neg}" if custom_neg else default_neg
+        
+        width = req.get("width", 512)
+        height = req.get("height", 512)
+        steps = req.get("steps", 25)
+        cfg_scale = req.get("cfg_scale", 7.0)
+        
+        logging.info(f"Running SD inference with parameters: Width={width}, Height={height}, Steps={steps}, CFG={cfg_scale}")
         
         # Run inference
         image = pipe(
             prompt=prompt,
             negative_prompt=negative_prompt,
-            num_inference_steps=25,
-            guidance_scale=7.0,
-            width=512,
-            height=512
+            num_inference_steps=steps,
+            guidance_scale=cfg_scale,
+            width=width,
+            height=height
         ).images[0]
         
         # Save output
@@ -155,6 +181,10 @@ def run_stable_diffusion(request_id: str):
 
 # --- Verification & Fallback Notifications ---
 
+def generate_callback_token(request_id: str) -> str:
+    """Generates a secure HMAC token to authorize callbacks."""
+    return hmac.new(API_KEY.encode(), request_id.encode(), hashlib.sha256).hexdigest()
+
 def show_notification(request_id: str, username: str, prompt: str):
     """Triggers Windows toast notification with action buttons or falls back to Tkinter dialog."""
     
@@ -162,6 +192,7 @@ def show_notification(request_id: str, username: str, prompt: str):
     try:
         from winotify import Notification
         
+        token = generate_callback_token(request_id)
         toast = Notification(
             app_id="RVDiA GPU Pipeline",
             title="Image Generation Request",
@@ -171,11 +202,11 @@ def show_notification(request_id: str, username: str, prompt: str):
         # Clicking these will launch the local callback URL in the browser
         toast.add_actions(
             label="Approve ✅", 
-            launch=f"http://127.0.0.1:{PORT}/callback/approve?id={request_id}"
+            launch=f"http://127.0.0.1:{PORT}/callback/approve?id={request_id}&token={token}"
         )
         toast.add_actions(
             label="Decline ❌", 
-            launch=f"http://127.0.0.1:{PORT}/callback/decline?id={request_id}"
+            launch=f"http://127.0.0.1:{PORT}/callback/decline?id={request_id}&token={token}"
         )
         toast.show()
         logging.info(f"Sent Winotify Toast notification for request {request_id}.")
@@ -236,7 +267,7 @@ def decline_generation(request_id: str):
 
 def check_auth():
     api_key = request.headers.get("X-API-Key")
-    if not api_key or api_key != API_KEY:
+    if not api_key or not hmac.compare_digest(api_key, API_KEY):
         return False
     return True
 
@@ -254,6 +285,29 @@ def generate():
         return jsonify({"status": "unauthorized"}), 401
         
     data = request.json or {}
+    
+    # Clean up old requests if registry grows too large
+    if len(REQUESTS) >= 100:
+        now = datetime.now()
+        to_delete = []
+        for req_id, req in REQUESTS.items():
+            req_time = datetime.fromisoformat(req["timestamp"])
+            is_done = req["status"] in ("completed", "declined", "failed")
+            if (is_done and now - req_time > timedelta(minutes=30)) or (now - req_time > timedelta(hours=24)):
+                to_delete.append(req_id)
+        for req_id in to_delete:
+            REQUESTS.pop(req_id, None)
+            
+        # If still too large, cap it at 100 and pop oldest
+        if len(REQUESTS) >= 100:
+            sorted_keys = sorted(REQUESTS.keys(), key=lambda k: REQUESTS[k]["timestamp"])
+            for k in sorted_keys[:len(REQUESTS) - 99]:
+                REQUESTS.pop(k, None)
+
+    # Check if there are too many pending requests (DoS protection)
+    pending_count = sum(1 for req in REQUESTS.values() if req["status"] == "pending")
+    if pending_count >= 10:
+        return jsonify({"error": "Too many pending requests. Please wait until they are approved or processed."}), 429
     prompt = data.get("prompt")
     username = data.get("username", "Unknown User")
     is_nsfw = data.get("is_nsfw", False)
@@ -275,12 +329,18 @@ def generate():
     request_id = str(uuid.uuid4())
     REQUESTS[request_id] = {
         "prompt": prompt,
+        "negative_prompt": data.get("negative_prompt"),
         "username": username,
         "is_nsfw": is_nsfw,
         "status": "pending",
         "image_path": None,
         "error": None,
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
+        "width": int(data.get("width", 512)),
+        "height": int(data.get("height", 512)),
+        "steps": int(data.get("steps", 25)),
+        "cfg_scale": float(data.get("cfg_scale", 7.0)),
+        "scheduler": data.get("scheduler", "dpm++_2m_karras")
     }
     
     logging.info(f"Received generation request from {username}. Prompt: '{prompt}' | Channel NSFW: {is_nsfw}")
@@ -323,6 +383,14 @@ def get_image(request_id):
 @app.route("/callback/approve", methods=["GET"])
 def callback_approve():
     request_id = request.args.get("id")
+    token = request.args.get("token")
+    if not request_id or not token:
+        return "Missing parameters", 400
+        
+    expected_token = generate_callback_token(request_id)
+    if not hmac.compare_digest(token, expected_token):
+        return "Unauthorized", 401
+        
     success = approve_generation(request_id)
     
     if success:
@@ -341,6 +409,14 @@ def callback_approve():
 @app.route("/callback/decline", methods=["GET"])
 def callback_decline():
     request_id = request.args.get("id")
+    token = request.args.get("token")
+    if not request_id or not token:
+        return "Missing parameters", 400
+        
+    expected_token = generate_callback_token(request_id)
+    if not hmac.compare_digest(token, expected_token):
+        return "Unauthorized", 401
+        
     success = decline_generation(request_id)
     
     if success:

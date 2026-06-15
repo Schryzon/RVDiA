@@ -61,23 +61,6 @@ model Warning {
   createdAt DateTime @default(now())
 }
 
-model GTechMember {
-  id     BigInt @id // userId
-  nama   String
-  kelas  String
-  divisi String
-}
-
-model GTechNews {
-  id          Int      @id @default(1)
-  author      String
-  kelas       String
-  title       String
-  desc        String
-  attachments String?
-  createdAt   DateTime @default(now())
-}
-
 model Message {
   id        Int      @id @default(autoincrement())
   userId    BigInt
@@ -89,11 +72,12 @@ model Message {
 }
 
 model Memory {
-  id        Int                      @id @default(autoincrement())
-  userId    BigInt
-  content   String
-  embedding Unsupported("vector(384)")?
-  createdAt DateTime                 @default(now())
+  id           Int                      @id @default(autoincrement())
+  userId       BigInt
+  content      String
+  embedding    Unsupported("vector(384)")?
+  isPersistent Boolean                  @default(false)
+  createdAt    DateTime                 @default(now())
 
   @@index([userId])
 }

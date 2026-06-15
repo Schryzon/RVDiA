@@ -1,16 +1,5 @@
 from discord.ext import commands
 
-class NotGTechMember(commands.CommandError):
-  """Raised when command is not being run by a G-Tech Resman member"""
-  pass
-
-class NotInGTechServer(commands.CommandError):
-  """Raised when the command was not executed in a G-Tech server"""
-  pass
-
-class NotGTechAdmin(commands.CommandError):
-  """Raised when the command was not executed by a G-Tech Admin, replaces is_owner()"""
-  pass
 
 class NoProfilePicture(commands.CommandError):
   """Raised when the user doesn't have a profile picture (automatically aborts command)"""

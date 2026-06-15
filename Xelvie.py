@@ -14,7 +14,6 @@ from os import getenv
 from dotenv import load_dotenv
 from discord.ext import commands, tasks
 from datetime import datetime, timedelta
-from datetime import datetime, timedelta
 load_dotenv()
 
 xlv = commands.Bot(command_prefix="x-",
@@ -29,14 +28,21 @@ async def trigger_alert(url, reason):
     logging.warning(f"ALERT: {url} is down! Reason: {reason}")
     
     # NTFY Out-of-discord alert
-    try:
-        async with aiohttp.ClientSession() as session:
-            await session.post(
-                "https://ntfy.sh/schryzon_3dex_alerts",
-                data=f"🚨 3Dex Alert 🚨\n{url} is DOWN!\nReason: {reason}".encode('utf-8')
-            )
-    except:
-        pass
+    ntfy_topic = getenv("NTFY_TOPIC")
+    if ntfy_topic:
+        try:
+            headers = {}
+            ntfy_token = getenv("NTFY_TOKEN")
+            if ntfy_token:
+                headers["Authorization"] = f"Bearer {ntfy_token}"
+            async with aiohttp.ClientSession() as session:
+                await session.post(
+                    f"https://ntfy.sh/{ntfy_topic}",
+                    data=f"🚨 3Dex Alert 🚨\n{url} is DOWN!\nReason: {reason}".encode('utf-8'),
+                    headers=headers
+                )
+        except Exception as e:
+            logging.error(f"Failed to send NTFY alert: {e}")
         
     # Discord alert
     try:

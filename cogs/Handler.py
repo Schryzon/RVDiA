@@ -12,7 +12,7 @@ Error handlers, it's where the ifs and elifs go crazy!
 """
 
 from scripts.errors import (
-    NotGTechMember, NotInGTechServer, NotGTechAdmin, NoProfilePicture,
+    NoProfilePicture,
     Blacklisted, NoEventAvailable, NotVoted, NoGameAccount, AccountIncompatible,
     ArtistOffline, GenerationDeclined, GenerationFailed, NSFWBlocked, GenerationTimeout
 )
@@ -59,15 +59,6 @@ class Error(commands.Cog):
 
     if isinstance(error, commands.MissingRequiredArgument):
       await ctx.reply(f"Ada beberapa bagian yang belum kamu isi!\nDibutuhkan: \n**```{error.param}```**")
-
-    elif isinstance(error, NotGTechMember):
-      await ctx.reply('Akun Discordmu harus didaftarkan dulu ke data G-Tech sebelum menjalankan command ini!')
-
-    elif isinstance(error, NotInGTechServer):
-      await ctx.reply('Command ini hanya bisa dijalankan di G-Tech server!')
-
-    elif isinstance(error, NotGTechAdmin):
-      await ctx.reply('Command ini hanya bisa dijalankan oleh admin database G-Tech!')
 
     elif isinstance(error, Blacklisted):
       await ctx.reply('Maaf, kamu telah diblacklist dari menggunakan RVDIA!')

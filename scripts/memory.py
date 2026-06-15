@@ -46,9 +46,35 @@ class MemoryManager:
             vector_str = "[" + ",".join(map(str, embedding)) + "]"
             
             await db.execute_raw(
-                'INSERT INTO "Memory" ("userId", "content", "embedding", "createdAt") VALUES ($1, $2, $3::vector, NOW())',
-                user_id, content, vector_str
+                'INSERT INTO "Memory" ("userId", "content", "embedding", "createdAt", "isPersistent") VALUES ($1, $2, $3::vector, NOW(), $4)',
+                user_id, content, vector_str, False
             )
+
+    async def toggle_memory_persistence(self, memory_id: int, user_id: int) -> bool:
+        """Toggles the isPersistent status of a memory, verifying owner user_id."""
+        memory = await db.memory.find_unique(where={'id': memory_id})
+        if not memory or memory.userId != user_id:
+            return False
+        new_val = not memory.isPersistent
+        await db.memory.update(
+            where={'id': memory_id},
+            data={'isPersistent': new_val}
+        )
+        return new_val
+
+    async def clean_withered_memories(self, days: int = 7) -> int:
+        """Deletes memories that are not persistent and are older than `days` days."""
+        from datetime import timedelta
+        cutoff = datetime.now() - timedelta(days=days)
+        deleted = await db.memory.delete_many(
+            where={
+                'isPersistent': False,
+                'createdAt': {
+                    'lt': cutoff
+                }
+            }
+        )
+        return deleted
 
     async def get_context(self, user_id: int, current_query: str, history_limit: int = 10, memory_limit: int = 5):
         """Retrieves short-term history and semantically relevant long-term memories.

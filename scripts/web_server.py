@@ -120,8 +120,9 @@ async def handle_saweria(request):
     return web.Response(text="OK")
 
 async def handle_internal_dm(request):
-    # Only allow from localhost for security
-    if request.remote != '127.0.0.1' and request.remote != 'localhost':
+    internal_key = request.headers.get("X-Internal-Key")
+    expected_key = os.getenv("INTERNAL_API_KEY")
+    if not expected_key or not internal_key or not hmac.compare_digest(internal_key, expected_key):
         return web.Response(text="Unauthorized", status=401)
         
     try:
@@ -136,7 +137,9 @@ async def handle_internal_dm(request):
             return web.Response(text="OK")
         return web.Response(text="User not found", status=404)
     except Exception as e:
-        return web.Response(text=str(e), status=500)
+        import logging
+        logging.error(f"Error in handle_internal_dm: {e}", exc_info=True)
+        return web.Response(text="Internal Server Error", status=500)
 
 async def start_web_server(bot):
     app = web.Application()

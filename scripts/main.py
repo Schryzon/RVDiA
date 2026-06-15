@@ -13,7 +13,7 @@ from prisma import Prisma
 from discord.ui import View, Button
 from discord.ext import commands
 from dotenv import load_dotenv
-from scripts.errors import NotInGTechServer, NotGTechMember, NotGTechAdmin, NoProfilePicture, Blacklisted, NoEventAvailable, NotVoted
+from scripts.errors import NoProfilePicture, Blacklisted, NoEventAvailable, NotVoted
 from scripts.errors import NoGameAccount, NoPremiumStatus
 from datetime import datetime
 load_dotenv()
@@ -61,37 +61,10 @@ def check_blacklist():
         return True
     return commands.check(predicate)
 
-def in_gtech_server():
-    async def predicate(ctx):
-        if not ctx.guild.id == int(os.getenv('gtechguild')):
-            raise NotInGTechServer('Not in the G-Tech server!')
-        return True
-    return commands.check(predicate)
-
 def event_available():
     async def predicate(ctx):
         if ctx.bot.event_mode == False:
             raise NoEventAvailable("No event available!")
-        return True
-    return commands.check(predicate)
-
-def is_member_check():
-    async def predicate(ctx):
-        data = await db.gtechmember.find_unique(where={'id': ctx.author.id})
-        if data is None:
-            raise NotGTechMember('Not a G-Tech member!')
-        return True
-    return commands.check(predicate)
-
-def is_perangkat():
-    async def predicate(ctx):
-        perangkat = [
-            893152351689527326, 919461305432305685, int(os.getenv('schryzonid')), 632930926522925056,
-            745218212689477642, 892293912964767784, 866890432038567949
-            # Ayuning, Nisa, Jayananda, Ditha, Cok Is, Nanda Maharani, Richonanta
-        ]
-        if not ctx.author.id in perangkat:
-            raise NotGTechAdmin('Not a G-Tech admin!')
         return True
     return commands.check(predicate)
 
@@ -206,3 +179,28 @@ async def disable_command(ctx:commands.Context):
     Used for disabled commands.
     """
     await ctx.reply("Mohon maaf, command ini sedang dinonaktifkan!\nMohon sabar menunggu update terbaru, yah! ❤️")
+
+def get_commands_context(bot) -> str:
+    """Dynamically generates a list of available commands for LLM context."""
+    lines = ["[AVAILABLE BOT COMMANDS]"]
+    lines.append("Berikut adalah daftar command yang tersedia untuk user. Jika user bertanya tentang cara menggunakan fitur ini atau salah ketik, arahkan mereka untuk menggunakan command ini secara langsung (gunakan format /nama_command):")
+    for cmd in bot.commands:
+        if cmd.hidden:
+            continue
+        desc = cmd.description or cmd.help or ""
+        desc = desc.strip().split('\n')[0]
+        aliases_str = f" (aliases: {', '.join(cmd.aliases)})" if cmd.aliases else ""
+        lines.append(f"- `/{cmd.name}`{aliases_str}: {desc}")
+    return "\n".join(lines)
+
+def clean_truncate(text: str, max_char: int = 3800) -> str:
+    """Gracefully truncates text at the last complete sentence within max_char."""
+    if not text or len(text) <= max_char:
+        return text
+    
+    truncated = text[:max_char]
+    # Find the last sentence-ending punctuation mark
+    last_punc = max(truncated.rfind('.'), truncated.rfind('!'), truncated.rfind('?'))
+    if last_punc != -1:
+        return truncated[:last_punc + 1] + " ..."
+    return truncated + " ..."

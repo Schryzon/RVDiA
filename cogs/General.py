@@ -131,15 +131,27 @@ class General(commands.Cog):
         """
         async with ctx.typing():
             if attachment:
-                unique_filename = f"{ctx.author.id}_{attachment.filename}"
-                await attachment.save(unique_filename)
-                file = discord.File(unique_filename)
-                if teks:
-                    await ctx.send(teks, file=file)
-                else:
-                    await ctx.send(file=file)
+                import tempfile
+                # Securely get and clean the extension
+                _, ext = os.path.splitext(attachment.filename)
+                ext = re.sub(r'[^a-zA-Z0-9.]', '', ext)
                 
-                os.remove(unique_filename)
+                # Create a secure temp file in the system temp directory
+                with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
+                    tmp_name = tmp.name
+                
+                try:
+                    await attachment.save(tmp_name)
+                    # Sanitize filename for Discord attachment presentation
+                    safe_filename = re.sub(r'[^a-zA-Z0-9._-]', '_', attachment.filename)
+                    file = discord.File(tmp_name, filename=safe_filename)
+                    if teks:
+                        await ctx.send(teks, file=file)
+                    else:
+                        await ctx.send(file=file)
+                finally:
+                    if os.path.exists(tmp_name):
+                        os.remove(tmp_name)
             
             else:
                 await ctx.send(teks) if teks else await ctx.send("Aku gak tau harus berkata apa ¯\_(ツ)_/¯")
@@ -355,7 +367,9 @@ class Utilities(commands.Cog):
                     await ctx.send(embed=embed)
 
             except Exception as e:
-                await ctx.send(f'Terjadi kesalahan: {e}')
+                import logging
+                logging.error(f"Error in weather command: {e}", exc_info=True)
+                await ctx.send('Terjadi kesalahan internal saat mengambil data cuaca.')
 
     @commands.hybrid_command(description="Lihat info tentang waktu di suatu kota atau daerah!")
     @app_commands.describe(location='Daerah mana yang ingin kamu ketahui?')
