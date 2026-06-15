@@ -659,7 +659,7 @@ class Conversation(commands.Cog):
 
     @commands.hybrid_command(
         aliases=['create'],
-        description='Ciptakan sebuah karya seni anime menggunakan model AnythingV5!'
+        description='Ciptakan sebuah karya seni anime menggunakan model MeinaMix V11!'
     )
     @app_commands.describe(
         prompt='Apa yang ingin diciptakan?',
@@ -667,6 +667,7 @@ class Conversation(commands.Cog):
         steps='Jumlah langkah inferensi (Default: Balanced)',
         cfg_scale='Seberapa ketat AI mengikuti prompt (Default: 7.0)',
         scheduler='Metode sampling scheduler (Default: DPM++ 2M Karras)',
+        upscale='Perbesar resolusi gambar menggunakan Swin2SR 2x (Default: No)',
         negative_prompt='Hal yang tidak ingin ada di gambar (Opsional)'
     )
     @app_commands.choices(
@@ -694,6 +695,10 @@ class Conversation(commands.Cog):
             app_commands.Choice(name="Euler a (Ancestral/Soft)", value="euler_a"),
             app_commands.Choice(name="DPM++ SDE Karras (Realistic/Rich)", value="dpm++_sde_karras"),
             app_commands.Choice(name="DDIM (Classic)", value="ddim")
+        ],
+        upscale=[
+            app_commands.Choice(name="Yes (Swin2SR 2x)", value="yes"),
+            app_commands.Choice(name="No", value="no")
         ]
     )
     @commands.cooldown(type=commands.BucketType.default, per=60, rate=4)
@@ -705,12 +710,13 @@ class Conversation(commands.Cog):
         steps: str = "25", 
         cfg_scale: str = "7.0", 
         scheduler: str = "dpm++_2m_karras", 
+        upscale: str = "no",
         negative_prompt: str = None, 
         *, 
         prompt: str
     ):
         """
-        Ciptakan sebuah karya seni anime menggunakan model AnythingV5!
+        Ciptakan sebuah karya seni anime menggunakan model MeinaMix V11!
         """
         import io
         import aiohttp
@@ -722,8 +728,9 @@ class Conversation(commands.Cog):
             valid_steps = ["15", "25", "35", "50"]
             valid_cfgs = ["5.0", "7.0", "9.0", "12.0"]
             valid_schedulers = ["euler_a", "dpm++_2m_karras", "dpm++_sde_karras", "ddim"]
+            valid_upscale = ["yes", "no"]
             
-            if aspect_ratio in valid_ratios and steps in valid_steps and cfg_scale in valid_cfgs and scheduler in valid_schedulers:
+            if aspect_ratio in valid_ratios and steps in valid_steps and cfg_scale in valid_cfgs and scheduler in valid_schedulers and upscale in valid_upscale:
                 pass
             else:
                 parts = []
@@ -731,6 +738,7 @@ class Conversation(commands.Cog):
                 if steps: parts.append(steps)
                 if cfg_scale: parts.append(cfg_scale)
                 if scheduler: parts.append(scheduler)
+                if upscale: parts.append(upscale)
                 if negative_prompt: parts.append(negative_prompt)
                 if prompt: parts.append(prompt)
                 prompt = " ".join(parts)
@@ -738,13 +746,14 @@ class Conversation(commands.Cog):
                 steps = "25"
                 cfg_scale = "7.0"
                 scheduler = "dpm++_2m_karras"
+                upscale = "no"
                 negative_prompt = None
                 
-        # Map aspect ratios keeping max dimension capped at 512px
+        # Map aspect ratios keeping max dimension capped at 512px (divisible by 8)
         ratio_map = {
             "1:1": (512, 512),
-            "3:2": (512, 341),
-            "2:3": (341, 512),
+            "3:2": (512, 344),
+            "2:3": (344, 512),
             "16:9": (512, 288),
             "9:16": (288, 512)
         }
@@ -784,7 +793,8 @@ class Conversation(commands.Cog):
                 "height": height,
                 "steps": int(steps),
                 "cfg_scale": float(cfg_scale),
-                "scheduler": scheduler
+                "scheduler": scheduler,
+                "upscale": upscale == "yes"
             }
             try:
                 async with session.post(f"{api_url}/generate", json=payload, timeout=5.0) as resp:
@@ -805,7 +815,7 @@ class Conversation(commands.Cog):
                 
             # 3. Polling loop
             status = "pending"
-            device_name = "AnythingV5"
+            device_name = "MeinaMix V11"
             msg = await ctx.reply("Mengirim permintaan ke laptop... 🖥️")
             
             last_status = None
@@ -828,7 +838,7 @@ class Conversation(commands.Cog):
                     await msg.edit(content="Menunggu persetujuan pada laptop senimanku... (Tolong klik Approve di Dialog Box/Toast ya! 🌸)")
                     last_status = "pending"
                 elif status == "generating" and last_status != "generating":
-                    await msg.edit(content="Permintaan disetujui! Sedang menggambar menggunakan GPU (AnythingV5)... 🎨")
+                    await msg.edit(content="Permintaan disetujui! Sedang menggambar menggunakan GPU (MeinaMix V11)... 🎨")
                     last_status = "generating"
                 elif status == "completed":
                     await msg.edit(content="Selesai! Mengambil gambar... 📥")
@@ -852,9 +862,11 @@ class Conversation(commands.Cog):
                                     "ddim": "DDIM"
                                 }.get(scheduler, scheduler)
                                 footer_text = (
-                                    f"Requested by {ctx.author} | Model: AnythingV5 | GPU: {device_name} | "
+                                    f"Requested by {ctx.author} | Model: MeinaMix V11 | GPU: {device_name} | "
                                     f"Ratio: {aspect_ratio} ({width}x{height}) | Steps: {steps} | CFG: {cfg_scale} | Sampler: {scheduler_display}"
                                 )
+                                if upscale == "yes":
+                                    footer_text += " | Upscaled: Swin2SR 2x"
                                 embed.set_footer(text=footer_text)
                                 await ctx.reply(embed=embed, file=file)
                                 try:
@@ -887,7 +899,17 @@ class Conversation(commands.Cog):
                         await msg.delete()
                     except:
                         pass
-                    raise GenerationFailed()
+                    
+                    err_msg = None
+                    try:
+                        err_msg = data.get("error")
+                    except Exception:
+                        pass
+                        
+                    if err_msg:
+                        raise GenerationFailed(err_msg)
+                    else:
+                        raise GenerationFailed()
             
             try:
                 await msg.delete()
