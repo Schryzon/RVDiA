@@ -390,7 +390,7 @@ class Conversation(commands.Cog):
     @app_commands.describe(message='Apa yang ingin kamu tanyakan?', attachment='Lampirkan file (PDF, gambar, atau teks)')
     @commands.cooldown(type=commands.BucketType.user, per=2, rate=1)
     @check_blacklist()
-    async def chat(self, ctx: commands.Context, message: str = "", attachment: discord.Attachment = None):
+    async def chat(self, ctx: commands.Context, *, message: str = "", attachment: discord.Attachment = None):
         """
         Tanyakan atau perhintahkan aku untuk melakukan sesuatu!
         """
