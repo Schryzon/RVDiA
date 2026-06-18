@@ -26,10 +26,15 @@ class AppNav(View):
         pages: List[discord.Embed] = None,
         timeout: Optional[float] = None,
         ephemeral: Optional[bool] = False,
+        lang: str = "en",
     ):
         super().__init__(timeout=timeout)
         self.page_count = len(pages) if pages else None
         self.pages = pages
+
+        # Translate select placeholder dynamically
+        from scripts.i18n import i18n
+        self.select.placeholder = i18n.get(lang, "help.select_placeholder")
 
         if pages and len(pages) == 1:
             self.remove_item(self.dblnext)
@@ -138,17 +143,23 @@ class AppMenu(PrettyMenu):
         destination: discord.abc.Messageable,
         pages: List[discord.Embed],
     ):
+        try:
+            from scripts.main import db
+            user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+            lang = user_settings.lang if user_settings else "en"
+        except Exception:
+            lang = "en"
 
         if ctx.interaction:
             await ctx.interaction.followup.send(
                 embed=pages[0],
                 view=AppNav(
-                    pages=pages, timeout=self.timeout, ephemeral=self.ephemeral
+                    pages=pages, timeout=self.timeout, ephemeral=self.ephemeral, lang=lang
                 ),
                 ephemeral=self.ephemeral,
             )
 
         else:
             await destination.send(
-                embed=pages[0], view=AppNav(pages=pages, timeout=self.timeout)
+                embed=pages[0], view=AppNav(pages=pages, timeout=self.timeout, lang=lang)
             )

@@ -9,6 +9,8 @@ from datetime import datetime, timedelta
 from aiohttp import web
 from discord.ext import commands
 from scripts.main import db
+from scripts.api_auth import setup_auth_routes, get_session
+from scripts.api_routes import setup_api_routes
 
 def load_locales():
     locales = {}
@@ -28,11 +30,24 @@ def get_i18n(request):
         lang = 'id'
     return locales_data[lang], lang
 
+def _get_user_ctx(request):
+    """Build user context dict for templates (logged-in state)."""
+    session = get_session(request)
+    if session:
+        return {
+            "logged_in": True,
+            "username": session["username"],
+            "avatar_url": session["avatar_url"],
+            "user_id": session["user_id"],
+        }
+    return {"logged_in": False}
+
 async def handle_home(request):
     i18n, lang = get_i18n(request)
     return aiohttp_jinja2.render_template('index.html', request, {
         'i18n': i18n,
-        'lang': lang
+        'lang': lang,
+        'user': _get_user_ctx(request),
     })
 
 async def handle_commands(request):
@@ -81,21 +96,24 @@ async def handle_commands(request):
     return aiohttp_jinja2.render_template('commands.html', request, {
         'i18n': i18n,
         'lang': lang,
-        'categories': sorted_categories
+        'categories': sorted_categories,
+        'user': _get_user_ctx(request),
     })
 
 async def handle_privacy(request):
     i18n, lang = get_i18n(request)
     return aiohttp_jinja2.render_template('privacy.html', request, {
         'i18n': i18n,
-        'lang': lang
+        'lang': lang,
+        'user': _get_user_ctx(request),
     })
 
 async def handle_terms(request):
     i18n, lang = get_i18n(request)
     return aiohttp_jinja2.render_template('terms.html', request, {
         'i18n': i18n,
-        'lang': lang
+        'lang': lang,
+        'user': _get_user_ctx(request),
     })
 
 async def handle_license(request):
@@ -112,7 +130,8 @@ async def handle_license(request):
     return aiohttp_jinja2.render_template('license.html', request, {
         'i18n': i18n,
         'lang': lang,
-        'license_content': license_content
+        'license_content': license_content,
+        'user': _get_user_ctx(request),
     })
 
 async def handle_saweria(request):
@@ -141,6 +160,40 @@ async def handle_internal_dm(request):
         logging.error(f"Error in handle_internal_dm: {e}", exc_info=True)
         return web.Response(text="Internal Server Error", status=500)
 
+
+# ── Dashboard Pages ──────────────────────────────────────────
+
+async def handle_login_page(request):
+    """Render the login page."""
+    i18n, lang = get_i18n(request)
+    user_ctx = _get_user_ctx(request)
+
+    # already logged in? redirect to dashboard
+    if user_ctx.get("logged_in"):
+        raise web.HTTPFound(f"/dashboard?lang={lang}")
+
+    return aiohttp_jinja2.render_template('login.html', request, {
+        'i18n': i18n,
+        'lang': lang,
+        'user': user_ctx,
+    })
+
+async def handle_dashboard(request):
+    """Render the dashboard page (requires login)."""
+    i18n, lang = get_i18n(request)
+    user_ctx = _get_user_ctx(request)
+
+    # not logged in? redirect to login
+    if not user_ctx.get("logged_in"):
+        raise web.HTTPFound(f"/login?lang={lang}")
+
+    return aiohttp_jinja2.render_template('dashboard.html', request, {
+        'i18n': i18n,
+        'lang': lang,
+        'user': user_ctx,
+    })
+
+
 async def start_web_server(bot):
     app = web.Application()
     app['bot'] = bot
@@ -153,12 +206,18 @@ async def start_web_server(bot):
     static_dir = os.path.join(os.path.dirname(__file__), '../website/static')
     app.router.add_static('/static/', path=static_dir, name='static')
     
-    # Setup Routes
+    # Setup Auth & API Routes
+    setup_auth_routes(app)
+    setup_api_routes(app)
+
+    # Setup Page Routes
     app.router.add_get('/', handle_home)
     app.router.add_get('/commands', handle_commands)
     app.router.add_get('/privacy', handle_privacy)
     app.router.add_get('/terms', handle_terms)
     app.router.add_get('/license', handle_license)
+    app.router.add_get('/login', handle_login_page)
+    app.router.add_get('/dashboard', handle_dashboard)
     app.router.add_post('/internal/dm', handle_internal_dm)
     
     runner = web.AppRunner(app)

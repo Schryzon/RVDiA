@@ -3,6 +3,7 @@ from discord import app_commands
 from scripts.main import db, check_blacklist
 from os import getenv
 from discord.ext import commands
+from scripts.i18n import i18n
 
 class Moderation(commands.Cog):
     """
@@ -28,15 +29,20 @@ class Moderation(commands.Cog):
         Lihat info server ini!
         """
         async with ctx.typing():
+            user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+            lang = user_settings.lang if user_settings else "en"
+
             owner = await self.bot.fetch_user(ctx.guild.owner_id)
             guild_icon = ctx.guild.icon.url if not ctx.guild.icon is None else getenv('normalpfp')
             timestamp = ctx.message.created_at if ctx.message else ctx.interaction.created_at
             embed = discord.Embed(title=f'{ctx.guild.name}', color=ctx.author.colour, timestamp = timestamp)
             embed.set_thumbnail(url=guild_icon)
-            embed.set_author(name = "Server Info:")
-            embed.add_field(name="Pemilik", value=f"{owner.mention} ({owner})", inline = False)
-            embed.add_field(name="Tanggal Dibuat", value=f'{ctx.guild.created_at.strftime("%a, %d %B %Y")}', inline = False)
-            embed.add_field(name="Jumlah Pengguna", value=f"{ctx.guild.member_count} members", inline = False)
+            embed.set_author(name=i18n.get(lang, "moderation.info_header"))
+            embed.add_field(name=i18n.get(lang, "moderation.info_owner"), value=f"{owner.mention} ({owner})", inline = False)
+            embed.add_field(name=i18n.get(lang, "moderation.info_created"), value=f'{ctx.guild.created_at.strftime("%a, %d %B %Y")}', inline = False)
+            
+            members_val = i18n.get(lang, "moderation.info_members_val", count=ctx.guild.member_count)
+            embed.add_field(name=i18n.get(lang, "moderation.info_members"), value=members_val, inline = False)
             embed.set_footer(text=f"ID: {ctx.guild.id}", icon_url=guild_icon)
             await ctx.reply(embed=embed)
 
@@ -47,15 +53,19 @@ class Moderation(commands.Cog):
         Memperlihatkan gambar icon server ini.
         """
         async with ctx.typing():
+            user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+            lang = user_settings.lang if user_settings else "en"
+            
             guild = ctx.guild
 
             if guild.icon is None:
-                return await ctx.reply(f'Server ini tidak memiliki icon!')
+                return await ctx.reply(i18n.get(lang, "moderation.icon_none"))
             png = guild.icon.with_format("png").url
             jpg = guild.icon.with_format("jpg").url
             webp = guild.icon.with_format("webp").url
 
-            embed=discord.Embed(title=f"Icon {guild.name}", url = guild.icon.with_format("png").url, color=self.bot.color)
+            title_txt = i18n.get(lang, "moderation.icon_title", name=guild.name)
+            embed=discord.Embed(title=title_txt, url = guild.icon.with_format("png").url, color=self.bot.color)
 
             if guild.icon.is_animated():
                 gif = guild.icon.with_format("gif").url
@@ -90,13 +100,17 @@ class Moderation(commands.Cog):
         """
         Buat invite instan!
         """
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
         created_invite = await ctx.channel.create_invite(
             reason=f'Created using /invite create command by {ctx.author}.', 
             max_age=expire,
             max_uses=max_use
             )
         
-        await ctx.reply(f'**Invite siap!**\n{created_invite}')
+        msg = i18n.get(lang, "moderation.invite_created", url=str(created_invite))
+        await ctx.reply(msg)
 
     @invite.command(name='view', description = 'Lihat daftar invite server ini!')
     @commands.bot_has_permissions(manage_guild=True)
@@ -105,27 +119,34 @@ class Moderation(commands.Cog):
         """
         Lihat daftar invite server ini!
         """
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
         try:
             invites = await ctx.guild.invites()
-            invite_urls = [v.url for v in invites]
-            invite_authors = [v.inviter for v in invites]
-            invite_expire = [v.expires_at for v in invites]
             invite_list = []
 
-            for i, j, k in zip(invite_urls, invite_authors, invite_expire):
-                text = f'{i} | Dibuat oleh: {j} | Expire: {k}'
+            for v in invites:
+                text = i18n.get(
+                    lang,
+                    "moderation.invite_list_item",
+                    url=v.url,
+                    author=str(v.inviter),
+                    expire=str(v.expires_at)
+                )
                 invite_list.append(text)
 
             timestamp = ctx.message.created_at if ctx.message else ctx.interaction.created_at
-            embed = discord.Embed(title=f'Daftar Invite {ctx.guild.name}', color=ctx.author.color, timestamp=timestamp)
+            title_txt = i18n.get(lang, "moderation.invite_list_title", name=ctx.guild.name)
+            embed = discord.Embed(title=title_txt, color=ctx.author.color, timestamp=timestamp)
             embed.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else getenv('normalpfp'))
             embed.description = '\n'.join(invite_list)
             if not embed.description or embed.description == '':
-                return await ctx.reply("Sepertinya server ini belum membuat invite apapun!")
+                return await ctx.reply(i18n.get(lang, "moderation.invite_none"))
             await ctx.reply(embed=embed)
 
         except AttributeError:
-            await ctx.reply('Sepertinya server ini belum membuat invite sama sekali!')
+            await ctx.reply(i18n.get(lang, "moderation.invite_none"))
 
     @commands.hybrid_group(name='warn')
     @commands.has_permissions(manage_messages= True)
@@ -154,12 +175,16 @@ class Moderation(commands.Cog):
         """
         Memberikan pelanggaran kepada pengguna.
         """
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
         if ctx.author == member:
-            return await ctx.reply("Kamu tidak bisa memberikan pelanggaran kepada dirimu!", ephemeral=True)
+            return await ctx.reply(i18n.get(lang, "moderation.warn_self_error"), ephemeral=True)
         if member.bot:
-            return await ctx.reply("Uh... sepertinya memberikan pelanggaran kepada bot itu kurang berguna.", ephemeral=True)
+            return await ctx.reply(i18n.get(lang, "moderation.warn_bot_error"), ephemeral=True)
         
-        reason = reason or "Tidak ada alasan dispesifikasi."
+        default_reason = i18n.get(lang, "moderation.warn_no_reason")
+        reason = reason or default_reason
 
         # Create warning record
         await db.warning.create(data={
@@ -174,14 +199,16 @@ class Moderation(commands.Cog):
             'userId': member.id
         })
 
-        em = discord.Embed(title=f"Pelanggaran Diberikan❗", description = f"{member.mention} telah diberikan pelanggaran.\nDia sekarang telah diberikan **`{warnqty}`** pelanggaran.",
-        color = member.colour
-        )
-        em.add_field(name="Alasan", value=reason, inline=False)
+        title_txt = i18n.get(lang, "moderation.warn_added_title")
+        desc_txt = i18n.get(lang, "moderation.warn_added_desc", member=member.mention, count=warnqty)
+        em = discord.Embed(title=title_txt, description=desc_txt, color = member.colour)
+        
+        em.add_field(name=i18n.get(lang, "moderation.warn_added_reason"), value=reason, inline=False)
         em.set_thumbnail(url = member.display_avatar.url)
-        em.set_footer(text=f"Pelanggaran diberikan oleh {ctx.author} | ID:{ctx.author.id}", icon_url=ctx.author.display_avatar.url)
+        
+        footer_txt = i18n.get(lang, "moderation.warn_added_footer", author=str(ctx.author), author_id=ctx.author.id)
+        em.set_footer(text=footer_txt, icon_url=ctx.author.display_avatar.url)
         await ctx.reply(embed = em)
-
 
     @warn.command(
         name='history',
@@ -196,24 +223,30 @@ class Moderation(commands.Cog):
     async def warnhistory(self, ctx:commands.Context, member:discord.Member=None):
             """Lihat riwayat pelanggaran pengguna."""
             member = member or ctx.author
+            user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+            lang = user_settings.lang if user_settings else "en"
+
             warns = await db.warning.find_many(where={
                 'guildId': ctx.guild.id,
                 'userId': member.id
             }, order={'createdAt': 'desc'})
             
             if not warns:
-                return await ctx.reply(f"**`{member}`** saat ini belum memiliki pelanggaran!", ephemeral=True)
+                msg = i18n.get(lang, "moderation.warn_history_none", member=str(member))
+                return await ctx.reply(msg, ephemeral=True)
             
             warn_count = len(warns)
             reasons = [w.reason for w in warns]
-            emb = discord.Embed(title = f"Riwayat pelanggaran {member}", color = member.colour)
-            emb.add_field(name= "Jumlah Pelanggaran", value=str(warn_count), inline=False)
+            
+            title_txt = i18n.get(lang, "moderation.warn_history_title", member=str(member))
+            emb = discord.Embed(title=title_txt, color=member.colour)
+            emb.add_field(name=i18n.get(lang, "moderation.warn_history_count_label"), value=str(warn_count), inline=False)
             
             reasons_text = "\n".join([f"{i+1}. {r}" for i, r in enumerate(reasons)])
             if warn_count > 1:
-                emb.add_field(name=f"Alasan (dari terbaru)", value=f"*{reasons_text}*")
+                emb.add_field(name=i18n.get(lang, "moderation.warn_history_reasons_latest"), value=f"*{reasons_text}*")
             else:
-                emb.add_field(name=f"Alasan", value=f"*{reasons_text}*")
+                emb.add_field(name=i18n.get(lang, "moderation.warn_history_reasons_single"), value=f"*{reasons_text}*")
             emb.set_thumbnail(url = member.display_avatar.url)
             await ctx.reply(embed = emb)
 
@@ -230,15 +263,20 @@ class Moderation(commands.Cog):
         """
         Menghilangkan segala data pelanggaran pengguna.
         """
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
         deleted = await db.warning.delete_many(where={
             'guildId': ctx.guild.id,
             'userId': member.id
         })
         
         if deleted == 0:
-            return await ctx.reply(f"`{member}` belum pernah diberikan pelanggaran!")
+            msg = i18n.get(lang, "moderation.warn_remove_none", member=str(member))
+            return await ctx.reply(msg)
         
-        await ctx.reply(f"Semua pelanggaran untuk {member.mention} di server ini telah dihapus.")
+        success_msg = i18n.get(lang, "moderation.warn_remove_success", member=member.mention)
+        await ctx.reply(success_msg)
 
     @warn.command(name='list', description = 'Memperlihatkan semua pengguna yang memiliki pelanggaran di server ini.')
     @commands.has_permissions(manage_messages=True)
@@ -247,12 +285,13 @@ class Moderation(commands.Cog):
         """
         Memperlihatkan semua pengguna yang memiliki pelanggaran di server ini.
         """
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
         # Get unique user IDs with warnings in this guild
-        # Prisma Python doesn't have groupBy yet in some versions, but we can use distinct if supported
-        # Or just get all and process in Python
         warns = await db.warning.find_many(where={'guildId': ctx.guild.id})
         if not warns:
-            return await ctx.reply(f'Belum ada orang yang diberikan pelanggaran di server ini!')
+            return await ctx.reply(i18n.get(lang, "moderation.warn_list_none"))
         
         user_warns = {}
         for w in warns:
@@ -262,12 +301,13 @@ class Moderation(commands.Cog):
         for user_id, count in user_warns.items():
             try:
                 user = await self.bot.fetch_user(user_id)
-                text.append(f'**`{user}`** | Jumlah: `{count}` pelanggaran')
+                text.append(i18n.get(lang, "moderation.warn_list_item", user=str(user), count=count))
             except:
-                text.append(f'**`Unknown User ({user_id})`** | Jumlah: `{count}` pelanggaran')
+                text.append(i18n.get(lang, "moderation.warn_list_item_unknown", user_id=user_id, count=count))
         
         timestamp = ctx.message.created_at if ctx.message else ctx.interaction.created_at
-        embed = discord.Embed(title=f'Daftar Pelanggaran di {ctx.guild.name}', color=ctx.author.color, timestamp=timestamp)
+        title_txt = i18n.get(lang, "moderation.warn_list_title", guild=ctx.guild.name)
+        embed = discord.Embed(title=title_txt, color=ctx.author.color, timestamp=timestamp)
         embed.description = '\n'.join(text)
         embed.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else getenv('normalpfp'))
         await ctx.reply(embed=embed)
@@ -288,13 +328,21 @@ class Moderation(commands.Cog):
         """
         Ban pengguna dari server
         """
-        reason = reason or "Tidak ada alasan dispesifikasi."
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
+        default_reason = i18n.get(lang, "moderation.warn_no_reason")
+        reason = reason or default_reason
+
         await ctx.guild.ban(user)
-        embed = discord.Embed(title="❗Ultimate Ban❗", color = ctx.author.colour)
-        embed.description = f"**`{user}`** telah diban!"
-        embed.add_field(name = "Alasan", value = reason, inline = False)
+        title_txt = i18n.get(lang, "moderation.ban_success_title")
+        embed = discord.Embed(title=title_txt, color = ctx.author.colour)
+        desc_txt = i18n.get(lang, "moderation.ban_success_desc", user=str(user))
+        embed.description = desc_txt
+        embed.add_field(name=i18n.get(lang, "moderation.ban_success_reason"), value = reason, inline = False)
         embed.set_thumbnail(url = user.display_avatar.url)
-        embed.set_footer(text=f"Dieksekusi oleh {ctx.author} | ID:{ctx.author.id}", icon_url=ctx.author.display_avatar.url)
+        footer_txt = i18n.get(lang, "moderation.ban_success_footer", author=str(ctx.author), author_id=ctx.author.id)
+        embed.set_footer(text=footer_txt, icon_url=ctx.author.display_avatar.url)
         await ctx.reply(embed = embed)
 
     @commands.hybrid_command(description="Unban seseorang yang telah diban sebelumnya.")
@@ -312,12 +360,15 @@ class Moderation(commands.Cog):
         Unban pengguna yang telah diban.
         """
         async with ctx.typing():
+            user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+            lang = user_settings.lang if user_settings else "en"
+
             try:
                 await ctx.guild.unban(user)
-                await ctx.send(f"{user} telah diunban.")
+                await ctx.send(i18n.get(lang, "moderation.unban_success", user=str(user)))
                 return
             except:
-                await ctx.send(f"Aku tidak bisa menemukan {user} di ban list!")
+                await ctx.send(i18n.get(lang, "moderation.unban_not_found", user=str(user)))
                 return
 
     @commands.hybrid_command(aliases = ['clean', 'purge', 'delete', 'hapus'], 
@@ -336,22 +387,28 @@ class Moderation(commands.Cog):
         """
         Menghilangkan pesan berdasarkan jumlah yang diinginkan.
         """
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
 
         channel = channel or ctx.channel
         if amount <= 0:
-            return await ctx.reply("Aku tidak bisa menghapus `0` pesan!", ephemeral=True)
+            return await ctx.reply(i18n.get(lang, "moderation.clear_zero_error"), ephemeral=True)
         elif amount >= 100:
-            return await ctx.reply("Aku mempunyai batas untuk menghapus `99` pesan!", ephemeral=True)
+            return await ctx.reply(i18n.get(lang, "moderation.clear_limit_error"), ephemeral=True)
         
         match channel:
             case ctx.channel:
-                await ctx.reply(f"Menghapus **`{amount}`** pesan...")
+                msg = i18n.get(lang, "moderation.clear_deleting_here", amount=amount)
+                await ctx.reply(msg)
             case _:
-                await ctx.reply(f"Menghapus **`{amount}`** pesan di {channel.mention}...", delete_after=10.0)
+                msg = i18n.get(lang, "moderation.clear_deleting_there", amount=amount, channel=channel.mention)
+                await ctx.reply(msg, delete_after=10.0)
 
         async with ctx.channel.typing():
             await channel.purge(limit = amount+1 if channel == ctx.channel else amount)
-        return await ctx.channel.send(f"Aku telah menghapus {amount} pesan from {channel.mention}.", delete_after = 5.0)
+        
+        success_msg = i18n.get(lang, "moderation.clear_success", amount=amount, channel=channel.mention)
+        return await ctx.channel.send(success_msg, delete_after = 5.0)
 
 async def setup(bot):
     await bot.add_cog(Moderation(bot))

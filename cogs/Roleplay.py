@@ -7,7 +7,8 @@ import discord
 from aiohttp import ClientSession
 from discord import app_commands
 from discord.ext import commands
-from scripts.main import has_voted, check_blacklist
+from scripts.main import db, has_voted, check_blacklist
+from scripts.i18n import i18n
 
 class Roleplay(commands.GroupCog, group_name = 'roleplay'):
     """
@@ -32,13 +33,14 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
             interaction:discord.Interaction, 
             url:str,
             source:str,
-            action:str,
+            action_key:str,
             user:discord.Member = None, 
             ):
-        """
-        Lazy me lol
-        """
         await interaction.response.defer()
+        user_settings = await db.usersettings.find_unique(where={'userId': interaction.user.id})
+        lang = user_settings.lang if user_settings else "en"
+        action = i18n.get(lang, action_key)
+        
         if not user:
             embed = discord.Embed(title=f'{interaction.user.display_name} {action}!', color=interaction.user.color)
         else:
@@ -59,7 +61,7 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         get_request = await self.nekos_get('hug')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Memeluk', user)
+        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'roleplay.action_hug', user)
     
     @app_commands.command(description='Cium seseorang!')
     @app_commands.describe(user='Siapa yang ingin kamu cium?')
@@ -73,7 +75,7 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         get_request = await self.nekos_get('kiss')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Mencium', user)
+        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'roleplay.action_kiss', user)
     
     @app_commands.command(description='Tampar seseorang!')
     @app_commands.describe(user='Siapa yang ingin kamu tampar?')
@@ -87,7 +89,7 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         get_request = await self.nekos_get('slap')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Menampar', user)
+        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'roleplay.action_slap', user)
     
     @app_commands.command(description='Ungkapkan ekspresi tertawamu!')
     @has_voted()
@@ -99,7 +101,7 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         get_request = await self.nekos_get('laugh')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Tertawa')
+        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'roleplay.action_laugh')
     
     @app_commands.command(description='Ungkapkan ekspresi bahagiamu!')
     @has_voted()
@@ -111,7 +113,7 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         get_request = await self.nekos_get('happy')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Merasa Bahagia')
+        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'roleplay.action_happy')
     
     @app_commands.command(description='Ungkapkan ekspresi berpikirmu!')
     @has_voted()
@@ -123,7 +125,7 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         get_request = await self.nekos_get('think')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Sedang Berpikir')
+        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'roleplay.action_think')
     
     @app_commands.command(description='Ungkapkan ekspresi malumu!')
     @has_voted()
@@ -135,7 +137,7 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         get_request = await self.nekos_get('blush')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Merasa Malu')
+        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'roleplay.action_blush')
     
     @app_commands.command(description='Ungkapkan ekspresi sedihmu!')
     @has_voted()
@@ -147,7 +149,7 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         get_request = await self.nekos_get('cry')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Menangis')
+        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'roleplay.action_cry')
 
     @app_commands.command(description='Ungkapkan ekspresi setujumu!')
     @has_voted()
@@ -159,7 +161,7 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         get_request = await self.nekos_get('thumbsup')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Setuju')
+        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'roleplay.action_agree')
     
     @app_commands.command(description='Elus kepala seseorang!')
     @app_commands.describe(user='Siapa yang ingin kamu elus kepalanya?')
@@ -168,12 +170,12 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
     @check_blacklist()
     async def pat(self, interaction:discord.Interaction, *, user:discord.Member):
         """
-        Tampar seseorang!
+        Elus kepala seseorang!
         """
         get_request = await self.nekos_get('pat')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Mengelus Kepala', user)
+        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'roleplay.action_pat', user)
     
     @app_commands.command(description='Ungkapkan ekspresi kebosananmu!')
     @has_voted()
@@ -185,7 +187,7 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         get_request = await self.nekos_get('bored')
         gif_url = get_request[0]
         anime_name = get_request[1]
-        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'Merasa Bosan')
+        return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'roleplay.action_bored')
 
 async def setup(bot):
     await bot.add_cog(Roleplay(bot))

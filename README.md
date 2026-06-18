@@ -48,10 +48,18 @@ This bot is in Indonesian and has special commands for members of the G-Tech Re'
 - **AI Memory & Logic**: Persistent personality driven by Google Gemini and Prisma.
     - **Smart Memory**: Efficient memory management using Prisma with optimized query logic.
     - **Smart Title Casing**: Intelligent text formatting handler that respects linguistic rules for both Indonesian and English.
-- **Dynamic Web Dashboard**: Built with `aiohttp` and `Jinja2` featuring premium Glassmorphism aesthetics and multilingual support (ID/EN).
+- **Dynamic Web Dashboard**: Built with `aiohttp` and `Jinja2` featuring premium Glassmorphism aesthetics, responsive layouts, and multilingual support (ID/EN).
+    - **Secure OAuth2 Auth**: Complete authentication flow with Discord, utilizing HMAC-signed cookies for secure session storage.
+    - **REST API Endpoints**:
+        - `/api/v1/user/profile` — Fetches authenticated user profile and details.
+        - `/api/v1/user/inventory` — Retrieves the user's RPG inventory.
+        - `/api/v1/stats` — Exposes system statistics and command execution metrics.
+        - `/api/v1/chat` — Connects the web client to the backend chat service.
+    - **Interactive Frontend**: Rich client-side dashboard with real-time stats updates, animated numeric counters, and a fully functional live chat console.
+- **Top.gg API Integration**: Built-in automated server and shard status reporting using the latest Top.gg API v1 batch metrics endpoint.
 
 ## Gated Local GPU Image Generation Pipeline
-To run Stable Diffusion (`genai-archive/anything-v5`) on a low-VRAM laptop (e.g. RTX 3050 4GB) without interrupting web browsing, RVDiA offloads image generation to a local server gated by interactive Windows notification prompts.
+To run Stable Diffusion (`Meina/MeinaMix_V11`) on a low-VRAM laptop (e.g. RTX 3050 4GB) without interrupting web browsing, RVDiA offloads image generation to a local server gated by interactive Windows notification prompts.
 
 ```mermaid
 sequenceDiagram

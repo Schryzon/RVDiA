@@ -16,6 +16,8 @@ from dotenv import load_dotenv
 from scripts.errors import NoProfilePicture, Blacklisted, NoEventAvailable, NotVoted
 from scripts.errors import NoGameAccount, NoPremiumStatus
 from datetime import datetime
+from scripts.i18n import i18n
+
 load_dotenv()
 
 # New in v1.x
@@ -109,13 +111,19 @@ def has_registered():
 
 def is_premium():
     async def predicate(ctx):
+        try:
+            user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+            lang = user_settings.lang if user_settings else "en"
+        except:
+            lang = "en"
         user = await db.user.find_unique(where={'id': ctx.author.id})
         if not user or not user.premiumUntil:
-            raise NoPremiumStatus("Fitur ini khusus untuk Dream Weaver! 💎")
+            raise NoPremiumStatus(i18n.get(lang, "errors.premium_exclusive"))
         if user.premiumUntil < datetime.now():
-            raise NoPremiumStatus("Masa berlaku Premium-mu telah habis!")
+            raise NoPremiumStatus(i18n.get(lang, "errors.premium_expired"))
         return True
     return commands.check(predicate)
+
 
 # def buy_item(ctx:commands.Context):
 
@@ -178,7 +186,14 @@ async def disable_command(ctx:commands.Context):
     """
     Used for disabled commands.
     """
-    await ctx.reply("Mohon maaf, command ini sedang dinonaktifkan!\nMohon sabar menunggu update terbaru, yah! ❤️")
+    try:
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+    except:
+        lang = "en"
+    msg = i18n.get(lang, "errors.command_disabled")
+    await ctx.reply(msg)
+
 
 def get_commands_context(bot) -> str:
     """Dynamically generates a list of available commands for LLM context."""

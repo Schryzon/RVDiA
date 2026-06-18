@@ -39,7 +39,6 @@ class Paginator:
     def __init__(
         self, show_index, color=0, image_url: str = None, thumbnail_url: str = None
     ):
-        # self.ending_note = None
         self.color = color
         self.char_limit = 6000
         self.field_limit = 25
@@ -48,6 +47,7 @@ class Paginator:
         self.show_index = show_index
         self.image_url = image_url
         self.thumbnail_url = thumbnail_url
+        self.lang = "en"
         self.clear()
 
     def clear(self):
@@ -55,56 +55,48 @@ class Paginator:
         self._pages = []
 
     def _check_embed(self, embed: discord.Embed, *chars: str):
-        """
-        Check if the emebed is too big to be sent on discord
-        Args:
-            embed (discord.Embed): The embed to check
-        Returns:
-            bool: Will return True if the emebed isn't too large
-        """
         return (
             len(embed) + sum(len(char) for char in chars if char) < self.char_limit
             and len(embed.fields) < self.field_limit
         )
 
     def _new_page(self, title: str, description: str):
-        """
-        Create a new page
-        Args:
-            title (str): The title of the new page
-        Returns:
-            discord.Emebed: Returns an embed with the title and color set
-        """
         embed = discord.Embed(title=title, description=description, color=self.color)
         embed.set_image(url=self.image_url)
         embed.set_thumbnail(url=self.thumbnail_url)
         return embed
 
     def _add_page(self, page: discord.Embed):
-        """
-        Add a page to the paginator
-        Args:
-            page (discord.Embed): The page to add
-        """
         page.set_footer(text=self.ending_note)
         self._pages.append(page)
 
     def add_cog(
         self, title: Union[str, commands.Cog], commands_list: List[commands.Command]
     ):
-        """
-        Add a cog page to the help menu
-        Args:
-            title (Union[str, commands.Cog]): The title of the embed
-            commands_list (List[commands.Command]): List of commands
-        """
         cog = isinstance(title, commands.Cog)
         if not commands_list:
             return
 
         page_title = title.qualified_name if cog else title
-        embed = self._new_page(page_title, (title.description or "") if cog else "")
+        cog_key = page_title.lower()
+        from scripts.i18n import i18n
+        map_key = {
+            "conversation": "help.category_conversation",
+            "fun": "help.category_fun",
+            "game": "help.category_game",
+            "general": "help.category_general",
+            "image": "help.category_image",
+            "moderation": "help.category_moderation",
+            "roleplay": "help.category_roleplay",
+            "event": "help.category_event",
+            "no category": "help.no_category",
+            "tak tergolongkan": "help.no_category"
+        }.get(cog_key, "")
+        
+        if map_key:
+            page_title = i18n.get(self.lang, map_key)
 
+        embed = self._new_page(page_title, (title.description or "") if cog else "")
         self._add_command_fields(embed, page_title, commands_list)
 
     def _add_command_fields(
@@ -114,25 +106,46 @@ class Paginator:
         command_list: List[Union[commands.Command, app_commands.commands.Command]],
         group: bool = False,
     ):
-        """
-        Adds command fields to Category/Cog and Command Group pages
-        Args:
-            embed (discord.Embed): The page to add command descriptions
-            page_title (str): The title of the page
-            commands_list(List[Union[commands.Command, app_commands.commands.Command]]): The list of commands for the fields
-        """
+        from scripts.i18n import i18n
+        no_desc_text = i18n.get(self.lang, "help.no_description")
 
         for command in command_list:
-
             if isinstance(command, commands.Command):
                 short_doc = command.short_doc
             else:
                 short_doc = command.description.split("\n", 1)[0]
+                
+            short_doc = short_doc or no_desc_text
+
+            subcmds = []
+            if not group:
+                if hasattr(command, "commands") and command.commands:
+                    subcmds = list(command.commands)
+                elif hasattr(command, "walk_commands"):
+                    subcmds = list(command.walk_commands())
+                
+                subcmds = [s for s in subcmds if not getattr(s, "hidden", False)]
+            
+            if subcmds:
+                tree_lines = [short_doc]
+                for idx, sub in enumerate(subcmds[:5]):
+                    connector = "└── " if idx == len(subcmds[:5]) - 1 else "├── "
+                    sub_desc = sub.short_doc if hasattr(sub, "short_doc") else (sub.description.split("\n", 1)[0] if sub.description else "")
+                    sub_desc = sub_desc or "..."
+                    if len(sub_desc) > 50:
+                        sub_desc = sub_desc[:47] + "..."
+                    tree_lines.append(f"{connector}{sub.name} — {sub_desc}")
+                if len(subcmds) > 5:
+                    tree_lines.append(f"└── ... ({len(subcmds) - 5} more)")
+                value_content = "\n".join(tree_lines)
+            else:
+                value_content = short_doc
+
             if not self._check_embed(
                 embed,
                 self.ending_note,
                 command.name,
-                short_doc,
+                value_content,
                 self.prefix,
                 self.suffix,
             ):
@@ -140,35 +153,31 @@ class Paginator:
                 embed = self._new_page(page_title.title(), embed.description)
 
             embed.add_field(
-                name=f"🔗 {command.name}" if group else f"{command.name}",
-                value=f'{self.prefix}{short_doc or "Tidak ada deskripsi."}{self.suffix}',
+                name=f"🔗 {command.name}" if group else f"/{command.name}" if not isinstance(command, commands.Command) else f"{command.name}",
+                value=f'{self.prefix}{value_content}{self.suffix}',
                 inline=False,
             )
 
         self._add_page(embed)
 
-    @staticmethod
-    def __command_info(command: Union[commands.Command, commands.Group]):
+    def __command_info(self, command: Union[commands.Command, commands.Group]):
         info = ""
         if command.description:
             info += command.description + "\n\n"
         if command.help:
             info += command.help
         if not info:
-            info = "Tidak ada info tentang command ini."
+            from scripts.i18n import i18n
+            info = i18n.get(self.lang, "help.no_info")
         return info
 
     def add_app_command(self, command: app_commands.commands.Command, signature: str):
-        """
-        Add an application command to the help page
-        Args:
-            command (app_commands.commands.Command): The application command to add
-        """
+        from scripts.i18n import i18n
         page = self._new_page(
-            f"{command.name.title()}", f"{self.prefix}{command.description}{self.suffix}" # MARKED
+            f"{command.name.title()}", f"{self.prefix}{command.description}{self.suffix}"
         )
         page.add_field(
-            name="Penggunaan",
+            name=i18n.get(self.lang, "help.usage"),
             value=f"{self.prefix}{signature}{self.suffix}",
             inline=False,
         )
@@ -180,32 +189,23 @@ class Paginator:
                 description = (
                     "" if parameter.description == "…" else parameter.description
                 )
+                req_val = "True" if parameter.required else "False"
                 page.add_field(
                     name=parameter.name,
-                    value=f"```Dibutuhkan: {parameter.required}\n{description}```",
+                    value=f"```Dibutuhkan: {req_val}\n{description}```" if self.lang == "id" else f"```Required: {req_val}\n{description}```",
                     inline=False,
                 )
 
         self._add_page(page)
 
     def add_app_group(self, group: app_commands.commands.Group, signature: str):
-        """
-        Add an application command to the help page
-        Args:
-            command (app_commands.commands.Group): The application group command to add
-        """
         page = self._new_page(
             group.qualified_name, f"{self.prefix}{group.description}{self.suffix}"
         )
         self._add_command_fields(page, group.name, group.walk_commands(), group=True)
 
     def add_command(self, command: commands.Command, signature: str):
-        """
-        Add a command help page
-        Args:
-            command (commands.Command): The command to get help for
-            signature (str): The command signature/usage string
-        """
+        from scripts.i18n import i18n
         page = self._new_page(
             command.qualified_name.title(),
             f"{self.prefix}{self.__command_info(command)}{self.suffix}" or "",
@@ -213,48 +213,39 @@ class Paginator:
         if command.aliases:
             aliases = ", ".join(command.aliases)
             page.add_field(
-                name="Alias",
+                name=i18n.get(self.lang, "help.alias"),
                 value=f"{self.prefix}{aliases}{self.suffix}",
                 inline=False,
             )
         if cooldown := command._buckets._cooldown:
             page.add_field(
-                name="Cooldown",
-                value=f"`{cooldown.rate} kali setiap {cooldown.per} detik`",
+                name=i18n.get(self.lang, "help.cooldown"),
+                value=f"`{i18n.get(self.lang, 'help.cooldown_value', rate=cooldown.rate, per=cooldown.per)}`",
             )
 
         page.add_field(
-            name="Penggunaan", value=f"{self.prefix}{signature}{self.suffix}", inline=False
+            name=i18n.get(self.lang, "help.usage"), value=f"{self.prefix}{signature}{self.suffix}", inline=False
         )
         self._add_page(page)
 
     def add_group(self, group: commands.Group, commands_list: List[commands.Command]):
-        """
-        Add a group help page
-        Args:
-            group (commands.Group): The command group to get help for
-            commands_list (List[commands.Command]): The list of commands in the group
-        """
         page = self._new_page(
             group.name, f"{self.prefix}{self.__command_info(group)}{self.suffix}" or ""
         )
-
         self._add_command_fields(page, group.name, commands_list, group=True)
 
     def add_index(self, title: str, bot: commands.Bot):
-        """
-        Add an index page to the response of the bot_help command
-        Args:
-            title (str): The title of the index page
-            bot (commands.Bot): The bot instance
-        """
+        from scripts.i18n import i18n
+        title = i18n.get(self.lang, "help.index_title")
+        no_desc_text = i18n.get(self.lang, "help.no_description")
+        
         if self.show_index:
             index = self._new_page(title, bot.description or "")
 
             for page_no, page in enumerate(self._pages, 1):
                 index.add_field(
                     name=f"{page_no}) {page.title}",
-                    value=f'{self.prefix}{page.description or "Tidak ada deskripsi."}{self.suffix}',
+                    value=f'{self.prefix}{page.description or no_desc_text}{self.suffix}',
                     inline=False,
                 )
             index.set_footer(text=self.ending_note)
@@ -264,16 +255,17 @@ class Paginator:
 
     @property
     def pages(self):
-        """Returns the rendered list of pages."""
         if len(self._pages) == 1:
             return self._pages
         lst = []
         start = 0 if self.show_index else 1
         pages = len(self._pages) - 1 if self.show_index else len(self._pages)
+        from scripts.i18n import i18n
         for page_no, page in enumerate(self._pages, start):
             page: discord.Embed
             if not self.show_index or page_no != 0:
-                page.description = f"`Halaman: {page_no}/{pages}`\n{page.description}"
+                pg_label = i18n.get(self.lang, "help.page_number", current=page_no, total=pages)
+                page.description = f"`{pg_label}`\n{page.description}"
             lst.append(page)
         return lst
 
@@ -381,6 +373,14 @@ class Help(HelpCommand, commands.Cog):
         self, ctx: commands.Context, command: commands.Command
     ):
         self.context = ctx
+        try:
+            from scripts.main import db
+            user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+            self.lang = user_settings.lang if user_settings else "en"
+        except Exception:
+            self.lang = "en"
+        self.paginator.lang = self.lang
+
         if ctx.guild is not None:
             perms = ctx.channel.permissions_for(ctx.guild.me)
             if not perms.embed_links:
@@ -417,10 +417,10 @@ class Help(HelpCommand, commands.Cog):
 
     def get_ending_note(self):
         """Returns help command's ending note. This is mainly useful to override for i18n purposes."""
-        note = self.ending_note or (
-            'Ketik "{help.clean_prefix}{help.invoked_with} (command)" untuk info command mendetail.\n'
-            'Ketik "{help.clean_prefix}{help.invoked_with} (group)" untuk melihat info kategori/group.'
-        )
+        from scripts.i18n import i18n
+        # Set self.lang fallback in case prepare_help_command hasn't set it yet
+        lang = getattr(self, "lang", "en")
+        note = self.ending_note or i18n.get(lang, "help.ending_note")
         return note.format(
             ctx=self.context,
             help=self if hasattr(self, "clean_prefix") else self.context,
@@ -560,9 +560,11 @@ class Help(HelpCommand, commands.Cog):
 
     async def send_error_message(self, error: str, /) -> None:
         """Check if the conext is from an app command or text command and send an error message"""
+        from scripts.i18n import i18n
+        lang = getattr(self, "lang", "en")
+        msg = i18n.get(lang, "help.command_not_found")
+        
         if self.context.interaction:
-            return await self.context.interaction.response.send_message(
-                "Aku tidak bisa menemukan command itu!\nCheck lagi command yang ada dengan `/help`!", ephemeral=True
-            )
+            return await self.context.interaction.response.send_message(msg, ephemeral=True)
 
-        return await super().send_error_message("Aku tidak bisa menemukan command itu!\nCheck lagi command yang ada dengan `@RVDIA help`!")
+        return await super().send_error_message(msg)

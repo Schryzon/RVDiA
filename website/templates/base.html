@@ -45,14 +45,27 @@
             <li><a href="/privacy?lang={{ lang }}">{{ i18n.privacy }}</a></li>
             <li><a href="/terms?lang={{ lang }}">{{ i18n.terms }}</a></li>
             <li><a href="/license?lang={{ lang }}">{{ i18n.license_title }}</a></li>
+            {% if user and user.logged_in %}
+            <li><a href="/dashboard?lang={{ lang }}" class="nav-dash-link">{{ i18n.get('dashboard_nav', 'Dashboard') }}</a></li>
+            {% else %}
+            <li><a href="/login?lang={{ lang }}" class="nav-login-link">{{ i18n.get('login_nav', 'Login') }}</a></li>
+            {% endif %}
             <li class="mobile-only lang-switch-mobile">
                 <a href="?lang=id">ID</a>
                 <a href="?lang=en">EN</a>
             </li>
         </ul>
-        <div class="lang-switch desktop-only">
-            <a href="?lang=id">ID</a>
-            <a href="?lang=en">EN</a>
+        <div class="nav-right desktop-only">
+            {% if user and user.logged_in %}
+            <a href="/dashboard?lang={{ lang }}" class="nav-user-pill">
+                <img src="{{ user.avatar_url }}" alt="Avatar" class="nav-avatar">
+                <span>{{ user.username }}</span>
+            </a>
+            {% endif %}
+            <div class="lang-switch">
+                <a href="?lang=id">ID</a>
+                <a href="?lang=en">EN</a>
+            </div>
         </div>
     </nav>
 

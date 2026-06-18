@@ -21,74 +21,81 @@ from discord import app_commands
 from discord.ext import commands
 from scripts.main import db, has_registered, check_blacklist
 from scripts.game import level_up, send_level_up_msg, split_reward_string, give_rewards, default_data, check_compatible
+from scripts.i18n import i18n
+
+async def get_user_lang(user_id: int) -> str:
+    user_settings = await db.usersettings.find_unique(where={'userId': user_id})
+    return user_settings.lang if user_settings else "en"
+
+def to_key(name: str) -> str:
+    name = name.lower()
+    name = re.sub(r'[^a-z0-9\s_]', '', name)
+    name = re.sub(r'[\s_]+', '_', name)
+    return name
 
 class FightView(View):
-    def __init__(self):
+    def __init__(self, lang="en"):
         super().__init__(timeout=25.0)
+        self.lang = lang
+        for child in self.children:
+            if isinstance(child, Button):
+                if child.custom_id == 'attack':
+                    child.label = 'Serang' if lang == 'id' else 'Attack'
+                elif child.custom_id == 'defend':
+                    child.label = 'Tahan' if lang == 'id' else 'Defend'
+                elif child.custom_id == 'item':
+                    child.label = 'Barang' if lang == 'id' else 'Item'
+                elif child.custom_id == 'skill':
+                    child.label = 'Skill' if lang == 'id' else 'Skill'
+                elif child.custom_id == 'self':
+                    child.label = 'Diri' if lang == 'id' else 'Self'
+                elif child.custom_id == 'end':
+                    child.label = 'Kabur' if lang == 'id' else 'Flee'
+                elif child.custom_id == 'check':
+                    child.label = 'Musuh' if lang == 'id' else 'Enemy'
+                elif child.custom_id == 'skip':
+                    child.label = 'Lewati' if lang == 'id' else 'Skip'
 
-    @button(label = 'Serang', custom_id='attack', style=discord.ButtonStyle.danger, emoji='💥')
-    async def attack(self, interaction:discord.Interaction, button:Button):
+    async def _handle_click(self, interaction: discord.Interaction, button: Button):
         if interaction.message.mentions[0] != interaction.user:
-            return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
-        await interaction.response.send_message("Opsi terpilih: 💥Serang")
+            msg = i18n.get(self.lang, "game.resign_button_not_allowed")
+            return await interaction.response.send_message(msg, ephemeral=True)
+        prefix = "Option selected: " if self.lang == "en" else "Opsi terpilih: "
+        await interaction.response.send_message(f"{prefix}{button.emoji}{button.label}")
         await asyncio.sleep(0.5)
-        await interaction.message.delete(delay = 5)
+        await interaction.message.delete(delay=5)
+
+    @button(label='Serang', custom_id='attack', style=discord.ButtonStyle.danger, emoji='💥')
+    async def attack(self, interaction:discord.Interaction, button:Button):
+        await self._handle_click(interaction, button)
 
     @button(label='Tahan', custom_id='defend', style=discord.ButtonStyle.blurple, emoji='🛡️')
     async def defend(self, interaction:discord.Interaction, button:Button):
-        if interaction.message.mentions[0] != interaction.user:
-            return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
-        await interaction.response.send_message("Opsi terpilih: 🛡️Tahan")
-        await asyncio.sleep(0.5)
-        await interaction.message.delete(delay=5)
+        await self._handle_click(interaction, button)
 
     @button(label='Barang', custom_id='item', style=discord.ButtonStyle.green, emoji='👜')
     async def item(self, interaction:discord.Interaction, button:Button):
-        if interaction.message.mentions[0] != interaction.user:
-            return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
-        await interaction.response.send_message("Opsi terpilih: 👜Barang")
-        await asyncio.sleep(0.5)
-        await interaction.message.delete(delay=5)
+        await self._handle_click(interaction, button)
 
     @button(label='Skill', custom_id='skill', style=discord.ButtonStyle.green, emoji='🔮')
     async def skill(self, interaction:discord.Interaction, button:Button):
-        if interaction.message.mentions[0] != interaction.user:
-            return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
-        await interaction.response.send_message("Opsi terpilih: 🔮Skill")
-        await asyncio.sleep(0.5)
-        await interaction.message.delete(delay=5)
+        await self._handle_click(interaction, button)
 
     @button(label='Diri', custom_id='self', style=discord.ButtonStyle.gray, emoji='👤')
     async def self_check(self, interaction:discord.Interaction, button:Button):
-        if interaction.message.mentions[0] != interaction.user:
-            return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
-        await interaction.response.send_message("Opsi terpilih: 👤Diri")
-        await asyncio.sleep(0.5)
-        await interaction.message.delete(delay=5)
+        await self._handle_click(interaction, button)
 
     @button(label='Kabur', custom_id='end', style=discord.ButtonStyle.gray, emoji='🏃')
     async def flee(self, interaction:discord.Interaction, button:Button):
-        if interaction.message.mentions[0] != interaction.user:
-            return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
-        await interaction.response.send_message("Opsi terpilih: 🏃Kabur")
-        await asyncio.sleep(0.5)
-        await interaction.message.delete(delay=5)
+        await self._handle_click(interaction, button)
 
     @button(label='Musuh', custom_id='check', style=discord.ButtonStyle.gray, emoji='❔', row=1)
     async def check(self, interaction:discord.Interaction, button:Button):
-        if interaction.message.mentions[0] != interaction.user:
-            return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
-        await interaction.response.send_message("Opsi terpilih: ❔Musuh")
-        await asyncio.sleep(0.5)
-        await interaction.message.delete(delay=5)
+        await self._handle_click(interaction, button)
 
     @button(label='Lewati', custom_id='skip', style=discord.ButtonStyle.gray, emoji='⌚', row=1)
     async def skip(self, interaction:discord.Interaction, button:Button):
-        if interaction.message.mentions[0] != interaction.user:
-            return await interaction.response.send_message("Kamu tidak diizinkan untuk menekan tombol ini!", ephemeral=True)
-        await interaction.response.send_message("Opsi terpilih: ⌚Lewati")
-        await asyncio.sleep(0.5)
-        await interaction.message.delete(delay=5)
+        await self._handle_click(interaction, button)
 
 class GameInstance():
     def __init__(self, ctx:commands.Context, user1:discord.Member, user2, bot):
@@ -120,6 +127,7 @@ class GameInstance():
         self.turns = 0
         self.p1_karma = 10
         self.p2_karma = 10
+        self.lang = "en"
         try:
             self.enemy_avatar = self.user2['avatar'] or getenv('defaultenemy')
         except:
@@ -131,6 +139,7 @@ class GameInstance():
                 return 3
             return 3*(math.floor(level/10))
         
+        self.lang = await get_user_lang(self.user1.id)
         user1_data = await db.user.find_unique(where={'id': self.user1.id})
         stats1 = user1_data.data
         self.user1_hp = user1_data.hp # Dynamic HP!
@@ -149,7 +158,8 @@ class GameInstance():
             # Fight = PvP
             user2_data = await db.user.find_unique(where={'id': self.user2.id})
             if user2_data is None:
-                await self.ctx.reply(f'Waduh! Sepertinya <@{self.user2.id}> belum membuat akun Re:Volution!')
+                msg = i18n.get(self.lang, "game.profile_not_registered")
+                await self.ctx.reply(msg)
                 raise Exception('Rival has no account!')
             
             stats2 = user2_data.data
@@ -255,15 +265,28 @@ class GameInstance():
     async def use(self, user1, type):
         inv_data = await db.inventory.find_unique(where={'userId': user1.id})
         items = inv_data.items if type == 'item' else inv_data.skills
-        view = ItemView(items, user1, type)
+        view = ItemView(items, user1, type, lang=self.lang)
         if type == 'item':
-            await self.ctx.channel.send(f"{user1.mention}, 10 detik untuk memilih item.", view=view, delete_after=15)
+            msg = f"{user1.mention}, 10 detik untuk memilih item." if self.lang == 'id' else f"{user1.mention}, 10 seconds to choose an item."
+            await self.ctx.channel.send(msg, view=view, delete_after=15)
         else:
-            await self.ctx.channel.send(f"{user1.mention}, 10 detik untuk menggunakan skill.", view=view, delete_after=15)
+            msg = f"{user1.mention}, 10 detik untuk menggunakan skill." if self.lang == 'id' else f"{user1.mention}, 10 seconds to use a skill."
+            await self.ctx.channel.send(msg, view=view, delete_after=15)
 
     async def func_converter(self, func: str, user1, user2):
         func = func.upper()
         func = re.sub(r'\(|\)', '', func)
+        
+        def get_name(u):
+            if isinstance(u, (discord.Member, discord.User)):
+                return u.mention
+            if isinstance(u, dict) and 'name' in u:
+                return i18n.get(self.lang, f"game.enemy_{to_key(u['name'])}_name", default=u['name'])
+            return "Seseorang" if self.lang == 'id' else "Someone"
+
+        name1 = get_name(user1)
+        name2 = get_name(user2)
+
         if '+' in func:
             func = func.split('+')
             match func[0]:
@@ -283,11 +306,8 @@ class GameInstance():
                         self.user2_hp += amount
                         if self.user2_hp > self.user2_max_hp: self.user2_hp = self.user2_max_hp
                         
-                    if isinstance(user1, (discord.Member, discord.User)):
-                        await self.ctx.channel.send(f'{user1.mention} memulihkan `{amount}` HP!')
-                    else:
-                        name = user1['name'] if user1 else "Seseorang"
-                        await self.ctx.channel.send(f"{name} memulihkan `{amount}` HP!")
+                    msg = i18n.get(self.lang, "game.func_hp_heal", name=name1, amount=amount)
+                    await self.ctx.channel.send(msg)
 
                 case 'DMG':
                     val = func[1]
@@ -303,54 +323,38 @@ class GameInstance():
                     else:
                         self.user1_hp -= amount
                     
-                    user1_is_mem = isinstance(user1, (discord.Member, discord.User))
-                    user2_is_mem = isinstance(user2, (discord.Member, discord.User))
-
-                    if user1_is_mem and user2_is_mem:
-                        await self.ctx.channel.send(f'{user1.mention} memberikan `{amount}` Damage instan ke {user2.mention}!')
-                    elif not user1_is_mem and user2_is_mem:
-                        name = user1['name'] if user1 else "Seseorang"
-                        await self.ctx.channel.send(f"{name} memberikan `{amount}` Damage instan ke {user2.mention}!")
-                    else:
-                        name = user1.mention if user1_is_mem else (user1['name'] if user1 else "Seseorang")
-                        target_name = user2['name'] if user2 else "Target"
-                        await self.ctx.channel.send(f"{name} memberikan `{amount}` Damage instan ke {target_name}!")
+                    msg = i18n.get(self.lang, "game.func_instant_dmg", name=name1, amount=amount, target=name2)
+                    await self.ctx.channel.send(msg)
 
                 case 'ATK':
+                    val_stat = int(func[1])
                     if user1 == self.user1:
-                        self.user1_stats[0] += int(func[1])
+                        self.user1_stats[0] += val_stat
                     else:
-                        self.user2_stats[0] += int(func[1])
+                        self.user2_stats[0] += val_stat
                     
-                    if isinstance(user1, (discord.Member, discord.User)):
-                        await self.ctx.channel.send(f'{user1.mention} menjadi lebih kuat!\n(+`{func[1]}` Attack)')
-                    else:
-                        name = user1['name'] if user1 else "Seseorang"
-                        await self.ctx.channel.send(f'{name} menjadi lebih kuat!\n(+`{func[1]}` Attack)')
+                    msg = i18n.get(self.lang, "game.func_atk_buff", name=name1, amount=val_stat)
+                    await self.ctx.channel.send(msg)
 
                 case 'DEF':
+                    val_stat = int(func[1])
                     if user1 == self.user1:
-                        self.user1_stats[1] += int(func[1])
+                        self.user1_stats[1] += val_stat
                     else:
-                        self.user2_stats[1] += int(func[1])
+                        self.user2_stats[1] += val_stat
                     
-                    if isinstance(user1, (discord.Member, discord.User)):
-                        await self.ctx.channel.send(f'{user1.mention} menjadi lebih kuat!\n(+`{func[1]}` Defense)')
-                    else:
-                        name = user1['name'] if user1 else "Seseorang"
-                        await self.ctx.channel.send(f'{name} menjadi lebih kuat!\n(+`{func[1]}` Defense)')
+                    msg = i18n.get(self.lang, "game.func_def_buff", name=name1, amount=val_stat)
+                    await self.ctx.channel.send(msg)
 
                 case 'AGL':
+                    val_stat = int(func[1])
                     if user1 == self.user1:
-                        self.user1_stats[2] += int(func[1])
+                        self.user1_stats[2] += val_stat
                     else:
-                        self.user2_stats[2] += int(func[1])
+                        self.user2_stats[2] += val_stat
                     
-                    if isinstance(user1, (discord.Member, discord.User)):
-                        await self.ctx.channel.send(f'{user1.mention} menjadi lebih lincah!\n(+`{func[1]}` Agility)')
-                    else:
-                        name = user1['name'] if user1 else "Seseorang"
-                        await self.ctx.channel.send(f'{name} menjadi lebih lincah!\n(+`{func[1]}` Agility)')
+                    msg = i18n.get(self.lang, "game.func_agl_buff", name=name1, amount=val_stat)
+                    await self.ctx.channel.send(msg)
                 
                 case 'ALL':
                     val_str = func[1]
@@ -365,18 +369,14 @@ class GameInstance():
 
                     if is_percent:
                         pct = int(val_str[:-1])
-                        # For stats, percent of what? Usually percent of base or current. 
-                        # Let's assume percent of current for stats, or fixed if it's too complex.
-                        # Actually, let's just treat percent in ALL as "X% of max HP" for HP and "X" for others if not specified.
-                        # Better yet, let's just stick to flat values for ALL stats for now, but handle the % safely.
                         val = round(max_hp * (pct / 100))
                     else:
                         val = int(val_str)
 
                     for i in range(3): target_stats[i] += val
                     
-                    name = user1.mention if isinstance(user1, (discord.Member, discord.User)) else (user1['name'] if user1 else "Seseorang")
-                    await self.ctx.channel.send(f'{name} mendapatkan dorongan kekuatan pada seluruh status!\n(+`{val}` All Stats)')
+                    msg = i18n.get(self.lang, "game.func_all_buff", name=name1, amount=val)
+                    await self.ctx.channel.send(msg)
         else:
             func = func.split('-')
             match func[0]:
@@ -398,93 +398,38 @@ class GameInstance():
                         self.user2_hp += amount
                         if self.user2_hp > self.user2_max_hp: self.user2_hp = self.user2_max_hp
 
-                    user1_is_mem = isinstance(user1, (discord.Member, discord.User))
-                    user2_is_mem = isinstance(user2, (discord.Member, discord.User))
-
-                    if user1_is_mem and user2_is_mem:
-                        await self.ctx.channel.send(f'{user1.mention} mengambil `{amount}` HP dari {user2.mention}!')
-                    elif not user1_is_mem and user2_is_mem:
-                        name = user1['name'] if user1 else "Seseorang"
-                        await self.ctx.channel.send(f"{name} mengambil `{amount}` HP dari {user2.mention}!")
-                    else:
-                        name = user1.mention if user1_is_mem else (user1['name'] if user1 else "Seseorang")
-                        target_name = user2['name'] if user2 else "Target"
-                        await self.ctx.channel.send(f"{name} mengambil `{amount}` HP dari {target_name}!")
+                    msg = i18n.get(self.lang, "game.func_hp_steal", name=name1, amount=amount, target=name2)
+                    await self.ctx.channel.send(msg)
 
                 case 'ATK':
+                    val_stat = int(func[1])
                     if user1 == self.user1:
-                        if not self.user2_stats[0] - int(func[1]) <= 1:
-                            self.user2_stats[0] -= int(func[1])
-                        else:
-                            self.user2_stats[0] = 1
-
+                        self.user2_stats[0] = max(1, self.user2_stats[0] - val_stat)
                     else:
-                        if not self.user1_stats[0] - int(func[1]) <= 1:
-                            self.user1_stats[0] -= int(func[1])
-                        else:
-                            self.user1_stats[0] = 1
+                        self.user1_stats[0] = max(1, self.user1_stats[0] - val_stat)
                     
-                    user1_is_mem = isinstance(user1, (discord.Member, discord.User))
-                    user2_is_mem = isinstance(user2, (discord.Member, discord.User))
-
-                    if user1_is_mem and user2_is_mem:
-                        await self.ctx.channel.send(f'{user1.mention} melemahkan serangan dari {user2.mention}!\n(-`{func[1]}` Attack)')
-                    elif not user1_is_mem and user2_is_mem:
-                        name = user1['name'] if user1 else "Seseorang"
-                        await self.ctx.channel.send(f'{name} melemahkan serangan dari {user2.mention}!\n(-`{func[1]}` Attack)')
-                    else:
-                        name = user1.mention if user1_is_mem else (user1['name'] if user1 else "Seseorang")
-                        target_name = user2['name'] if user2 else "Target"
-                        await self.ctx.channel.send(f'{name} melemahkan serangan dari {target_name}!\n(-`{func[1]}` Attack)')
+                    msg = i18n.get(self.lang, "game.func_atk_debuff", name=name1, target=name2, amount=val_stat)
+                    await self.ctx.channel.send(msg)
 
                 case 'DEF':
+                    val_stat = int(func[1])
                     if user1 == self.user1:
-                        if not self.user2_stats[1] - int(func[1]) <= 1:
-                            self.user2_stats[1] -= int(func[1])
-                        else:
-                            self.user2_stats[1] = 1
-
+                        self.user2_stats[1] = max(1, self.user2_stats[1] - val_stat)
                     else:
-                        if not self.user1_stats[1] - int(func[1]) <= 1:
-                            self.user1_stats[1] -= int(func[1])
-                        else:
-                            self.user1_stats[1] = 1
+                        self.user1_stats[1] = max(1, self.user1_stats[1] - val_stat)
                     
-                    user1_is_mem = isinstance(user1, (discord.Member, discord.User))
-                    user2_is_mem = isinstance(user2, (discord.Member, discord.User))
-
-                    if user1_is_mem and user2_is_mem:
-                        await self.ctx.channel.send(f'{user1.mention} melemahkan pertahanan dari {user2.mention}!\n(-`{func[1]}` Defense)')
-                    elif not user1_is_mem and user2_is_mem:
-                        name = user1['name'] if user1 else "Seseorang"
-                        await self.ctx.channel.send(f'{name} melemahkan pertahanan dari {user2.mention}!\n(-`{func[1]}` Defense)')
-                    else:
-                        name = user1.mention if user1_is_mem else (user1['name'] if user1 else "Seseorang")
-                        target_name = user2['name'] if user2 else "Target"
-                        await self.ctx.channel.send(f'{name} melemahkan pertahanan dari {target_name}!\n(-`{func[1]}` Defense)')
+                    msg = i18n.get(self.lang, "game.func_def_debuff", name=name1, target=name2, amount=val_stat)
+                    await self.ctx.channel.send(msg)
 
                 case 'AGL':
+                    val_stat = int(func[1])
                     if user1 == self.user1:
-                        if not self.user2_stats[2] - int(func[1]) <= 1:
-                            self.user2_stats[2] -= int(func[1])
-                        else:
-                            self.user2_stats[2] = 1
-
+                        self.user2_stats[2] = max(1, self.user2_stats[2] - val_stat)
                     else:
-                        if not self.user1_stats[2] - int(func[1]) <= 1:
-                            self.user1_stats[2] -= int(func[1])
-                        else:
-                            self.user1_stats[2] = 1
+                        self.user1_stats[2] = max(1, self.user1_stats[2] - val_stat)
                     
-                    user1_is_mem = isinstance(user1, (discord.Member, discord.User))
-                    user2_is_mem = isinstance(user2, (discord.Member, discord.User))
-
-                    if user1_is_mem and user2_is_mem:
-                        await self.ctx.channel.send(f'{user1.mention} mengurangi kelincahan dari {user2.mention}!\n(-`{func[1]}` Agility)')
-                    elif not user1_is_mem and user2_is_mem:
-                        await self.ctx.channel.send(f'{user1["name"]} mengurangi kelincahan dari {user2.mention}!\n(-`{func[1]}` Agility)')
-                    else:
-                        await self.ctx.channel.send(f'{user1.mention} mengurangi kelincahan dari {user2["name"]}!\n(-`{func[1]}` Agility)')
+                    msg = i18n.get(self.lang, "game.func_agl_debuff", name=name1, target=name2, amount=val_stat)
+                    await self.ctx.channel.send(msg)
                 
                 case 'ALL':
                     val_str = func[1]
@@ -502,13 +447,8 @@ class GameInstance():
                     for i in range(3):
                         target_stats[i] = max(1, target_stats[i] - val)
                     
-                    if user1 == self.user1:
-                        target_name = self.user2.mention if isinstance(self.user2, discord.Member) else (self.user2['name'] if self.user2 else "Target")
-                    else:
-                        target_name = self.user1.mention
-
-                    name = user1.mention if isinstance(user1, (discord.Member, discord.User)) else (user1['name'] if user1 else "Seseorang")
-                    await self.ctx.channel.send(f'{name} melemahkan seluruh status {target_name}!\n(-`{val}` All Stats)')
+                    msg = i18n.get(self.lang, "game.func_all_debuff", name=name1, target=name2, amount=val)
+                    await self.ctx.channel.send(msg)
 
     async def ai_choose_skill(self, skill_set:list, ai, player):
         # Filter skills based on turn and situation
@@ -545,7 +485,12 @@ class GameInstance():
         skill = random.choice(available_skills)
         skill_func = skill['func'].upper()
         
-        await self.ctx.channel.send(f"{self.user2['name']} menggunakan skill:\n# {skill['name']}!")
+        enemy_name = i18n.get(self.lang, f"game.enemy_{to_key(self.user2['name'])}_name", default=self.user2['name'])
+        # Find index in original skill_set
+        skill_idx = skill_set.index(skill)
+        skill_name = i18n.get(self.lang, f"game.enemy_skill_{to_key(self.user2['name'])}_{skill_idx}_name", default=skill['name'])
+        msg = i18n.get(self.lang, "game.use_skill_success", user=enemy_name, skill=skill_name, func=skill_func)
+        await self.ctx.channel.send(msg)
         await asyncio.sleep(1)
         await self.func_converter(skill_func, ai, player)
         self.ai_skill_usage += 1
@@ -561,121 +506,140 @@ class GameInstance():
         p1_skills_used = 0
         p2_skills_used = 0
         if isinstance(self.user2, discord.Member):
-            await self.ctx.reply(f'⚔️ Perang dimulai!\nLawan: {self.user2.mention}') # I'll just use this for now
+            msg = i18n.get(self.lang, "game.combat_started_pvp", mention=self.user2.mention)
+            await self.ctx.reply(msg)
         else:
-            await self.ctx.reply(f"⚔️ Perang dimulai!\nMusuh: **`{self.user2['name']}`**\nLevel: **``{self.user2['tier']}``**")
+            enemy_name = i18n.get(self.lang, f"game.enemy_{to_key(self.user2['name'])}_name", default=self.user2['name'])
+            msg = i18n.get(self.lang, "game.combat_started_pve", name=enemy_name, tier=self.user2['tier'])
+            await self.ctx.reply(msg)
         await asyncio.sleep(2.7)
         self.turns = 1
 
         while self.user1_hp > 0 and self.user2_hp > 0:
-            fight_view1 = FightView()
-            await self.ctx.channel.send(f'<@{self.user1.id}> Giliranmu!', view=fight_view1)
+            fight_view1 = FightView(lang=self.lang)
+            turn_msg = i18n.get(self.lang, "game.combat_turn_prompt", user=self.user1.id)
+            await self.ctx.channel.send(turn_msg, view=fight_view1)
 
             try:
-                res_1:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and r.content.startswith('Opsi terpilih: '), timeout = 25.0) # Detect a message from RVDiA
+                res_1:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and (r.content.startswith('Opsi terpilih: ') or r.content.startswith('Option selected: ')), timeout = 25.0)
 
             except asyncio.TimeoutError:
-                return await self.ctx.channel.send(f"🏃{self.user1.mention} kabur dari perang!")
+                fled_msg = i18n.get(self.lang, "game.combat_fled", mention=self.user1.mention)
+                return await self.ctx.channel.send(fled_msg)
 
-            match res_1.content:
-                case "Opsi terpilih: 💥Serang":
+            action = res_1.content.replace("Opsi terpilih: ", "").replace("Option selected: ", "")
+            match action:
+                case "💥Serang" | "💥Attack":
                     damage_info = await self.attack(self.user1_stats, self.user2_stats, self.user1.id, self.user2_defend, self.p1_karma, self.p2_karma)
                     damage, is_crit, is_dodge = damage_info[0], damage_info[1], damage_info[2]
                     
-                    title = f"💥 {self.user1.display_name} Menyerang!"
-                    if is_crit: title = f"✨ CRITICAL HIT! ✨"
-                    if is_dodge: title = f"💫 MIRACLE DODGE! 💫"
+                    title = i18n.get(self.lang, "game.combat_attack_title", name=self.user1.display_name)
+                    if is_crit: title = i18n.get(self.lang, "game.combat_attack_crit")
+                    if is_dodge: title = i18n.get(self.lang, "game.combat_attack_dodge")
                     
                     embed = discord.Embed(title=title, color=self.user1.color if not is_crit else discord.Color.gold())
                     
                     if is_dodge:
-                        embed.description = f"**{self.user2.display_name if isinstance(self.user2, discord.Member) else self.user2['name']}** berhasil menghindari serangan secara ajaib!"
+                        target_name = self.user2.display_name if isinstance(self.user2, discord.Member) else i18n.get(self.lang, f"game.enemy_{to_key(self.user2['name'])}_name", default=self.user2['name'])
+                        embed.description = i18n.get(self.lang, "game.combat_miracle_dodge_desc", name=target_name)
                     elif damage > 0:
                         if isinstance(self.user2, discord.Member):
-                            embed.description = f"**`{damage}` Damage!**\nHP <@{self.user2.id}> tersisa `{self.user2_hp}` HP!"
+                            embed.description = i18n.get(self.lang, "game.combat_damage_desc_pvp", user=self.user2.id, damage=damage, hp=self.user2_hp)
                         else:
-                            embed.description = f"**`{damage}` Damage!**\nHP {self.user2['name']} tersisa `{self.user2_hp}` HP!"
+                            enemy_name = i18n.get(self.lang, f"game.enemy_{to_key(self.user2['name'])}_name", default=self.user2['name'])
+                            embed.description = i18n.get(self.lang, "game.combat_damage_desc_pve", name=enemy_name, damage=damage, hp=self.user2_hp)
                     else:
-                        embed.description = f"Serangan {self.user1.display_name} meleset!"
+                        embed.description = i18n.get(self.lang, "game.combat_missed_desc", name=self.user1.display_name)
                         
                     embed.set_thumbnail(url=self.user1.display_avatar.url)
                     await self.ctx.channel.send(embed=embed)
 
-                case "Opsi terpilih: 🛡️Tahan":
+                case "🛡️Tahan" | "🛡️Defend":
                     self.defend(self.user1)
-                    embed = discord.Embed(title=f'🛡️{self.user1.display_name} Melindungi Diri!', color=self.user1.color)
-                    embed.description = f"**Defense bertambah untuk serangan selanjutnya!**"
+                    title = i18n.get(self.lang, "game.combat_defend_title", name=self.user1.display_name)
+                    embed = discord.Embed(title=title, color=self.user1.color)
+                    embed.description = i18n.get(self.lang, "game.combat_defend_desc")
                     embed.set_thumbnail(url=self.user1.display_avatar.url)
                     await self.ctx.channel.send(embed=embed)
 
-                case "Opsi terpilih: 👜Barang":
+                case "👜Barang" | "👜Item":
                     await self.use(self.user1, 'item')
                     try:
-                        res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and " menggunakan " in r.content and "\n(" in r.content, timeout = 10)
+                        res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and (" menggunakan " in r.content or " used " in r.content) and "\n(" in r.content, timeout = 10)
                         func_lines = res_use.content.split('\n')
                         if len(func_lines) >= 3:
                             func = func_lines[2]
                             await self.func_converter(func, self.user1, self.user2)
                         else:
-                            await self.ctx.channel.send("Format item tidak valid, gunakan kembali item yang benar.")
+                            msg = i18n.get(self.lang, "game.combat_item_invalid")
+                            await self.ctx.channel.send(msg)
                     except asyncio.TimeoutError:
-                        await self.ctx.channel.send(f"{self.user1.mention}, giliranmu dilewatkan karena tidak menggunakan item!")
+                        msg = i18n.get(self.lang, "game.combat_item_timeout", mention=self.user1.mention)
+                        await self.ctx.channel.send(msg)
 
-                case "Opsi terpilih: 🔮Skill":
+                case "🔮Skill" | "🔮Skill":
                     if p1_skills_used >= self.p1_skill_limit:
-                        await self.ctx.channel.send(f"{self.user1.mention}, kamu terbatas **`{self.p1_skill_limit}`** kali menggunakan skill untuk levelmu saat ini!")
+                        msg = i18n.get(self.lang, "game.combat_skill_limit_reached", mention=self.user1.mention, limit=self.p1_skill_limit)
+                        await self.ctx.channel.send(msg)
                     else:
                         await self.use(self.user1, 'skill')
                         try:
-                            res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and " menggunakan " in r.content and "\n(" in r.content, timeout = 10)
+                            res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and (" menggunakan " in r.content or " used " in r.content) and "\n(" in r.content, timeout = 10)
                             func_lines = res_use.content.split('\n')
                             if len(func_lines) >= 3:
                                 func = func_lines[2]
                                 await self.func_converter(func, self.user1, self.user2)
                                 p1_skills_used += 1
                             else:
-                                await self.ctx.channel.send("Format skill tidak valid, gunakan kembali skill yang benar.")
+                                msg = i18n.get(self.lang, "game.combat_skill_invalid")
+                                await self.ctx.channel.send(msg)
                         except asyncio.TimeoutError:
-                            await self.ctx.channel.send(f"{self.user1.mention}, giliranmu dilewatkan karena tidak menggunakan skill!")
+                            msg = i18n.get(self.lang, "game.combat_skill_timeout", mention=self.user1.mention)
+                            await self.ctx.channel.send(msg)
 
-                case "Opsi terpilih: ❔Musuh":
+                case "❔Musuh" | "❔Enemy":
                     stats = self.user2_stats
+                    defending_val = i18n.get(self.lang, "game.combat_status_yes") if self.user2_defend else i18n.get(self.lang, "game.combat_status_no")
                     if isinstance(self.user2, discord.Member):
                         embed = discord.Embed(title=self.user2.display_name, color=self.user2.color)
                         embed.set_thumbnail(url=self.user2.display_avatar.url)
-                        embed.description = f"HP: `{self.user2_hp}`/`100`\nBertahan? `{'TIDAK' if self.user2_defend is False else 'YA'}`"
+                        embed.description = i18n.get(self.lang, "game.combat_hp_status_enemy", hp=self.user2_hp, max_hp=100, defending=defending_val)
                         embed.add_field(
-                            name="Statisik Tempur",
+                            name=i18n.get(self.lang, "game.combat_stats_field"),
                             value=f"Attack: `{stats[0]}`\nDefense: `{stats[1]}`\nAgility: `{stats[2]}`",
                             inline=False
                         )
-                        embed.set_author(name='Info Lawan:')
+                        embed.set_author(name=i18n.get(self.lang, "game.combat_opponent_info_header"))
                     
                     else:
-                        embed = discord.Embed(title=self.user2['name'], color=discord.Color.from_str(self.user2.get('color', '#ff0000')))
-                        embed.description = f"\"{self.user2['desc']}\"\nHP: `{self.user2_hp}`/`{datas[1]['hp']}`\nBertahan? `{'TIDAK' if self.user2_defend is False else 'YA'}`"
+                        enemy_name = i18n.get(self.lang, f"game.enemy_{to_key(self.user2['name'])}_name", default=self.user2['name'])
+                        enemy_desc = i18n.get(self.lang, f"game.enemy_{to_key(self.user2['name'])}_desc", default=self.user2['desc'])
+                        embed = discord.Embed(title=enemy_name, color=discord.Color.from_str(self.user2.get('color', '#ff0000')))
+                        embed.description = f"\"{enemy_desc}\"\n" + i18n.get(self.lang, "game.combat_hp_status_enemy", hp=self.user2_hp, max_hp=datas[1]['hp'], defending=defending_val)
                         embed.add_field(
-                            name="Statisik Tempur",
+                            name=i18n.get(self.lang, "game.combat_stats_field"),
                             value=f"Attack: `{stats[0]}`\nDefense: `{stats[1]}`\nAgility: `{stats[2]}`",
                             inline=True
                         )
                         
                         # Show Enemy Skills
                         skills_text = ""
-                        for s in self.user2.get('skills', []):
-                            skills_text += f"• **{s['name']}**\n  _{s.get('desc', 'Tidak ada deskripsi.')}_\n"
-                        if not skills_text: skills_text = "Tidak ada skill khusus."
-                        embed.add_field(name="Daftar Skill Musuh", value=skills_text, inline=False)
+                        for idx, s in enumerate(self.user2.get('skills', [])):
+                            skill_name = i18n.get(self.lang, f"game.enemy_skill_{to_key(self.user2['name'])}_{idx}_name", default=s['name'])
+                            skills_text += f"• **{skill_name}**\n"
+                        if not skills_text: skills_text = i18n.get(self.lang, "game.combat_no_skills")
+                        embed.add_field(name=i18n.get(self.lang, "game.combat_enemy_skills_field"), value=skills_text, inline=False)
                         
                         # Show Player Consumables (Items)
                         inv_data = await db.inventory.find_unique(where={'userId': self.user1.id})
                         if inv_data and inv_data.items:
                             items_text = ""
                             for item in inv_data.items:
-                                items_text += f"• **{item.get('name', 'Barang')}** x{item.get('owned', 0)}\n"
-                            embed.add_field(name="Barang Milikmu", value=items_text or "Tidak ada barang.", inline=False)
+                                item_name = i18n.get(self.lang, f"game.item_{item['_id']}_name", default=item.get('name'))
+                                items_text += f"• **{item_name}** x{item.get('owned', 0)}\n"
+                            embed.add_field(name=i18n.get(self.lang, "game.combat_your_items_field"), value=items_text or i18n.get(self.lang, "game.combat_no_items"), inline=False)
                         
-                        embed.set_author(name='Info Musuh:')
+                        embed.set_author(name=i18n.get(self.lang, "game.combat_enemy_info_header"))
                         try:
                             embed.set_thumbnail(url = self.enemy_avatar)
                         except:
@@ -683,28 +647,32 @@ class GameInstance():
 
                     await self.ctx.channel.send(embed = embed)
 
-                case "Opsi terpilih: 👤Diri":
+                case "Opsi terpilih: 👤Diri" | "👤Self":
                     stats = self.user1_stats
+                    defending_val = i18n.get(self.lang, "game.combat_status_yes") if self.user1_defend else i18n.get(self.lang, "game.combat_status_no")
                     embed = discord.Embed(title=self.user1.display_name, color=self.user1.color)
                     embed.set_thumbnail(url=self.user1.display_avatar.url)
-                    embed.description = f"HP: `{self.user1_hp}`/`{self.user1_max_hp}`\nBertahan? `{'TIDAK' if self.user1_defend is False else 'YA'}`"
+                    embed.description = i18n.get(self.lang, "game.combat_hp_status", hp=self.user1_hp, max_hp=self.user1_max_hp, defending=defending_val)
                     embed.add_field(
-                        name="Statisik Saat Ini",
+                        name=i18n.get(self.lang, "game.combat_current_stats_field"),
                         value=f"Attack: `{stats[0]}`\nDefense: `{stats[1]}`\nAgility: `{stats[2]}`",
                         inline=False
                     )
-                    embed.set_author(name='Status Dirimu:')
+                    embed.set_author(name=i18n.get(self.lang, "game.combat_self_info_header"))
                     await self.ctx.channel.send(embed=embed)
 
-                case "Opsi terpilih: 🏃Kabur":
-                    await self.ctx.channel.send(f'⛔ <@{self.user1.id}>  mengakhiri perang.')
+                case "Opsi terpilih: 🏃Kabur" | "🏃Flee":
+                    msg = i18n.get(self.lang, "game.combat_ended", user=self.user1.id)
+                    await self.ctx.channel.send(msg)
                     return
                 
-                case "Opsi terpilih: ⌚Lewati":
-                    await self.ctx.channel.send(f'{self.user1.mention} melewati gilirannya!')
+                case "Opsi terpilih: ⌚Lewati" | "⌚Skip":
+                    msg = i18n.get(self.lang, "game.combat_skipped", mention=self.user1.mention)
+                    await self.ctx.channel.send(msg)
 
                 case _:
-                    await self.ctx.channel.send("Opsi tidak valid, giliran dilewatkan.") # This was actually possible, now it's an easter egg!
+                    msg = i18n.get(self.lang, "game.combat_invalid_option")
+                    await self.ctx.channel.send(msg) # This was actually possible, now it's an easter egg!
 
             if self.user2_hp <= 0:
                 await asyncio.sleep(2.5)
@@ -713,50 +681,61 @@ class GameInstance():
             await asyncio.sleep(2.5)
 
             if isinstance(self.user2, discord.Member):
-                fight_view2 = FightView()
-                await self.ctx.channel.send(f'<@{self.user2.id}> Giliranmu!', view=fight_view2)
+                fight_view2 = FightView(lang=self.lang)
+                turn_msg = i18n.get(self.lang, "game.combat_turn_prompt", user=self.user2.id)
+                await self.ctx.channel.send(turn_msg, view=fight_view2)
 
                 try:
-                    res_2 = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel, timeout = 25.0)
+                    res_2 = await self.bot.wait_for(
+                        'message',
+                        check=lambda r: r.author == self.bot.user 
+                        and r.channel == self.ctx.channel 
+                        and (r.content.startswith('Opsi terpilih: ') or r.content.startswith('Option selected: ')),
+                        timeout=25.0
+                    )
 
                 except asyncio.TimeoutError:
-                    return await self.ctx.channel.send(f"🏃{self.user2.mention} kabur dari perang!")
+                    fled_msg = i18n.get(self.lang, "game.combat_fled", mention=self.user2.mention)
+                    return await self.ctx.channel.send(fled_msg)
             
-                match res_2.content:
-                    case "Opsi terpilih: 💥Serang":
+                action = res_2.content.replace("Opsi terpilih: ", "").replace("Option selected: ", "")
+                match action:
+                    case "💥Serang" | "💥Attack":
                         damage_info = await self.attack(datas[1]['stats'], datas[0]['stats'], self.user2.id, self.user1_defend, self.p2_karma, self.p1_karma)
                         damage, is_crit, is_dodge = damage_info[0], damage_info[1], damage_info[2]
                         
-                        title = f"💥 {self.user2.display_name} Menyerang!"
-                        if is_crit: title = f"✨ CRITICAL HIT! ✨"
-                        if is_dodge: title = f"💫 MIRACLE DODGE! 💫"
+                        title = i18n.get(self.lang, "game.combat_attack_title", name=self.user2.display_name)
+                        if is_crit: title = i18n.get(self.lang, "game.combat_attack_crit")
+                        if is_dodge: title = i18n.get(self.lang, "game.combat_attack_dodge")
                         
                         embed = discord.Embed(title=title, color=self.user2.color if not is_crit else discord.Color.gold())
                         
                         if is_dodge:
-                            embed.description = f"**{self.user1.display_name}** berhasil menghindari serangan secara ajaib!"
+                            embed.description = i18n.get(self.lang, "game.combat_miracle_dodge_desc", name=self.user1.display_name)
                         elif damage > 0:
-                            embed.description = f"**`{damage}` Damage!**\nHP <@{self.user1.id}> tersisa `{self.user1_hp}` HP!"
+                            embed.description = i18n.get(self.lang, "game.combat_damage_desc_pvp", user=self.user1.id, damage=damage, hp=self.user1_hp)
                         else:
-                            embed.description = f"Serangan {self.user2.display_name} meleset!"
+                            embed.description = i18n.get(self.lang, "game.combat_missed_desc", name=self.user2.display_name)
                             
                         embed.set_thumbnail(url=self.user2.display_avatar.url)
                         await self.ctx.channel.send(embed=embed)
 
-                    case "Opsi terpilih: 🛡️Tahan":
+                    case "🛡️Tahan" | "🛡️Defend":
                         self.defend(self.user2)
-                        embed = discord.Embed(title=f'🛡️{self.user2.display_name} Melindungi Diri!', color=self.user2.color)
-                        embed.description = f"**Defense bertambah untuk serangan selanjutnya!**"
+                        title = i18n.get(self.lang, "game.combat_defend_title", name=self.user2.display_name)
+                        embed = discord.Embed(title=title, color=self.user2.color)
+                        embed.description = i18n.get(self.lang, "game.combat_defend_desc")
                         embed.set_thumbnail(url=self.user2.display_avatar.url)
                         await self.ctx.channel.send(embed=embed)
 
-                    case "Opsi terpilih: ❔Musuh":
+                    case "❔Musuh" | "❔Enemy":
                         stats = self.user1_stats
+                        defending_val = i18n.get(self.lang, "game.combat_status_yes") if self.user1_defend else i18n.get(self.lang, "game.combat_status_no")
                         embed = discord.Embed(title=self.user1.display_name, color=self.user1.color)
                         embed.set_thumbnail(url=self.user1.display_avatar.url)
-                        embed.description = f"HP: `{self.user1_hp}`/`{self.user1_max_hp}`\nBertahan? `{'TIDAK' if self.user1_defend is False else 'YA'}`"
+                        embed.description = i18n.get(self.lang, "game.combat_hp_status_enemy", hp=self.user1_hp, max_hp=self.user1_max_hp, defending=defending_val)
                         embed.add_field(
-                            name="Statisik Tempur",
+                            name=i18n.get(self.lang, "game.combat_stats_field"),
                             value=f"Attack: `{stats[0]}`\nDefense: `{stats[1]}`\nAgility: `{stats[2]}`",
                             inline=False
                         )
@@ -766,46 +745,65 @@ class GameInstance():
                         if inv_data and inv_data.items:
                             items_text = ""
                             for item in inv_data.items:
-                                items_text += f"• **{item.get('name', 'Barang')}** x{item.get('owned', 0)}\n"
-                            embed.add_field(name="Barang Milikmu", value=items_text or "Tidak ada barang.", inline=False)
+                                item_name = i18n.get(self.lang, f"game.item_{item['_id']}_name", default=item.get('name'))
+                                items_text += f"• **{item_name}** x{item.get('owned', 0)}\n"
+                            embed.add_field(name=i18n.get(self.lang, "game.combat_your_items_field"), value=items_text or i18n.get(self.lang, "game.combat_no_items"), inline=False)
                             
-                        embed.set_author(name='Info Lawan:')
-                        await self.ctx.channel.send(embed = embed)
+                        embed.set_author(name=i18n.get(self.lang, "game.combat_opponent_info_header"))
+                        await self.ctx.channel.send(embed=embed)
 
-                    case "Opsi terpilih: 👤Diri":
+                    case "👤Diri" | "👤Self":
                         stats = self.user2_stats
+                        defending_val = i18n.get(self.lang, "game.combat_status_yes") if self.user2_defend else i18n.get(self.lang, "game.combat_status_no")
                         embed = discord.Embed(title=self.user2.display_name, color=self.user2.color)
                         embed.set_thumbnail(url=self.user2.display_avatar.url)
-                        embed.description = f"HP: `{self.user2_hp}`/`{self.user2_max_hp}`\nBertahan? `{'TIDAK' if self.user2_defend is False else 'YA'}`"
+                        embed.description = i18n.get(self.lang, "game.combat_hp_status", hp=self.user2_hp, max_hp=self.user2_max_hp, defending=defending_val)
                         embed.add_field(
-                            name="Statisik Saat Ini",
+                            name=i18n.get(self.lang, "game.combat_current_stats_field"),
                             value=f"Attack: `{stats[0]}`\nDefense: `{stats[1]}`\nAgility: `{stats[2]}`",
                             inline=False
                         )
-                        embed.set_author(name='Status Dirimu:')
+                        embed.set_author(name=i18n.get(self.lang, "game.combat_self_info_header"))
                         await self.ctx.channel.send(embed=embed)
 
-                    case "Opsi terpilih: 👜Barang":
+                    case "👜Barang" | "👜Item":
                         await self.use(self.user2, 'item')
                         try:
-                            res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and " menggunakan " in r.content and "\n(" in r.content, timeout = 10)
+                            res_use:discord.Message = await self.bot.wait_for(
+                                'message',
+                                check=lambda r: r.author == self.bot.user 
+                                and r.channel == self.ctx.channel 
+                                and (" menggunakan " in r.content or " used " in r.content) 
+                                and "\n(" in r.content,
+                                timeout=10
+                            )
                             func_lines = res_use.content.split('\n')
                             if len(func_lines) >= 3:
                                 func = func_lines[2]
                                 await asyncio.sleep(1.2)
                                 await self.func_converter(func, self.user2, self.user1)
                             else:
-                                await self.ctx.channel.send("Format item tidak valid.")
+                                msg = i18n.get(self.lang, "game.combat_item_invalid")
+                                await self.ctx.channel.send(msg)
                         except asyncio.TimeoutError:
-                            await self.ctx.channel.send(f"{self.user2.mention}, giliranmu dilewatkan karena tidak menggunakan item!")
+                            msg = i18n.get(self.lang, "game.combat_item_timeout", mention=self.user2.mention)
+                            await self.ctx.channel.send(msg)
 
-                    case "Opsi terpilih: 🔮Skill":
-                        if p2_skills_used > self.p2_skill_limit:
-                            await self.ctx.channel.send(f"{self.user2.mention}, kamu terbatas **`{self.p2_skill_limit}`** kali menggunakan skill untuk levelmu saat ini!")
+                    case "🔮Skill":
+                        if p2_skills_used >= self.p2_skill_limit:
+                            msg = i18n.get(self.lang, "game.combat_skill_limit_reached", mention=self.user2.mention, limit=self.p2_skill_limit)
+                            await self.ctx.channel.send(msg)
                         else:
                             await self.use(self.user2, 'skill')
                             try:
-                                res_use:discord.Message = await self.bot.wait_for('message', check = lambda r: r.author == self.bot.user and r.channel == self.ctx.channel and " menggunakan " in r.content and "\n(" in r.content, timeout = 10)
+                                res_use:discord.Message = await self.bot.wait_for(
+                                    'message',
+                                    check=lambda r: r.author == self.bot.user 
+                                    and r.channel == self.ctx.channel 
+                                    and (" menggunakan " in r.content or " used " in r.content) 
+                                    and "\n(" in r.content,
+                                    timeout=10
+                                )
                                 func_lines = res_use.content.split('\n')
                                 if len(func_lines) >= 3:
                                     func = func_lines[2]
@@ -813,40 +811,47 @@ class GameInstance():
                                     await self.func_converter(func, self.user2, self.user1)
                                     p2_skills_used += 1
                                 else:
-                                    await self.ctx.channel.send("Format skill tidak valid.")
+                                    msg = i18n.get(self.lang, "game.combat_skill_invalid")
+                                    await self.ctx.channel.send(msg)
                             except asyncio.TimeoutError:
-                                await self.ctx.channel.send(f"{self.user2.mention}, giliranmu dilewatkan karena tidak menggunakan skill!")
+                                msg = i18n.get(self.lang, "game.combat_skill_timeout", mention=self.user2.mention)
+                                await self.ctx.channel.send(msg)
 
-                    case "Opsi terpilih: 🏃Kabur":
-                        await self.ctx.channel.send(f'⛔ <@{self.user2.id}>  mengakhiri perang.')
+                    case "🏃Kabur" | "🏃Flee":
+                        msg = i18n.get(self.lang, "game.combat_ended", user=self.user2.id)
+                        await self.ctx.channel.send(msg)
                         return
                     
-                    case "Opsi terpilih: ⌚Lewati":
-                        await self.ctx.channel.send(f'{self.user2.mention} melewati gilirannya!')
+                    case "⌚Lewati" | "⌚Skip":
+                        msg = i18n.get(self.lang, "game.combat_skipped", mention=self.user2.mention)
+                        await self.ctx.channel.send(msg)
 
                     case _:
-                        await self.ctx.channel.send("Opsi tidak valid, giliran dilewatkan.")
+                        msg = i18n.get(self.lang, "game.combat_invalid_option")
+                        await self.ctx.channel.send(msg)
 
             else:
                 ai = AI(self, self.turns)
                 choice = await ai.decide()
+                enemy_name = i18n.get(self.lang, f"game.enemy_{to_key(self.user2['name'])}_name", default=self.user2['name'])
+                
                 match choice:
                     case "attack":
                         damage_info = await self.attack(self.user2_stats, self.user1_stats, 1, self.user1_defend, self.p2_karma, self.p1_karma)
                         damage, is_crit, is_dodge = damage_info[0], damage_info[1], damage_info[2]
                         
-                        title = f"💥 {self.user2['name']} Menyerang!"
-                        if is_crit: title = f"✨ CRITICAL HIT! ✨"
-                        if is_dodge: title = f"💫 MIRACLE DODGE! 💫"
+                        title = i18n.get(self.lang, "game.combat_attack_title", name=enemy_name)
+                        if is_crit: title = i18n.get(self.lang, "game.combat_attack_crit")
+                        if is_dodge: title = i18n.get(self.lang, "game.combat_attack_dodge")
                         
                         embed = discord.Embed(title=title, color=discord.Color.from_str(self.user2.get('color', '#ff0000')) if not is_crit else discord.Color.gold())
                         
                         if is_dodge:
-                            embed.description = f"**{self.user1.display_name}** berhasil menghindari serangan secara ajaib!"
+                            embed.description = i18n.get(self.lang, "game.combat_miracle_dodge_desc", name=self.user1.display_name)
                         elif damage > 0:
-                            embed.description = f"**`{damage}` Damage!**\nHP <@{self.user1.id}> tersisa `{self.user1_hp}` HP!"
+                            embed.description = i18n.get(self.lang, "game.combat_damage_desc_pvp", user=self.user1.id, damage=damage, hp=self.user1_hp)
                         else:
-                            embed.description = f"Serangan {self.user2['name']} meleset!"
+                            embed.description = i18n.get(self.lang, "game.combat_missed_desc", name=enemy_name)
                             self.ai_miss_count += 1
                             self.ai_consecutive_misses += 1
                             
@@ -858,8 +863,9 @@ class GameInstance():
 
                     case "defend":
                         self.defend(self.user2)
-                        embed = discord.Embed(title=f'🛡️{self.user2["name"]} Melindungi Diri!', color=discord.Color.from_str(self.user2.get('color', '#ff0000')))
-                        embed.description = f"**Defense bertambah untuk serangan selanjutnya!**"
+                        title = i18n.get(self.lang, "game.combat_defend_title", name=enemy_name)
+                        embed = discord.Embed(title=title, color=discord.Color.from_str(self.user2.get('color', '#ff0000')))
+                        embed.description = i18n.get(self.lang, "game.combat_defend_desc")
                         try:
                             embed.set_thumbnail(url = self.enemy_avatar)
                         except:
@@ -871,16 +877,19 @@ class GameInstance():
 
                     case "check":
                         self.ai_knows_user = True
-                        embed = discord.Embed(title=f"🔍 {self.user2['name']} sedang memperhatikanmu...", color=discord.Color.from_str(self.user2.get('color', '#3498db')))
-                        embed.description = (
-                            f"**{self.user2['name']}** sedang membaca alur seranganmu!\n"
-                            f"\"Hmm... jadi ini kemampuanmu yang sebenarnya?\"\n\n"
-                            f"📊 **Analisa Target:**\n"
-                            f"• HP: `{self.user1_hp}`/`{self.user1_max_hp}`\n"
-                            f"• Attack: `{self.user1_stats[0]}`\n"
-                            f"• Defense: `{self.user1_stats[1]}`\n"
-                            f"• Agility: `{self.user1_stats[2]}`"
+                        title = i18n.get(self.lang, "game.combat_ai_check_title", name=enemy_name)
+                        desc = i18n.get(
+                            self.lang,
+                            "game.combat_ai_check_desc",
+                            name=enemy_name,
+                            hp=self.user1_hp,
+                            max_hp=self.user1_max_hp,
+                            atk=self.user1_stats[0],
+                            def_=self.user1_stats[1],
+                            agl=self.user1_stats[2]
                         )
+                        embed = discord.Embed(title=title, color=discord.Color.from_str(self.user2.get('color', '#3498db')))
+                        embed.description = desc
                         try:
                             embed.set_thumbnail(url = self.enemy_avatar)
                         except:
@@ -889,8 +898,10 @@ class GameInstance():
 
                     case "skip":
                         self.defend(self.user2) # Skipping turn gives a minor defense boost
-                        embed = discord.Embed(title=f"⌚ {self.user2['name']} Menunggu...", color=discord.Color.from_str(self.user2.get('color', '#95a5a6')))
-                        embed.description = f"**{self.user2['name']}** tidak melakukan apa-apa dan beralih ke posisi siaga."
+                        title = i18n.get(self.lang, "game.combat_ai_skip_title", name=enemy_name)
+                        desc = i18n.get(self.lang, "game.combat_ai_skip_desc", name=enemy_name)
+                        embed = discord.Embed(title=title, color=discord.Color.from_str(self.user2.get('color', '#95a5a6')))
+                        embed.description = desc
                         try:
                             embed.set_thumbnail(url = self.enemy_avatar)
                         except:
@@ -898,9 +909,12 @@ class GameInstance():
                         await self.ctx.channel.send(embed=embed)
 
                     case "run":
-                        embed = discord.Embed(title=f'🏃{self.user2["name"]} Kabur!', color=discord.Color.from_str(self.user2.get('color', '#ff0000')))
-                        embed.description = f"**Sayang sekali!\nCoba lagi nanti!**"
-                        embed.set_footer(text="Tidak ada hadiah ketika musuh kabur!")
+                        title = i18n.get(self.lang, "game.combat_ai_run_title", name=enemy_name)
+                        desc = i18n.get(self.lang, "game.combat_ai_run_desc", name=enemy_name)
+                        footer = i18n.get(self.lang, "game.combat_ai_run_footer")
+                        embed = discord.Embed(title=title, color=discord.Color.from_str(self.user2.get('color', '#ff0000')))
+                        embed.description = desc
+                        embed.set_footer(text=footer)
                         try:
                             embed.set_thumbnail(url = self.enemy_avatar)
                         except:
@@ -912,31 +926,43 @@ class GameInstance():
             await asyncio.sleep(2.5)
 
         if self.user1_hp > self.user2_hp:
-            embed = discord.Embed(title=f"{self.user1.display_name} Menang!", color=0xffff00)
-            embed.description = f"Dengan `{self.user1_hp}` HP tersisa!"
+            title = i18n.get(self.lang, "game.combat_win_title", name=self.user1.display_name)
+            desc = i18n.get(self.lang, "game.combat_win_desc", hp=self.user1_hp)
+            embed = discord.Embed(title=title, color=0xffff00)
+            embed.description = desc
+            
+            reward_title = i18n.get(self.lang, "game.combat_reward_title")
+            
             if not isinstance(self.user2, discord.Member):
                 rewards = self.user2['reward']
                 rewards = split_reward_string(rewards)
                 if len(rewards) == 3:
+                    reward_exp = i18n.get(self.lang, "game.combat_reward_exp", amount=rewards[0])
+                    reward_coins = i18n.get(self.lang, "game.combat_reward_coins", emoji=self.bot.coin_emoji_anim, amount=rewards[1])
+                    reward_karma = i18n.get(self.lang, "game.combat_reward_karma", amount=rewards[2])
                     embed.add_field(
-                        name = "Kamu Memperoleh:",
-                        value= f"⬆️ `{rewards[0]}` EXP\n{self.bot.coin_emoji_anim} `{rewards[1]}` Koin\n👹 `{rewards[2]}` Karma",
+                        name=reward_title,
+                        value=f"{reward_exp}\n{reward_coins}\n{reward_karma}",
                         inline=False
                     )
                     await give_rewards(self.ctx, self.user1, rewards[0], rewards[1], rewards[2])
                 else:
+                    reward_exp = i18n.get(self.lang, "game.combat_reward_exp", amount=rewards[0])
+                    reward_coins = i18n.get(self.lang, "game.combat_reward_coins", emoji=self.bot.coin_emoji_anim, amount=rewards[1])
                     embed.add_field(
-                        name="Kamu Memperoleh:",
-                        value= f"⬆️ `{rewards[0]}` EXP\n{self.bot.coin_emoji_anim} `{rewards[1]}` Koin",
+                        name=reward_title,
+                        value=f"{reward_exp}\n{reward_coins}",
                         inline=False
                     )
                     await give_rewards(self.ctx, self.user1, rewards[0], rewards[1])
             else:
+                reward_coins = i18n.get(self.lang, "game.combat_reward_coins", emoji=self.bot.coin_emoji_anim, amount=15)
+                reward_karma = i18n.get(self.lang, "game.combat_reward_karma", amount=5)
                 embed.add_field(
-                        name="Kamu Memperoleh:",
-                        value= f"{self.bot.coin_emoji_anim} `15` Koin\n👹 `5` Karma",
-                        inline=False
-                    )
+                    name=reward_title,
+                    value=f"{reward_coins}\n{reward_karma}",
+                    inline=False
+                )
                 await give_rewards(self.ctx, self.user1, 0, 15, 5)
             await asyncio.sleep(0.7)
             embed.set_thumbnail(url = self.user1.display_avatar.url)
@@ -944,28 +970,42 @@ class GameInstance():
 
         else:
             if isinstance(self.user2, discord.Member):
-                embed = discord.Embed(title=f"{self.user2.display_name} Menang!", color=0xffff00)
-                embed.description = f"Dengan `{self.user2_hp}` HP tersisa!"
+                title = i18n.get(self.lang, "game.combat_win_title", name=self.user2.display_name)
+                desc = i18n.get(self.lang, "game.combat_win_desc", hp=self.user2_hp)
+                embed = discord.Embed(title=title, color=0xffff00)
+                embed.description = desc
+                
+                reward_title = i18n.get(self.lang, "game.combat_reward_title")
+                reward_coins = i18n.get(self.lang, "game.combat_reward_coins", emoji=self.bot.coin_emoji_anim, amount=15)
+                reward_karma = i18n.get(self.lang, "game.combat_reward_karma", amount=5)
                 embed.add_field(
-                        name="Kamu Memperoleh:",
-                        value= f"{self.bot.coin_emoji_anim} `15` Koin\n 👹 `5` Karma",
-                        inline=False
-                    )
+                    name=reward_title,
+                    value=f"{reward_coins}\n{reward_karma}",
+                    inline=False
+                )
                 await give_rewards(self.ctx, self.user2, 0, 15, 5)
                 embed.set_thumbnail(url = self.user2.display_avatar.url)
                 await self.ctx.channel.send(embed=embed)
 
             else:
-                tips = ['Gunakan item dan skill spesial yang kamu miliki!',
-                        'Jika terlalu susah, kembali ke yang lebih mudah!',
-                        'Skill musuh muncul setelah 3 giliran pertama!',
-                        'Kunjungi Xaneria untuk meningkatkan peralatan dan skillmu!',
-                        'Selalu ingat untuk memeriksa status musuhmu!'
-                        ]
-                tips = random.choice(tips)
-                embed = discord.Embed(title=f"Kamu Kalah!", color=discord.Color.from_str(self.user2.get('color', '#ff0000')))
-                embed.description = f"{self.user2['name']} menang dengan `{self.user2_hp}` HP tersisa!"
-                embed.set_footer(text=f'Tip: {tips}')
+                tip_keys = [
+                    "game.combat_tip_1",
+                    "game.combat_tip_2",
+                    "game.combat_tip_3",
+                    "game.combat_tip_4",
+                    "game.combat_tip_5"
+                ]
+                selected_tip_key = random.choice(tip_keys)
+                tip_text = i18n.get(self.lang, selected_tip_key)
+                
+                title = i18n.get(self.lang, "game.combat_loss_title")
+                enemy_name = i18n.get(self.lang, f"game.enemy_{to_key(self.user2['name'])}_name", default=self.user2['name'])
+                desc = i18n.get(self.lang, "game.combat_loss_desc", name=enemy_name, hp=self.user2_hp)
+                footer = i18n.get(self.lang, "game.combat_loss_tip", tip=tip_text)
+                
+                embed = discord.Embed(title=title, color=discord.Color.from_str(self.user2.get('color', '#ff0000')))
+                embed.description = desc
+                embed.set_footer(text=footer)
                 try:
                     embed.set_thumbnail(url = self.enemy_avatar)
                 except:
@@ -1192,11 +1232,11 @@ class AI():
         return chosen_action
     
 class ItemDropdown(discord.ui.Select):
-    def __init__(self, items:list, user1, type) -> None:
+    def __init__(self, items:list, user1, type, lang="en") -> None:
         options = []
         for item in items:
-            # Truncate description to 100 characters max (Discord limit)
-            desc = item.get('desc', 'Tidak ada deskripsi.')
+            name = i18n.get(lang, f"game.item_{item['_id']}_name", default=item.get('name'))
+            desc = i18n.get(lang, f"game.item_{item['_id']}_desc", default=item.get('desc', 'No description.'))
             func = item.get('func', '???').upper()
             full_desc = f"{desc} ({func})"
             if len(full_desc) > 100:
@@ -1204,44 +1244,51 @@ class ItemDropdown(discord.ui.Select):
 
             if '0-' in item['_id'] and item['usefor'] == 'battle' and not item.get('owned', 0) <= 0 and type == 'item':
                 options.append(discord.SelectOption(
-                    label=f"{item['name']}",
+                    label=name,
                     value=item['_id'],
                     description=full_desc
                 ))
             elif '2-' in item['_id'] and item['usefor'] == 'battle' and not item.get('owned', 0) <= 0 and type == 'skill':
                 options.append(discord.SelectOption(
-                    label=f"{item['name']}",
+                    label=name,
                     value=item['_id'],
                     description=full_desc
                 ))
         
-        # Limit options to 25 max (Discord limit)
         if len(options) > 25:
             options = options[:25]
 
         if not options:
+            no_item_lbl = i18n.get(lang, "game.use_no_items") if type == 'item' else i18n.get(lang, "game.use_no_skills")
+            no_item_desc = i18n.get(lang, "game.combat_no_items") if type == 'item' else i18n.get(lang, "game.combat_no_skills")
             options.append(discord.SelectOption(
-                    label=f"Tidak ada item/skill!",
+                    label=no_item_lbl,
                     value="none",
-                    description=f"Kamu harus membelinya dulu di /game shop!"
+                    description=no_item_desc
                 )
             )
-        super().__init__(custom_id="itemdrop", placeholder='Pilih yang ingin kamu gunakan!', min_values=1, max_values=1, options=options)
+        placeholder_text = i18n.get(lang, "game.shop_select_item")
+        super().__init__(custom_id="itemdrop", placeholder=placeholder_text, min_values=1, max_values=1, options=options)
         self.user1 = user1
         self.items = items
         self.types = type
+        self.lang = lang
 
     async def callback(self, interaction:discord.Interaction):
         if interaction.message.mentions[0].id != interaction.user.id:
-            return await interaction.response.send_message(f"Hey! Kamu tidak diizinkan untuk memilih!", ephemeral=True)
+            msg = i18n.get(self.lang, "game.invite_view_not_for_you")
+            return await interaction.response.send_message(msg, ephemeral=True)
         if self.values[0] == 'none' and self.types == 'item':
-            return await interaction.response.send_message("Kamu tidak memiliki item apapun!", ephemeral=True)
+            msg = i18n.get(self.lang, "game.use_no_items")
+            return await interaction.response.send_message(msg, ephemeral=True)
         elif self.values[0] == 'none' and self.types == 'skill':
-            return await interaction.response.send_message("Kamu tidak memiliki skill apapun!", ephemeral=True)
+            msg = i18n.get(self.lang, "game.use_no_skills")
+            return await interaction.response.send_message(msg, ephemeral=True)
         
         user_record = await db.user.find_unique(where={'id': self.user1.id}, include={'inventory': True})
         if not user_record or not user_record.inventory:
-            return await interaction.response.send_message("Akun bermasalah!", ephemeral=True)
+            msg = i18n.get(self.lang, "game.use_account_issue")
+            return await interaction.response.send_message(msg, ephemeral=True)
             
         inventory = user_record.inventory
         used_item = None
@@ -1251,7 +1298,8 @@ class ItemDropdown(discord.ui.Select):
             for item in user_items:
                 if item['_id'] == self.values[0] and item.get('owned', 0) > 0:
                     item['owned'] -= 1
-                    used_item = [item['name'], item['func']]
+                    item_name = i18n.get(self.lang, f"game.item_{item['_id']}_name", default=item['name'])
+                    used_item = [item_name, item['func']]
                     break
             
             if used_item:
@@ -1260,26 +1308,29 @@ class ItemDropdown(discord.ui.Select):
                     data={'items': Json(user_items)}
                 )
         else:
-            # Skill usage (doesn't consume)
             user_skills = inventory.skills if isinstance(inventory.skills, list) else []
             for item in user_skills:
                 if item['_id'] == self.values[0] and item.get('owned', 0) > 0:
-                    used_item = [item['name'], item['func']]
+                    item_name = i18n.get(self.lang, f"game.item_{item['_id']}_name", default=item['name'])
+                    used_item = [item_name, item['func']]
                     break
 
         if used_item is None:
-            return await interaction.response.send_message("Item tidak ditemukan atau sudah habis!", ephemeral=True)
+            msg = i18n.get(self.lang, "game.use_not_found")
+            return await interaction.response.send_message(msg, ephemeral=True)
             
         if self.types == 'item':
-            await interaction.response.send_message(f"{interaction.user.mention} menggunakan item:\n# {used_item[0]}!\n({used_item[1].upper()})")
+            msg = i18n.get(self.lang, "game.use_item_success", user=interaction.user.mention, item=used_item[0], func=used_item[1].upper())
+            await interaction.response.send_message(msg)
         else:
-            await interaction.response.send_message(f"{interaction.user.mention} menggunakan skill:\n# {used_item[0]}!\n({used_item[1].upper()})")
+            msg = i18n.get(self.lang, "game.use_skill_success", user=interaction.user.mention, skill=used_item[0], func=used_item[1].upper())
+            await interaction.response.send_message(msg)
 
 
 class ItemView(View):
-    def __init__(self, items:list, user1, type):
+    def __init__(self, items:list, user1, type, lang="en") -> None:
         super().__init__(timeout=20)
-        self.add_item(ItemDropdown(items, user1, type))
+        self.add_item(ItemDropdown(items, user1, type, lang=lang))
     
 def guess_level_convert(level:str):
     """
@@ -1296,11 +1347,12 @@ def guess_level_convert(level:str):
             return 25
 
 class GuessDropdown(discord.ui.Select):
-    def __init__(self, number:int, attempt:int, hint:int, level:str) -> None:
+    def __init__(self, number:int, attempt:int, hint:int, level:str, lang="en") -> None:
         self.number = number
         self.attempt = attempt
         self.hints = hint
         self.level = level
+        self.lang = lang
         num_amount = guess_level_convert(level)
         options = []
         for i in range(1, num_amount+1):
@@ -1308,46 +1360,55 @@ class GuessDropdown(discord.ui.Select):
                 label=str(i),
                 value=i
             ))
-        super().__init__(custom_id='guessdrop', placeholder='Pilih angka yang tepat!', min_values=1, max_values=1, options=options)
+        placeholder_text = "Pilih angka yang tepat!" if lang == "id" else "Select the correct number!"
+        super().__init__(custom_id='guessdrop', placeholder=placeholder_text, min_values=1, max_values=1, options=options)
 
     async def callback(self, interaction:discord.Interaction):
         if self.attempt > 0:
             if int(self.values[0]) == self.number:
-                await interaction.response.send_message(f"Benar! Angkanya `{self.number}`!")
-                self.disabled =True
+                msg = i18n.get(self.lang, "game.guess_correct", number=self.number)
+                await interaction.response.send_message(msg)
+                self.disabled = True
                 return
             else:
                 self.attempt -= 1
-                await interaction.response.send_message(f"Salah! Angkanya bukan `{self.values[0]}`!\nSisa attempt: {self.attempt}", view=GuessGameView(self.number, self.attempt, self.hints, self.level, int(self.values[0])))
+                msg = i18n.get(self.lang, "game.guess_incorrect", guess=self.values[0], attempt=self.attempt)
+                await interaction.response.send_message(msg, view=GuessGameView(self.number, self.attempt, self.hints, self.level, int(self.values[0]), lang=self.lang))
         else:
-            return await interaction.response.send_message('Attempt-mu sudah habis! Terima kasih karena telah bermain bersama RVDiA!', ephemeral=True)
+            msg = i18n.get(self.lang, "game.guess_out_of_attempts")
+            return await interaction.response.send_message(msg, ephemeral=True)
 
 class GuessGameView(View):
     """
     Buttons and stuff
     """
-    def __init__(self, number:int, attempt:int, hint_left:int, level:str, last_number:int=None):
+    def __init__(self, number:int, attempt:int, hint_left:int, level:str, last_number:int=None, lang="en"):
         super().__init__(timeout=None) # Maybe None prevents it from timing out too soon.
         self.hints = hint_left
         self.last = last_number
         self.number = number
         self.attempt = attempt
         self.level = level
-        self.add_item(GuessDropdown(self.number, self.attempt, self.hints, self.level))
+        self.lang = lang
+        self.add_item(GuessDropdown(self.number, self.attempt, self.hints, self.level, lang=self.lang))
 
     @button(label='Hint', custom_id='hint', style=discord.ButtonStyle.blurple, emoji='❔')
     async def give_hint(self, interaction:discord.Interaction, button:Button):
         if self.last == None:
-            await interaction.response.send_message("Kamu belum menebak! Coba tebak dulu angka yang ku pilih!", ephemeral=True)
+            msg = i18n.get(self.lang, "game.guess_not_guessed_yet")
+            await interaction.response.send_message(msg, ephemeral=True)
             return
         if self.hints != 0:
             self.hints -= 1
             if self.last < self.number:
-                await interaction.response.send_message(f"Angka terakhirmu, `{self.last}` **lebih kecil** dari angka yang ku pilih.", ephemeral=True)
+                msg = i18n.get(self.lang, "game.guess_hint_smaller", guess=self.last)
+                await interaction.response.send_message(msg, ephemeral=True)
             else:
-                await interaction.response.send_message(f"Angka terakhirmu, `{self.last}` **lebih besar** dari angka yang ku pilih.", ephemeral=True)
+                msg = i18n.get(self.lang, "game.guess_hint_larger", guess=self.last)
+                await interaction.response.send_message(msg, ephemeral=True)
         else:
-            await interaction.response.send_message('Hint-mu telah habis terpakai! Coba tebak semampumu sekarang!', ephemeral=True)
+            msg = i18n.get(self.lang, "game.guess_out_of_hints")
+            await interaction.response.send_message(msg, ephemeral=True)
 
         button.disabled = True
 
@@ -1356,21 +1417,30 @@ class GuessGame():
     The guessing number game
     Using the power of class chain reaction
     """
-    def __init__(self, ctx:commands.Context, level:str) -> None:
+    def __init__(self, ctx:commands.Context, level:str, lang="en") -> None:
         self.ctx = ctx
         self.level = level
+        self.lang = lang
 
     async def start(self):
         num_limit = guess_level_convert(self.level)
         number = random.randint(1, num_limit)
-        game_view = GuessGameView(number, 5, 3, self.level)
-        await self.ctx.reply(f"Coba tebak angka yang ku pilih!\nLevel: `{self.level}`", view=game_view)
-        
+        game_view = GuessGameView(number, 5, 3, self.level, lang=self.lang)
+        msg = i18n.get(self.lang, "game.guess_start_reply", level=self.level)
+        await self.ctx.reply(msg, view=game_view)
+
 class ResignButton(View):
-    def __init__(self, ctx:commands.Context):
+    def __init__(self, ctx:commands.Context, lang="en"):
         super().__init__(timeout=20)
         self.ctx = ctx
+        self.lang = lang
         self.value = None
+        for child in self.children:
+            if isinstance(child, Button):
+                if child.custom_id == 'delacc':
+                    child.label = i18n.get(self.lang, "game.resign_button_delete")
+                elif child.custom_id == 'canceldel':
+                    child.label = i18n.get(self.lang, "game.resign_button_cancel")
 
     async def on_timeout(self) -> None:
         for item in self.children:
@@ -1380,12 +1450,14 @@ class ResignButton(View):
     @button(label='Hapus Akun', style=discord.ButtonStyle.danger, custom_id='delacc')
     async def delete_account(self, interaction: discord.Interaction, button: Button):
         if interaction.user != self.ctx.author:
-            await interaction.response.send_message("Kamu tidak diperbolehkan berinteraksi dengan tombol ini!", ephemeral=True)
+            msg = i18n.get(self.lang, "game.resign_button_not_allowed")
+            await interaction.response.send_message(msg, ephemeral=True)
             return
         
         user_record = await db.user.find_unique(where={'id': interaction.user.id}, include={'guild': True})
         if not user_record:
-            return await interaction.response.send_message("Akunmu tidak ditemukan!", ephemeral=True)
+            msg = i18n.get(self.lang, "game.resign_not_found")
+            return await interaction.response.send_message(msg, ephemeral=True)
 
         name = user_record.data['name']
         
@@ -1401,37 +1473,45 @@ class ResignButton(View):
             if members:
                 # Find the strongest member (highest level, then karma)
                 new_owner = sorted(members, key=lambda u: (u.data.get('level', 1), u.data.get('karma', 0)), reverse=True)[0]
+                new_owner_name = new_owner.data.get('name', 'Seseorang')
                 
                 await db.guild.update(
                     where={'id': guild.id},
                     data={'ownerId': new_owner.id}
                 )
-                await interaction.channel.send(f"👑 **{name}** telah turun dari tahta. Tahta guild **{guild.name}** kini diwariskan kepada **{new_owner.data.get('name', 'Seseorang')}**!")
+                msg = i18n.get(self.lang, "game.resign_guild_transfer", name=name, guild=guild.name, new_owner=new_owner_name)
+                await interaction.channel.send(msg)
             else:
                 # No one else in the guild, delete it
                 await db.guild.delete(where={'id': guild.id})
-                await interaction.channel.send(f"💥 Guild **{guild.name}** telah dibubarkan karena tidak ada penerus tahta.")
+                msg = i18n.get(self.lang, "game.resign_guild_disbanded", name=guild.name)
+                await interaction.channel.send(msg)
 
         await db.user.delete(where={'id': interaction.user.id})
-        await interaction.response.send_message(f'Aku telah menghapus akunmu.\nSampai jumpa, `{name}`, di Re:Volution!')
+        msg = i18n.get(self.lang, "game.resign_success", name=name)
+        await interaction.response.send_message(msg)
         self.value = True
         self.stop()
 
     @button(label='Batalkan', style=discord.ButtonStyle.green, custom_id='canceldel')
     async def cancel(self, interaction: discord.Interaction, button: Button):
         if interaction.user != self.ctx.author:
-            await interaction.response.send_message("Kamu tidak diperbolehkan berinteraksi dengan tombol ini!", ephemeral=True)
+            msg = i18n.get(self.lang, "game.resign_button_not_allowed")
+            await interaction.response.send_message(msg, ephemeral=True)
             return
-        await interaction.response.send_message('Penghapusan akun dibatalkan.', ephemeral=True)
+        msg = i18n.get(self.lang, "game.resign_cancel")
+        await interaction.response.send_message(msg, ephemeral=True)
         self.value = False
         self.stop()
+
 
 class ShopDropdown(discord.ui.Select):
     """
     Buy feature
     """
-    def __init__(self, page:int):
+    def __init__(self, page:int, lang="en"):
         self.page = page
+        self.lang = lang
 
         with open('./src/game/shop.json') as file:
             content = file.read()
@@ -1441,14 +1521,19 @@ class ShopDropdown(discord.ui.Select):
         start_index = (self.page - 1) * 5
         end_index = self.page * 5
         for index, item in enumerate(items[start_index:end_index]):
+            item_name = i18n.get(self.lang, f"game.item_{item['_id']}_name", default=item['name'])
+            currency = i18n.get(self.lang, "game.paywith_koin") if item['paywith'] == "Koin" else i18n.get(self.lang, "game.paywith_karma")
+            desc_text = f"Harga: {item['cost']} {currency}" if self.lang == "id" else f"Price: {item['cost']} {currency}"
+            
             options.append(discord.SelectOption(
-                            label = f"{index + start_index + 1}. {item['name']}", 
-                            description=f"Harga: {item['cost']} {item['paywith']}", 
+                            label = f"{index + start_index + 1}. {item_name}", 
+                            description=desc_text, 
                             value=item['_id']
                             )
                         )
 
-        super().__init__(custom_id="shopdrop", placeholder="Mau beli apa?", min_values=1, max_values=1, options=options)
+        placeholder_text = i18n.get(self.lang, "game.shop_select_item")
+        super().__init__(custom_id="shopdrop", placeholder=placeholder_text, min_values=1, max_values=1, options=options)
 
     async def callback(self, interaction: discord.Interaction):
         with open('./src/game/shop.json') as file:
@@ -1458,7 +1543,8 @@ class ShopDropdown(discord.ui.Select):
         item_id = self.values[0]
         user_record = await db.user.find_unique(where={'id': interaction.user.id}, include={'inventory': True})
         if not user_record or not user_record.inventory:
-            return await interaction.response.send_message("Akunmu bermasalah, silahkan hubungi developer.", ephemeral=True)
+            msg = i18n.get(self.lang, "game.use_account_issue")
+            return await interaction.response.send_message(msg, ephemeral=True)
             
         data = user_record.data
         inventory = user_record.inventory
@@ -1469,7 +1555,12 @@ class ShopDropdown(discord.ui.Select):
         current_money = data[currency_key]
         
         if current_money < matched_item['cost']:
-            return await interaction.response.send_message(f"Waduh!\n{matched_item['paywith']}mu tidak cukup untuk membeli barang ini!", ephemeral=True)
+            paywith_name = i18n.get(self.lang, "game.paywith_koin") if matched_item['paywith'] == "Koin" else i18n.get(self.lang, "game.paywith_karma")
+            if self.lang == "en":
+                msg = f"Oops!\nYour {paywith_name.lower()} are not enough to buy this item!"
+            else:
+                msg = f"Waduh!\n{paywith_name}mu tidak cukup untuk membeli barang ini!"
+            return await interaction.response.send_message(msg, ephemeral=True)
 
         # Handle items, skills, and equipment correctly
         user_items = inventory.items if isinstance(inventory.items, list) else []
@@ -1490,9 +1581,11 @@ class ShopDropdown(discord.ui.Select):
         
         if item_id in mongo_dict:
             if '1-' in item_id:
-                return await interaction.response.send_message("Kamu hanya bisa membeli equipment sekali saja!", ephemeral=True)
+                msg = i18n.get(self.lang, "game.shop_equipment_bought")
+                return await interaction.response.send_message(msg, ephemeral=True)
             if '2-' in item_id:
-                return await interaction.response.send_message("Kamu hanya bisa memelajari skill sekali saja!", ephemeral=True)
+                msg = i18n.get(self.lang, "game.shop_skill_learned")
+                return await interaction.response.send_message(msg, ephemeral=True)
             
             for item in current_list:
                 if item['_id'] == item_id:
@@ -1519,12 +1612,15 @@ class ShopDropdown(discord.ui.Select):
             }
         )
 
-        await interaction.response.send_message(f"Pembelian berhasil!\nKamu telah membeli `{matched_item['name']}`", ephemeral=True)
+        item_name = i18n.get(self.lang, f"game.item_{item_id}_name", default=matched_item['name'])
+        msg = i18n.get(self.lang, "game.shop_buy_success", name=item_name)
+        await interaction.response.send_message(msg, ephemeral=True)
 
 class PaginatedEnemyView(View):
-    def __init__(self, ctx):
+    def __init__(self, ctx, lang="en"):
         super().__init__(timeout=120)
         self.ctx = ctx
+        self.lang = lang
         self.tiers = ['boss', 'bonus', 'elite', 'high', 'normal', 'low']
         self.current_tier_index = 0
         self.enemies = []
@@ -1537,12 +1633,15 @@ class PaginatedEnemyView(View):
         
         strongest = max(self.enemies, key=lambda x: x['hp'] + x['atk'] + x['def'] + x['agl'])
         
-        embed = discord.Embed(title=f"📖 Bestiary: {tier.title()}", color=0xff0000 if tier == 'boss' else 0x3498db)
-        embed.description = f"Menampilkan musuh tingkat **{tier.upper()}**\n\n"
+        title = i18n.get(self.lang, "game.bestiary_title", tier=tier.title())
+        desc = i18n.get(self.lang, "game.bestiary_desc", tier=tier.upper())
+        embed = discord.Embed(title=title, color=0xff0000 if tier == 'boss' else 0x3498db)
+        embed.description = desc
         
         for index, enemy in enumerate(self.enemies):
+            enemy_name = i18n.get(self.lang, f"game.enemy_{to_key(enemy['name'])}_name", default=enemy['name'])
             embed.add_field(
-                name=f"{index+1}. {enemy['name']} ({enemy['tier']})",
+                name=f"{index+1}. {enemy_name} ({enemy['tier']})",
                 value=f"**HP**: `{enemy['hp']}` | **Stats**: `{enemy['atk']}/{enemy['def']}/{enemy['agl']}`",
                 inline=False
             )
@@ -1550,20 +1649,22 @@ class PaginatedEnemyView(View):
         if strongest.get('avatar'):
             embed.set_thumbnail(url=strongest['avatar'])
             
-        embed.set_footer(text=f"Halaman {self.current_tier_index + 1}/{len(self.tiers)} • Pilih musuh untuk detail!")
+        footer_text = i18n.get(self.lang, "game.bestiary_footer", current=self.current_tier_index + 1, total=len(self.tiers))
+        embed.set_footer(text=footer_text)
         
         self.clear_items()
         self.add_item(self.prev_page)
         self.add_item(self.destroy)
         self.add_item(self.next_page)
-        self.add_item(SpecificEnemyDropdown(self.enemies))
+        self.add_item(SpecificEnemyDropdown(self.enemies, lang=self.lang))
         
         return embed
 
     @discord.ui.button(label='◀', style=discord.ButtonStyle.blurple)
     async def prev_page(self, interaction: discord.Interaction, button: Button):
         if interaction.user != self.ctx.author:
-            return await interaction.response.send_message("Hanya yang memanggil command ini yang bisa menggunakannya!", ephemeral=True)
+            msg = i18n.get(self.lang, "game.bestiary_not_owner")
+            return await interaction.response.send_message(msg, ephemeral=True)
         self.current_tier_index = (self.current_tier_index - 1) % len(self.tiers)
         embed = await self.get_embed()
         await interaction.response.edit_message(embed=embed, view=self)
@@ -1571,7 +1672,8 @@ class PaginatedEnemyView(View):
     @discord.ui.button(label='▶', style=discord.ButtonStyle.blurple)
     async def next_page(self, interaction: discord.Interaction, button: Button):
         if interaction.user != self.ctx.author:
-            return await interaction.response.send_message("Hanya yang memanggil command ini yang bisa menggunakannya!", ephemeral=True)
+            msg = i18n.get(self.lang, "game.bestiary_not_owner")
+            return await interaction.response.send_message(msg, ephemeral=True)
         self.current_tier_index = (self.current_tier_index + 1) % len(self.tiers)
         embed = await self.get_embed()
         await interaction.response.edit_message(embed=embed, view=self)
@@ -1579,13 +1681,14 @@ class PaginatedEnemyView(View):
     @discord.ui.button(label='✖', style=discord.ButtonStyle.danger)
     async def destroy(self, interaction: discord.Interaction, button: Button):
         if interaction.user != self.ctx.author:
-            return await interaction.response.send_message("Hanya yang memanggil command ini yang bisa menggunakannya!", ephemeral=True)
+            msg = i18n.get(self.lang, "game.bestiary_not_owner")
+            return await interaction.response.send_message(msg, ephemeral=True)
         await interaction.message.delete()
 
 class EnemyDropdown(discord.ui.Select):
-    def __init__(self):
+    def __init__(self, lang="en"):
+        self.lang = lang
         options = []
-        # Using this cause for loops randomizes the texts
         options.append(discord.SelectOption(
                 label='Boss',
                 value='boss'
@@ -1610,7 +1713,8 @@ class EnemyDropdown(discord.ui.Select):
                 label='Low',
                 value='low'
             ))
-        super().__init__(custom_id="enemydrop", placeholder="Level Musuh", min_values=1, max_values=1, options=options)
+        placeholder_lbl = "Level Musuh" if lang == "id" else "Enemy Tier"
+        super().__init__(custom_id="enemydrop", placeholder=placeholder_lbl, min_values=1, max_values=1, options=options)
 
     async def callback(self, interaction: discord.Interaction):
         enemy_path = path.join(path.dirname(__file__), '..', 'src', 'game', 'enemies', f'{self.values[0]}.json')
@@ -1620,10 +1724,12 @@ class EnemyDropdown(discord.ui.Select):
         # Find the strongest enemy (highest total stats + HP)
         strongest = max(enemies, key=lambda x: x['hp'] + x['atk'] + x['def'] + x['agl'])
         
-        embed = discord.Embed(title=f"Bestiary: {self.values[0].title()}", color=interaction.user.color)
+        title_lbl = i18n.get(self.lang, "game.bestiary_title", tier=self.values[0].title())
+        embed = discord.Embed(title=title_lbl, color=interaction.user.color)
         for index, enemy in enumerate(enemies):
+            enemy_name = i18n.get(self.lang, f"game.enemy_{to_key(enemy['name'])}_name", default=enemy['name'])
             embed.add_field(
-                name=f"{index+1}. {enemy['name']} ({enemy['tier']})",
+                name=f"{index+1}. {enemy_name} ({enemy['tier']})",
                 value=f"**HP**: `{enemy['hp']}` | **Stats**: `{enemy['atk']}/{enemy['def']}/{enemy['agl']}`",
                 inline=False
                 )
@@ -1633,37 +1739,53 @@ class EnemyDropdown(discord.ui.Select):
         else:
             embed.set_thumbnail(url=interaction.user.display_avatar.url)
             
-        embed.set_footer(text="Pilih musuh dari dropdown di bawah untuk melihat detail!")
-        await interaction.response.edit_message(content='', embed=embed, view=EnemyView(enemies))
+        footer_text = "Pilih musuh dari dropdown di bawah untuk melihat detail!" if self.lang == "id" else "Choose enemy from the dropdown below for details!"
+        embed.set_footer(text=footer_text)
+        await interaction.response.edit_message(content='', embed=embed, view=EnemyView(enemies, lang=self.lang))
 
 class SpecificEnemyDropdown(discord.ui.Select):
-    def __init__(self, enemies: list):
+    def __init__(self, enemies: list, lang="en"):
+        self.lang = lang
         options = []
         for index, enemy in enumerate(enemies):
+            enemy_name = i18n.get(self.lang, f"game.enemy_{to_key(enemy['name'])}_name", default=enemy['name'])
             options.append(discord.SelectOption(
-                label=f"{enemy['name']}",
+                label=f"{enemy_name}",
                 value=str(index),
                 description=f"{enemy['tier']} - HP: {enemy['hp']}",
                 emoji="👹"
             ))
-        super().__init__(placeholder="Pilih musuh untuk detail...", min_values=1, max_values=1, options=options)
+        placeholder_lbl = i18n.get(self.lang, "game.bestiary_select_placeholder")
+        super().__init__(placeholder=placeholder_lbl, min_values=1, max_values=1, options=options)
         self.enemies = enemies
 
     async def callback(self, interaction: discord.Interaction):
         enemy = self.enemies[int(self.values[0])]
+        enemy_name = i18n.get(self.lang, f"game.enemy_{to_key(enemy['name'])}_name", default=enemy['name'])
+        enemy_desc = i18n.get(self.lang, f"game.enemy_{to_key(enemy['name'])}_desc", default=enemy['desc'])
         
-        embed = discord.Embed(title=f"Detail Musuh: {enemy['name']}", description=f"*{enemy['desc']}*", color=discord.Color.from_str(enemy.get('color', '#ff0000')))
-        embed.add_field(name="Tier", value=f"`{enemy['tier']}`", inline=True)
+        detail_title = i18n.get(self.lang, "game.bestiary_detail_title", name=enemy_name)
+        embed = discord.Embed(title=detail_title, description=f"*{enemy_desc}*", color=discord.Color.from_str(enemy.get('color', '#ff0000')))
+        
+        tier_lbl = i18n.get(self.lang, "game.bestiary_tier")
+        embed.add_field(name=tier_lbl, value=f"`{enemy['tier']}`", inline=True)
         embed.add_field(name="HP", value=f"`{enemy['hp']}`", inline=True)
         embed.add_field(name="Stats (A/D/Ag)", value=f"`{enemy['atk']}/{enemy['def']}/{enemy['agl']}`", inline=True)
         
         if enemy.get('skills'):
-            skill_list = "\n".join([f"✨ **{s['name']}**: `{s['func']}`" for s in enemy['skills']])
-            embed.add_field(name="Kemampuan Spesial", value=skill_list, inline=False)
+            skills_lbl = i18n.get(self.lang, "game.bestiary_skills")
+            skills_fmt = []
+            for idx, s in enumerate(enemy['skills']):
+                key = f"game.enemy_skill_{to_key(enemy['name'])}_{idx}_name"
+                name_val = i18n.get(self.lang, key, default=s['name'])
+                skills_fmt.append(f"✨ **{name_val}**: `{s['func']}`")
+            skill_list = "\n".join(skills_fmt)
+            embed.add_field(name=skills_lbl, value=skill_list, inline=False)
             
         if enemy.get('reward'):
+            rewards_lbl = i18n.get(self.lang, "game.bestiary_rewards")
             rewards = ", ".join(enemy['reward'])
-            embed.add_field(name="Potensi Hadiah", value=f"`{rewards}`", inline=False)
+            embed.add_field(name=rewards_lbl, value=f"`{rewards}`", inline=False)
             
         if enemy.get('avatar'):
             embed.set_thumbnail(url=enemy['avatar'])
@@ -1671,25 +1793,26 @@ class SpecificEnemyDropdown(discord.ui.Select):
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
 class EnemyView(View):
-    def __init__(self, enemies: list = None):
+    def __init__(self, enemies: list = None, lang="en"):
         super().__init__(timeout=120)
         if enemies:
-            self.add_item(SpecificEnemyDropdown(enemies))
+            self.add_item(SpecificEnemyDropdown(enemies, lang=lang))
         else:
-            self.add_item(EnemyDropdown())
+            self.add_item(EnemyDropdown(lang=lang))
         
 class ShopView(View):
     """
     Currently not up to write DRY code
     """
-    def __init__(self, ctx, items, data):
+    def __init__(self, ctx, items, data, lang="en"):
         self.current_page = 1
         super().__init__(timeout=40)
         self.ctx = ctx
         self.items = items
         self.data = data
         self.owned = []
-        self.add_item(ShopDropdown(self.current_page))
+        self.lang = lang
+        self.add_item(ShopDropdown(self.current_page, lang=self.lang))
 
     async def on_timeout(self) -> None:
         for item in self.children:
@@ -1711,44 +1834,51 @@ class ShopView(View):
             if owned_item['_id'] == item_id:
                 count = owned_item.get('owned', 0)
                 if item['type'] == 'Skill' or item['type'] == 'Equipment':
-                    return "YA" if count > 0 else "TIDAK"
+                    return i18n.get(self.lang, "game.shop_owned_yes")
                 return str(count)
                 
         if item['type'] == 'Skill' or item['type'] == 'Equipment':
-            return "TIDAK"
+            return i18n.get(self.lang, "game.shop_owned_no")
         return "0"
 
     async def update_embed(self, last_page):
-        embed = discord.Embed(title='Toko Xaneria', color=0xFFFF00)
-        embed.description = '"Hey, hey! Selamat datang. Silahkan, mau beli apa?"'
-        embed.set_footer(text='Untuk membeli sebuah item, klik di bawah ini! v')
+        title = i18n.get(self.lang, "game.shop_title")
+        desc = i18n.get(self.lang, "game.shop_desc")
+        footer = i18n.get(self.lang, "game.shop_footer")
+        
+        embed = discord.Embed(title=title, color=0xFFFF00)
+        embed.description = desc
+        embed.set_footer(text=footer)
         embed.set_thumbnail(url=getenv('xaneria'))
 
         self.owned.clear()
         start_index = (self.current_page - 1) * 5
         end_index = start_index + 5
 
-        def generate_embed_field(index, item, owned_count):
-            embed.add_field(
-                name=f"{index}. {item['name']}",
-                value=f"**`{item['desc']}`**\n({item['func']})\n**Tipe:** {item['type']}\n**Harga:** {item['cost']} {item['paywith']}\n**Dimiliki:** {owned_count}",
-                inline=False
-            )
-        
+        type_text = "Type" if self.lang == "en" else "Tipe"
+        price_text = "Price" if self.lang == "en" else "Harga"
+        owned_text = "Owned" if self.lang == "en" else "Dimiliki"
+
         for index, item in enumerate(self.items[start_index:end_index], start=start_index + 1):
             owned_display = self.get_owned_display(item)
             self.owned.append(owned_display)
+            
+            item_name = i18n.get(self.lang, f"game.item_{item['_id']}_name", default=item['name'])
+            item_desc = i18n.get(self.lang, f"game.item_{item['_id']}_desc", default=item['desc'])
+            item_type_label = i18n.get(self.lang, f"game.type_{to_key(item['type'])}")
+            currency_label = i18n.get(self.lang, "game.paywith_koin") if item['paywith'] == "Koin" else i18n.get(self.lang, "game.paywith_karma")
+            
             embed.add_field(
-                name=f"{index}. {item['name']}",
-                value=f"**`{item['desc']}`**\n({item['func']})\n**Tipe:** {item['type']}\n**Harga:** {item['cost']} {item['paywith']}\n**Dimiliki:** {owned_display}",
+                name=f"{index}. {item_name}",
+                value=f"**`{item_desc}`**\n({item['func']})\n**{type_text}:** {item_type_label}\n**{price_text}:** {item['cost']} {currency_label}\n**{owned_text}:** {owned_display}",
                 inline=False
             )
 
-        self.clear_items() # Fuck this
+        self.clear_items()
         self.add_item(self.back)
         self.add_item(self._delete)
         self.add_item(self.next)
-        self.add_item(ShopDropdown(self.current_page)) # Dear god hope this works
+        self.add_item(ShopDropdown(self.current_page, lang=self.lang))
 
         return embed
 
@@ -1784,35 +1914,41 @@ def convert_to_db_stat(func:list):
     return func
 
 class UseDropdown(discord.ui.Select):
-    def __init__(self, items:list, ctx:commands.Context) -> None:
+    def __init__(self, items:list, ctx:commands.Context, lang="en") -> None:
+        self.lang = lang
         options = []
         for index, item in enumerate(items, start=1):
+            item_name = i18n.get(self.lang, f"game.item_{item['_id']}_name", default=item['name'])
             options.append(discord.SelectOption(
-                label=f"{index}. {item['name']} ({item['usefor']})" if not item['usefor'] == 'free' else f"{index}. {item['name']}",
+                label=f"{index}. {item_name} ({item['usefor']})" if not item['usefor'] == 'free' else f"{index}. {item_name}",
                 description=f"{item['func'].upper()}",
                 value = item['_id']
             ))
         if not options:
             options.append(discord.SelectOption(
-                    label=f"Tidak ada apapun!",
+                    label=i18n.get(self.lang, "game.use_no_items"),
                     value="none",
-                    description=f"Kamu harus membelinya dulu di /game shop!"
+                    description=i18n.get(self.lang, "game.use_no_items_shop")
                 )
             )
-        super().__init__(custom_id="usedrop", placeholder="Pilihlah barang yang ingin kamu pakai!", min_values=1, max_values=1, options=options)
+        placeholder_text = i18n.get(self.lang, "game.use_placeholder")
+        super().__init__(custom_id="usedrop", placeholder=placeholder_text, min_values=1, max_values=1, options=options)
         self.items = items
         self.ctx = ctx
 
     async def callback(self, interaction: discord.Interaction):
         # Click -> Check item_id and owned -> Add stats accordingly
         if interaction.message.mentions[0] != interaction.user:
-            return await interaction.response.send_message("Kamu tidak diizinkan untuk menggunakan dropdown ini!", ephemeral=True)
+            msg = i18n.get(self.lang, "game.use_not_owner")
+            return await interaction.response.send_message(msg, ephemeral=True)
         if self.values[0] == 'none':
-            return await interaction.response.send_message("Kamu tidak memiliki apapun!\nKamu harus membeli barang/skill di `/game shop`!", ephemeral=True)
+            msg = i18n.get(self.lang, "game.use_no_items_shop")
+            return await interaction.response.send_message(msg, ephemeral=True)
         
         user_record = await db.user.find_unique(where={'id': interaction.user.id}, include={'inventory': True})
         if not user_record or not user_record.inventory:
-            return await interaction.response.send_message("Akunmu bermasalah, silahkan hubungi developer.", ephemeral=True)
+            msg = i18n.get(self.lang, "game.use_account_issue")
+            return await interaction.response.send_message(msg, ephemeral=True)
             
         data = user_record.data
         inventory = user_record.inventory
@@ -1841,14 +1977,17 @@ class UseDropdown(discord.ui.Select):
                         }
                     }
                 )
-                await interaction.response.send_message(f"Kamu telah melepas `{item_to_unequip['name']}`!")
+                item_name = i18n.get(self.lang, f"game.item_{item_to_unequip['_id']}_name", default=item_to_unequip['name'])
+                msg = i18n.get(self.lang, "game.use_unequip_success", name=item_name)
+                await interaction.response.send_message(msg)
             
             else: # Equip
                 all_items = inventory.items if isinstance(inventory.items, list) else []
                 item_match = [x for x in all_items if x['_id'] == item_id]
                 
                 if not item_match:
-                    return await interaction.response.send_message("Kamu tidak memiliki item tersebut!", ephemeral=True)
+                    msg = i18n.get(self.lang, "game.use_not_found")
+                    return await interaction.response.send_message(msg, ephemeral=True)
                 
                 item_to_equip = item_match[0]
                 func = item_to_equip['func'].split('+')
@@ -1875,19 +2014,25 @@ class UseDropdown(discord.ui.Select):
                         }
                     }
                 )
-                await interaction.response.send_message(f"Kamu telah menggunakan `{item_to_equip['name']}`!")
+                item_name = i18n.get(self.lang, f"game.item_{item_to_equip['_id']}_name", default=item_to_equip['name'])
+                msg = i18n.get(self.lang, "game.use_equip_success", name=item_name)
+                await interaction.response.send_message(msg)
         
         else:
             # Consumable or Skill
             all_items = inventory.items if isinstance(inventory.items, list) else []
             item_match = [x for x in all_items if x['_id'] == item_id]
             if not item_match:
-                return await interaction.response.send_message("Kamu tidak memiliki item/skill tersebut!", ephemeral=True)
+                msg = i18n.get(self.lang, "game.use_not_found")
+                return await interaction.response.send_message(msg, ephemeral=True)
             
             item_to_use = item_match[0]
-            await interaction.response.send_message(f"Kamu telah menggunakan `{item_to_use['name']}`!")
+            item_name = i18n.get(self.lang, f"game.item_{item_to_use['_id']}_name", default=item_to_use['name'])
+            msg = i18n.get(self.lang, "game.use_equip_success", name=item_name)
+            await interaction.response.send_message(msg)
             
             game_inst = GameInstance(self.ctx, interaction.user, None, self.ctx.bot)
+            game_inst.lang = self.lang
             await game_inst.func_converter(item_to_use['func'], interaction.user, None)
             await asyncio.sleep(1)
             await level_up(self.ctx)
@@ -1903,17 +2048,18 @@ class UseDropdown(discord.ui.Select):
 
     
 class UseView(View):
-    def __init__(self, items:list, ctx:commands.Context):
+    def __init__(self, items:list, ctx:commands.Context, lang="en"):
         super().__init__(timeout=30)
-        self.add_item(UseDropdown(items, ctx))
+        self.add_item(UseDropdown(items, ctx, lang=lang))
 
 class LeaderboardView(View):
-    def __init__(self, ctx, data: list, title: str, type: str = "player"):
+    def __init__(self, ctx, data: list, title: str, type: str = "player", lang="en"):
         super().__init__(timeout=60)
         self.ctx = ctx
         self.data = data
         self.title = title
         self.type = type
+        self.lang = lang
         self.current_page = 0
         self.items_per_page = 10
         self.max_pages = (len(data) - 1) // self.items_per_page + 1
@@ -1924,47 +2070,59 @@ class LeaderboardView(View):
         items = self.data[start_idx:end_idx]
         
         embed = discord.Embed(title=self.title, color=0xffd700) # Gold
-        embed.description = f"Menampilkan peringkat **{start_idx + 1}** sampai **{min(end_idx, len(self.data))}** dari **{len(self.data)}**."
+        embed.description = i18n.get(
+            self.lang, 
+            "game.leaderboard_desc", 
+            start=start_idx + 1, 
+            end=min(end_idx, len(self.data)), 
+            total=len(self.data)
+        )
         
         for i, item in enumerate(items, start=start_idx + 1):
             if self.type == "player":
                 name = item.data.get('name', 'Unknown')
                 level = item.data.get('level', 1)
                 karma = item.data.get('karma', 0)
+                field_val = i18n.get(self.lang, "game.leaderboard_member_field", level=level, karma=karma)
                 embed.add_field(
                     name=f"{i}. {name}",
-                    value=f"🔰 Level: `{level}` | 👹 Karma: `{karma}`",
+                    value=field_val,
                     inline=False
                 )
             else: # guild
                 name = item.name
                 member_count = len(item.members) if hasattr(item, 'members') else 0
+                field_val = i18n.get(self.lang, "game.leaderboard_guild_field", count=member_count, owner=item.ownerId)
                 embed.add_field(
                     name=f"{i}. {name}",
-                    value=f"👥 Anggota: `{member_count}` | 👑 Owner: <@{item.ownerId}>",
+                    value=field_val,
                     inline=False
                 )
         
-        embed.set_footer(text=f"Halaman {self.current_page + 1}/{self.max_pages}")
+        page_lbl = "Halaman" if self.lang == "id" else "Page"
+        embed.set_footer(text=f"{page_lbl} {self.current_page + 1}/{self.max_pages}")
         return embed
 
     @discord.ui.button(label='◀', style=discord.ButtonStyle.blurple)
     async def prev_page(self, interaction: discord.Interaction, button: Button):
         if interaction.user != self.ctx.author:
-            return await interaction.response.send_message("Bukan tombolmu, Sang Pemimpi!", ephemeral=True)
+            msg = "Bukan tombolmu, Sang Pemimpi!" if self.lang == "id" else "Not your button, Dreamer!"
+            return await interaction.response.send_message(msg, ephemeral=True)
         self.current_page = (self.current_page - 1) % self.max_pages
         await interaction.response.edit_message(embed=await self.get_embed())
 
     @discord.ui.button(label='✖', style=discord.ButtonStyle.danger)
     async def destroy(self, interaction: discord.Interaction, button: Button):
         if interaction.user != self.ctx.author:
-            return await interaction.response.send_message("Hanya yang memanggil ini yang bisa menutupnya!", ephemeral=True)
+            msg = "Hanya yang memanggil ini yang bisa menutupnya!" if self.lang == "id" else "Only the caller can close this!"
+            return await interaction.response.send_message(msg, ephemeral=True)
         await interaction.message.delete()
 
     @discord.ui.button(label='▶', style=discord.ButtonStyle.blurple)
     async def next_page(self, interaction: discord.Interaction, button: Button):
         if interaction.user != self.ctx.author:
-            return await interaction.response.send_message("Bukan tombolmu, Sang Pemimpi!", ephemeral=True)
+            msg = "Bukan tombolmu, Sang Pemimpi!" if self.lang == "id" else "Not your button, Dreamer!"
+            return await interaction.response.send_message(msg, ephemeral=True)
         self.current_page = (self.current_page + 1) % self.max_pages
         await interaction.response.edit_message(embed=await self.get_embed())
 
@@ -1992,9 +2150,11 @@ class Game(commands.Cog):
         Daftarkan akunmu ke Re:Volution ~ The Dream World!
         """
         name = name or ctx.author.name
+        lang = await get_user_lang(ctx.author.id)
         user_data = await db.user.find_unique(where={'id': ctx.author.id})
         if user_data:
-            return await ctx.reply('Kamu sudah terdaftar!')
+            msg = i18n.get(lang, "game.register_already")
+            return await ctx.reply(msg)
             
         # Create User and Inventory together
         data_to_save = {**default_data}
@@ -2014,7 +2174,8 @@ class Game(commands.Cog):
             }
         })
         
-        await ctx.reply(f'Akunmu sudah didaftarkan!\nSelamat datang di Re:Volution, **`{name}`**!')
+        msg = i18n.get(lang, "game.register_success", name=name)
+        await ctx.reply(msg)
         await asyncio.sleep(0.7)
         await self.account(ctx)
     
@@ -2024,15 +2185,18 @@ class Game(commands.Cog):
         """
         Lihat siapa yang terkuat di Re:Volution ~ The Dream World!
         """
+        lang = await get_user_lang(ctx.author.id)
         users = await db.user.find_many()
         if not users:
-            return await ctx.reply("Belum ada pemain yang terdaftar!")
+            msg = i18n.get(lang, "game.leaderboard_empty")
+            return await ctx.reply(msg)
             
         # Sort by level DESC, then karma DESC
         sorted_users = sorted(users, key=lambda u: (u.data.get('level', 1), u.data.get('karma', 0)), reverse=True)
         top_100 = sorted_users[:100]
         
-        view = LeaderboardView(ctx, top_100, "🏆 Papan Peringkat Re:Volution 🏆", type="player")
+        title = i18n.get(lang, "game.leaderboard_title")
+        view = LeaderboardView(ctx, top_100, title, type="player", lang=lang)
         embed = await view.get_embed()
         await ctx.reply(embed=embed, view=view)
 
@@ -2042,26 +2206,15 @@ class Game(commands.Cog):
         """
         Panduan bermain Re:Volution ~ The Dream World!
         """
-        embed = discord.Embed(title="✨ Panduan Re:Volution ✨", color=0x86273d)
-        embed.description = (
-            "Halo, Sang Pemimpi! 💫\n"
-            "Selamat datang di **Re:Volution ~ The Dream World**. Aku akan memandumu memahami dunia ini!\n\n"
-            "🛡️ **Memulai Petualangan**\n"
-            "Gunakan `/game register` untuk membuat akunmu. Setelah itu, kamu bisa mulai menjelajah!\n\n"
-            "⚔️ **Pertarungan (Combat)**\n"
-            "• `/game battle`: Lawan monster untuk mendapatkan EXP, Koin, dan Karma.\n"
-            "• `/game fight`: Tantang temanmu dalam pertarungan PvP yang sengit!\n"
-            "• Selama bertarung, kamu bisa Menyerang (Attack), Bertahan (Defend), menggunakan Item, atau Skill.\n"
-            "• **Karma**: Semakin tinggi Karma, semakin besar peluang Critical Hit dan Dodge!\n\n"
-            "💰 **Ekonomi & Kekuatan**\n"
-            "• `/game shop`: Beli item konsumsi, perlengkapan (Equipment), atau pelajari Skill baru.\n"
-            "• `/game account`: Lihat statusmu, koin, dan karma.\n"
-            "• `/game adventure`: Jalankan petualangan singkat untuk hadiah cepat.\n\n"
-            "📜 **Tips dari RVDiA**\n"
-            "*\"Jangan lupa untuk selalu melengkapi equipment terbaikmu sebelum melawan Boss! Jika merasa lelah, beristirahatlah sejenak di Xaneria.\"*"
-        )
+        lang = await get_user_lang(ctx.author.id)
+        title = i18n.get(lang, "game.guide_title")
+        desc = i18n.get(lang, "game.guide_desc")
+        footer = i18n.get(lang, "game.guide_footer")
+        
+        embed = discord.Embed(title=title, color=0x86273d)
+        embed.description = desc
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
-        embed.set_footer(text="Semoga beruntung di dalam mimpi ini!")
+        embed.set_footer(text=footer)
         await ctx.reply(embed=embed)
 
     @game.command(description='Lihat catatan pembaruan terbaru Re:Volution!')
@@ -2070,26 +2223,15 @@ class Game(commands.Cog):
         """
         Catatan pembaruan Re:Volution ~ The Dream World!
         """
-        embed = discord.Embed(title="📜 Catatan Pembaruan Re:Volution", color=0x86273d)
-        embed.description = (
-            "**Versi 2.0.0 - Rebirth & Rebalance**\n"
-            "*\"Dunia mimpi ini telah berevolusi menjadi lebih menantang dan terstruktur.\"*\n\n"
-            "🔰 **Sistem & Fitur Baru**\n"
-            "• `/game leaderboard`: Pantau siapa Sang Pemimpi terkuat secara global.\n"
-            "• `/game guide`: Panduan lengkap untuk memulai petualanganmu.\n"
-            "• `/game fix_account`: Perbaiki dan migrasikan struktur datamu ke sistem terbaru.\n"
-            "• `/game enemies`: Tampilan daftar musuh kini menggunakan sistem halaman (dimulai dari Boss).\n\n"
-            "⚔️ **Keseimbangan & Konten**\n"
-            "• **Global Rebalance**: Semua musuh telah disesuaikan stat dan HP-nya untuk pertempuran yang lebih adil.\n"
-            "• **Final Boss Tier**: Schryzon & RVDiA kini berada di kasta tertinggi dengan kekuatan yang melampaui batas.\n"
-            "• **New Bosses**: Selamat datang **Mira** (Adik Historia) dan **Victoria** (Kakak Historia) ke dalam Bestiary.\n"
-            "• **Smarter AI**: Musuh kini lebih sering menganalisa statistikmu di tengah pertempuran.\n\n"
-            "👜 **Perbaikan Toko**\n"
-            "• Logika penyimpanan item kini lebih terorganisir antara Skill, Equipment, dan Item.\n"
-            "• Status kepemilikan Skill kini ditampilkan secara biner (YA/TIDAK)."
-        )
+        lang = await get_user_lang(ctx.author.id)
+        title = i18n.get(lang, "game.changelog_title")
+        desc = i18n.get(lang, "game.changelog_desc")
+        footer = i18n.get(lang, "game.changelog_footer")
+        
+        embed = discord.Embed(title=title, color=0x86273d)
+        embed.description = desc
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
-        embed.set_footer(text="Terima kasih telah menjadi bagian dari Re:Volution!")
+        embed.set_footer(text=footer)
         await ctx.reply(embed=embed)
 
     @game.command(description="Menghapuskan akunmu dari Re:Volution.")
@@ -2099,11 +2241,14 @@ class Game(commands.Cog):
         """
         Menghapuskan akunmu dari Re:Volution ~ The Dream World.
         """
-        view = ResignButton(ctx)
-        await ctx.reply('Apakah kamu yakin akan menghapus akunmu?\nKamu punya 20 detik untuk menentukan keputusanmu.', view=view)
+        lang = await get_user_lang(ctx.author.id)
+        view = ResignButton(ctx, lang=lang)
+        prompt = i18n.get(lang, "game.resign_prompt")
+        await ctx.reply(prompt, view=view)
         await view.wait()
         if view.value is None:
-            await ctx.channel.send('Waktu habis, penghapusan akun dibatalkan.')
+            timeout_msg = i18n.get(lang, "game.resign_timeout")
+            await ctx.channel.send(timeout_msg)
         elif view.value:
             # Account deletion is handled inside the ResignButton view
             pass
@@ -2132,9 +2277,11 @@ class Game(commands.Cog):
 
         next_login = last_login + timedelta(hours=24)
         next_login_unix = int(time.mktime(next_login.timetuple()))
+        lang = await get_user_lang(ctx.author.id)
 
         if delta_time.total_seconds() <= 24*60*60:
-            return await ctx.reply(f'Kamu sudah login hari ini!\nKamu bisa login lagi pada <t:{next_login_unix}:f>')
+            msg = i18n.get(lang, "game.daily_already", timestamp=next_login_unix)
+            return await ctx.reply(msg)
         
         else:
             new_coins = random.randint(15, 25)
@@ -2151,14 +2298,24 @@ class Game(commands.Cog):
                 data={'data': Json(data)}
             )
             
-            embed = discord.Embed(title='Bonus Harianmu', color=0x00FF00, timestamp=next_login)
+            title = i18n.get(lang, "game.daily_success_title")
+            footer_text = i18n.get(lang, "game.daily_footer")
+            
+            embed = discord.Embed(title=title, color=0x00FF00, timestamp=next_login)
             embed.set_thumbnail(url=ctx.author.display_avatar.url)
+            
+            reward_title = i18n.get(lang, "game.combat_reward_title")
+            coins_lbl = i18n.get(lang, "game.paywith_koin") if lang == "en" else "Koin"
+            reward_coins = f"{self.bot.coin_emoji_anim} `{new_coins}` {coins_lbl}"
+            reward_karma = i18n.get(lang, "game.combat_reward_karma", amount=new_karma)
+            reward_exp = i18n.get(lang, "game.combat_reward_exp", amount=new_exp)
+            
             embed.add_field(
-                name="Kamu Memperoleh:",
-                value=f"{self.bot.coin_emoji_anim} `{new_coins}` Koin\n👹 `{new_karma}` Karma\n⬆️ `{new_exp}` EXP!",
+                name=reward_title,
+                value=f"{reward_coins}\n{reward_karma}\n{reward_exp}!",
                 inline=False
             )
-            embed.set_footer(text='Bonus selanjutnya pada ')
+            embed.set_footer(text=footer_text)
             await ctx.reply(embed=embed)
             level_uped = await level_up(ctx)
             if level_uped:
@@ -2183,9 +2340,11 @@ class Game(commands.Cog):
         """
         Gunakan ini jika akunmu mengalami masalah struktur data atau item tidak muncul di tempatnya.
         """
+        lang = await get_user_lang(ctx.author.id)
         user_record = await db.user.find_unique(where={'id': ctx.author.id}, include={'inventory': True})
         if not user_record:
-            return await ctx.reply('Kamu belum terdaftar!')
+            msg = i18n.get(lang, "game.profile_not_registered")
+            return await ctx.reply(msg)
             
         # 1. Fix User.data
         data = user_record.data
@@ -2244,13 +2403,16 @@ class Game(commands.Cog):
             }
         )
         
-        msg = f"✅ Akunmu telah diperbaiki!"
+        msg = i18n.get(lang, "game.fix_success")
         if moved_skills > 0 or moved_equips > 0:
-            msg += f"\n- Berhasil memindahkan `{moved_skills}` skill.\n- Berhasil memindahkan `{moved_equips}` perlengkapan."
+            skills_lbl = i18n.get(lang, "game.fix_moved_skills", count=moved_skills)
+            equips_lbl = i18n.get(lang, "game.fix_moved_equips", count=moved_equips)
+            msg += f"\n{skills_lbl}\n{equips_lbl}"
         if updated_data:
-            msg += "\n- Struktur data profil juga telah diperbarui."
+            data_lbl = i18n.get(lang, "game.fix_updated_data")
+            msg += f"\n{data_lbl}"
         if moved_skills == 0 and moved_equips == 0 and not updated_data:
-            msg = "✅ Akunmu sudah dalam kondisi terbaik! Tidak ada yang perlu diperbaiki."
+            msg = i18n.get(lang, "game.fix_already_optimal")
             
         await ctx.reply(msg)
 
@@ -2258,11 +2420,13 @@ class Game(commands.Cog):
         """
         Tampilkan informasi akun Re:Volution-mu!
         """
+        lang = await get_user_lang(ctx.author.id)
         target = user or ctx.author
         user_record = await db.user.find_unique(where={'id': target.id})
         
         if not user_record:
-            return await ctx.reply('Waduh! Akun tersebut belum terdaftar di Re:Volution!')
+            msg = i18n.get(lang, "game.profile_not_registered")
+            return await ctx.reply(msg)
         
         data = user_record.data
         
@@ -2270,18 +2434,27 @@ class Game(commands.Cog):
         is_p = user_record.premiumUntil and user_record.premiumUntil > datetime.now()
         title_prefix = "💎 " if is_p else ""
         
-        embed = discord.Embed(title=f"{title_prefix}Profil Re:Volution ~ {data['name']}", color=0x86273d)
+        title_lbl = i18n.get(lang, "game.profile_title", name=data['name'])
+        embed = discord.Embed(title=f"{title_prefix}{title_lbl}", color=0x86273d)
         embed.set_thumbnail(url=target.display_avatar.url)
         
         # Display HP and Max HP
         hp_str = f"❤️ `{user_record.hp}/{user_record.max_hp}` HP"
         
-        embed.add_field(name='Level', value=f"🔰 `{data['level']}`", inline=True)
-        embed.add_field(name='EXP', value=f"⬆️ `{data['exp']}/{data['next_exp']}`", inline=True)
-        embed.add_field(name='Status', value=hp_str, inline=True)
+        level_lbl = i18n.get(lang, "game.profile_level")
+        exp_lbl = i18n.get(lang, "game.profile_exp")
+        status_lbl = i18n.get(lang, "game.profile_status")
+        stats_lbl = i18n.get(lang, "game.profile_stats")
+        stats_val = i18n.get(lang, "game.profile_stats_val", atk=data['attack'], def_=data['defense'], agl=data['agility'])
+        wealth_lbl = i18n.get(lang, "game.profile_wealth")
+        wealth_val = i18n.get(lang, "game.profile_wealth_val", emoji=self.bot.coin_emoji, coins=data['coins'], karma=data['karma'])
         
-        embed.add_field(name='Stats', value=f"⚔️ `{data['attack']}` Attack\n🛡️ `{data['defense']}` Defense\n💨 `{data['agility']}` Agility", inline=True)
-        embed.add_field(name='Harta', value=f"{self.bot.coin_emoji} `{data['coins']}` Koin\n👹 `{data['karma']}` Karma", inline=True)
+        embed.add_field(name=level_lbl, value=f"🔰 `{data['level']}`", inline=True)
+        embed.add_field(name=exp_lbl, value=f"⬆️ `{data['exp']}/{data['next_exp']}`", inline=True)
+        embed.add_field(name=status_lbl, value=hp_str, inline=True)
+        
+        embed.add_field(name=stats_lbl, value=stats_val, inline=True)
+        embed.add_field(name=wealth_lbl, value=wealth_val, inline=True)
         
         await ctx.reply(embed=embed)
 
@@ -2293,9 +2466,11 @@ class Game(commands.Cog):
         """
         Beli item atau perlengkapan perang!
         """
+        lang = await get_user_lang(ctx.author.id)
         user_record = await db.user.find_unique(where={'id': ctx.author.id}, include={'inventory': True})
         if not user_record:
-            return await ctx.reply('Kamu belum terdaftar!')
+            msg = i18n.get(lang, "game.profile_not_registered")
+            return await ctx.reply(msg)
             
         data = user_record.data
         inventory = user_record.inventory
@@ -2303,9 +2478,13 @@ class Game(commands.Cog):
         with open('./src/game/shop.json') as file:
             items = json.load(file)
 
-        embed = discord.Embed(title = 'Toko Xaneria', color=0xFFFF00)
-        embed.description='"Hey, hey! Selamat datang. Silahkan, mau beli apa?"'
-        embed.set_footer(text='Untuk membeli sebuah item, klik di bawah ini! v')
+        title = i18n.get(lang, "game.shop_title")
+        desc = i18n.get(lang, "game.shop_desc")
+        footer = i18n.get(lang, "game.shop_footer")
+
+        embed = discord.Embed(title=title, color=0xFFFF00)
+        embed.description = desc
+        embed.set_footer(text=footer)
         embed.set_thumbnail(url=getenv('xaneria'))
 
         user_items = inventory.items if isinstance(inventory.items, list) else []
@@ -2322,26 +2501,30 @@ class Game(commands.Cog):
                 if owned_item['_id'] == item_id:
                     count = owned_item.get('owned', 0)
                     if item['type'] == 'Skill' or item['type'] == 'Equipment':
-                        return "YA" if count > 0 else "TIDAK"
+                        return i18n.get(lang, "game.shop_owned_yes")
                     return str(count)
             
             if item['type'] == 'Skill' or item['type'] == 'Equipment':
-                return "TIDAK"
+                return i18n.get(lang, "game.shop_owned_no")
             return "0"
 
         options_per_page = 5
+        type_text = "Type" if lang == "en" else "Tipe"
+        price_text = "Price" if lang == "en" else "Harga"
+        owned_text = "Owned" if lang == "en" else "Dimiliki"
+
         for index, item in enumerate(items[:options_per_page], start=1):
             owned_display = get_owned_display(item)
+            item_name = i18n.get(lang, f"game.item_{item['_id']}_name", default=item['name'])
+            item_desc = i18n.get(lang, f"game.item_{item['_id']}_desc", default=item['desc'])
+            item_type_label = i18n.get(lang, f"game.type_{to_key(item['type'])}")
+            currency_label = i18n.get(lang, "game.paywith_koin") if item['paywith'] == "Koin" else i18n.get(lang, "game.paywith_karma")
+            
             embed.add_field(
-                name=f"{index}. {item['name']}",
-                value=f"**`{item['desc']}`**\n({item['func']})\n**Tipe:** {item['type']}\n**Harga:** {item['cost']} {item['paywith']}\n**Dimiliki:** {owned_display}",
+                name=f"{index}. {item_name}",
+                value=f"**`{item_desc}`**\n({item['func']})\n**{type_text}:** {item_type_label}\n**{price_text}:** {item['cost']} {currency_label}\n**{owned_text}:** {owned_display}",
                 inline=False
-            )
-
-        view = ShopView(ctx, items, user_record.dict()) # Pass as dict for simplicity in View
-        await ctx.reply(embed = embed, view=view)
-
-    @game.command(description='Bertualang di Re:Volution!')
+            )    @game.command(description='Bertualang di Re:Volution!')
     @has_registered()
     @check_compatible()
     @check_blacklist()
@@ -2349,11 +2532,13 @@ class Game(commands.Cog):
         """
         Bertualang di Re:Volution ~ The Dream World!
         """
+        lang = await get_user_lang(ctx.author.id)
         exp_gain = random.randint(10, 25)
         coin_gain = random.randint(15, 35)
         
         await give_rewards(ctx, ctx.author, exp_gain, coin_gain)
-        await ctx.reply(f"Kamu bertualang di Dream World dan mendapatkan `{exp_gain}` EXP dan `{coin_gain}` Koin!")
+        msg = i18n.get(lang, "game.adventure_success", exp=exp_gain, coins=coin_gain)
+        await ctx.reply(msg)
 
     @game.command(description='Tantang seseorang ke sebuah duel!')
     @app_commands.describe(member='Siapa yang ingin kamu lawan?')
@@ -2365,8 +2550,16 @@ class Game(commands.Cog):
         """
         Tantang seseorang ke sebuah duel!
         """
+        lang = await get_user_lang(ctx.author.id)
         if member.bot:
-            return await ctx.reply('Bot tidak bisa melakukan perlawanan!', ephemeral=True)
+            msg = i18n.get(lang, "game.fight_bot_cannot_fight")
+            return await ctx.reply(msg, ephemeral=True)
+            
+        rival_record = await db.user.find_unique(where={'id': member.id})
+        if not rival_record:
+            msg = i18n.get(lang, "errors.rival_no_account")
+            return await ctx.reply(msg)
+            
         game = GameInstance(ctx, ctx.author, member, self.bot)
         await game.start()
 
@@ -2391,6 +2584,7 @@ class Game(commands.Cog):
         """
         Lawan musuh-musuh yang ada di Re:Volution ~ The Dream World!
         """
+        lang = await get_user_lang(ctx.author.id)
         with open(f'./src/game/enemies/{enemy_tier.value}.json') as file:
             content = file.read()
             enemies = json.loads(content)
@@ -2424,7 +2618,8 @@ class Game(commands.Cog):
                             break
 
             if enemy == None:
-                return await ctx.reply(f"Aku tidak dapat menemukan musuh bernama **`{enemy_name}`** di level **`{enemy_tier.value.upper()}`**\nPastikan nama musuh dan/atau levelnya benar!", ephemeral=True)
+                msg = i18n.get(lang, "game.battle_enemy_not_found", name=enemy_name, tier=enemy_tier.value.upper())
+                return await ctx.reply(msg, ephemeral=True)
         else:
             enemy = random.choice(enemies)
 
@@ -2438,7 +2633,8 @@ class Game(commands.Cog):
         """
         Lihat daftar musuh yang muncul di Re:Volution ~ The Dream World!
         """
-        view = PaginatedEnemyView(ctx)
+        lang = await get_user_lang(ctx.author.id)
+        view = PaginatedEnemyView(ctx, lang=lang)
         embed = await view.get_embed()
         await ctx.reply(embed=embed, view=view)
 
@@ -2455,39 +2651,52 @@ class Game(commands.Cog):
         """
         Request untuk pemindahan data akun.
         """
+        lang = await get_user_lang(ctx.author.id)
         current_acc_record = await db.user.find_unique(where={'id': ctx.author.id})
         old_acc_record = await db.user.find_unique(where={'id': old_acc.id})
         
         if not old_acc_record:
-            return await ctx.reply("Akun Re:Volution tidak ditemukan!\nJika tidak yakin dengan ID akun Discord lamamu, silahkan hubungi langsung Schryzon!", ephemeral=True)
+            msg = i18n.get(lang, "game.transfer_not_found")
+            return await ctx.reply(msg, ephemeral=True)
         
         if ctx.author.id == old_acc.id:
-            return await ctx.reply("Hey! Akun yang kamu cantumkan sama dengan akun Discordmu saat ini!", ephemeral=True)
+            msg = i18n.get(lang, "game.transfer_same_account")
+            return await ctx.reply(msg, ephemeral=True)
         
-        embed = discord.Embed(title="Request Transfer Data Akun", color=ctx.author.color, timestamp=ctx.message.created_at)
+        title_lbl = i18n.get(lang, "game.transfer_embed_title")
+        embed = discord.Embed(title=title_lbl, color=ctx.author.color, timestamp=ctx.message.created_at)
+        
+        old_lbl = i18n.get(lang, "game.transfer_embed_old")
         embed.add_field(
-            name="Akun Lama",
+            name=old_lbl,
             value=f"Nama: {old_acc_record.data['name']}\nID: {old_acc_record.id}",
             inline=False
         )
 
+        new_lbl = i18n.get(lang, "game.transfer_embed_new")
         embed.add_field(
-            name="Akun Baru",
+            name=new_lbl,
             value=f"Nama: {current_acc_record.data['name']}\nID: {current_acc_record.id}",
             inline=False
         )
 
+        reason_lbl = i18n.get(lang, "game.transfer_embed_reason")
         embed.add_field(
-            name="Alasan",
+            name=reason_lbl,
             value=reason,
             inline=False
         )
 
         embed.set_author(name=ctx.author)
-        embed.set_footer(text="Reply \"Approve\" jika disetujui\nReply \"Decline\" jika tidak disetujui")
+        footer_lbl = i18n.get(lang, "game.transfer_embed_footer")
+        embed.set_footer(text=footer_lbl)
+        
         channel = self.bot.get_channel(1115422709585817710)
-        await channel.send(embed=embed)
-        await ctx.send("Aku telah mengirimkan request transfer data akun ke developer!\nMohon ditunggu persetujuannya ya!\nJangan lupa untuk mengaktifkan pesan DM dari aku karena nanti akan diberikan info apabila disetujui/ditolak.")
+        if channel:
+            await channel.send(embed=embed)
+        
+        success_msg = i18n.get(lang, "game.transfer_request_success")
+        await ctx.send(success_msg)
 
 
     @game.command(description='Ayo main tebak angka bersamaku!')
@@ -2503,7 +2712,8 @@ class Game(commands.Cog):
         """
         Ayo main tebak angka bersamaku!
         """
-        game_instance = GuessGame(ctx, level.value)
+        lang = await get_user_lang(ctx.author.id)
+        game_instance = GuessGame(ctx, level.value, lang=lang)
         await game_instance.start()
 
     @game.command(description = "Gunakan barang atau perlengkapan perang!")
@@ -2520,10 +2730,11 @@ class Game(commands.Cog):
         """
         Gunakan barang atau perlengkapan perang!
         """
-        # Choose type -> Dropdown class
+        lang = await get_user_lang(ctx.author.id)
         user_record = await db.user.find_unique(where={'id': ctx.author.id}, include={'inventory': True})
         if not user_record or not user_record.inventory:
-            return await ctx.reply("Kamu belum terdaftar atau akunmu bermasalah!", ephemeral=True)
+            msg = i18n.get(lang, "game.use_not_registered")
+            return await ctx.reply(msg, ephemeral=True)
             
         inventory = user_record.inventory
         user_items = inventory.items if isinstance(inventory.items, list) else []
@@ -2536,9 +2747,10 @@ class Game(commands.Cog):
                 things = [item for item in user_items if "1-" in item['_id']]
 
             case _:
-                return await ctx.reply("Hey! Pilihlah salah satu dari opsi tersedia!", ephemeral=True)
+                msg = i18n.get(lang, "game.use_invalid_option")
+                return await ctx.reply(msg, ephemeral=True)
             
-        view = UseView(things, ctx)
+        view = UseView(things, ctx, lang=lang)
         await ctx.reply(f'{ctx.author.mention}', view=view)
 
     @commands.hybrid_group(name="guild", description="Sistem Guild Re:Volution", fallback="info")
@@ -2547,20 +2759,30 @@ class Game(commands.Cog):
         """
         Lihat informasi guild kamu atau guild orang lain.
         """
+        lang = await get_user_lang(ctx.author.id)
         user_record = await db.user.find_unique(where={'id': ctx.author.id}, include={'guild': True})
         if not user_record or not user_record.guild:
-            return await ctx.reply("Kamu belum bergabung dengan guild manapun! Gunakan `/guild create` untuk membuat guild baru.", ephemeral=True)
+            msg = i18n.get(lang, "game.guild_not_member")
+            return await ctx.reply(msg, ephemeral=True)
         
         guild = user_record.guild
         members_count = await db.user.count(where={'guildId': guild.id})
         
-        embed = discord.Embed(title=guild.name, description=guild.tagline or "No tagline set.", color=ctx.author.color)
+        tagline_empty = i18n.get(lang, "game.guild_info_tagline_empty")
+        embed = discord.Embed(title=guild.name, description=guild.tagline or tagline_empty, color=ctx.author.color)
         if guild.iconUrl:
             embed.set_thumbnail(url=guild.iconUrl)
         
-        embed.add_field(name="👑 Owner", value=f"<@{guild.ownerId}>")
-        embed.add_field(name="👥 Anggota", value=f"{members_count} Anggota")
-        embed.set_footer(text=f"ID Guild: {guild.id} | Dibuat pada {guild.createdAt.strftime('%d/%m/%Y')}")
+        owner_name = i18n.get(lang, "game.guild_info_owner")
+        embed.add_field(name=owner_name, value=f"<@{guild.ownerId}>")
+        
+        members_name = i18n.get(lang, "game.guild_info_members")
+        members_value = i18n.get(lang, "game.guild_info_members_value", count=members_count)
+        embed.add_field(name=members_name, value=members_value)
+        
+        date_str = guild.createdAt.strftime('%d/%m/%Y')
+        footer_text = i18n.get(lang, "game.guild_info_footer", id=guild.id, date=date_str)
+        embed.set_footer(text=footer_text)
         
         await ctx.reply(embed=embed)
 
@@ -2571,26 +2793,32 @@ class Game(commands.Cog):
         """
         Buat guild baru untuk komunitasmu!
         """
+        lang = await get_user_lang(ctx.author.id)
         user_record = await db.user.find_unique(where={'id': ctx.author.id})
         if not user_record:
-            return await ctx.reply("Kamu belum terdaftar di Re:Volution!", ephemeral=True)
+            msg = i18n.get(lang, "game.guild_not_registered")
+            return await ctx.reply(msg, ephemeral=True)
         
         if user_record.guildId:
-            return await ctx.reply("Kamu sudah berada di sebuah guild! Keluar dulu sebelum membuat yang baru.", ephemeral=True)
+            msg = i18n.get(lang, "game.guild_already_member")
+            return await ctx.reply(msg, ephemeral=True)
             
         # Check if user already owns a guild (Unique constraint check)
         existing_owned = await db.guild.find_unique(where={'ownerId': ctx.author.id})
         if existing_owned:
-            return await ctx.reply(f"Kamu sudah memiliki guild bernama **{existing_owned.name}**! Kamu harus membubarkannya dulu sebelum membuat yang baru.", ephemeral=True)
+            msg = i18n.get(lang, "game.guild_already_owns", name=existing_owned.name)
+            return await ctx.reply(msg, ephemeral=True)
         
         data = user_record.data
         if data['coins'] < 5000:
-            return await ctx.reply(f"Koinmu tidak cukup! Dibutuhkan **5000** Koin, kamu hanya punya **{data['coins']}**.", ephemeral=True)
+            msg = i18n.get(lang, "game.guild_insufficient_coins", coins=data['coins'])
+            return await ctx.reply(msg, ephemeral=True)
         
         # Check if name exists
         existing = await db.guild.find_unique(where={'name': name})
         if existing:
-            return await ctx.reply(f"Nama guild `{name}` sudah diambil orang lain!", ephemeral=True)
+            msg = i18n.get(lang, "game.guild_name_taken", name=name)
+            return await ctx.reply(msg, ephemeral=True)
         
         # Create guild
         new_guild = await db.guild.create(data={
@@ -2608,9 +2836,15 @@ class Game(commands.Cog):
             }
         )
         
-        embed = discord.Embed(title="🏰 Guild Diciptakan!", description=f"Selamat! Guild **{name}** telah resmi didirikan.", color=discord.Color.gold())
-        embed.add_field(name="Biaya", value="5000 Koin")
-        embed.set_footer(text="Gunakan /guild edit untuk mengatur ikon dan tagline!")
+        title_lbl = i18n.get(lang, "game.guild_created_title")
+        desc_lbl = i18n.get(lang, "game.guild_created_desc", name=name)
+        embed = discord.Embed(title=title_lbl, description=desc_lbl, color=discord.Color.gold())
+        
+        fee_lbl = i18n.get(lang, "game.guild_created_fee")
+        embed.add_field(name="Biaya" if lang == "id" else "Cost", value=fee_lbl)
+        
+        footer_lbl = i18n.get(lang, "game.guild_created_footer")
+        embed.set_footer(text=footer_lbl)
         
         await ctx.reply(embed=embed)
 
@@ -2625,32 +2859,39 @@ class Game(commands.Cog):
         """
         Ubah detail guildmu agar terlihat lebih keren!
         """
+        lang = await get_user_lang(ctx.author.id)
         user_record = await db.user.find_unique(where={'id': ctx.author.id}, include={'guild': True})
         if not user_record or not user_record.guild:
-            return await ctx.reply("Kamu tidak berada dalam guild!", ephemeral=True)
+            msg = i18n.get(lang, "game.guild_edit_not_member")
+            return await ctx.reply(msg, ephemeral=True)
         
         guild = user_record.guild
         if guild.ownerId != ctx.author.id:
-            return await ctx.reply("Hanya Owner guild yang bisa mengubah pengaturan ini!", ephemeral=True)
+            msg = i18n.get(lang, "game.guild_edit_not_owner")
+            return await ctx.reply(msg, ephemeral=True)
         
         update_data = {}
         if name:
             existing = await db.guild.find_unique(where={'name': name})
             if existing and existing.id != guild.id:
-                return await ctx.reply(f"Nama guild `{name}` sudah digunakan!", ephemeral=True)
+                msg = i18n.get(lang, "game.guild_edit_name_taken", name=name)
+                return await ctx.reply(msg, ephemeral=True)
             update_data['name'] = name
         if tagline:
             update_data['tagline'] = tagline
         if icon_url:
             if not icon_url.startswith("http"):
-                return await ctx.reply("Ikon harus berupa URL gambar yang valid!", ephemeral=True)
+                msg = i18n.get(lang, "game.guild_edit_invalid_icon")
+                return await ctx.reply(msg, ephemeral=True)
             update_data['iconUrl'] = icon_url
             
         if not update_data:
-            return await ctx.reply("Pilihl|ah apa yang ingin kamu ubah!", ephemeral=True)
+            msg = i18n.get(lang, "game.guild_edit_no_choices")
+            return await ctx.reply(msg, ephemeral=True)
             
         await db.guild.update(where={'id': guild.id}, data=update_data)
-        await ctx.reply(f"✅ Detail guild **{guild.name}** berhasil diperbarui!")
+        success_msg = i18n.get(lang, "game.guild_edit_success", name=name or guild.name)
+        await ctx.reply(success_msg)
 
     @guild.command(name="invite", description="Undang seseorang ke guildmu")
     @app_commands.describe(user="User yang ingin diundang")
@@ -2659,24 +2900,30 @@ class Game(commands.Cog):
         """
         Undang temanmu untuk bergabung dalam guild!
         """
+        lang = await get_user_lang(ctx.author.id)
         user_record = await db.user.find_unique(where={'id': ctx.author.id}, include={'guild': True})
         if not user_record or not user_record.guild:
-            return await ctx.reply("Kamu tidak berada dalam guild!", ephemeral=True)
+            msg = i18n.get(lang, "game.guild_edit_not_member")
+            return await ctx.reply(msg, ephemeral=True)
         
         guild = user_record.guild
         if guild.ownerId != ctx.author.id:
-            return await ctx.reply("Hanya Owner yang bisa mengundang orang baru untuk saat ini!", ephemeral=True)
+            msg = i18n.get(lang, "game.guild_invite_not_owner")
+            return await ctx.reply(msg, ephemeral=True)
             
         target_record = await db.user.find_unique(where={'id': user.id})
         if not target_record:
-            return await ctx.reply("Orang tersebut belum terdaftar di Re:Volution!", ephemeral=True)
+            msg = i18n.get(lang, "game.guild_invite_target_not_registered")
+            return await ctx.reply(msg, ephemeral=True)
         
         if target_record.guildId:
-            return await ctx.reply("Orang tersebut sudah memiliki guild!", ephemeral=True)
+            msg = i18n.get(lang, "game.guild_invite_target_has_guild")
+            return await ctx.reply(msg, ephemeral=True)
             
         # Sending invitation
-        view = GuildInviteView(guild, user)
-        await ctx.reply(f"💌 {user.mention}, kamu diundang untuk bergabung ke guild **{guild.name}**!", view=view)
+        view = GuildInviteView(guild, user, lang=lang)
+        prompt_msg = i18n.get(lang, "game.guild_invite_prompt", mention=user.mention, name=guild.name)
+        await ctx.reply(prompt_msg, view=view)
 
     @guild.command(name="leave", description="Keluar dari guild saat ini")
     @check_blacklist()
@@ -2684,18 +2931,22 @@ class Game(commands.Cog):
         """
         Keluar dari guild. Jika kamu Owner, guild akan dibubarkan!
         """
+        lang = await get_user_lang(ctx.author.id)
         user_record = await db.user.find_unique(where={'id': ctx.author.id}, include={'guild': True})
         if not user_record or not user_record.guild:
-            return await ctx.reply("Kamu tidak berada dalam guild!", ephemeral=True)
+            msg = i18n.get(lang, "game.guild_edit_not_member")
+            return await ctx.reply(msg, ephemeral=True)
             
         guild = user_record.guild
         if guild.ownerId == ctx.author.id:
             # Bubarkan guild
             await db.guild.delete(where={'id': guild.id})
-            await ctx.reply(f"💥 Guild **{guild.name}** telah dibubarkan karena Owner keluar.")
+            msg = i18n.get(lang, "game.guild_leave_disbanded", name=guild.name)
+            await ctx.reply(msg)
         else:
             await db.user.update(where={'id': ctx.author.id}, data={'guild': {'disconnect': True}})
-            await ctx.reply(f"👋 Kamu telah keluar dari guild **{guild.name}**.")
+            msg = i18n.get(lang, "game.guild_leave_success", name=guild.name)
+            await ctx.reply(msg)
 
     @guild.command(name="leaderboard", aliases=["lb"], description="Lihat guild terkuat di Re:Volution!")
     @check_blacklist()
@@ -2703,15 +2954,18 @@ class Game(commands.Cog):
         """
         Papan peringkat Guild berdasarkan jumlah anggota.
         """
+        lang = await get_user_lang(ctx.author.id)
         guilds = await db.guild.find_many(include={'members': True})
         if not guilds:
-            return await ctx.reply("Belum ada guild yang terdaftar!")
+            msg = i18n.get(lang, "game.guild_lb_empty")
+            return await ctx.reply(msg)
             
         # Sort by member count DESC
         sorted_guilds = sorted(guilds, key=lambda g: len(g.members), reverse=True)
         top_100 = sorted_guilds[:100]
         
-        view = LeaderboardView(ctx, top_100, "🏆 Papan Peringkat Guild 🏆", type="guild")
+        title_lbl = i18n.get(lang, "game.guild_leaderboard_title")
+        view = LeaderboardView(ctx, top_100, title_lbl, type="guild", lang=lang)
         embed = await view.get_embed()
         await ctx.reply(embed=embed, view=view)
 
@@ -2722,25 +2976,32 @@ class Game(commands.Cog):
         """
         Lihat atau ubah ikon guildmu agar terlihat lebih megah!
         """
+        lang = await get_user_lang(ctx.author.id)
         user_record = await db.user.find_unique(where={'id': ctx.author.id}, include={'guild': True})
         if not user_record or not user_record.guild:
-            return await ctx.reply("Kamu tidak berada dalam guild!", ephemeral=True)
+            msg = i18n.get(lang, "game.guild_edit_not_member")
+            return await ctx.reply(msg, ephemeral=True)
         
         guild = user_record.guild
         
         if url:
             if guild.ownerId != ctx.author.id:
-                return await ctx.reply("Hanya Owner guild yang bisa mengubah ikon!", ephemeral=True)
+                msg = i18n.get(lang, "game.guild_icon_owner_only")
+                return await ctx.reply(msg, ephemeral=True)
             if not url.startswith("http"):
-                return await ctx.reply("Ikon harus berupa URL gambar yang valid!", ephemeral=True)
+                msg = i18n.get(lang, "game.guild_edit_invalid_icon")
+                return await ctx.reply(msg, ephemeral=True)
             
             await db.guild.update(where={'id': guild.id}, data={'iconUrl': url})
-            return await ctx.reply(f"✅ Ikon guild **{guild.name}** berhasil diperbarui!")
+            msg = i18n.get(lang, "game.guild_icon_updated", name=guild.name)
+            return await ctx.reply(msg)
             
         if not guild.iconUrl:
-            return await ctx.reply(f"Guild **{guild.name}** belum memiliki ikon!")
+            msg = i18n.get(lang, "game.guild_icon_empty", name=guild.name)
+            return await ctx.reply(msg)
             
-        embed = discord.Embed(title=f"Ikon Guild: {guild.name}", color=ctx.author.color)
+        title_text = f"Guild Icon: {guild.name}" if lang == "en" else f"Ikon Guild: {guild.name}"
+        embed = discord.Embed(title=title_text, color=ctx.author.color)
         embed.set_image(url=guild.iconUrl)
         await ctx.reply(embed=embed)
 
@@ -2750,26 +3011,26 @@ class Game(commands.Cog):
         """
         Lihat status dan keuntungan menjadi Dream Weaver.
         """
+        lang = await get_user_lang(ctx.author.id)
         user_record = await db.user.find_unique(where={'id': ctx.author.id})
         if not user_record:
-            return await ctx.reply("Kamu belum terdaftar!")
+            msg = i18n.get(lang, "game.premium_not_registered")
+            return await ctx.reply(msg)
             
         is_p = user_record.premiumUntil and user_record.premiumUntil > datetime.now()
         
         embed = discord.Embed(title="💎 Dream Weaver Premium 💎", color=0x00ffff)
         if is_p:
-            embed.description = f"Status: **AKTIF**\nBerlaku sampai: <t:{int(user_record.premiumUntil.timestamp())}:F>"
+            embed.description = i18n.get(lang, "game.premium_active_desc", timestamp=int(user_record.premiumUntil.timestamp()))
         else:
-            embed.description = "Status: **TIDAK AKTIF**\nJadilah Dream Weaver untuk mendapatkan berbagai keuntungan!"
+            embed.description = i18n.get(lang, "game.premium_inactive_desc")
             
-        embed.add_field(name="✨ Keuntungan", value=(
-            "• **2x EXP & Koin**: Petualangan jadi lebih cepat!\n"
-            "• **💎 Badge Eksklusif**: Tampil beda di profil & leaderboard.\n"
-            "• **🏰 Guild Prioritas**: Biaya pembuatan guild lebih murah (mendatang).\n"
-            "• **💖 Dukungan**: Membantu pengembangan Re:Volution!"
-        ), inline=False)
+        benefits_title = i18n.get(lang, "game.premium_benefits_title")
+        benefits_desc = i18n.get(lang, "game.premium_benefits_desc")
+        embed.add_field(name=benefits_title, value=benefits_desc, inline=False)
         
-        embed.set_footer(text="Gunakan /premium buy untuk cara berlangganan.")
+        footer_text = i18n.get(lang, "game.premium_footer")
+        embed.set_footer(text=footer_text)
         await ctx.reply(embed=embed)
 
     @premium.command(name="buy", description="Cara menjadi Dream Weaver (15k IDR / 30 Hari)")
@@ -2778,18 +3039,12 @@ class Game(commands.Cog):
         """
         Instruksi berlangganan Premium.
         """
+        lang = await get_user_lang(ctx.author.id)
         saweria_link = getenv('SAWERIA_LINK', 'https://saweria.co/Schryzon')
         
-        embed = discord.Embed(title="💎 Cara Menjadi Dream Weaver", color=0x00ffff)
-        embed.description = (
-            f"Dukung pengembangan bot ini hanya dengan **Rp 15.000 / 30 Hari**!\n\n"
-            f"**Langkah-langkah:**\n"
-            f"1. Buka link Saweria berikut: **[Klik di Sini]({saweria_link})**\n"
-            f"2. Selesaikan pembayaran (nominal Rp 15.000).\n"
-            f"3. Simpan/Screenshot bukti pembayaran berhasil.\n"
-            f"4. Jalankan command `/premium claim` dan lampirkan screenshot tersebut.\n\n"
-            f"*Status premium akan diaktifkan oleh admin segera setelah verifikasi.*"
-        )
+        title_text = "💎 How to Become a Dream Weaver" if lang == "en" else "💎 Cara Menjadi Dream Weaver"
+        embed = discord.Embed(title=title_text, color=0x00ffff)
+        embed.description = i18n.get(lang, "game.premium_buy_desc", saweria_link=saweria_link)
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
         await ctx.reply(embed=embed)
 
@@ -2800,13 +3055,16 @@ class Game(commands.Cog):
         """
         Kirim bukti pembayaranmu untuk diverifikasi oleh admin!
         """
+        lang = await get_user_lang(ctx.author.id)
         staff_channel_id = getenv('STAFF_CHANNEL_ID')
         if not staff_channel_id:
-            return await ctx.reply("Sistem klaim sedang tidak tersedia, silahkan hubungi admin secara langsung.", ephemeral=True)
+            msg = i18n.get(lang, "game.premium_claim_no_channel")
+            return await ctx.reply(msg, ephemeral=True)
             
         staff_channel = self.bot.get_channel(int(staff_channel_id))
         if not staff_channel:
-            return await ctx.reply("Terjadi kesalahan konfigurasi, silahkan hubungi admin.", ephemeral=True)
+            msg = i18n.get(lang, "game.premium_claim_config_error")
+            return await ctx.reply(msg, ephemeral=True)
             
         embed = discord.Embed(title="💎 Klaim Premium Baru!", color=0x00ffff)
         embed.set_author(name=ctx.author.name, icon_url=ctx.author.display_avatar.url)
@@ -2816,14 +3074,17 @@ class Game(commands.Cog):
         embed.set_footer(text=f"Gunakan approve_premium {ctx.author.id} untuk menyetujui.")
         await staff_channel.send(embed=embed)
         
-        await ctx.reply("✅ Bukti pembayaranmu telah dikirim! Mohon tunggu verifikasi dari admin.", ephemeral=True)
+        success_msg = i18n.get(lang, "game.premium_claim_success")
+        await ctx.reply(success_msg, ephemeral=True)
 
     @commands.command(name="approve_premium", description="[ADMIN] Setujui klaim premium seseorang")
     @commands.is_owner()
     async def approve_premium(self, ctx: commands.Context, user: discord.User):
+        staff_lang = await get_user_lang(ctx.author.id)
         user_record = await db.user.find_unique(where={'id': user.id})
         if not user_record:
-            return await ctx.reply("User tidak ditemukan di database!")
+            msg = i18n.get(staff_lang, "game.premium_approve_not_found")
+            return await ctx.reply(msg)
             
         now = datetime.now()
         if user_record.premiumUntil and user_record.premiumUntil > now:
@@ -2832,36 +3093,53 @@ class Game(commands.Cog):
             new_expiry = now + timedelta(days=30)
             
         await db.user.update(where={'id': user.id}, data={'premiumUntil': new_expiry})
-        await ctx.reply(f"✅ Klaim premium untuk **{user.name}** disetujui! Berlaku sampai: <t:{int(new_expiry.timestamp())}:F>")
+        
+        success_msg = i18n.get(staff_lang, "game.premium_approve_success", name=user.name, timestamp=int(new_expiry.timestamp()))
+        await ctx.reply(success_msg)
+        
         try:
-            await user.send(f"💎 **Klaim Premium Berhasil!** Selamat, kamu telah menjadi Dream Weaver selama 30 hari!\nBerlaku sampai: <t:{int(new_expiry.timestamp())}:F>")
+            user_lang = await get_user_lang(user.id)
+            dm_msg = i18n.get(user_lang, "game.premium_dm_success", timestamp=int(new_expiry.timestamp()))
+            await user.send(dm_msg)
         except:
             pass
 
 class GuildInviteView(View):
-    def __init__(self, guild, target_user):
+    def __init__(self, guild, target_user, lang="en"):
         super().__init__(timeout=60.0)
         self.guild = guild
         self.target_user = target_user
+        self.lang = lang
+        for child in self.children:
+            if isinstance(child, Button):
+                if child.custom_id == 'accept_invite':
+                    child.label = 'Terima' if lang == 'id' else 'Accept'
+                elif child.custom_id == 'decline_invite':
+                    child.label = 'Tolak' if lang == 'id' else 'Decline'
 
-    @discord.ui.button(label="Terima", style=discord.ButtonStyle.success, emoji="✅")
+    @discord.ui.button(label="Terima", style=discord.ButtonStyle.success, emoji="✅", custom_id="accept_invite")
     async def accept(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.target_user.id:
-            return await interaction.response.send_message("Undangan ini bukan untukmu!", ephemeral=True)
+            msg = i18n.get(self.lang, "game.invite_view_not_for_you")
+            return await interaction.response.send_message(msg, ephemeral=True)
             
         # Re-check if guild still exists
         guild_exists = await db.guild.find_unique(where={'id': self.guild.id})
         if not guild_exists:
-            return await interaction.response.send_message("Guild ini sudah tidak ada!", ephemeral=True)
+            msg = i18n.get(self.lang, "game.invite_view_guild_gone")
+            return await interaction.response.send_message(msg, ephemeral=True)
             
         await db.user.update(where={'id': self.target_user.id}, data={'guild': {'connect': {'id': self.guild.id}}})
-        await interaction.response.edit_message(content=f"✅ {self.target_user.mention} telah bergabung dengan guild **{self.guild.name}**!", view=None)
+        msg = i18n.get(self.lang, "game.invite_view_accepted", mention=self.target_user.mention, name=self.guild.name)
+        await interaction.response.edit_message(content=msg, view=None)
 
-    @discord.ui.button(label="Tolak", style=discord.ButtonStyle.danger, emoji="❌")
+    @discord.ui.button(label="Tolak", style=discord.ButtonStyle.danger, emoji="❌", custom_id="decline_invite")
     async def decline(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.target_user.id:
-            return await interaction.response.send_message("Undangan ini bukan untukmu!", ephemeral=True)
-        await interaction.response.edit_message(content=f"❌ {self.target_user.mention} menolak undangan.", view=None)
+            msg = i18n.get(self.lang, "game.invite_view_not_for_you")
+            return await interaction.response.send_message(msg, ephemeral=True)
+        msg = i18n.get(self.lang, "game.invite_view_declined", mention=self.target_user.mention)
+        await interaction.response.edit_message(content=msg, view=None)
 
 async def setup(bot):
     await bot.add_cog(Game(bot))

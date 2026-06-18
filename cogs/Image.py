@@ -7,7 +7,7 @@ import os
 import io
 from discord.ext import commands
 from discord import app_commands
-from scripts.main import check_blacklist, has_pfp, smart_title_case
+from scripts.main import db, check_blacklist, has_pfp, smart_title_case
 from scripts.search import search_images
 from scripts.image_processing import (
     Image_Ops, Convolution, Histogram, Equalization, 
@@ -15,17 +15,21 @@ from scripts.image_processing import (
     Morphology, gpu_available, gpu_info, _GPU_NAME,
     Wavelet, Stego, FreqFilter
 )
+from scripts.i18n import i18n
 
 class ImageSearchView(discord.ui.View):
     """
     View for paginated image search results.
     """
-    def __init__(self, query: str, results: list, author_id: int):
+    def __init__(self, query: str, results: list, author_id: int, lang: str = "en"):
         super().__init__(timeout=60)
         self.query = query
         self.results = results
         self.author_id = author_id
         self.current_index = 0
+        self.lang = lang
+        self.prev_button.label = i18n.get(lang, "general.prev_page")
+        self.next_button.label = i18n.get(lang, "general.next_page")
 
     def create_embed(self):
         data = self.results[self.current_index]
@@ -40,21 +44,24 @@ class ImageSearchView(discord.ui.View):
         if len(source_title) > 60:
             source_title = source_title[:57] + "..."
             
-        embed.set_footer(text=f"Hasil {self.current_index + 1}/{len(self.results)} | Sumber: {source_title}")
+        footer_text = i18n.get(self.lang, "image.search_footer", current=self.current_index + 1, total=len(self.results), source=source_title)
+        embed.set_footer(text=footer_text)
         return embed
 
-    @discord.ui.button(label="Sebelumnya", style=discord.ButtonStyle.gray, emoji="◀️")
+    @discord.ui.button(style=discord.ButtonStyle.gray, emoji="◀️")
     async def prev_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author_id:
-            return await interaction.response.send_message("Hey! Ini bukan sesi pencarianmu!", ephemeral=True)
+            msg = i18n.get(self.lang, "general.search_not_yours")
+            return await interaction.response.send_message(msg, ephemeral=True)
         
         self.current_index = (self.current_index - 1) % len(self.results)
         await interaction.response.edit_message(embed=self.create_embed(), view=self)
 
-    @discord.ui.button(label="Selanjutnya", style=discord.ButtonStyle.gray, emoji="▶️")
+    @discord.ui.button(style=discord.ButtonStyle.gray, emoji="▶️")
     async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author_id:
-            return await interaction.response.send_message("Hey! Ini bukan sesi pencarianmu!", ephemeral=True)
+            msg = i18n.get(self.lang, "general.search_not_yours")
+            return await interaction.response.send_message(msg, ephemeral=True)
         
         self.current_index = (self.current_index + 1) % len(self.results)
         await interaction.response.edit_message(embed=self.create_embed(), view=self)
@@ -68,14 +75,17 @@ class Image(commands.Cog):
 
     async def _get_image_bytes(self, ctx, user: discord.User = None, attachment: discord.Attachment = None) -> bytes:
         """Helper to get image bytes from attachment, user avatar, or author avatar."""
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
         if attachment:
             if not any(attachment.filename.lower().endswith(ext) for ext in ['.png', '.jpg', '.jpeg', '.webp']):
-                raise ValueError("Lampiran harus berupa gambar (png, jpg, jpeg, webp)!")
+                raise ValueError(i18n.get(lang, "image.invalid_format"))
             return await attachment.read()
         
         target = user or ctx.author
         if target.avatar is None:
-            raise ValueError(f"{target.display_name} tidak memiliki foto profil!")
+            raise ValueError(i18n.get(lang, "image.no_avatar", user=target.display_name))
         
         return await target.display_avatar.with_format("png").read()
 
@@ -132,12 +142,15 @@ class Image(commands.Cog):
 
     async def _process_and_reply(self, ctx, image_bytes: bytes, filename: str, process_func, *args, **kwargs):
         """Helper to process image and reply to context."""
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
         try:
             # Convert bytes to numpy array
             nparr = np.frombuffer(image_bytes, np.uint8)
             img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
             if img is None:
-                return await ctx.reply("Gagal membaca gambar. Pastikan formatnya benar!")
+                return await ctx.reply(i18n.get(lang, "image.read_failed"))
 
             # Convert BGR (OpenCV default) to RGB for Image_Ops
             img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -163,7 +176,7 @@ class Image(commands.Cog):
             await ctx.reply(file=discord.File(io_buf, filename))
 
         except Exception as e:
-            await ctx.reply(f"Terjadi kesalahan saat memproses gambar: `{str(e)}`")
+            await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
 
     @commands.hybrid_group(name='image')
     @check_blacklist()
@@ -178,12 +191,15 @@ class Image(commands.Cog):
     @check_blacklist()
     async def gpu(self, ctx: commands.Context):
         """Lihat status akselerasi GPU."""
-        status = "Aktif 🚀" if gpu_available() else "Nonaktif 💤"
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
+        status = i18n.get(lang, "image.gpu_active") if gpu_available() else i18n.get(lang, "image.gpu_inactive")
         device = _GPU_NAME or "N/A"
-        embed = discord.Embed(title="Status GPU", color=discord.Color.blue())
+        embed = discord.Embed(title=i18n.get(lang, "image.gpu_title"), color=discord.Color.blue())
         embed.add_field(name="Akselerasi", value=status, inline=True)
         embed.add_field(name="Device", value=device, inline=True)
-        embed.set_footer(text="Menggunakan CuPy untuk pengolahan array skala besar.")
+        embed.set_footer(text=i18n.get(lang, "image.gpu_footer"))
         await ctx.reply(embed=embed)
         
     @image_group.command(name="search", description="Cari gambar di internet dengan navigasi hasil.")
@@ -192,6 +208,9 @@ class Image(commands.Cog):
     async def search(self, ctx: commands.Context, query: str):
         """Cari gambar di internet dan tampilkan hasilnya dengan navigasi."""
         async with ctx.typing():
+            user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+            lang = user_settings.lang if user_settings else "en"
+
             try:
                 # Enable NSFW results only if the channel is NSFW
                 is_nsfw = False
@@ -210,13 +229,13 @@ class Image(commands.Cog):
                 # Fetch up to 10 results for pagination
                 results = await search_images(query, max_results=10, safesearch=safesearch)
                 if not results:
-                    return await ctx.reply("Waduh! Tidak ada gambar yang ditemukan untuk query tersebut.")
+                    return await ctx.reply(i18n.get(lang, "image.search_no_results"))
                 
-                view = ImageSearchView(query, results, ctx.author.id)
+                view = ImageSearchView(query, results, ctx.author.id, lang=lang)
                 await ctx.reply(embed=view.create_embed(), view=view)
                 
             except Exception as e:
-                await ctx.reply(f"Terjadi kesalahan saat mencari gambar: `{str(e)}`")
+                await ctx.reply(i18n.get(lang, "image.search_error", error=str(e)))
 
     @image_group.command(description="Ubah gambar menjadi hitam putih (grayscale).")
     @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit")
@@ -284,8 +303,11 @@ class Image(commands.Cog):
     @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit", axis="Sumbu balik (horizontal/vertical)")
     @check_blacklist()
     async def flip(self, ctx: commands.Context, axis: str = "horizontal", user: discord.User = None, attachment: discord.Attachment = None):
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
         if axis not in ["horizontal", "vertical"]:
-            return await ctx.reply("Axis harus 'horizontal' atau 'vertical'!")
+            return await ctx.reply(i18n.get(lang, "image.flip_axis_error"))
         async with ctx.typing():
             try:
                 bytes_data = await self._get_image_bytes(ctx, user, attachment)
@@ -297,8 +319,11 @@ class Image(commands.Cog):
     @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit", angle="Sudut putar (derajat)", direction="Arah putar (ccw/cw)")
     @check_blacklist()
     async def rotate(self, ctx: commands.Context, angle: float, direction: str = "ccw", user: discord.User = None, attachment: discord.Attachment = None):
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
         if direction not in ["ccw", "cw"]:
-            return await ctx.reply("Direction harus 'ccw' atau 'cw'!")
+            return await ctx.reply(i18n.get(lang, "image.rotate_dir_error"))
         async with ctx.typing():
             try:
                 bytes_data = await self._get_image_bytes(ctx, user, attachment)
@@ -321,6 +346,9 @@ class Image(commands.Cog):
     @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit", method="Metode deteksi (canny/sobel/laplacian/prewitt/roberts/scharr)")
     @check_blacklist()
     async def edge(self, ctx: commands.Context, method: str = "canny", user: discord.User = None, attachment: discord.Attachment = None):
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
         methods = {
             "canny": Edge_Detection.canny,
             "sobel": Edge_Detection.sobel,
@@ -330,7 +358,8 @@ class Image(commands.Cog):
             "scharr": Edge_Detection.scharr
         }
         if method not in methods:
-            return await ctx.reply(f"Metode tidak valid! Pilihan: {', '.join(methods.keys())}")
+            choices_str = ", ".join(methods.keys())
+            return await ctx.reply(i18n.get(lang, "image.edge_method_error", choices=choices_str))
         async with ctx.typing():
             try:
                 bytes_data = await self._get_image_bytes(ctx, user, attachment)
@@ -342,13 +371,17 @@ class Image(commands.Cog):
     @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit", type="Tipe noise (salt_pepper/gaussian/poisson)")
     @check_blacklist()
     async def noise(self, ctx: commands.Context, type: str = "salt_pepper", user: discord.User = None, attachment: discord.Attachment = None):
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
         types = {
             "salt_pepper": Image_Ops.add_salt_pepper,
             "gaussian": Enhancement.add_gaussian_noise,
             "poisson": Enhancement.add_poisson_noise
         }
         if type not in types:
-            return await ctx.reply(f"Tipe noise tidak valid! Pilihan: {', '.join(types.keys())}")
+            choices_str = ", ".join(types.keys())
+            return await ctx.reply(i18n.get(lang, "image.noise_type_error", choices=choices_str))
         async with ctx.typing():
             try:
                 bytes_data = await self._get_image_bytes(ctx, user, attachment)
@@ -360,13 +393,17 @@ class Image(commands.Cog):
     @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit", method="Metode (global/clahe/adaptive)")
     @check_blacklist()
     async def equalize(self, ctx: commands.Context, method: str = "global", user: discord.User = None, attachment: discord.Attachment = None):
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
         methods = {
             "global": Equalization.equalize,
             "clahe": Equalization.clahe,
             "adaptive": Equalization.adaptive
         }
         if method not in methods:
-            return await ctx.reply(f"Metode tidak valid! Pilihan: {', '.join(methods.keys())}")
+            choices_str = ", ".join(methods.keys())
+            return await ctx.reply(i18n.get(lang, "image.equalize_method_error", choices=choices_str))
         async with ctx.typing():
             try:
                 bytes_data = await self._get_image_bytes(ctx, user, attachment)
@@ -472,23 +509,26 @@ class Image(commands.Cog):
     @check_blacklist()
     async def blend(self, ctx: commands.Context, user1: discord.User = None, user2: discord.User = None, attachment1: discord.Attachment = None, attachment2: discord.Attachment = None, alpha: float = 0.5):
         async with ctx.typing():
+            user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+            lang = user_settings.lang if user_settings else "en"
+
             try:
                 # Determine image 1
                 if attachment1:
                     img1_bytes = await attachment1.read()
                 else:
                     target1 = user1 or ctx.author
-                    if target1.avatar is None: raise ValueError(f"{target1.display_name} tidak memiliki avatar!")
+                    if target1.avatar is None: raise ValueError(i18n.get(lang, "image.no_avatar", user=target1.display_name))
                     img1_bytes = await target1.display_avatar.with_format("png").read()
 
                 # Determine image 2
                 if attachment2:
                     img2_bytes = await attachment2.read()
                 elif user2:
-                    if user2.avatar is None: raise ValueError(f"{user2.display_name} tidak memiliki avatar!")
+                    if user2.avatar is None: raise ValueError(i18n.get(lang, "image.no_avatar", user=user2.display_name))
                     img2_bytes = await user2.display_avatar.with_format("png").read()
                 else:
-                    raise ValueError("Harus memberikan gambar kedua (user2 atau attachment2)!")
+                    raise ValueError(i18n.get(lang, "image.blend_missing_second"))
 
                 # Load images
                 img1 = cv2.imdecode(np.frombuffer(img1_bytes, np.uint8), cv2.IMREAD_COLOR)
@@ -508,7 +548,7 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
             except Exception as e:
-                await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
+                await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
 
     @commands.hybrid_group(name='histogram')
     @check_blacklist()
@@ -522,11 +562,16 @@ class Image(commands.Cog):
     @check_blacklist()
     async def histogram_show(self, ctx: commands.Context, user: discord.User = None, attachment: discord.Attachment = None):
         async with ctx.typing():
+            user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+            lang = user_settings.lang if user_settings else "en"
+
             try:
                 bytes_data = await self._get_image_bytes(ctx, user, attachment)
                 img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
                 img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                plot_buf = await self._generate_histogram_plot(img_rgb, title=f"Histogram {user.display_name if user else ctx.author.display_name}")
+                
+                title_txt = i18n.get(lang, "image.hist_show_title", name=(user.display_name if user else ctx.author.display_name))
+                plot_buf = await self._generate_histogram_plot(img_rgb, title=title_txt)
                 await ctx.reply(file=discord.File(plot_buf, "histogram.png"))
             except ValueError as e:
                 await ctx.reply(str(e))
@@ -536,23 +581,26 @@ class Image(commands.Cog):
     @check_blacklist()
     async def match(self, ctx: commands.Context, user1: discord.User = None, user2: discord.User = None, attachment1: discord.Attachment = None, attachment2: discord.Attachment = None):
         async with ctx.typing():
+            user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+            lang = user_settings.lang if user_settings else "en"
+
             try:
                 # Determine image 1
                 if attachment1:
                     img1_bytes = await attachment1.read()
                 else:
                     target1 = user1 or ctx.author
-                    if target1.avatar is None: raise ValueError(f"{target1.display_name} tidak memiliki avatar!")
+                    if target1.avatar is None: raise ValueError(i18n.get(lang, "image.no_avatar", user=target1.display_name))
                     img1_bytes = await target1.display_avatar.with_format("png").read()
 
                 # Determine image 2 (Reference)
                 if attachment2:
                     img2_bytes = await attachment2.read()
                 elif user2:
-                    if user2.avatar is None: raise ValueError(f"{user2.display_name} tidak memiliki avatar!")
+                    if user2.avatar is None: raise ValueError(i18n.get(lang, "image.no_avatar", user=user2.display_name))
                     img2_bytes = await user2.display_avatar.with_format("png").read()
                 else:
-                    raise ValueError("Harus memberikan gambar referensi (user2 atau attachment2)!")
+                    raise ValueError(i18n.get(lang, "image.match_missing_ref"))
 
                 img1 = cv2.imdecode(np.frombuffer(img1_bytes, np.uint8), cv2.IMREAD_COLOR)
                 img2 = cv2.imdecode(np.frombuffer(img2_bytes, np.uint8), cv2.IMREAD_COLOR)
@@ -571,30 +619,33 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
             except Exception as e:
-                await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
+                await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
 
     @histogram_group.command(name="transfer", description="Transfer warna dari satu gambar ke gambar lain.")
     @app_commands.describe(source_user="User sumber warna", ref_user="User referensi warna", source_attachment="Gambar sumber warna", ref_attachment="Gambar referensi warna")
     @check_blacklist()
     async def transfer(self, ctx: commands.Context, source_user: discord.User = None, ref_user: discord.User = None, source_attachment: discord.Attachment = None, ref_attachment: discord.Attachment = None):
         async with ctx.typing():
+            user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+            lang = user_settings.lang if user_settings else "en"
+
             try:
                 # Determine source image
                 if source_attachment:
                     img1_bytes = await source_attachment.read()
                 else:
                     target1 = source_user or ctx.author
-                    if target1.avatar is None: raise ValueError(f"{target1.display_name} tidak memiliki avatar!")
+                    if target1.avatar is None: raise ValueError(i18n.get(lang, "image.no_avatar", user=target1.display_name))
                     img1_bytes = await target1.display_avatar.with_format("png").read()
 
                 # Determine reference image
                 if ref_attachment:
                     img2_bytes = await ref_attachment.read()
                 elif ref_user:
-                    if ref_user.avatar is None: raise ValueError(f"{ref_user.display_name} tidak memiliki avatar!")
+                    if ref_user.avatar is None: raise ValueError(i18n.get(lang, "image.no_avatar", user=ref_user.display_name))
                     img2_bytes = await ref_user.display_avatar.with_format("png").read()
                 else:
-                    raise ValueError("Harus memberikan gambar referensi warna (ref_user atau ref_attachment)!")
+                    raise ValueError(i18n.get(lang, "image.transfer_missing_ref"))
 
                 img1 = cv2.imdecode(np.frombuffer(img1_bytes, np.uint8), cv2.IMREAD_COLOR)
                 img2 = cv2.imdecode(np.frombuffer(img2_bytes, np.uint8), cv2.IMREAD_COLOR)
@@ -613,14 +664,17 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
             except Exception as e:
-                await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
+                await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
 
     @image_group.command(description="Binarisasi gambar (threshold).")
     @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit", threshold_value="Nilai threshold (0-255)", method="Metode (binary/otsu)")
     @check_blacklist()
     async def threshold(self, ctx: commands.Context, threshold_value: int = 127, method: str = "binary", user: discord.User = None, attachment: discord.Attachment = None):
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
         if method not in ["binary", "otsu"]:
-            return await ctx.reply("Metode harus 'binary' atau 'otsu'!")
+            return await ctx.reply(i18n.get(lang, "image.threshold_method_error"))
         async with ctx.typing():
             try:
                 bytes_data = await self._get_image_bytes(ctx, user, attachment)
@@ -644,24 +698,27 @@ class Image(commands.Cog):
     @app_commands.describe(user1="User pertama", user2="User kedua", attachment1="Gambar pertama (background)", attachment2="Gambar kedua (overlay)", mode="Mode blend (normal/add/multiply/screen/overlay)", match_mode="Mode penyesuaian ukuran (resize/crop/pad)")
     @check_blacklist()
     async def composite(self, ctx: commands.Context, user1: discord.User = None, user2: discord.User = None, attachment1: discord.Attachment = None, attachment2: discord.Attachment = None, mode: str = "normal", match_mode: str = "resize"):
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
         modes = ["normal", "add", "multiply", "screen", "overlay"]
         match_modes = ["resize", "crop", "pad"]
-        if mode not in modes: return await ctx.reply(f"Mode tidak valid! Pilihan: {', '.join(modes)}")
-        if match_mode not in match_modes: return await ctx.reply(f"Match mode tidak valid! Pilihan: {', '.join(match_modes)}")
+        if mode not in modes: return await ctx.reply(i18n.get(lang, "image.composite_mode_error", choices=", ".join(modes)))
+        if match_mode not in match_modes: return await ctx.reply(i18n.get(lang, "image.composite_match_mode_error", choices=", ".join(match_modes)))
         async with ctx.typing():
             try:
                 # Load Image 1
                 if attachment1: img1_bytes = await attachment1.read()
                 else:
                     target1 = user1 or ctx.author
-                    if target1.avatar is None: raise ValueError(f"{target1.display_name} tidak memiliki avatar!")
+                    if target1.avatar is None: raise ValueError(i18n.get(lang, "image.no_avatar", user=target1.display_name))
                     img1_bytes = await target1.display_avatar.with_format("png").read()
                 # Load Image 2
                 if attachment2: img2_bytes = await attachment2.read()
                 elif user2:
-                    if user2.avatar is None: raise ValueError(f"{user2.display_name} tidak memiliki avatar!")
+                    if user2.avatar is None: raise ValueError(i18n.get(lang, "image.no_avatar", user=user2.display_name))
                     img2_bytes = await user2.display_avatar.with_format("png").read()
-                else: raise ValueError("Harus memberikan gambar kedua (user2 atau attachment2)!")
+                else: raise ValueError(i18n.get(lang, "image.composite_missing_overlay"))
 
                 img1 = cv2.cvtColor(cv2.imdecode(np.frombuffer(img1_bytes, np.uint8), cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
                 img2 = cv2.cvtColor(cv2.imdecode(np.frombuffer(img2_bytes, np.uint8), cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
@@ -670,27 +727,30 @@ class Image(commands.Cog):
                 _, buffer = cv2.imencode('.png', cv2.cvtColor(result, cv2.COLOR_RGB2BGR))
                 await ctx.reply(file=discord.File(io.BytesIO(buffer), "composite.png"))
             except ValueError as e: await ctx.reply(str(e))
-            except Exception as e: await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
+            except Exception as e: await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
 
     @image_group.command(description="Gabungkan dua gambar secara bersebelahan (concat).")
     @app_commands.describe(user1="User pertama", user2="User kedua", attachment1="Gambar kiri/atas", attachment2="Gambar kanan/bawah", axis="Sumbu gabung (horizontal/vertical)")
     @check_blacklist()
     async def concat(self, ctx: commands.Context, user1: discord.User = None, user2: discord.User = None, attachment1: discord.Attachment = None, attachment2: discord.Attachment = None, axis: str = "horizontal"):
-        if axis not in ["horizontal", "vertical"]: return await ctx.reply("Axis harus 'horizontal' atau 'vertical'!")
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
+        if axis not in ["horizontal", "vertical"]: return await ctx.reply(i18n.get(lang, "image.concat_axis_error"))
         async with ctx.typing():
             try:
                 # Load Image 1
                 if attachment1: img1_bytes = await attachment1.read()
                 else:
                     target1 = user1 or ctx.author
-                    if target1.avatar is None: raise ValueError(f"{target1.display_name} tidak memiliki avatar!")
+                    if target1.avatar is None: raise ValueError(i18n.get(lang, "image.no_avatar", user=target1.display_name))
                     img1_bytes = await target1.display_avatar.with_format("png").read()
                 # Load Image 2
                 if attachment2: img2_bytes = await attachment2.read()
                 elif user2:
-                    if user2.avatar is None: raise ValueError(f"{user2.display_name} tidak memiliki avatar!")
+                    if user2.avatar is None: raise ValueError(i18n.get(lang, "image.no_avatar", user=user2.display_name))
                     img2_bytes = await user2.display_avatar.with_format("png").read()
-                else: raise ValueError("Harus memberikan gambar kedua (user2 atau attachment2)!")
+                else: raise ValueError(i18n.get(lang, "image.concat_missing_second"))
 
                 img1 = cv2.cvtColor(cv2.imdecode(np.frombuffer(img1_bytes, np.uint8), cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
                 img2 = cv2.cvtColor(cv2.imdecode(np.frombuffer(img2_bytes, np.uint8), cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
@@ -699,7 +759,7 @@ class Image(commands.Cog):
                 _, buffer = cv2.imencode('.png', cv2.cvtColor(result, cv2.COLOR_RGB2BGR))
                 await ctx.reply(file=discord.File(io.BytesIO(buffer), "concat.png"))
             except ValueError as e: await ctx.reply(str(e))
-            except Exception as e: await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
+            except Exception as e: await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
 
     @commands.hybrid_group(name='morph')
     @check_blacklist()
@@ -717,7 +777,10 @@ class Image(commands.Cog):
                 bytes_data = await self._get_image_bytes(ctx, user, attachment)
                 await self._process_and_reply(ctx, bytes_data, "erode.png", Morphology.erode, kernel_size, iterations)
             except ValueError as e: await ctx.reply(str(e))
-            except Exception as e: await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
+            except Exception as e:
+                user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+                lang = user_settings.lang if user_settings else "en"
+                await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
 
     @morph_group.command(description="Dilasi gambar (menebalkan fitur).")
     @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit", iterations="Jumlah iterasi (default: 1)", kernel_size="Ukuran kernel (default: 3)")
@@ -728,7 +791,10 @@ class Image(commands.Cog):
                 bytes_data = await self._get_image_bytes(ctx, user, attachment)
                 await self._process_and_reply(ctx, bytes_data, "dilate.png", Morphology.dilate, kernel_size, iterations)
             except ValueError as e: await ctx.reply(str(e))
-            except Exception as e: await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
+            except Exception as e:
+                user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+                lang = user_settings.lang if user_settings else "en"
+                await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
 
     @morph_group.command(description="Ekstrak skeleton/kerangka gambar (hanya untuk grayscale/binary).")
     @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit")
@@ -750,28 +816,34 @@ class Image(commands.Cog):
                     return cv2.cvtColor(skel, cv2.COLOR_GRAY2RGB)
                 await self._process_and_reply(ctx, bytes_data, "skeleton.png", apply_skeleton)
             except ValueError as e: await ctx.reply(str(e))
-            except Exception as e: await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
+            except Exception as e:
+                user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+                lang = user_settings.lang if user_settings else "en"
+                await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
 
     @histogram_group.command(name="compare", description="Bandingkan dua gambar menggunakan histogram.")
     @app_commands.describe(user1="User pertama", user2="User kedua", attachment1="Gambar pertama", attachment2="Gambar kedua", method="Metode perbandingan (correl/chisqr/intersect/bhattacharyya)")
     @check_blacklist()
     async def hist_compare(self, ctx: commands.Context, user1: discord.User = None, user2: discord.User = None, attachment1: discord.Attachment = None, attachment2: discord.Attachment = None, method: str = "correl"):
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
         methods = ["correl", "chisqr", "intersect", "bhattacharyya"]
-        if method not in methods: return await ctx.reply(f"Metode tidak valid! Pilihan: {', '.join(methods)}")
+        if method not in methods: return await ctx.reply(i18n.get(lang, "image.hist_compare_method_error", choices=", ".join(methods)))
         async with ctx.typing():
             try:
                 # Load Image 1
                 if attachment1: img1_bytes = await attachment1.read()
                 else:
                     target1 = user1 or ctx.author
-                    if target1.avatar is None: raise ValueError(f"{target1.display_name} tidak memiliki avatar!")
+                    if target1.avatar is None: raise ValueError(i18n.get(lang, "image.no_avatar", user=target1.display_name))
                     img1_bytes = await target1.display_avatar.with_format("png").read()
                 # Load Image 2
                 if attachment2: img2_bytes = await attachment2.read()
                 elif user2:
-                    if user2.avatar is None: raise ValueError(f"{user2.display_name} tidak memiliki avatar!")
+                    if user2.avatar is None: raise ValueError(i18n.get(lang, "image.no_avatar", user=user2.display_name))
                     img2_bytes = await user2.display_avatar.with_format("png").read()
-                else: raise ValueError("Harus memberikan gambar referensi (user2 atau attachment2)!")
+                else: raise ValueError(i18n.get(lang, "image.match_missing_ref"))
 
                 img1 = cv2.cvtColor(cv2.imdecode(np.frombuffer(img1_bytes, np.uint8), cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
                 img2 = cv2.cvtColor(cv2.imdecode(np.frombuffer(img2_bytes, np.uint8), cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
@@ -783,19 +855,23 @@ class Image(commands.Cog):
                 name2 = user2.display_name if user2 else "Gambar 2"
                 plot_buf = await self._generate_comparison_plot(img1, img2, title1=f"Histogram {name1}", title2=f"Histogram {name2}")
 
-                embed = discord.Embed(title="Perbandingan Histogram", color=discord.Color.green())
+                embed = discord.Embed(title=i18n.get(lang, "image.hist_compare_title"), color=discord.Color.green())
                 embed.add_field(name="Metode", value=method.upper(), inline=True)
                 embed.add_field(name="Skor Kecocokan", value=f"`{score:.4f}`", inline=True)
                 embed.set_image(url="attachment://comparison.png")
                 
-                await ctx.reply(embed=embed, file=discord.File(plot_buf, "comparison.png"))
-            except ValueError as e: await ctx.reply(str(e))
-            except Exception as e: await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
+                file = discord.File(plot_buf, "comparison.png")
+                await ctx.reply(file=file, embed=embed)
 
-    @histogram_group.command(name="cdf", description="Tampilkan grafik CDF (Cumulative Distribution Function).")
-    @app_commands.describe(user="User yang avatar-nya ingin dilihat", attachment="Gambar yang ingin dilihat")
+            except ValueError as e:
+                await ctx.reply(str(e))
+            except Exception as e:
+                await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
+
+    @histogram_group.command(name="cdf", description="Tampilkan grafik CDF (Cumulative Distribution Function) gambar.")
+    @app_commands.describe(user="User yang avatar-nya ingin dilihat CDF-nya", attachment="Gambar yang ingin dilihat CDF-nya")
     @check_blacklist()
-    async def hist_cdf(self, ctx: commands.Context, user: discord.User = None, attachment: discord.Attachment = None):
+    async def histogram_cdf(self, ctx: commands.Context, user: discord.User = None, attachment: discord.Attachment = None):
         async with ctx.typing():
             try:
                 bytes_data = await self._get_image_bytes(ctx, user, attachment)
@@ -820,7 +896,10 @@ class Image(commands.Cog):
                 buf.seek(0)
                 await ctx.reply(file=discord.File(buf, "cdf.png"))
             except ValueError as e: await ctx.reply(str(e))
-            except Exception as e: await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
+            except Exception as e:
+                user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+                lang = user_settings.lang if user_settings else "en"
+                await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
 
     @commands.hybrid_group(name='wavelet')
     @check_blacklist()
@@ -835,8 +914,11 @@ class Image(commands.Cog):
     @app_commands.describe(user="User yang avatar-nya ingin didekomposisi", attachment="Gambar yang ingin didekomposisi", level="Tingkat dekomposisi (1-4, default: 2)")
     @check_blacklist()
     async def wavelet_decomp(self, ctx: commands.Context, level: int = 2, user: discord.User = None, attachment: discord.Attachment = None):
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
         if not (1 <= level <= 4):
-            return await ctx.reply("Tingkat dekomposisi harus di antara 1 dan 4!")
+            return await ctx.reply(i18n.get(lang, "image.wavelet_level_error"))
         async with ctx.typing():
             try:
                 bytes_data = await self._get_image_bytes(ctx, user, attachment)
@@ -881,10 +963,13 @@ class Image(commands.Cog):
     @app_commands.describe(user="User yang avatar-nya ingin didenoise", attachment="Gambar yang ingin didenoise", level="Tingkat dekomposisi (1-4, default: 2)", mode="Mode thresholding (hard/soft)")
     @check_blacklist()
     async def wavelet_denoise(self, ctx: commands.Context, level: int = 2, mode: str = "soft", user: discord.User = None, attachment: discord.Attachment = None):
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
         if not (1 <= level <= 4):
-            return await ctx.reply("Tingkat dekomposisi harus di antara 1 dan 4!")
+            return await ctx.reply(i18n.get(lang, "image.wavelet_level_error"))
         if mode not in ["hard", "soft"]:
-            return await ctx.reply("Mode thresholding harus 'hard' atau 'soft'!")
+            return await ctx.reply(i18n.get(lang, "image.wavelet_mode_error"))
         async with ctx.typing():
             try:
                 bytes_data = await self._get_image_bytes(ctx, user, attachment)
@@ -896,10 +981,13 @@ class Image(commands.Cog):
     @app_commands.describe(user="User yang avatar-nya ingin dikompres", attachment="Gambar yang ingin dikompres", level="Tingkat dekomposisi (1-4, default: 3)", keep_ratio="Persentase koefisien yang disimpan (0.01 - 1.0, default: 0.1)")
     @check_blacklist()
     async def wavelet_compress(self, ctx: commands.Context, level: int = 3, keep_ratio: float = 0.1, user: discord.User = None, attachment: discord.Attachment = None):
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
         if not (1 <= level <= 4):
-            return await ctx.reply("Tingkat dekomposisi harus di antara 1 dan 4!")
+            return await ctx.reply(i18n.get(lang, "image.wavelet_level_error"))
         if not (0.01 <= keep_ratio <= 1.0):
-            return await ctx.reply("Rasio penyimpanan (keep_ratio) harus di antara 0.01 dan 1.0!")
+            return await ctx.reply(i18n.get(lang, "image.wavelet_keep_ratio_error"))
         async with ctx.typing():
             try:
                 bytes_data = await self._get_image_bytes(ctx, user, attachment)
@@ -920,8 +1008,11 @@ class Image(commands.Cog):
     @app_commands.describe(message="Pesan rahasia yang ingin disembunyikan", user="User yang avatar-nya ingin digunakan", attachment="Gambar yang ingin digunakan")
     @check_blacklist()
     async def stego_hide(self, ctx: commands.Context, message: str, user: discord.User = None, attachment: discord.Attachment = None):
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
         if not message:
-            return await ctx.reply("Pesan rahasia tidak boleh kosong!")
+            return await ctx.reply(i18n.get(lang, "image.stego_empty_msg"))
         async with ctx.typing():
             try:
                 bytes_data = await self._get_image_bytes(ctx, user, attachment)
@@ -929,7 +1020,7 @@ class Image(commands.Cog):
                 nparr = np.frombuffer(bytes_data, np.uint8)
                 img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
                 if img is None:
-                    return await ctx.reply("Gagal membaca gambar!")
+                    return await ctx.reply(i18n.get(lang, "image.read_failed"))
                 
                 img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                 
@@ -939,23 +1030,26 @@ class Image(commands.Cog):
                 stego_bgr = cv2.cvtColor(stego_img, cv2.COLOR_RGB2BGR)
                 _, buffer = cv2.imencode('.png', stego_bgr)
                 
-                await ctx.reply(content="Pesan rahasia berhasil disembunyikan! Gunakan `/stego reveal` pada gambar ini untuk membacanya.", file=discord.File(io.BytesIO(buffer), "stego_image.png"))
+                await ctx.reply(content=i18n.get(lang, "image.stego_hide_success"), file=discord.File(io.BytesIO(buffer), "stego_image.png"))
             except ValueError as e:
                 await ctx.reply(str(e))
             except Exception as e:
-                await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
+                await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
 
     @stego_group.command(name="reveal", description="Ekstrak dan baca pesan rahasia dari gambar stego.")
     @app_commands.describe(user="User yang avatar-nya ingin dibaca pesannya", attachment="Gambar yang ingin dibaca pesannya")
     @check_blacklist()
     async def stego_reveal(self, ctx: commands.Context, user: discord.User = None, attachment: discord.Attachment = None):
         async with ctx.typing():
+            user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+            lang = user_settings.lang if user_settings else "en"
+
             try:
                 bytes_data = await self._get_image_bytes(ctx, user, attachment)
                 nparr = np.frombuffer(bytes_data, np.uint8)
                 img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
                 if img is None:
-                    return await ctx.reply("Gagal membaca gambar!")
+                    return await ctx.reply(i18n.get(lang, "image.read_failed"))
                 
                 img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                 
@@ -963,12 +1057,12 @@ class Image(commands.Cog):
                 message = Stego.decode(img_rgb)
                 
                 if not message:
-                    await ctx.reply("Tidak ada pesan rahasia yang ditemukan pada gambar ini!")
+                    await ctx.reply(i18n.get(lang, "image.stego_none_found"))
                 else:
                     escaped_message = discord.utils.escape_markdown(message)
-                    await ctx.reply(f"🕵️‍♂️ **Pesan Rahasia Ditemukan:**\n{escaped_message}")
+                    await ctx.reply(f"{i18n.get(lang, 'image.stego_found_title')}\n{escaped_message}")
             except Exception as e:
-                await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
+                await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
 
     @commands.hybrid_group(name='fourier')
     @check_blacklist()
@@ -989,11 +1083,14 @@ class Image(commands.Cog):
     )
     @check_blacklist()
     async def fourier_lpf(self, ctx: commands.Context, cutoff: float = 30.0, type: str = "gaussian", order: int = 2, user: discord.User = None, attachment: discord.Attachment = None):
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
         types = ["ideal", "butterworth", "gaussian"]
         if type not in types:
-            return await ctx.reply(f"Jenis filter tidak valid! Pilihan: {', '.join(types)}")
+            return await ctx.reply(i18n.get(lang, "image.fourier_type_error", choices=", ".join(types)))
         if cutoff <= 0:
-            return await ctx.reply("Cutoff harus lebih besar dari 0!")
+            return await ctx.reply(i18n.get(lang, "image.fourier_cutoff_error"))
         
         async with ctx.typing():
             try:
@@ -1011,7 +1108,7 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
             except Exception as e:
-                await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
+                await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
 
     @fourier_group.command(name="hpf", description="Terapkan High-Pass Filter (HPF) di domain frekuensi untuk mendeteksi tepi/detail gambar.")
     @app_commands.describe(
@@ -1023,11 +1120,14 @@ class Image(commands.Cog):
     )
     @check_blacklist()
     async def fourier_hpf(self, ctx: commands.Context, cutoff: float = 30.0, type: str = "gaussian", order: int = 2, user: discord.User = None, attachment: discord.Attachment = None):
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
         types = ["ideal", "butterworth", "gaussian"]
         if type not in types:
-            return await ctx.reply(f"Jenis filter tidak valid! Pilihan: {', '.join(types)}")
+            return await ctx.reply(i18n.get(lang, "image.fourier_type_error", choices=", ".join(types)))
         if cutoff <= 0:
-            return await ctx.reply("Cutoff harus lebih besar dari 0!")
+            return await ctx.reply(i18n.get(lang, "image.fourier_cutoff_error"))
         
         async with ctx.typing():
             try:
@@ -1045,7 +1145,7 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
             except Exception as e:
-                await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
+                await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
 
     @fourier_group.command(name="homomorphic", description="Terapkan filter homomorphic untuk menyeimbangkan pencahayaan gambar.")
     @app_commands.describe(
@@ -1058,13 +1158,16 @@ class Image(commands.Cog):
     @check_blacklist()
     async def fourier_homomorphic(self, ctx: commands.Context, gamma_l: float = 0.5, gamma_h: float = 2.0, cutoff: float = 30.0, user: discord.User = None, attachment: discord.Attachment = None):
         async with ctx.typing():
+            user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+            lang = user_settings.lang if user_settings else "en"
+
             try:
                 bytes_data = await self._get_image_bytes(ctx, user, attachment)
                 await self._process_and_reply(ctx, bytes_data, "homomorphic.png", FreqFilter.homomorphic, gamma_l, gamma_h, cutoff)
             except ValueError as e:
                 await ctx.reply(str(e))
             except Exception as e:
-                await ctx.reply(f"Terjadi kesalahan: `{str(e)}`")
+                await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Image(bot))

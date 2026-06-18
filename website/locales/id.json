@@ -33,5 +33,27 @@
     "license_cannot": "Anda Tidak Boleh",
     "license_can_desc": "Penggunaan komersial, modifikasi, distribusi, penggunaan paten, dan penggunaan pribadi.",
     "license_must_desc": "Menyertakan kode sumber (bahkan untuk penggunaan jaringan), menyertakan pemberitahuan hak cipta, dan menggunakan lisensi yang sama (AGPLv3).",
-    "license_cannot_desc": "Menuntut pertanggungjawaban penulis atau mengharapkan jaminan apa pun."
+    "license_cannot_desc": "Menuntut pertanggungjawaban penulis atau mengharapkan jaminan apa pun.",
+
+    "dashboard_nav": "Dashboard",
+    "login_nav": "Masuk",
+    "logout": "Keluar",
+
+    "login_title": "Selamat Datang, Hunter",
+    "login_desc": "Masuk dengan akun Discord-mu untuk mengakses Dashboard RVDiA — lihat profil RPG-mu, kelola inventori, dan ngobrol langsung dengan RVDiA dari web.",
+    "login_button": "Masuk dengan Discord",
+    "login_feature_rpg": "Lihat profil & statistik RPG-mu",
+    "login_feature_inventory": "Jelajahi inventori & perlengkapanmu",
+    "login_feature_chat": "Ngobrol dengan RVDiA di web",
+
+    "dash_servers": "Server",
+    "dash_users": "Pengguna",
+    "dash_memories": "Memori",
+    "dash_uptime": "Uptime",
+    "dash_profile_title": "⚔️ Profil RPG",
+    "dash_inventory_title": "🎒 Inventori",
+    "dash_loading": "Memuat...",
+    "dash_chat_title": "Ngobrol dengan RVDiA",
+    "dash_chat_greeting": "Hai! ✨ Aku RVDiA. Ketik sesuatu untuk mulai ngobrol!",
+    "dash_chat_placeholder": "Ketik pesan..."
 }

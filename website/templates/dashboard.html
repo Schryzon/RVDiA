@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Dashboard Header -->
+    <div class="dash-header">
+        <div class="dash-user-info">
+            <img src="{{ user.avatar_url }}" alt="Avatar" class="dash-avatar" id="dash-avatar">
+            <div>
+                <h2 class="dash-username" id="dash-username">{{ user.username }}</h2>
+                <span class="dash-badge" id="dash-premium-badge" style="display:none;">⭐ Premium</span>
+            </div>
+        </div>
+        <a href="/api/auth/logout?lang={{ lang }}" class="btn btn-secondary btn-sm" id="logout-btn">{{ i18n.logout }}</a>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="dash-stats-bar" id="stats-bar">
+        <div class="stat-item">
+            <span class="stat-value" id="stat-servers">—</span>
+            <span class="stat-label">{{ i18n.dash_servers }}</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-value" id="stat-users">—</span>
+            <span class="stat-label">{{ i18n.dash_users }}</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-value" id="stat-memories">—</span>
+            <span class="stat-label">{{ i18n.dash_memories }}</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-value" id="stat-uptime">—</span>
+            <span class="stat-label">{{ i18n.dash_uptime }}</span>
+        </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="dash-grid">
+        <!-- RPG Profile Card -->
+        <div class="dash-card profile-card" id="profile-card">
+            <h3 class="dash-card-title">{{ i18n.dash_profile_title }}</h3>
+            <div id="profile-content" class="profile-loading">
+                <div class="profile-placeholder">{{ i18n.dash_loading }}</div>
+            </div>
+        </div>
+
+        <!-- Inventory Card -->
+        <div class="dash-card inventory-card" id="inventory-card">
+            <h3 class="dash-card-title">{{ i18n.dash_inventory_title }}</h3>
+            <div id="inventory-content" class="profile-loading">
+                <div class="profile-placeholder">{{ i18n.dash_loading }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Web Chat Widget -->
+    <div class="chat-widget" id="chat-widget">
+        <div class="chat-toggle" id="chat-toggle">
+            <span class="chat-toggle-icon">💬</span>
+            <span class="chat-toggle-text">{{ i18n.dash_chat_title }}</span>
+        </div>
+        <div class="chat-panel" id="chat-panel">
+            <div class="chat-header">
+                <span>{{ i18n.dash_chat_title }}</span>
+                <button class="chat-close" id="chat-close">✕</button>
+            </div>
+            <div class="chat-messages" id="chat-messages">
+                <div class="chat-bubble bot-bubble visible">
+                    <p>{{ i18n.dash_chat_greeting }}</p>
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="{{ i18n.dash_chat_placeholder }}" maxlength="2000" autocomplete="off">
+                <button class="chat-send" id="chat-send">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // pass lang to dashboard.js
+    window.__RVDIA_LANG__ = "{{ lang }}";
+</script>
+<script src="/static/js/dashboard.js"></script>
+{% endblock %}

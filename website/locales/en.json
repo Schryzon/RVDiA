@@ -33,5 +33,27 @@
     "license_cannot": "You Cannot",
     "license_can_desc": "Commercial use, modification, distribution, patent use, and private use.",
     "license_must_desc": "Disclose source (even for network use), include copyright notice, and use the same license (AGPLv3).",
-    "license_cannot_desc": "Hold the author liable or expect any warranty."
+    "license_cannot_desc": "Hold the author liable or expect any warranty.",
+
+    "dashboard_nav": "Dashboard",
+    "login_nav": "Login",
+    "logout": "Logout",
+
+    "login_title": "Welcome, Hunter",
+    "login_desc": "Log in with your Discord account to access the RVDiA Dashboard — view your RPG profile, manage inventory, and chat with RVDiA directly from the web.",
+    "login_button": "Login with Discord",
+    "login_feature_rpg": "View your RPG profile & stats",
+    "login_feature_inventory": "Browse your inventory & equipment",
+    "login_feature_chat": "Chat with RVDiA on the web",
+
+    "dash_servers": "Servers",
+    "dash_users": "Users",
+    "dash_memories": "Memories",
+    "dash_uptime": "Uptime",
+    "dash_profile_title": "⚔️ RPG Profile",
+    "dash_inventory_title": "🎒 Inventory",
+    "dash_loading": "Loading...",
+    "dash_chat_title": "Chat with RVDiA",
+    "dash_chat_greeting": "Hi there! ✨ I'm RVDiA. Type something to start chatting!",
+    "dash_chat_placeholder": "Type a message..."
 }

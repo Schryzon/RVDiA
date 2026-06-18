@@ -6,6 +6,7 @@ import os
 import traceback
 import sys
 import logging
+from scripts.i18n import i18n
 
 """
 Error handlers, it's where the ifs and elifs go crazy!
@@ -57,139 +58,169 @@ class Error(commands.Cog):
       perms = [missing_perms.title() for missing_perms in permlist]
       return perms
 
+    user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+    lang = user_settings.lang if user_settings else "en"
+
     if isinstance(error, commands.MissingRequiredArgument):
-      await ctx.reply(f"Ada beberapa bagian yang belum kamu isi!\nDibutuhkan: \n**```{error.param}```**")
+      msg = i18n.get(lang, "errors.missing_argument", param=error.param)
+      await ctx.reply(msg)
 
     elif isinstance(error, Blacklisted):
-      await ctx.reply('Maaf, kamu telah diblacklist dari menggunakan RVDIA!')
+      msg = i18n.get(lang, "errors.blacklisted")
+      await ctx.reply(msg)
 
     elif isinstance(error, commands.CommandNotFound):
-      await ctx.reply(f"Tidak dapat menemukan command! Cari command yang ada dengan `{ctx.clean_prefix}help`")
+      msg = i18n.get(lang, "errors.command_not_found", prefix=ctx.clean_prefix)
+      await ctx.reply(msg)
 
     elif isinstance(error, commands.NoPrivateMessage):
-      await ctx.reply("Command ini tidak bisa dijalankan melalui DM.")
+      msg = i18n.get(lang, "errors.no_private_message")
+      await ctx.reply(msg)
       
     elif isinstance(error, commands.MemberNotFound):
-      await ctx.reply("Tidak dapat menemukan pengguna, pastikan dia ada di server ini!")
+      msg = i18n.get(lang, "errors.member_not_found")
+      await ctx.reply(msg)
       
     elif isinstance(error, commands.TooManyArguments):
-      await ctx.reply("Bagian yang kamu berlebihan, silahkan lihat help command untuk mengetahui berapa banyak yang ku butuhkan!")
+      msg = i18n.get(lang, "errors.too_many_arguments")
+      await ctx.reply(msg)
 
     elif isinstance(error, commands.UserNotFound):
-      await ctx.reply("Tidak dapat menemukan pengguna di database Discord!")
+      msg = i18n.get(lang, "errors.user_not_found")
+      await ctx.reply(msg)
 
     elif isinstance(error, commands.NSFWChannelRequired):
-      await ctx.reply("Command ini hanya bisa digunakan di channel NSFW!")
+      msg = i18n.get(lang, "errors.nsfw_channel_required")
+      await ctx.reply(msg)
 
     elif isinstance(error, commands.MissingRole):
-      await ctx.reply("`Role` kamu tidak cukup untuk menjalankan command ini!")
+      msg = i18n.get(lang, "errors.missing_role")
+      await ctx.reply(msg)
 
     elif isinstance(error, commands.ChannelNotFound):
-      await ctx.reply("Tidak dapat menemukan channel itu!")
+      msg = i18n.get(lang, "errors.channel_not_found")
+      await ctx.reply(msg)
 
     elif isinstance(error, commands.CommandOnCooldown):
-      await ctx.reply(f"Command sedang dalam cooldown!\nKamu bisa menjalankannya lagi setelah **`{round(error.retry_after)}`** detik.")
+      msg = i18n.get(lang, "errors.command_on_cooldown", seconds=round(error.retry_after))
+      await ctx.reply(msg)
 
     elif isinstance(error, commands.RoleNotFound):
-      await ctx.reply("Tidak dapat menemukan role tersebut di dalam server ini!")
+      msg = i18n.get(lang, "errors.role_not_found")
+      await ctx.reply(msg)
 
     elif isinstance(error, commands.NotOwner):
-      await ctx.reply("Hanya Jayananda yang memiliki akses ke command ini!")
+      msg = i18n.get(lang, "errors.not_owner")
+      await ctx.reply(msg)
 
     elif isinstance(error, NoProfilePicture):
-      await ctx.reply('Kamu harus memasang foto profil untuk menjalankan command ini!') # Maybe add a note in github somewhere
+      msg = i18n.get(lang, "errors.no_pfp")
+      await ctx.reply(msg)
 
     elif isinstance(error, commands.BotMissingPermissions):
       perms = format_permissions(error)
-      await ctx.reply("Saya kekurangan `permissions` untuk menjalankan command! \n(**"
-      + "`" + ",".join(perms) + "`**)"
-      )
+      msg = i18n.get(lang, "errors.bot_missing_permissions", perms=",".join(perms))
+      await ctx.reply(msg)
 
     elif isinstance(error, commands.MissingPermissions):
       perms = format_permissions(error)
-      await ctx.reply("Kamu kekurangan `permissions` untuk menjalankan command! \n(**"
-      + "```" + ",".join(perms) + "```**)"
-      )
+      msg = i18n.get(lang, "errors.missing_permissions", perms=",".join(perms))
+      await ctx.reply(msg)
 
     elif isinstance(error, discord.Forbidden) or "Forbidden" in str(error):
-      await ctx.reply("Kode error: `Forbidden`, mungkin `Role`ku atau kamu terlalu rendah/setara, atau kekurangan `Permissions`!")
+      msg = i18n.get(lang, "errors.forbidden")
+      await ctx.reply(msg)
 
     elif "Invalid base64-encoded string" in str(error) or "Incorrect padding" in str(error):
-      await ctx.reply("Sepertinya itu bukan Base64, tolong berikan teks dalam format Base64!")
+      msg = i18n.get(lang, "errors.invalid_base64")
+      await ctx.reply(msg)
 
     elif "Your prompt may contain text that is not allowed by our safety system." in str(error):
-      await ctx.reply('Prompt yang diberikan kurang pantas untuk ditampilkan!')
+      msg = i18n.get(lang, "errors.prompt_blocked")
+      await ctx.reply(msg)
 
     elif "Uploaded image must be a PNG and less than 4 MB." in str(error):
-      await ctx.reply('Format gambar tidak disupport RVDIA atau lebih dari 4MB! (hanya `.jpg` & `.png`)')
+      msg = i18n.get(lang, "errors.image_upload_error")
+      await ctx.reply(msg)
 
     elif "cannot identify image file" in str(error):
-      await ctx.reply('Aku tidak bisa mendeteksi file tersebut! Apakah kamu yakin itu file gambar?')
+      msg = i18n.get(lang, "errors.image_identify_error")
+      await ctx.reply(msg)
 
     elif isinstance(error, NoEventAvailable):
-      await ctx.reply('Maaf, saat ini tidak ada event yang berlangsung!')
+      msg = i18n.get(lang, "errors.no_event_available")
+      await ctx.reply(msg)
 
     elif "missing an attachment." in str(error):
-      await ctx.reply('Kamu belum melampirkan gambar! Command ini memerlukan lampiran!')
+      msg = i18n.get(lang, "errors.missing_attachment")
+      await ctx.reply(msg)
 
     elif "Your input image may contain content that is not allowed by our safety system." in str(error):
-      await ctx.reply('Gambar yang dilampirkan berisi konten yang tidak pantas!')
+      msg = i18n.get(lang, "errors.image_safety_blocked")
+      await ctx.reply(msg)
 
     elif "currently overloaded with other requests." in str(error):
-      await ctx.reply('Maaf, saat ini fitur tersebut sedang dalam gangguan. Mohon dicoba lagi nanti!')
+      msg = i18n.get(lang, "errors.overloaded")
+      await ctx.reply(msg)
 
     elif "Rate limit reached for" in str(error):
-      await ctx.reply("Aduh, maaf, otakku sedang kepanasan.\nTolong jalankan command lagi setelah 20 detik!")
+      msg = i18n.get(lang, "errors.rate_limited")
+      await ctx.reply(msg)
 
     elif isinstance(error, NotVoted):
-      # Man why doesnt it work tho
       class Vote_Button(View):
         def __init__(self):
             super().__init__(timeout=None)
-
+            label_text = i18n.get(lang, "errors.not_voted_label")
             vote_me = Button(
-                    label='Vote Aku!', 
+                    label=label_text, 
                     emoji='<:rvdia:1082789733001875518>',
                     style=discord.ButtonStyle.green, 
                     url='https://top.gg/bot/957471338577166417/vote'
                     )
-        
             self.add_item(vote_me)
-      await ctx.reply('Kamu belum vote aku!\nVote aku di Top.gg untuk bisa menggunakan command ini!', view=Vote_Button())
+      msg = i18n.get(lang, "errors.not_voted")
+      await ctx.reply(msg, view=Vote_Button())
 
     elif isinstance(error, NoGameAccount):
-      await ctx.reply(f'Kamu belum mendaftarkan akunmu ke Land of Revolution!\nDaftarkan akunmu dengan `{ctx.clean_prefix}game register`')
+      msg = i18n.get(lang, "errors.no_game_account", prefix=ctx.clean_prefix)
+      await ctx.reply(msg)
 
     elif isinstance(error, ConnectionResetError) or "reset by peer" in str(error) or "Can't reach database" in str(error):
-      await ctx.reply("Wah, sepertinya aku ada gangguan nyambung ke database, mohon dicoba lagi sebentar.\nJika error terus muncul, silahkan laporkan ke Support Server!", view=Support_Button())
+      msg = i18n.get(lang, "errors.database_connection_reset")
+      await ctx.reply(msg, view=Support_Button())
 
     elif "Invalid Form Body In message_reference: Unknown message" in str(error):
-      await ctx.reply("Hah?!\nSepertinya aku sedang mengalami masalah menemukan pesan yang kamu reply!")
+      msg = i18n.get(lang, "errors.message_reference_unknown")
+      await ctx.reply(msg)
 
     elif "Rival has no account!" in str(error):
-      await ctx.reply("Sepertinya lawanmu belum membuat akun Re:Volution! 😔")
-    
-      """elif "The server is overloaded or not ready yet." in str(error) or "Bad gateway." in str(error):
-      await ctx.reply("Sepertinya ada yang bermasalah dengan otakku tadi.\nTolong coba jalankan ulang command ini lagi!")"""
+      msg = i18n.get(lang, "errors.rival_no_account")
+      await ctx.reply(msg)
 
     elif isinstance(error, AccountIncompatible):
-      await ctx.reply(f"Sepertinya akunmu tidak sesuai dengan versi terbaru Re:Volution!\nJalankan **`{ctx.clean_prefix}game register`** untuk mengupdate akunmu!")
+      msg = i18n.get(lang, "errors.account_incompatible", prefix=ctx.clean_prefix)
+      await ctx.reply(msg)
 
     elif isinstance(error, ArtistOffline):
-      await ctx.reply("Aduh, maaf ya... Senimanku sedang offline atau tidak terjangkau saat ini. 🎨 Coba lagi nanti ketika laptopnya aktif!")
+      msg = i18n.get(lang, "errors.artist_offline")
+      await ctx.reply(msg)
 
     elif isinstance(error, GenerationDeclined):
-      await ctx.reply("Maaf, permintaannya ditolak oleh senimanku! 😔")
+      msg = i18n.get(lang, "errors.generation_declined")
+      await ctx.reply(msg)
 
     elif isinstance(error, GenerationFailed):
-      error_msg = str(error) if str(error) else "Aduh, terjadi kesalahan saat menggambar gambar tersebut! 😭"
+      error_msg = str(error) if str(error) else i18n.get(lang, "errors.unhandled_error")
       await ctx.reply(error_msg)
 
     elif isinstance(error, NSFWBlocked):
-      await ctx.reply("Aduh! Konten NSFW tidak diperbolehkan di channel SFW! ❌")
+      msg = i18n.get(lang, "errors.nsfw_blocked")
+      await ctx.reply(msg)
 
     elif isinstance(error, GenerationTimeout):
-      await ctx.reply("Aduh, permintaannya didiamkan terlalu lama... Aku batalkan saja ya! 🥺")
+      msg = i18n.get(lang, "errors.generation_timeout")
+      await ctx.reply(msg)
 
     else:
       error_channel_id = os.getenv("errorchannel")
@@ -201,7 +232,8 @@ class Error(commands.Cog):
               owner_id = os.getenv("schryzonid")
               await channel.send(f"<@{owner_id}> **Error from console!**", embed=embed)
       
-      await ctx.reply("Ada yang bermasalah dengan command ini, aku sudah memberikan laporan ke developer!\nJoin support serverku untuk mendapat info lebih lanjut!", view=Support_Button(), ephemeral=True)
+      msg = i18n.get(lang, "errors.unhandled_error")
+      await ctx.reply(msg, view=Support_Button(), ephemeral=True)
       logging.error(f"Error in command {ctx.command}: {str(error)}")
 
 async def setup(pandora):

@@ -82,3 +82,9 @@ model Memory {
   @@index([userId])
 }
 
+model UserSettings {
+  userId BigInt @id
+  lang   String @default("en") // Default to "en" for globally-acceptable behavior
+}
+
+

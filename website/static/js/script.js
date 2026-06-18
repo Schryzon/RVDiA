@@ -87,7 +87,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const target = link.getAttribute("target");
 
         // Only handle internal links that aren't opening in new tab
-        if (url && url.startsWith("/") && target !== "_blank" && !url.startsWith("/static")) {
+        // Exclude dashboard/login (need their own JS) and API routes (OAuth redirects)
+        const spa_exclude = ["/dashboard", "/login", "/api/"];
+        const is_excluded = spa_exclude.some(prefix => url.startsWith(prefix));
+        if (url && url.startsWith("/") && target !== "_blank" && !url.startsWith("/static") && !is_excluded) {
             e.preventDefault();
             
             // Start Animation
