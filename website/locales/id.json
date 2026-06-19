@@ -55,5 +55,9 @@
     "dash_loading": "Memuat...",
     "dash_chat_title": "Ngobrol dengan RVDiA",
     "dash_chat_greeting": "Hai! ✨ Aku RVDiA. Ketik sesuatu untuk mulai ngobrol!",
-    "dash_chat_placeholder": "Ketik pesan..."
+    "dash_chat_placeholder": "Ketik pesan...",
+    "dash_actions_title": "⚡ Aksi",
+    "dash_daily_btn": "Klaim Hadiah Harian",
+    "dash_adventure_btn": "Mulai Petualangan",
+    "dash_daily_cooldown": "Sedang Cooldown"
 }

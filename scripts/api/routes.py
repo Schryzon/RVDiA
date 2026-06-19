@@ -11,6 +11,26 @@ from scripts.main import db
 from scripts.ai.chat import chat_service
 
 
+import random
+from datetime import datetime, timedelta
+from prisma import Json
+from scripts.game.game import level_up, give_rewards
+
+# Mock classes for Discord models to call give_rewards / level_up without Discord connection dependencies
+class MockMember:
+    def __init__(self, id_val):
+        self.id = id_val
+
+class MockChannel:
+    async def send(self, *args, **kwargs):
+        pass
+
+class MockCtx:
+    def __init__(self, user_id):
+        self.author = MockMember(user_id)
+        self.channel = MockChannel()
+
+
 # ── User Profile ─────────────────────────────────────────────
 
 @require_auth
@@ -160,6 +180,204 @@ async def handle_web_chat(request: web.Request):
         return web.json_response({"error": "Failed to generate response."}, status=500)
 
 
+# ── RPG Actions ──────────────────────────────────────────────
+
+@require_auth
+async def handle_user_daily(request: web.Request):
+    """POST /api/v1/user/daily — Claims daily reward for the logged-in user."""
+    session = request["session"]
+    user_id = session["user_id"]
+
+    user_record = await db.user.find_unique(where={'id': user_id})
+    if not user_record:
+        return web.json_response({"error": "No RPG account found."}, status=404)
+
+    data = user_record.data
+    last_login_raw = data.get('last_login')
+    if not last_login_raw:
+        last_login = datetime.now() - timedelta(days=1)
+    elif isinstance(last_login_raw, str):
+        last_login = datetime.fromisoformat(last_login_raw)
+    else:
+        last_login = last_login_raw
+
+    current_time = datetime.now()
+    delta_time = current_time - last_login
+
+    if delta_time.total_seconds() <= 24 * 60 * 60:
+        next_login = last_login + timedelta(hours=24)
+        next_login_unix = int(time.mktime(next_login.timetuple()))
+        return web.json_response({
+            "claimed": False,
+            "on_cooldown": True,
+            "next_claim_timestamp": next_login_unix
+        })
+
+    new_coins = random.randint(15, 25)
+    new_karma = random.randint(1, 5)
+    new_exp = random.randint(10, 20)
+
+    data['coins'] += new_coins
+    data['karma'] += new_karma
+    data['exp'] += new_exp
+    data['last_login'] = current_time.isoformat()
+
+    await db.user.update(
+        where={'id': user_id},
+        data={'data': Json(data)}
+    )
+
+    mock_member = MockMember(user_id)
+    leveled_up = await level_up(mock_member)
+
+    return web.json_response({
+        "claimed": True,
+        "on_cooldown": False,
+        "rewards": {
+            "coins": new_coins,
+            "karma": new_karma,
+            "exp": new_exp
+        },
+        "leveled_up": leveled_up
+    })
+
+@require_auth
+async def handle_user_adventure(request: web.Request):
+    """POST /api/v1/user/adventure — Simulates an adventure and grants rewards."""
+    session = request["session"]
+    user_id = session["user_id"]
+
+    user_record = await db.user.find_unique(where={'id': user_id})
+    if not user_record:
+        return web.json_response({"error": "No RPG account found."}, status=404)
+
+    exp_gain = random.randint(10, 25)
+    coin_gain = random.randint(15, 35)
+
+    mock_ctx = MockCtx(user_id)
+    mock_user = MockMember(user_id)
+    
+    await give_rewards(mock_ctx, mock_user, exp_gain, coin_gain)
+    updated_user = await db.user.find_unique(where={'id': user_id})
+
+    return web.json_response({
+        "success": True,
+        "rewards": {
+            "exp": exp_gain,
+            "coins": coin_gain
+        },
+        "new_level": updated_user.data.get("level", 1) if updated_user else 1
+    })
+
+@require_auth
+async def handle_user_equip(request: web.Request):
+    """POST /api/v1/user/equip — Equips or unequips an item."""
+    session = request["session"]
+    user_id = session["user_id"]
+
+    try:
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "Invalid JSON body."}, status=400)
+
+    item_id = body.get("item_id")
+    if not item_id:
+        return web.json_response({"error": "Missing item_id parameter."}, status=400)
+
+    user_record = await db.user.find_unique(
+        where={'id': user_id},
+        include={'inventory': True}
+    )
+    if not user_record or not user_record.inventory:
+        return web.json_response({"error": "User inventory not found."}, status=404)
+
+    data = user_record.data
+    inventory = user_record.inventory
+
+    def convert_to_db_stat_key(short_stat):
+        mapping = {
+            'ATK': 'attack',
+            'DEF': 'defense',
+            'AGL': 'agility',
+            'HP': 'hp'
+        }
+        return mapping.get(short_stat.upper(), short_stat.lower())
+
+    equipments = inventory.equipments if isinstance(inventory.equipments, list) else []
+    all_items = inventory.items if isinstance(inventory.items, list) else []
+
+    matching = [x for x in equipments if x['_id'] == item_id]
+
+    action = ""
+    item_name = ""
+
+    if matching:
+        # Unequip
+        action = "unequip"
+        item_to_unequip = matching[0]
+        item_name = item_to_unequip.get('name', item_id)
+        func = item_to_unequip['func'].split('+')
+        stat_key = convert_to_db_stat_key(func[0])
+        stat_value = int(func[1])
+
+        new_equipments = [x for x in equipments if x['_id'] != item_id]
+        data[stat_key] -= stat_value
+
+        await db.user.update(
+            where={'id': user_id},
+            data={
+                'data': Json(data),
+                'inventory': {
+                    'update': {'equipments': Json(new_equipments)}
+                }
+            }
+        )
+    else:
+        # Equip
+        action = "equip"
+        item_match = [x for x in all_items if x['_id'] == item_id]
+        if not item_match:
+            return web.json_response({"error": "Item not found in inventory."}, status=404)
+
+        item_to_equip = item_match[0]
+        item_name = item_to_equip.get('name', item_id)
+        func = item_to_equip['func'].split('+')
+        stat_key = convert_to_db_stat_key(func[0])
+        stat_value = int(func[1])
+
+        same_type = [x for x in equipments if x.get('usefor') == item_to_equip.get('usefor')]
+        if same_type:
+            old_item = same_type[0]
+            old_func = old_item['func'].split('+')
+            old_stat_key = convert_to_db_stat_key(old_func[0])
+            data[old_stat_key] -= int(old_func[1])
+            equipments = [x for x in equipments if x['_id'] != old_item['_id']]
+
+        equipments.append(item_to_equip)
+        data[stat_key] += stat_value
+
+        await db.user.update(
+            where={'id': user_id},
+            data={
+                'data': Json(data),
+                'inventory': {
+                    'update': {'equipments': Json(equipments)}
+                }
+            }
+        )
+
+    return web.json_response({
+        "success": True,
+        "action": action,
+        "item_name": item_name,
+        "stats": {
+            "attack": data.get("attack"),
+            "defense": data.get("defense"),
+            "agility": data.get("agility")
+        }
+    })
+
+
 # ── Route Registration ───────────────────────────────────────
 
 def setup_api_routes(app: web.Application):
@@ -168,3 +386,6 @@ def setup_api_routes(app: web.Application):
     app.router.add_get("/api/v1/user/inventory", handle_user_inventory)
     app.router.add_get("/api/v1/stats", handle_bot_stats)
     app.router.add_post("/api/v1/chat", handle_web_chat)
+    app.router.add_post("/api/v1/user/daily", handle_user_daily)
+    app.router.add_post("/api/v1/user/adventure", handle_user_adventure)
+    app.router.add_post("/api/v1/user/equip", handle_user_equip)

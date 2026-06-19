@@ -55,5 +55,9 @@
     "dash_loading": "Loading...",
     "dash_chat_title": "Chat with RVDiA",
     "dash_chat_greeting": "Hi there! ✨ I'm RVDiA. Type something to start chatting!",
-    "dash_chat_placeholder": "Type a message..."
+    "dash_chat_placeholder": "Type a message...",
+    "dash_actions_title": "⚡ Actions",
+    "dash_daily_btn": "Claim Daily Reward",
+    "dash_adventure_btn": "Go Adventure",
+    "dash_daily_cooldown": "On Cooldown"
 }

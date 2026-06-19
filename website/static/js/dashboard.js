@@ -173,32 +173,40 @@ async function fetch_inventory() {
         const equipped = inv.equipments || [];
         const skills = inv.skills || {};
 
-        const item_keys = Object.keys(items);
-        const skill_keys = Object.keys(skills);
+        const raw_items = Array.isArray(items) ? items : Object.entries(items).map(([name, qty]) => ({ name, owned: qty, _id: name }));
+        const raw_equipped = Array.isArray(equipped) ? equipped.map(x => typeof x === 'object' ? x._id : x) : [];
+        const raw_skills = Array.isArray(skills) ? skills : Object.entries(skills).map(([name, info]) => ({ name }));
 
-        if (item_keys.length === 0 && skill_keys.length === 0) {
+        if (raw_items.length === 0 && raw_skills.length === 0) {
             container.innerHTML = `<div class="profile-empty"><p>🎒 ${LANG === "id" ? "Inventori kosong." : "Inventory is empty."}</p></div>`;
             return;
         }
 
         let html = '<div class="inv-grid">';
 
-        for (const [name, qty] of Object.entries(items)) {
-            const is_equipped = equipped.includes(name);
-            const cls = is_equipped ? "inv-item equipped" : "inv-item";
+        for (const item of raw_items) {
+            const item_id = item._id || item.name;
+            const is_equipped = raw_equipped.includes(item_id);
+            const is_equippable = item_id.startsWith("1-");
+            
+            const cls = is_equipped ? "inv-item equipped cursor-pointer" : is_equippable ? "inv-item cursor-pointer hover:border-accent/40" : "inv-item";
+            const qty = item.owned || item.qty || 1;
+            const display_name = item.name;
+
             html += `
-                <div class="${cls}">
-                    <span class="inv-item-name">${escape_html(name)}</span>
+                <div class="${cls}" data-item-id="${escape_html(item_id)}" data-equippable="${is_equippable}">
+                    <span class="inv-item-name">${escape_html(display_name)}</span>
                     <span class="inv-item-qty">×${qty}</span>
                     ${is_equipped ? '<span class="inv-equipped-badge">E</span>' : ""}
                 </div>
             `;
         }
 
-        for (const [name, info] of Object.entries(skills)) {
+        for (const skill of raw_skills) {
+            const skill_name = skill.name;
             html += `
                 <div class="inv-item skill-item">
-                    <span class="inv-item-name">🔮 ${escape_html(name)}</span>
+                    <span class="inv-item-name">🔮 ${escape_html(skill_name)}</span>
                 </div>
             `;
         }
@@ -206,10 +214,155 @@ async function fetch_inventory() {
         html += "</div>";
         container.innerHTML = html;
 
+        // Add click event listeners to equippable items
+        container.querySelectorAll(".inv-item[data-equippable='true']").forEach(el => {
+            el.addEventListener("click", async () => {
+                const itemId = el.getAttribute("data-item-id");
+                await equip_item(itemId);
+            });
+        });
+
     } catch (err) {
         console.error("fetch_inventory error:", err);
         container.innerHTML = `<div class="profile-empty"><p>Failed to load inventory.</p></div>`;
     }
+}
+
+
+// ── RPG Actions ──────────────────────────────────────────────
+
+async function equip_item(itemId) {
+    const status_el = document.getElementById("action-status-msg");
+    if (!status_el) return;
+    status_el.textContent = LANG === "id" ? "Memproses perlengkapan..." : "Processing equipment...";
+    status_el.style.color = "#94a3b8";
+
+    try {
+        const resp = await fetch("/api/v1/user/equip", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ item_id: itemId })
+        });
+        const data = await resp.json();
+
+        if (data.error) {
+            status_el.textContent = `❌ ${data.error}`;
+            status_el.style.color = "#ef4444";
+        } else {
+            const action_msg = data.action === "equip" 
+                ? (LANG === "id" ? `Berhasil memasang ${data.item_name}!` : `Successfully equipped ${data.item_name}!`)
+                : (LANG === "id" ? `Berhasil melepas ${data.item_name}!` : `Successfully unequipped ${data.item_name}!`);
+            status_el.textContent = `✅ ${action_msg}`;
+            status_el.style.color = "#10b981";
+
+            await fetch_profile();
+            await fetch_inventory();
+        }
+    } catch (err) {
+        status_el.textContent = "❌ Connection error.";
+        status_el.style.color = "#ef4444";
+    }
+
+    setTimeout(() => {
+        if (status_el.textContent.includes("✅") || status_el.textContent.includes("❌")) {
+            status_el.textContent = "";
+        }
+    }, 4000);
+}
+
+async function claim_daily() {
+    const btn = document.getElementById("daily-btn");
+    const status_el = document.getElementById("action-status-msg");
+    if (!btn || !status_el) return;
+
+    btn.disabled = true;
+    status_el.textContent = LANG === "id" ? "Mengklaim hadiah harian..." : "Claiming daily reward...";
+    status_el.style.color = "#94a3b8";
+
+    try {
+        const resp = await fetch("/api/v1/user/daily", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" }
+        });
+        const data = await resp.json();
+
+        if (data.error) {
+            status_el.textContent = `❌ ${data.error}`;
+            status_el.style.color = "#ef4444";
+        } else if (data.on_cooldown) {
+            const next_claim = new Date(data.next_claim_timestamp * 1000).toLocaleTimeString();
+            status_el.textContent = LANG === "id" 
+                ? `⏳ Sudah diklaim! Bisa klaim lagi pada pukul ${next_claim}`
+                : `⏳ Already claimed! Claim again at ${next_claim}`;
+            status_el.style.color = "#f59e0b";
+        } else {
+            const r = data.rewards;
+            status_el.textContent = LANG === "id"
+                ? `🎁 Berhasil! Mendapatkan +${r.coins} Koin, +${r.karma} Karma, dan +${r.exp} EXP!`
+                : `🎁 Success! Received +${r.coins} Coins, +${r.karma} Karma, and +${r.exp} EXP!`;
+            status_el.style.color = "#10b981";
+
+            if (data.leveled_up) {
+                setTimeout(() => {
+                    status_el.textContent = LANG === "id" ? "🔰 LEVEL UP! Selamat!" : "🔰 LEVEL UP! Congratulations!";
+                    status_el.style.color = "#a855f7";
+                }, 3000);
+            }
+
+            await fetch_profile();
+        }
+    } catch (err) {
+        status_el.textContent = "❌ Connection error.";
+        status_el.style.color = "#ef4444";
+    }
+
+    btn.disabled = false;
+    setTimeout(() => {
+        if (status_el.textContent.includes("🎁") || status_el.textContent.includes("⏳") || status_el.textContent.includes("❌")) {
+            status_el.textContent = "";
+        }
+    }, 6000);
+}
+
+async function go_adventure() {
+    const btn = document.getElementById("adventure-btn");
+    const status_el = document.getElementById("action-status-msg");
+    if (!btn || !status_el) return;
+
+    btn.disabled = true;
+    status_el.textContent = LANG === "id" ? "Menjelajahi dunia mimpi..." : "Exploring the dream world...";
+    status_el.style.color = "#94a3b8";
+
+    try {
+        const resp = await fetch("/api/v1/user/adventure", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" }
+        });
+        const data = await resp.json();
+
+        if (data.error) {
+            status_el.textContent = `❌ ${data.error}`;
+            status_el.style.color = "#ef4444";
+        } else {
+            const r = data.rewards;
+            status_el.textContent = LANG === "id"
+                ? `🧭 Petualangan berhasil! Mendapatkan +${r.coins} Koin dan +${r.exp} EXP!`
+                : `🧭 Adventure success! Received +${r.coins} Coins and +${r.exp} EXP!`;
+            status_el.style.color = "#10b981";
+
+            await fetch_profile();
+        }
+    } catch (err) {
+        status_el.textContent = "❌ Connection error.";
+        status_el.style.color = "#ef4444";
+    }
+
+    btn.disabled = false;
+    setTimeout(() => {
+        if (status_el.textContent.includes("🧭") || status_el.textContent.includes("❌")) {
+            status_el.textContent = "";
+        }
+    }, 5000);
 }
 
 
@@ -335,4 +488,9 @@ document.addEventListener("DOMContentLoaded", () => {
     fetch_inventory();
     fetch_stats();
     init_chat();
+
+    const daily_btn = document.getElementById("daily-btn");
+    const adventure_btn = document.getElementById("adventure-btn");
+    if (daily_btn) daily_btn.addEventListener("click", claim_daily);
+    if (adventure_btn) adventure_btn.addEventListener("click", go_adventure);
 });
