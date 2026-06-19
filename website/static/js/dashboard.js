@@ -480,6 +480,181 @@ function init_chat() {
     });
 }
 
+// ── Shop ────────────────────────────────────────────────────
+
+let shop_items_data = [];
+let active_shop_filter = "all";
+
+async function fetch_shop_items() {
+    const container = document.getElementById("shop-items-container");
+    if (!container) return;
+
+    try {
+        const resp = await fetch(`/api/v1/shop?lang=${LANG}`);
+        const data = await resp.json();
+
+        if (data.error) {
+            container.innerHTML = `<div class="profile-empty"><p>❌ ${data.error}</p></div>`;
+            return;
+        }
+
+        shop_items_data = data.items || [];
+        render_shop_items();
+    } catch (err) {
+        console.error("fetch_shop_items error:", err);
+        container.innerHTML = `<div class="profile-empty"><p>Failed to load shop items.</p></div>`;
+    }
+}
+
+function render_shop_items() {
+    const container = document.getElementById("shop-items-container");
+    if (!container) return;
+
+    const filtered = shop_items_data.filter(item => {
+        if (active_shop_filter === "all") return true;
+        return item.type === active_shop_filter;
+    });
+
+    if (filtered.length === 0) {
+        container.innerHTML = `<div class="profile-empty"><p>${LANG === "id" ? "Tidak ada item dalam kategori ini." : "No items in this category."}</p></div>`;
+        return;
+    }
+
+    const t = window.__RVDIA_I18N__ || {
+        buy: "Buy",
+        cost: "Cost",
+        owned: "Owned",
+        already_owned: "Already owned",
+        type_consumable: "Consumable",
+        type_equipment: "Equipment",
+        type_skill: "Skill",
+        koin: "Koin"
+    };
+
+    let html = `<div class="shop-grid w-full">`;
+
+    for (const item of filtered) {
+        const is_unstackable = item.type === "Skill" || item.type === "Equipment";
+        const has_owned = is_unstackable && item.owned >= 1;
+        
+        let currency_label = item.paywith === "Koin" ? t.koin : "Karma";
+        let type_label = t.type_consumable;
+        if (item.type === "Equipment") type_label = t.type_equipment;
+        else if (item.type === "Skill") type_label = t.type_skill;
+
+        const is_karma = item.paywith !== "Koin";
+        const theme_glow = is_karma 
+            ? "hover:border-indigo-500/50 hover:shadow-[0_0_15px_rgba(99,102,241,0.15)]" 
+            : "hover:border-accent/50 hover:shadow-[0_0_15px_rgba(255,200,0,0.15)]";
+
+        html += `
+            <div class="shop-item-card ${theme_glow}" id="shop-item-${item._id}">
+                <div>
+                    <span class="shop-item-type">${escape_html(type_label)}</span>
+                    <h4 class="shop-item-name">${escape_html(item.name)}</h4>
+                    <p class="shop-item-desc">${escape_html(item.desc || (LANG === "id" ? "Tidak ada deskripsi." : "No description."))}</p>
+                </div>
+                <div class="shop-item-footer">
+                    <div class="shop-item-cost">
+                        <span class="shop-cost-lbl">${escape_html(t.cost)}</span>
+                        <span class="shop-cost-val font-mono">
+                            ${is_karma ? "✨" : "💰"}
+                            ${format_number(item.cost)}
+                        </span>
+                    </div>
+                    <button class="shop-buy-btn ${is_karma ? "!bg-indigo-600 hover:!bg-indigo-500 !border-indigo-500/20" : ""}" 
+                            data-item-id="${escape_html(item._id)}"
+                            ${has_owned ? "disabled" : ""}>
+                        ${has_owned ? escape_html(t.already_owned) : escape_html(t.buy)}
+                        ${!is_unstackable ? ` (${escape_html(t.owned)}: ${item.owned})` : ""}
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    html += `</div>`;
+    container.innerHTML = html;
+
+    container.querySelectorAll(".shop-buy-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const itemId = btn.getAttribute("data-item-id");
+            await buy_shop_item(itemId, btn);
+        });
+    });
+}
+
+async function buy_shop_item(itemId, btn) {
+    const orig_text = btn.innerHTML;
+    btn.disabled = true;
+    btn.textContent = LANG === "id" ? "Memproses..." : "Buying...";
+
+    const status_el = document.getElementById("action-status-msg");
+
+    try {
+        const resp = await fetch("/api/v1/shop/buy", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ item_id: itemId })
+        });
+        const data = await resp.json();
+
+        if (data.error) {
+            if (status_el) {
+                status_el.textContent = `❌ ${data.error}`;
+                status_el.style.color = "#ef4444";
+            }
+            btn.innerHTML = orig_text;
+            btn.disabled = false;
+        } else {
+            btn.classList.remove("bg-accent", "bg-indigo-600");
+            btn.classList.add("bg-emerald-600");
+            btn.textContent = LANG === "id" ? "Berhasil! ✓" : "Bought! ✓";
+
+            if (status_el) {
+                const success_msg = LANG === "id" 
+                    ? `Berhasil membeli ${data.item_name}!` 
+                    : `Successfully purchased ${data.item_name}!`;
+                status_el.textContent = `✅ ${success_msg}`;
+                status_el.style.color = "#10b981";
+            }
+
+            await fetch_profile();
+            await fetch_inventory();
+            await fetch_shop_items();
+        }
+    } catch (err) {
+        if (status_el) {
+            status_el.textContent = "❌ Connection error.";
+            status_el.style.color = "#ef4444";
+        }
+        btn.innerHTML = orig_text;
+        btn.disabled = false;
+    }
+
+    setTimeout(() => {
+        if (status_el && (status_el.textContent.includes("✅") || status_el.textContent.includes("❌"))) {
+            status_el.textContent = "";
+        }
+    }, 4000);
+}
+
+function init_shop() {
+    const filter_container = document.getElementById("shop-filters");
+    if (!filter_container) return;
+
+    filter_container.querySelectorAll(".shop-filter-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            filter_container.querySelectorAll(".shop-filter-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            active_shop_filter = btn.getAttribute("data-filter");
+            render_shop_items();
+        });
+    });
+
+    fetch_shop_items();
+}
+
 
 // ── Init ────────────────────────────────────────────────────
 
@@ -488,9 +663,11 @@ document.addEventListener("DOMContentLoaded", () => {
     fetch_inventory();
     fetch_stats();
     init_chat();
+    init_shop();
 
     const daily_btn = document.getElementById("daily-btn");
     const adventure_btn = document.getElementById("adventure-btn");
     if (daily_btn) daily_btn.addEventListener("click", claim_daily);
     if (adventure_btn) adventure_btn.addEventListener("click", go_adventure);
 });
+

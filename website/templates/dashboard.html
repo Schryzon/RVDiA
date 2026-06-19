@@ -75,6 +75,49 @@
         .skill-item {
             @apply border-indigo-500/20 bg-indigo-500/[0.02] hover:bg-indigo-500/[0.05];
         }
+        .shop-filter-btn {
+            @apply px-4 py-2 text-xs font-bold rounded-xl border border-white/[0.06] bg-white/[0.02] text-slate-400 transition-all duration-300 hover:text-white hover:border-white/10 active:scale-95 cursor-pointer;
+        }
+        .shop-filter-btn.active {
+            @apply bg-accent text-white border-accent/20 shadow-[0_0_8px_rgba(255,200,0,0.2)];
+        }
+        .shop-grid {
+            @apply grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4;
+        }
+        .shop-item-card {
+            @apply flex flex-col justify-between p-5 rounded-2xl bg-white/[0.01] border border-white/[0.05] transition-all duration-500 hover:bg-white/[0.03] hover:border-white/10 hover:-translate-y-1 hover:shadow-lg relative overflow-hidden;
+        }
+        .shop-item-card::before {
+            content: '';
+            @apply absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 transition-opacity duration-500 pointer-events-none;
+        }
+        .shop-item-card:hover::before {
+            @apply opacity-100;
+        }
+        .shop-item-type {
+            @apply text-[9px] font-extrabold uppercase tracking-widest text-slate-500 mb-1;
+        }
+        .shop-item-name {
+            @apply text-base font-bold text-white mb-1.5;
+        }
+        .shop-item-desc {
+            @apply text-xs text-slate-400 leading-relaxed mb-4 flex-grow;
+        }
+        .shop-item-footer {
+            @apply flex items-center justify-between mt-auto pt-3 border-t border-white/[0.04];
+        }
+        .shop-item-cost {
+            @apply flex flex-col;
+        }
+        .shop-cost-val {
+            @apply text-sm font-black text-white flex items-center gap-1;
+        }
+        .shop-cost-lbl {
+            @apply text-[9px] font-semibold text-slate-500 uppercase tracking-wider;
+        }
+        .shop-buy-btn {
+            @apply px-3.5 py-2 text-xs font-bold rounded-lg bg-accent text-white border border-accent/20 transition-all duration-300 hover:bg-accent/80 hover:shadow-[0_0_8px_rgba(255,200,0,0.3)] active:scale-95 disabled:opacity-30 disabled:pointer-events-none cursor-pointer;
+        }
     }
 </style>
 
@@ -169,6 +212,29 @@
         </div>
     </div>
 
+    <!-- Shop / Marketplace Panel -->
+    <div class="glass-card-style p-6 md:p-8 space-y-6" id="shop-panel">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+            <h3 class="text-lg font-bold text-white tracking-wide uppercase flex items-center gap-2">
+                {{ i18n.dash_shop_title }}
+            </h3>
+            <!-- Filter Tabs -->
+            <div class="flex flex-wrap gap-2" id="shop-filters">
+                <button class="shop-filter-btn active" data-filter="all">{{ i18n.dash_shop_tab_all }}</button>
+                <button class="shop-filter-btn" data-filter="Consumable">{{ i18n.dash_shop_tab_items }}</button>
+                <button class="shop-filter-btn" data-filter="Equipment">{{ i18n.dash_shop_tab_equipment }}</button>
+                <button class="shop-filter-btn" data-filter="Skill">{{ i18n.dash_shop_tab_skills }}</button>
+            </div>
+        </div>
+
+        <!-- Shop Items Grid -->
+        <div id="shop-items-container" class="min-h-[200px] flex items-center justify-center">
+            <div class="text-center text-slate-400 text-sm animate-pulse">
+                {{ i18n.dash_loading }}
+            </div>
+        </div>
+    </div>
+
     <!-- Web Chat Widget -->
     <div class="chat-widget" id="chat-widget">
         <!-- Collapsed Toggle -->
@@ -208,8 +274,18 @@
 </div>
 
 <script>
-    // Pass lang context to dashboard.js
+    // Pass lang context and translations to dashboard.js
     window.__RVDIA_LANG__ = "{{ lang }}";
+    window.__RVDIA_I18N__ = {
+        buy: "{{ i18n.dash_shop_buy_btn }}",
+        cost: "{{ i18n.dash_shop_cost }}",
+        owned: "{{ i18n.dash_shop_owned }}",
+        already_owned: "{{ i18n.dash_shop_already_owned }}",
+        type_consumable: "{{ i18n.dash_shop_tab_items }}",
+        type_equipment: "{{ i18n.dash_shop_tab_equipment }}",
+        type_skill: "{{ i18n.dash_shop_tab_skills }}",
+        koin: "{{ lang == 'en' and 'Coins' or 'Koin' }}"
+    };
 </script>
 <script src="/static/js/dashboard.js"></script>
 {% endblock %}

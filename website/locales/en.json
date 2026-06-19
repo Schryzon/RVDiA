@@ -59,5 +59,14 @@
     "dash_actions_title": "⚡ Actions",
     "dash_daily_btn": "Claim Daily Reward",
     "dash_adventure_btn": "Go Adventure",
-    "dash_daily_cooldown": "On Cooldown"
+    "dash_daily_cooldown": "On Cooldown",
+    "dash_shop_title": "🏪 Marketplace & Shop",
+    "dash_shop_tab_all": "All",
+    "dash_shop_tab_items": "Consumables",
+    "dash_shop_tab_equipment": "Equipment",
+    "dash_shop_tab_skills": "Skills",
+    "dash_shop_buy_btn": "Buy",
+    "dash_shop_cost": "Cost",
+    "dash_shop_owned": "Owned",
+    "dash_shop_already_owned": "Already owned"
 }

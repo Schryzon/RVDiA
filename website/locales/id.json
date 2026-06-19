@@ -59,5 +59,14 @@
     "dash_actions_title": "⚡ Aksi",
     "dash_daily_btn": "Klaim Hadiah Harian",
     "dash_adventure_btn": "Mulai Petualangan",
-    "dash_daily_cooldown": "Sedang Cooldown"
+    "dash_daily_cooldown": "Sedang Cooldown",
+    "dash_shop_title": "🏪 Toko & Pasar",
+    "dash_shop_tab_all": "Semua",
+    "dash_shop_tab_items": "Konsumsi",
+    "dash_shop_tab_equipment": "Perlengkapan",
+    "dash_shop_tab_skills": "Keahlian",
+    "dash_shop_buy_btn": "Beli",
+    "dash_shop_cost": "Harga",
+    "dash_shop_owned": "Milik",
+    "dash_shop_already_owned": "Sudah dimiliki"
 }

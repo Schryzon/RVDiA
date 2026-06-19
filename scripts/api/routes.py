@@ -424,6 +424,153 @@ async def handle_user_equip(request: web.Request):
     })
 
 
+def load_shop_file():
+    import json
+    import os
+    shop_path = os.path.join(os.path.dirname(__file__), "../../src/game/shop.json")
+    if os.path.exists(shop_path):
+        with open(shop_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return []
+
+
+@require_auth
+async def handle_shop_items(request: web.Request):
+    """GET /api/v1/shop — Returns shop items with owned count for the user."""
+    session = request["session"]
+    user_id = session["user_id"]
+
+    user_record = await db.user.find_unique(
+        where={"id": user_id},
+        include={"inventory": True}
+    )
+    if not user_record:
+        return web.json_response({"error": "No RPG account found."}, status=404)
+
+    inventory = user_record.inventory
+    user_items = inventory.items if inventory and isinstance(inventory.items, list) else []
+    user_skills = inventory.skills if inventory and isinstance(inventory.skills, list) else []
+    user_equipments = inventory.equipments if inventory and isinstance(inventory.equipments, list) else []
+
+    owned_map = {}
+    for item in user_items:
+        owned_map[item.get("_id")] = item.get("owned", 0)
+    for skill in user_skills:
+        owned_map[skill.get("_id")] = 1
+    for eq in user_equipments:
+        owned_map[eq.get("_id")] = 1
+
+    from scripts.utils.i18n import i18n
+    lang = request.query.get("lang", "id")
+    if lang not in ["en", "id"]:
+        user_settings = await db.usersettings.find_unique(where={"userId": user_id})
+        lang = user_settings.lang if user_settings else "id"
+
+    shop_items = load_shop_file()
+    for item in shop_items:
+        item["owned"] = owned_map.get(item["_id"], 0)
+        item["name"] = i18n.get(lang, f"game.item_{item['_id']}_name", default=item.get("name", ""))
+        item["desc"] = i18n.get(lang, f"game.item_{item['_id']}_desc", default="")
+
+    return web.json_response({
+        "success": True,
+        "items": shop_items
+    })
+
+
+@require_auth
+async def handle_shop_buy(request: web.Request):
+    """POST /api/v1/shop/buy — Purchase an item from the shop."""
+    session = request["session"]
+    user_id = session["user_id"]
+
+    try:
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "Invalid JSON body."}, status=400)
+
+    item_id = body.get("item_id")
+    if not item_id:
+        return web.json_response({"error": "Missing item_id parameter."}, status=400)
+
+    shop_items = load_shop_file()
+    db_dict = {item["_id"]: item for item in shop_items}
+    if item_id not in db_dict:
+        return web.json_response({"error": "Item not found in shop."}, status=404)
+
+    matched_item = db_dict[item_id]
+
+    user_record = await db.user.find_unique(
+        where={"id": user_id},
+        include={"inventory": True}
+    )
+    if not user_record or not user_record.inventory:
+        return web.json_response({"error": "RPG profile or inventory not found."}, status=404)
+
+    data = user_record.data
+    inventory = user_record.inventory
+    
+    currency_key = "coins" if matched_item["paywith"] == "Koin" else "karma"
+    current_money = data.get(currency_key, 0)
+
+    if current_money < matched_item["cost"]:
+        currency_name = "coins" if currency_key == "coins" else "karma"
+        return web.json_response({"error": f"Insufficient {currency_name}."}, status=400)
+
+    user_items = inventory.items if isinstance(inventory.items, list) else []
+    user_skills = inventory.skills if isinstance(inventory.skills, list) else []
+    user_equipments = inventory.equipments if isinstance(inventory.equipments, list) else []
+
+    target_field = "items"
+    current_list = user_items
+
+    if "1-" in item_id:
+        target_field = "equipments"
+        current_list = user_equipments
+    elif "2-" in item_id:
+        target_field = "skills"
+        current_list = user_skills
+
+    mongo_dict = {item["_id"]: item for item in current_list}
+    if item_id in mongo_dict:
+        if "1-" in item_id:
+            return web.json_response({"error": "You already own this equipment."}, status=400)
+        if "2-" in item_id:
+            return web.json_response({"error": "You already learned this skill."}, status=400)
+        
+        for item in current_list:
+            if item["_id"] == item_id:
+                item["owned"] = item.get("owned", 0) + 1
+                break
+    else:
+        new_item = matched_item.copy()
+        new_item.pop("cost", None)
+        new_item.pop("paywith", None)
+        new_item["owned"] = 1
+        current_list.append(new_item)
+
+    data[currency_key] -= matched_item["cost"]
+
+    await db.user.update(
+        where={"id": user_id},
+        data={
+            "data": Json(data),
+            "inventory": {
+                "update": {target_field: Json(current_list)}
+            }
+        }
+    )
+
+    return web.json_response({
+        "success": True,
+        "item_name": matched_item["name"],
+        "balance": {
+            "coins": data.get("coins", 0),
+            "karma": data.get("karma", 0)
+        }
+    })
+
+
 # ── Route Registration ───────────────────────────────────────
 
 def setup_api_routes(app: web.Application):
@@ -436,3 +583,5 @@ def setup_api_routes(app: web.Application):
     app.router.add_post("/api/v1/user/daily", handle_user_daily)
     app.router.add_post("/api/v1/user/adventure", handle_user_adventure)
     app.router.add_post("/api/v1/user/equip", handle_user_equip)
+    app.router.add_get("/api/v1/shop", handle_shop_items)
+    app.router.add_post("/api/v1/shop/buy", handle_shop_buy)
