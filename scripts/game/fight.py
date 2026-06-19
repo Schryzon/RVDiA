@@ -1439,7 +1439,7 @@ class PaginatedEnemyView(View):
 
     async def get_embed(self):
         tier = self.tiers[self.current_tier_index]
-        enemy_path = path.join(path.dirname(__file__), '..', 'src', 'game', 'enemies', f'{tier}.json')
+        enemy_path = path.join(path.dirname(__file__), '..', '..', 'src', 'game', 'enemies', f'{tier}.json')
         with open(enemy_path, 'r') as file:
             self.enemies = json.load(file)
         
@@ -1529,7 +1529,7 @@ class EnemyDropdown(discord.ui.Select):
         super().__init__(custom_id="enemydrop", placeholder=placeholder_lbl, min_values=1, max_values=1, options=options)
 
     async def callback(self, interaction: discord.Interaction):
-        enemy_path = path.join(path.dirname(__file__), '..', 'src', 'game', 'enemies', f'{self.values[0]}.json')
+        enemy_path = path.join(path.dirname(__file__), '..', '..', 'src', 'game', 'enemies', f'{self.values[0]}.json')
         with open(enemy_path, 'r') as file:
             enemies = json.load(file)
         
