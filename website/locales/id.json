@@ -104,5 +104,10 @@
     "dash_inv_unequip_btn": "Lepas",
     "dash_inv_use_btn": "Gunakan (Dalam Game)",
     "dash_inv_quantity": "Jumlah",
-    "dash_inv_equipped": "Terpasang"
+    "dash_inv_equipped": "Terpasang",
+    "playground_title": "Playground Obrolan Mimpi",
+    "playground_subtitle": "Rasakan pengalaman bersama RVDiA secara instan — tanpa registrasi, masuk, atau konfigurasi!",
+    "playground_greeting": "Halo! Aku RVDiA, asisten digital virtualmu. Ketik pesan di bawah, dan mari kita mulai mengobrol! ✨",
+    "playground_disclaimer": "Catatan: Percakapan ini berjalan di sesi tamu publik. Untuk memulai petualangan RPG, mendapatkan koin, mengatur perlengkapan, atau menyimpan progress, silakan masuk menggunakan Discord.",
+    "playground_clear_btn": "Reset Riwayat"
 }

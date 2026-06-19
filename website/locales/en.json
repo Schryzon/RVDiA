@@ -104,5 +104,10 @@
     "dash_inv_unequip_btn": "Unequip",
     "dash_inv_use_btn": "Use (In-game)",
     "dash_inv_quantity": "Qty",
-    "dash_inv_equipped": "Equipped"
+    "dash_inv_equipped": "Equipped",
+    "playground_title": "Dream Chat Playground",
+    "playground_subtitle": "Experience RVDiA instantly — no registration, login, or setup required!",
+    "playground_greeting": "Hello! I am RVDiA, your virtual digital assistant. Type a message below, and let's start chatting! ✨",
+    "playground_disclaimer": "Note: This chat runs in a public guest session. To embark on RPG adventures, earn coins, customize equipment, or save your progress, please log in with Discord.",
+    "playground_clear_btn": "Reset History"
 }

@@ -34,6 +34,290 @@
     </div>
 </section>
 
+<!-- Interactive Chat Playground -->
+<div class="w-full max-w-4xl mx-auto px-4 mb-16 relative z-10">
+    <div class="text-center mb-8">
+        <h2 class="text-3xl font-bold tracking-tight text-white mb-2">
+            {{ i18n.playground_title }}
+        </h2>
+        <p class="text-sm text-slate-400 max-w-md mx-auto">
+            {{ i18n.playground_subtitle }}
+        </p>
+    </div>
+
+    <div class="glass-card-style rounded-3xl overflow-hidden flex flex-col h-[520px] shadow-2xl border border-white/10 relative">
+        <!-- Playground Header -->
+        <div class="flex items-center justify-between px-6 py-4 bg-white/[0.02] border-b border-white/[0.08]">
+            <div class="flex items-center gap-3">
+                <div class="relative">
+                    <div class="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-white border border-accent/30 shadow-inner">
+                        <svg class="w-6 h-6 text-accent-light" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/>
+                        </svg>
+                    </div>
+                    <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-dark-900 rounded-full animate-pulse"></span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-white text-sm">RVDiA</h3>
+                    <span class="text-[10px] text-slate-400 font-medium tracking-wider uppercase flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Online
+                    </span>
+                </div>
+            </div>
+            
+            <button id="playground-reset" class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-white/10 hover:border-accent hover:bg-accent/10 text-slate-400 hover:text-white transition-all flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                {{ i18n.playground_clear_btn }}
+            </button>
+        </div>
+
+        <!-- Chat Area -->
+        <div id="playground-chat-messages" class="flex-1 overflow-y-auto p-6 space-y-4">
+            <!-- Messages will be rendered here dynamically -->
+        </div>
+
+        <!-- Typing Indicator template -->
+        <div id="playground-typing-indicator" class="hidden px-6 py-2">
+            <div class="flex gap-3 max-w-[70%]">
+                <div class="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 text-xs border border-accent/10">🤖</div>
+                <div class="bg-white/5 border border-white/5 rounded-2xl rounded-tl-none px-4 py-3 flex items-center">
+                    <div class="typing-dots flex items-center gap-1.5">
+                        <span class="w-2 h-2 bg-slate-400 rounded-full"></span>
+                        <span class="w-2 h-2 bg-slate-400 rounded-full"></span>
+                        <span class="w-2 h-2 bg-slate-400 rounded-full"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Panel -->
+        <div class="p-4 bg-white/[0.01] border-t border-white/[0.08]">
+            <form id="playground-chat-form" class="flex items-center gap-3">
+                <input type="text" id="playground-input" autocomplete="off" placeholder="{{ i18n.dash_chat_placeholder }}" class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-accent/80 focus:ring-1 focus:ring-accent/80 transition-colors">
+                <button type="submit" class="btn-accent py-3.5 px-6 rounded-xl flex items-center justify-center font-bold h-full">
+                    <svg class="w-4 h-4 transform rotate-90" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>
+                    </svg>
+                </button>
+            </form>
+            <p class="text-[10px] text-slate-500 mt-2.5 text-center px-4 leading-relaxed">
+                {{ i18n.playground_disclaimer }}
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const chatFeed = document.getElementById("playground-chat-messages");
+    const chatForm = document.getElementById("playground-chat-form");
+    const chatInput = document.getElementById("playground-input");
+    const typingIndicator = document.getElementById("playground-typing-indicator");
+    const resetButton = document.getElementById("playground-reset");
+
+    const lang = "{{ lang }}";
+    
+    // Guest Session Management
+    let sessionId = localStorage.getItem("rvdia_guest_session_id");
+    if (!sessionId) {
+        sessionId = "guest_" + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+        localStorage.setItem("rvdia_guest_session_id", sessionId);
+    }
+
+    const storageKey = `rvdia_guest_messages_${sessionId}`;
+
+    // Load History
+    let messages = [];
+    try {
+        const stored = localStorage.getItem(storageKey);
+        if (stored) {
+            messages = JSON.parse(stored);
+        }
+    } catch (e) {
+        console.error("Error reading chat history", e);
+    }
+
+    // Default Greeting if empty
+    if (messages.length === 0) {
+        const welcomeText = lang === "id" 
+            ? "Halo! Aku RVDiA, asisten digital virtualmu. Ketik pesan di bawah, dan mari kita mulai mengobrol! ✨" 
+            : "Hello! I am RVDiA, your virtual digital assistant. Type a message below, and let's start chatting! ✨";
+        messages.push({
+            role: "bot",
+            text: welcomeText,
+            timestamp: new Date().toISOString()
+        });
+        saveHistory();
+    }
+
+    // Render all initial messages
+    messages.forEach(msg => {
+        renderBubble(msg.role, msg.text, msg.image_url, false);
+    });
+    setTimeout(scrollToBottom, 100);
+
+    // Form submission
+    chatForm.addEventListener("submit", async function(e) {
+        e.preventDefault();
+        const text = chatInput.value.trim();
+        if (!text) return;
+
+        chatInput.value = "";
+        
+        // User message
+        messages.push({
+            role: "user",
+            text: text,
+            timestamp: new Date().toISOString()
+        });
+        saveHistory();
+        renderBubble("user", text, null, true);
+        scrollToBottom();
+
+        // Show typing
+        showTyping(true);
+        scrollToBottom();
+
+        try {
+            const response = await fetch("/api/v1/public/chat", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    session_id: sessionId,
+                    message: text,
+                    lang: lang
+                })
+            });
+
+            showTyping(false);
+
+            if (response.ok) {
+                const data = await response.json();
+                const botResponse = data.response || "No response received.";
+                const imageUrl = data.image_url || null;
+
+                messages.push({
+                    role: "bot",
+                    text: botResponse,
+                    image_url: imageUrl,
+                    timestamp: new Date().toISOString()
+                });
+                saveHistory();
+
+                renderBubble("bot", botResponse, imageUrl, true);
+                scrollToBottom();
+            } else {
+                const errText = lang === "id" 
+                    ? "Maaf, sepertinya aku tidak bisa terhubung ke server saat ini." 
+                    : "Sorry, I can't reach the server right now.";
+                renderBubble("bot", `⚠️ ${errText}`, null, true);
+                scrollToBottom();
+            }
+        } catch (err) {
+            showTyping(false);
+            const errText = lang === "id" 
+                ? "Terjadi kesalahan koneksi. Silakan periksa koneksi internet Anda." 
+                : "A connection error occurred. Please check your internet connection.";
+            renderBubble("bot", `⚠️ ${errText}`, null, true);
+            scrollToBottom();
+            console.error("Chat error:", err);
+        }
+    });
+
+    // Reset handler
+    resetButton.addEventListener("click", function() {
+        localStorage.removeItem(storageKey);
+        chatFeed.innerHTML = "";
+        messages = [];
+        
+        const welcomeText = lang === "id" 
+            ? "Halo! Aku RVDiA, asisten digital virtualmu. Ketik pesan di bawah, dan mari kita mulai mengobrol! ✨" 
+            : "Hello! I am RVDiA, your virtual digital assistant. Type a message below, and let's start chatting! ✨";
+            
+        messages.push({
+            role: "bot",
+            text: welcomeText,
+            timestamp: new Date().toISOString()
+        });
+        saveHistory();
+        renderBubble("bot", welcomeText, null, true);
+        scrollToBottom();
+    });
+
+    function saveHistory() {
+        try {
+            localStorage.setItem(storageKey, JSON.stringify(messages));
+        } catch (e) {
+            console.error("Failed to save chat history", e);
+        }
+    }
+
+    function showTyping(show) {
+        if (show) {
+            chatFeed.appendChild(typingIndicator);
+            typingIndicator.classList.remove("hidden");
+        } else {
+            typingIndicator.classList.add("hidden");
+            chatFeed.parentNode.appendChild(typingIndicator);
+        }
+    }
+
+    function scrollToBottom() {
+        chatFeed.scrollTop = chatFeed.scrollHeight;
+    }
+
+    function renderBubble(role, text, imageUrl, animate) {
+        const bubbleWrap = document.createElement("div");
+        bubbleWrap.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'} w-full items-start gap-3`;
+        
+        const avatar = document.createElement("div");
+        avatar.className = `w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs border ${role === 'user' ? 'bg-sky-brand/20 border-sky-brand/10' : 'bg-accent/20 border-accent/10'}`;
+        avatar.innerText = role === 'user' ? '👤' : '🤖';
+
+        const contentWrap = document.createElement("div");
+        contentWrap.className = "flex flex-col gap-1 max-w-[70%]";
+
+        const bubble = document.createElement("div");
+        bubble.className = `chat-bubble p-4 rounded-2xl text-sm ${role === 'user' ? 'user-bubble bg-gradient-to-r from-accent to-[#a83c55] text-white border border-white/5 shadow-md shadow-accent/5' : 'bot-bubble bg-white/10 border border-white/5 text-slate-100 shadow-md'}`;
+        
+        bubble.innerHTML = text.replace(/\n/g, "<br>");
+
+        contentWrap.appendChild(bubble);
+
+        if (imageUrl) {
+            const img = document.createElement("img");
+            img.src = imageUrl;
+            img.alt = "Generated Image";
+            img.className = "max-w-full max-h-64 rounded-xl mt-2 border border-white/10 shadow-lg hover:scale-[1.02] transition-transform duration-300 cursor-pointer object-cover";
+            img.onclick = () => window.open(imageUrl, '_blank');
+            contentWrap.appendChild(img);
+        }
+
+        if (role === 'user') {
+            bubbleWrap.appendChild(contentWrap);
+            bubbleWrap.appendChild(avatar);
+        } else {
+            bubbleWrap.appendChild(avatar);
+            bubbleWrap.appendChild(contentWrap);
+        }
+
+        chatFeed.appendChild(bubbleWrap);
+
+        if (animate) {
+            setTimeout(() => {
+                bubble.classList.add("visible");
+            }, 50);
+        } else {
+            bubble.classList.add("visible");
+        }
+    }
+});
+</script>
+
 <!-- Features section -->
 <div class="mt-8 md:mt-16 max-w-6xl mx-auto px-4">
     <h2 class="text-3xl font-bold tracking-tight text-center text-white mb-10 md:mb-12">
