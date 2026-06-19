@@ -14,7 +14,7 @@ from scripts.api.routes import setup_api_routes
 
 def load_locales():
     locales = {}
-    locales_dir = os.path.join(os.path.dirname(__file__), '../website/locales')
+    locales_dir = os.path.join(os.path.dirname(__file__), '../../website/locales')
     for filename in os.listdir(locales_dir):
         if filename.endswith('.json'):
             lang_code = filename[:-5]
@@ -120,7 +120,7 @@ async def handle_license(request):
     i18n, lang = get_i18n(request)
     
     # Read the LICENSE file
-    license_path = os.path.join(os.path.dirname(__file__), '../LICENSE')
+    license_path = os.path.join(os.path.dirname(__file__), '../../LICENSE')
     try:
         with open(license_path, 'r', encoding='utf-8') as f:
             license_content = f.read()
@@ -252,11 +252,11 @@ async def start_web_server(bot):
     app['bot'] = bot
     
     # Setup Jinja2 templating
-    templates_dir = os.path.join(os.path.dirname(__file__), '../website/templates')
+    templates_dir = os.path.join(os.path.dirname(__file__), '../../website/templates')
     aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(templates_dir))
     
     # Setup Static Files serving
-    static_dir = os.path.join(os.path.dirname(__file__), '../website/static')
+    static_dir = os.path.join(os.path.dirname(__file__), '../../website/static')
     app.router.add_static('/static/', path=static_dir, name='static')
     
     # Setup Auth & API Routes

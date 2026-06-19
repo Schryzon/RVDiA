@@ -1,7 +1,6 @@
 [
     {
         "name": "Schryzon",
-        "desc": "Sang Pencipta Konflik. Entitas absolut yang melampaui batas realita dan imajinasi.",
         "tier": "FINAL BOSS",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1148819154267287582/20230906.png",
         "hp": 30000,
@@ -69,7 +68,6 @@
     },
     {
         "name": "Demi-fiend",
-        "desc": "The Hitoshura. Manusia setengah iblis yang membawa kehancuran dan penciptaan kembali.",
         "tier": "FINAL BOSS",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1502845810734403644/demifiend.jpg?ex=6a0131ba&is=69ffe03a&hm=9a2f7a40b896ddb057e17b2b8ed523d67dc72e5a201c40afb4b6400ca8882fe4&",
         "hp": 18000,
@@ -112,7 +110,6 @@
     },
     {
         "name": "Nahobino",
-        "desc": "Entitas terlarang yang menyatukan manusia dan dewa. Sang penyelamat atau penghancur tahta.",
         "tier": "FINAL BOSS",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1502845811292242134/nahobino.jpg?ex=6a0131ba&is=69ffe03a&hm=4441e6e4a2d41a7dfa1c8365f901edb4dc316710f229fb105b18cb92047e6ecb&",
         "hp": 20000,
@@ -155,7 +152,6 @@
     },
     {
         "name": "RVDiA",
-        "desc": "Putri yang memegang kendali atas seluruh Re:Volution.",
         "tier": "SUPER BOSS",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1123190763442929835/RVDiA-Profile-Pic.png",
         "hp": 7500,
@@ -202,7 +198,6 @@
     },
     {
         "name": "Pandora",
-        "desc": "Dewi kematian.",
         "tier": "BOSS",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122068626237829140/707e4188e73889b71ea185f50bea206feaabb1fa_s2_n2.png",
         "hp": 4500,
@@ -240,7 +235,6 @@
     },
     {
         "name": "Historia",
-        "desc": "Pahlawan legendaris Grouza. Vessel dari Lagtanis.",
         "tier": "SUPER BOSS",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122069136227442778/20230624_153829.jpg",
         "hp": 4200,
@@ -278,7 +272,6 @@
     },
     {
         "name": "Mira",
-        "desc": "Adik kandung Historia. Vessel dari Daiki.",
         "tier": "BOSS",
         "avatar": null,
         "hp": 3800,
@@ -312,7 +305,6 @@
     },
     {
         "name": "Victoria",
-        "desc": "Kakak kandung Historia. Corrupted Vessel.",
         "tier": "SUPER BOSS",
         "avatar": null,
         "hp": 5500,
@@ -354,7 +346,6 @@
     },
     {
         "name": "Zalvia & Sairan",
-        "desc": "Dua dewa yang mewakili keseimbangan alam semesta.",
         "tier": "BOSS",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122067949679824906/20230624_125606.jpg",
         "hp": 3800,
@@ -384,7 +375,6 @@
     },
     {
         "name": "VeRiTAS",
-        "desc": "Galactic Soldier MK.3",
         "tier": "SUPER BOSS",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1148814706878980187/0-a655e4d6-922a-445e-9cb9-1ea7ae728d2e.png",
         "hp": 5000,

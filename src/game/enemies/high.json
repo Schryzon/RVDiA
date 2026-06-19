@@ -1,7 +1,6 @@
 [
     {
         "name": "Mechanical Knight",
-        "desc": "Prajurit futuristik dengan pertahanan baja kokoh.",
         "tier": "SUPER HIGH",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122026194121015306/20230624_104417.png",
         "hp": 650,
@@ -31,7 +30,6 @@
     },
     {
         "name": "Nyrion",
-        "desc": "Pasukan tempur khusus pertempuran taktis.",
         "tier": "HIGH",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122026096867680346/20230624_105124.png",
         "hp": 450,
@@ -61,7 +59,6 @@
     },
     {
         "name": "Carmendria",
-        "desc": "Raja tua pemimpin pasukan Nyrion.",
         "tier": "SUPER HIGH",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122026194800488508/20230624_104510.png",
         "hp": 700,
@@ -91,7 +88,6 @@
     },
     {
         "name": "Reinvier",
-        "desc": "Permaisuri dari Carmendria.",
         "tier": "HIGH",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122026096423092294/20230624_122454.png",
         "hp": 420,
@@ -121,7 +117,6 @@
     },
     {
         "name": "JIN-SUCHI",
-        "desc": "Manusia hybrid - Keahlian.",
         "tier": "HIGH",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1181926945219420261/0-2ec4abf1-da59-48ca-990b-b53d6713a23b.png",
         "hp": 480,
@@ -151,7 +146,6 @@
     },
     {
         "name": "HIRO-KAZE",
-        "desc": "Manusia hybrid - Keseimbangan.",
         "tier": "HIGH",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1181926944527355986/0-c599fa60-70f1-42af-9aad-7667a4c38969.png",
         "hp": 460,
@@ -181,7 +175,6 @@
     },
     {
         "name": "MIKA-DARYA",
-        "desc": "Manusia hybrid - Manipulasi.",
         "tier": "SUPER HIGH",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1181926945890521138/0-e92081e3-2efb-43b3-bdf0-b03b84a6e49a.png",
         "hp": 680,
@@ -211,7 +204,6 @@
     },
     {
         "name": "VORTeX",
-        "desc": "Galactic Soldier MK.1",
         "tier": "SUPER HIGH",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1148814705687806032/20230906_095119.png",
         "hp": 750,

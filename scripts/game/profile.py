@@ -250,7 +250,7 @@ class ShopView(View):
             self.owned.append(owned_display)
             
             item_name = i18n.get(self.lang, f"game.item_{item['_id']}_name", default=item['name'])
-            item_desc = i18n.get(self.lang, f"game.item_{item['_id']}_desc", default=item['desc'])
+            item_desc = i18n.get(self.lang, f"game.item_{item['_id']}_desc", default=item.get('desc', ''))
             item_type_label = i18n.get(self.lang, f"game.type_{to_key(item['type'])}")
             currency_label = i18n.get(self.lang, "game.paywith_koin") if item['paywith'] == "Koin" else i18n.get(self.lang, "game.paywith_karma")
             
@@ -781,7 +781,7 @@ async def execute_shop(ctx):
     for index, item in enumerate(items[:options_per_page], start=1):
         owned_display = get_owned_display(item)
         item_name = i18n.get(lang, f"game.item_{item['_id']}_name", default=item['name'])
-        item_desc = i18n.get(lang, f"game.item_{item['_id']}_desc", default=item['desc'])
+        item_desc = i18n.get(lang, f"game.item_{item['_id']}_desc", default=item.get('desc', ''))
         item_type_label = i18n.get(lang, f"game.type_{to_key(item['type'])}")
         currency_label = i18n.get(lang, "game.paywith_koin") if item['paywith'] == "Koin" else i18n.get(lang, "game.paywith_karma")
         

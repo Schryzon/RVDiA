@@ -45,7 +45,7 @@ if not API_KEY:
 
 PORT = int(PORT_ENV)
 MODEL_ID = os.getenv("MODEL_ID_OR_PATH", "Meina/MeinaMix_V11")
-OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "../scratch/gpu_outputs")
+OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "../../scratch/gpu_outputs")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 app = Flask(__name__)

@@ -5,7 +5,7 @@ class I18nManager:
     def __init__(self):
         self.locales = {}
         # Load locales from root locales/ directory
-        locales_dir = os.path.join(os.path.dirname(__file__), '../locales')
+        locales_dir = os.path.join(os.path.dirname(__file__), '../../locales')
         if os.path.exists(locales_dir):
             for filename in os.listdir(locales_dir):
                 if filename.endswith('.json'):

@@ -603,7 +603,7 @@ class GameInstance():
                     
                     else:
                         enemy_name = i18n.get(self.lang, f"game.enemy_{to_key(self.user2['name'])}_name", default=self.user2['name'])
-                        enemy_desc = i18n.get(self.lang, f"game.enemy_{to_key(self.user2['name'])}_desc", default=self.user2['desc'])
+                        enemy_desc = i18n.get(self.lang, f"game.enemy_{to_key(self.user2['name'])}_desc", default=self.user2.get('desc', ''))
                         embed = discord.Embed(title=enemy_name, color=discord.Color.from_str(self.user2.get('color', '#ff0000')))
                         embed.description = f"\"{enemy_desc}\"\n" + i18n.get(self.lang, "game.combat_hp_status_enemy", hp=self.user2_hp, max_hp=datas[1]['hp'], defending=defending_val)
                         embed.add_field(
@@ -1564,7 +1564,7 @@ class SpecificEnemyDropdown(discord.ui.Select):
     async def callback(self, interaction: discord.Interaction):
         enemy = self.enemies[int(self.values[0])]
         enemy_name = i18n.get(self.lang, f"game.enemy_{to_key(enemy['name'])}_name", default=enemy['name'])
-        enemy_desc = i18n.get(self.lang, f"game.enemy_{to_key(enemy['name'])}_desc", default=enemy['desc'])
+        enemy_desc = i18n.get(self.lang, f"game.enemy_{to_key(enemy['name'])}_desc", default=enemy.get('desc', ''))
         
         detail_title = i18n.get(self.lang, "game.bestiary_detail_title", name=enemy_name)
         embed = discord.Embed(title=detail_title, description=f"*{enemy_desc}*", color=discord.Color.from_str(enemy.get('color', '#ff0000')))

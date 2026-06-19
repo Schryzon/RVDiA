@@ -1,7 +1,6 @@
 [
     {
         "name": "Slippy Slime",
-        "desc": "Makhluk berbahaya menyerupai substansi kenyal.",
         "tier": "LOW",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122156473275924600/20230624_201436.png",
         "hp": 80,
@@ -31,7 +30,6 @@
     },
     {
         "name": "Novice Hunter",
-        "desc": "Pemburu tingkat pemula yang sedang berlatih.",
         "tier": "LOW",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122156472512544809/20230624_201413.png",
         "hp": 100,
@@ -61,7 +59,6 @@
     },
     {
         "name": "Reivyun",
-        "desc": "Suku kuno di Revolution Dreamland.",
         "tier": "SUPER LOW",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122156472860680252/20230624_201345.png",
         "hp": 120,
@@ -87,7 +84,6 @@
     },
     {
         "name": "New Hero",
-        "desc": "Petualang baru di Re:Volution.",
         "tier": "SUPER LOW",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122156473674367057/20230624_201513.png",
         "hp": 130,
@@ -113,7 +109,6 @@
     },
     {
         "name": "Mudling",
-        "desc": "Makhluk lumpur yang menjelma menjadi manusia.",
         "tier": "SUPER LOW",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1148814704878297088/20230906_095158.png",
         "hp": 140,
@@ -139,7 +134,6 @@
     },
     {
         "name": "Blossomling",
-        "desc": "Makhluk berbunga dengan serangan penuh racun.",
         "tier": "SUPER LOW",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1148814703326404748/20230906_095458.png",
         "hp": 110,
@@ -169,7 +163,6 @@
     },
     {
         "name": "Nature Seeker",
-        "desc": "Penjelajah alam, pencari rahasia kehidupan.",
         "tier": "SUPER LOW",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1148814704458879097/20230906_095251.png",
         "hp": 140,
@@ -199,7 +192,6 @@
     },
     {
         "name": "Bubbles",
-        "desc": "Makhluk bergelembung dan berbahaya.",
         "tier": "SUPER LOW",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1181926946981023804/0-7b4f479d-ad40-4e94-8e34-90710516db33.png",
         "hp": 140,
@@ -229,7 +221,6 @@
     },
     {
         "name": "Grove Prowler",
-        "desc": "Hewan pemangsa dari hutan yang licin dan lincah.",
         "tier": "SUPER LOW",
         "avatar": null,
         "hp": 110,

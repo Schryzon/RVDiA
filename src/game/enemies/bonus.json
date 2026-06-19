@@ -1,7 +1,6 @@
 [
     {
         "name": "Shiruto",
-        "desc": "Jiwa yang terpisah.",
         "tier": "BONUS ENEMY",
         "avatar": "https://cdn.discordapp.com/avatars/735653554165121086/f92ce78ea1e6f1ba95c4b7c539c61b05.png?size=512",
         "hp": 4500,
@@ -31,7 +30,6 @@
     },
     {
         "name": "Kamen Rider Kuuga (Ultimate)",
-        "desc": "Prajurit legendaris dengan kekuatan kegelapan yang suci. 'No Fear, No Pain'.",
         "tier": "BONUS ENEMY",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1501110155499012126/kuuga.jpg?ex=69fae146&is=69f98fc6&hm=fb8debcb3626760042924b4ce41a7f5e871f9bbef6cb28fd2d12adc2238d341a",
         "hp": 6500,
@@ -73,7 +71,6 @@
     },
     {
         "name": "Kamen Rider Agito (Shining)",
-        "desc": "Evolusi tanpa batas dari kekuatan matahari. 'For Agito... for Humanity!'",
         "tier": "BONUS ENEMY",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1501107996481294447/agito.JPG?ex=69fadf43&is=69f98dc3&hm=a30dc09371003b03fb2df1ef54b726240f94fda5c33e65c029c6e053c830108e&",
         "hp": 6000,
@@ -111,7 +108,6 @@
     },
     {
         "name": "Kamen Rider Ryuki (Survive)",
-        "desc": "Prajurit cermin yang bertarung demi keinginannya. 'Those who don't fight won't survive'.",
         "tier": "BONUS ENEMY",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1501107996032372806/ryuki.JPG?ex=69fadf43&is=69f98dc3&hm=7be4e0bbe53b2eeb31bb6dd04cd36fd6c11729e64b1ad34064e6008c76cef00a&",
         "hp": 5800,
@@ -165,7 +161,6 @@
     },
     {
         "name": "Kamen Rider Faiz (Blaster)",
-        "desc": "Puncak dari teknologi Smart Brain. 'Open Your Eyes for the Next Faiz'.",
         "tier": "BONUS ENEMY",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1501107995663143023/faiz.JPG?ex=69fadf43&is=69f98dc3&hm=5df008cae3fa6ed915176b0c220c05084cb2de3a0395c8e60c98f99ffd0e5a08&",
         "hp": 5500,
@@ -203,7 +198,6 @@
     },
     {
         "name": "Kamen Rider Blade (King)",
-        "desc": "Perpaduan 13 Undead yang menciptakan ksatria tak terkalahkan.",
         "tier": "BONUS ENEMY",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1501107995164147803/blade.JPG?ex=69fadf43&is=69f98dc3&hm=693ad09df898609e8f6f195ac36d190e8cf2820e02ef3bc8aa73ee22e6365ed6&",
         "hp": 7000,
@@ -241,7 +235,6 @@
     },
     {
         "name": "Kamen Rider Hibiki (Armed)",
-        "desc": "Ksatria Oni yang telah mencapai puncak latihan spiritualnya.",
         "tier": "BONUS ENEMY",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1501107994266435754/hibiki.JPG?ex=69fadf43&is=69f98dc3&hm=274448a3e7d0ecbf1606d04337d4a66467746758ea7a5ddbea88899ccaeed1bc&",
         "hp": 7500,
@@ -279,7 +272,6 @@
     },
     {
         "name": "Kamen Rider Kabuto (Hyper Form)",
-        "desc": "Berjalan di jalan surga, menguasai segalanya. 'Cast Off: Change Beetle'.",
         "tier": "BONUS ENEMY",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1501107993834557531/kabuto.JPG?ex=69fadf42&is=69f98dc2&hm=932005c081530c5a6ea810e2495bb3769b44e5a479c9e5430d31de4870791bc1&",
         "hp": 5200,
@@ -325,7 +317,6 @@
     },
     {
         "name": "Kamen Rider Den-O (Liner)",
-        "desc": "Ksatria kereta waktu yang melampaui imajinasi.",
         "tier": "BONUS ENEMY",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1501107993352077342/den-o.JPG?ex=69fadf42&is=69f98dc2&hm=6ed03773fa55e9b5883093ef24dbeb686c203a1c3732b58a08dfa473a8e9c9e6&",
         "hp": 5600,
@@ -363,7 +354,6 @@
     },
     {
         "name": "Kamen Rider Kiva (Emperor)",
-        "desc": "Pewaris takhta Fangire yang legendaris. 'Wake Up!'.",
         "tier": "BONUS ENEMY",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1501107992588849172/kiva.JPG?ex=69fadf42&is=69f98dc2&hm=500cd02a5cb6b23fe7e7dce64fa19a51ae9365c032852db9f67ca4130c70f6d6&",
         "hp": 5900,
@@ -405,7 +395,6 @@
     },
     {
         "name": "Kamen Rider Decade (Complete)",
-        "desc": "Sang Penghancur Dunia. 'I'm just a passing-through Kamen Rider, remember that!'.",
         "tier": "BONUS ENEMY",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1501107991892725900/decade.JPG?ex=69fadf42&is=69f98dc2&hm=c0d74e4c0e43f1c81e336c1b31fd7f08c5bb9e912274be3b5c32626a216232cd&",
         "hp": 8500,
@@ -447,7 +436,6 @@
     },
     {
         "name": "Makoto Yuki",
-        "desc": "The Door. Pemuda yang memegang kunci antara hidup dan mati. 'Burn My Dread'.",
         "tier": "BONUS ENEMY",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1502846936204709898/makoto.png?ex=6a0132c7&is=69ffe147&hm=f1933dfaff7ecf44b252c4e9e3b2824db2175a91641e524c41db86849078d246&",
         "hp": 7000,
@@ -480,7 +468,6 @@
     },
     {
         "name": "Yu Narukami",
-        "desc": "The Wild Card of Inaba. Sang pencari kebenaran di balik kabut. 'Reach Out To The Truth'.",
         "tier": "BONUS ENEMY",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1502846935462051951/yu.jpg?ex=6a0132c6&is=69ffe146&hm=2588bc78e6b999b56c7cb4badfc44ed583f57df55eaa4f0debef74254a71a2e0&",
         "hp": 6500,
@@ -513,7 +500,6 @@
     },
     {
         "name": "Ren Amamiya",
-        "desc": "Joker. Pemimpin Phantom Thieves yang akan mencuri hatimu. 'Wake Up, Get Up, Get Out There'.",
         "tier": "BONUS ENEMY",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1502846935868903495/ren.jpg?ex=6a0132c7&is=69ffe147&hm=fe1e4587ef87f3ba45a795c176668ed76c0357707587aeae7af06b026f31e55d&",
         "hp": 6000,
@@ -546,7 +532,6 @@
     },
     {
         "name": "Young Xehanort",
-        "desc": "Entitas misterius yang melampaui waktu dan ruang. Kecepatannya tidak masuk akal dan kekuatannya absolut. 'It is time.'",
         "tier": "BONUS ENEMY",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1502861863010963466/mysteriousfigure.png?ex=6a0140ad&is=69ffef2d&hm=d8f8f2c62ca73accce759ec6f36394858fcbde494a17abac4212dd607903e7be",
         "hp": 100,

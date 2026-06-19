@@ -116,7 +116,7 @@ class ChatService:
         if needs_game_lore:
             try:
                 # Use current workspace directory to locate game manual
-                manual_path = os.path.join(os.path.dirname(__file__), "../game_manual.md")
+                manual_path = os.path.join(os.path.dirname(__file__), "../../game_manual.md")
                 if os.path.exists(manual_path):
                     with open(manual_path, "r", encoding="utf-8") as f:
                         lore = f.read()

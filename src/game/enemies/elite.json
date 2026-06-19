@@ -1,7 +1,6 @@
 [
     {
         "name": "Lagtanis",
-        "desc": "Dewa utama - Petir.",
         "tier": "SUPER ELITE",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122156470889349180/20230624_201545.png",
         "hp": 1800,
@@ -49,7 +48,6 @@
     },
     {
         "name": "Daiki",
-        "desc": "Dewi kedua - Angin.",
         "tier": "ELITE",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122156469840773203/20230624_202500.png",
         "hp": 1400,
@@ -91,7 +89,6 @@
     },
     {
         "name": "Yizai Qi",
-        "desc": "Dewa ketiga - Api.",
         "tier": "SUPER ELITE",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122156471573028924/20230624_201721.png",
         "hp": 1950,
@@ -125,7 +122,6 @@
     },
     {
         "name": "Rahjda",
-        "desc": "Dewa keempat - Tanah.",
         "tier": "ELITE",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122156472118296636/20230624_201750.png",
         "hp": 1600,
@@ -159,7 +155,6 @@
     },
     {
         "name": "Arheious",
-        "desc": "Dewi kelima - Air.",
         "tier": "SUPER ELITE",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122156470394429461/20230624_202247.png",
         "hp": 2000,
@@ -197,7 +192,6 @@
     },
     {
         "name": "ViRTUE",
-        "desc": "Galactic Soldier MK.2",
         "tier": "SUPER ELITE",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1148814706371481630/20230906_095029.png",
         "hp": 2200,
