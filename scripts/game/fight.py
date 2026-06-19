@@ -8,6 +8,7 @@ import time
 import math
 import difflib
 import os
+from os import path
 from datetime import datetime
 from prisma import Json
 from discord.ui import View, Button, button
