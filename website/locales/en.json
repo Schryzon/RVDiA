@@ -95,5 +95,14 @@
     "dash_leaderboard_name": "Name",
     "dash_leaderboard_level": "Level",
     "dash_leaderboard_karma": "Karma",
-    "dash_leaderboard_members": "Members"
+    "dash_leaderboard_members": "Members",
+    "dash_inv_tab_items": "Items",
+    "dash_inv_tab_skills": "Skills",
+    "dash_inv_tab_equipment": "Equipment",
+    "dash_inv_empty": "Your inventory is empty.",
+    "dash_inv_equip_btn": "Equip",
+    "dash_inv_unequip_btn": "Unequip",
+    "dash_inv_use_btn": "Use (In-game)",
+    "dash_inv_quantity": "Qty",
+    "dash_inv_equipped": "Equipped"
 }

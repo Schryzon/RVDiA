@@ -95,5 +95,14 @@
     "dash_leaderboard_name": "Nama",
     "dash_leaderboard_level": "Level",
     "dash_leaderboard_karma": "Karma",
-    "dash_leaderboard_members": "Anggota"
+    "dash_leaderboard_members": "Anggota",
+    "dash_inv_tab_items": "Barang",
+    "dash_inv_tab_skills": "Kemampuan",
+    "dash_inv_tab_equipment": "Perlengkapan",
+    "dash_inv_empty": "Inventaris kamu kosong.",
+    "dash_inv_equip_btn": "Pasang",
+    "dash_inv_unequip_btn": "Lepas",
+    "dash_inv_use_btn": "Gunakan (Dalam Game)",
+    "dash_inv_quantity": "Jumlah",
+    "dash_inv_equipped": "Terpasang"
 }

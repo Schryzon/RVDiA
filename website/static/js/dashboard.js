@@ -157,75 +157,209 @@ async function fetch_profile() {
 
 // ── Inventory ───────────────────────────────────────────────
 
+let active_inventory_tab = "items";
+let user_inventory_data = null;
+
 async function fetch_inventory() {
     const container = document.getElementById("inventory-content");
     try {
         const resp = await fetch("/api/v1/user/inventory");
-        const data = await resp.json();
+        user_inventory_data = await resp.json();
 
-        if (!data.registered) {
-            container.innerHTML = `<div class="profile-empty"><p>${LANG === "id" ? "Belum terdaftar." : "Not registered."}</p></div>`;
-            return;
+        if (shop_items_data.length === 0) {
+            try {
+                const shop_resp = await fetch(`/api/v1/shop?lang=${LANG}`);
+                const shop_data = await shop_resp.json();
+                shop_items_data = shop_data.items || [];
+            } catch (err) {
+                console.error("Failed to load shop items for inventory mapping:", err);
+            }
         }
 
-        const inv = data.inventory;
-        const items = inv.items || {};
-        const equipped = inv.equipments || [];
-        const skills = inv.skills || {};
-
-        const raw_items = Array.isArray(items) ? items : Object.entries(items).map(([name, qty]) => ({ name, owned: qty, _id: name }));
-        const raw_equipped = Array.isArray(equipped) ? equipped.map(x => typeof x === 'object' ? x._id : x) : [];
-        const raw_skills = Array.isArray(skills) ? skills : Object.entries(skills).map(([name, info]) => ({ name }));
-
-        if (raw_items.length === 0 && raw_skills.length === 0) {
-            container.innerHTML = `<div class="profile-empty"><p>🎒 ${LANG === "id" ? "Inventori kosong." : "Inventory is empty."}</p></div>`;
-            return;
-        }
-
-        let html = '<div class="inv-grid">';
-
-        for (const item of raw_items) {
-            const item_id = item._id || item.name;
-            const is_equipped = raw_equipped.includes(item_id);
-            const is_equippable = item_id.startsWith("1-");
-            
-            const cls = is_equipped ? "inv-item equipped cursor-pointer" : is_equippable ? "inv-item cursor-pointer hover:border-accent/40" : "inv-item";
-            const qty = item.owned || item.qty || 1;
-            const display_name = item.name;
-
-            html += `
-                <div class="${cls}" data-item-id="${escape_html(item_id)}" data-equippable="${is_equippable}">
-                    <span class="inv-item-name">${escape_html(display_name)}</span>
-                    <span class="inv-item-qty">×${qty}</span>
-                    ${is_equipped ? '<span class="inv-equipped-badge">E</span>' : ""}
-                </div>
-            `;
-        }
-
-        for (const skill of raw_skills) {
-            const skill_name = skill.name;
-            html += `
-                <div class="inv-item skill-item">
-                    <span class="inv-item-name">🔮 ${escape_html(skill_name)}</span>
-                </div>
-            `;
-        }
-
-        html += "</div>";
-        container.innerHTML = html;
-
-        // Add click event listeners to equippable items
-        container.querySelectorAll(".inv-item[data-equippable='true']").forEach(el => {
-            el.addEventListener("click", async () => {
-                const itemId = el.getAttribute("data-item-id");
-                await equip_item(itemId);
-            });
-        });
-
+        render_inventory();
     } catch (err) {
         console.error("fetch_inventory error:", err);
         container.innerHTML = `<div class="profile-empty"><p>Failed to load inventory.</p></div>`;
     }
+}
+
+function render_inventory() {
+    const container = document.getElementById("inventory-content");
+    if (!container || !user_inventory_data) return;
+
+    if (!user_inventory_data.registered) {
+        container.innerHTML = `<div class="profile-empty"><p>${LANG === "id" ? "Belum terdaftar." : "Not registered."}</p></div>`;
+        return;
+    }
+
+    const t = window.__RVDIA_I18N__ || {
+        inv_tab_items: "Items",
+        inv_tab_skills: "Skills",
+        inv_tab_equipment: "Equipment",
+        inv_empty: "Your inventory is empty.",
+        inv_equip_btn: "Equip",
+        inv_unequip_btn: "Unequip",
+        inv_use_btn: "Use (In-game)",
+        inv_quantity: "Qty",
+        inv_equipped: "Equipped"
+    };
+
+    const inv = user_inventory_data.inventory || {};
+    const items = inv.items || {};
+    const equipped = inv.equipments || [];
+    const skills = inv.skills || {};
+
+    const raw_items = Array.isArray(items) ? items : Object.entries(items).map(([name, qty]) => ({ name, owned: qty, _id: name }));
+    const raw_equipped = Array.isArray(equipped) ? equipped.map(x => typeof x === 'object' ? x._id : x) : [];
+    const raw_skills = Array.isArray(skills) ? skills : Object.entries(skills).map(([name, info]) => ({ name }));
+
+    let html = "";
+
+    if (active_inventory_tab === "items") {
+        const consumables = raw_items.filter(item => {
+            const catalog_item = shop_items_data.find(x => x._id === item._id);
+            if (catalog_item) return catalog_item.type === "Consumable";
+            return item._id.startsWith("0-");
+        });
+
+        if (consumables.length === 0) {
+            container.innerHTML = `<div class="profile-empty"><p>🎒 ${t.inv_empty}</p></div>`;
+            return;
+        }
+
+        html = '<div class="inv-grid w-full">';
+        for (const item of consumables) {
+            const catalog_item = shop_items_data.find(x => x._id === item._id);
+            const name = catalog_item ? catalog_item.name : item.name;
+            const desc = catalog_item ? (catalog_item.desc || catalog_item.func) : item._id;
+            const qty = item.owned || 1;
+
+            html += `
+                <div class="shop-item-card hover:border-accent/40 hover:shadow-[0_0_12px_rgba(255,200,0,0.1)]">
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="shop-item-type">🧪 ${LANG === "id" ? "Konsumsi" : "Consumable"}</span>
+                            <span class="font-mono text-xs text-slate-400 bg-white/[0.04] px-1.5 py-0.5 rounded border border-white/5">${escape_html(t.inv_quantity)}: ${qty}</span>
+                        </div>
+                        <h4 class="shop-item-name">${escape_html(name)}</h4>
+                        <p class="shop-item-desc text-xs text-slate-400 leading-relaxed">${escape_html(desc)}</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-white/[0.04]">
+                        <button class="w-full py-2 text-xs font-bold rounded-lg bg-white/[0.02] text-slate-500 border border-white/5 cursor-not-allowed" disabled>${escape_html(t.inv_use_btn)}</button>
+                    </div>
+                </div>
+            `;
+        }
+        html += '</div>';
+
+    } else if (active_inventory_tab === "equipment") {
+        const equipments = raw_items.filter(item => {
+            const catalog_item = shop_items_data.find(x => x._id === item._id);
+            if (catalog_item) return catalog_item.type === "Equipment";
+            return item._id.startsWith("1-");
+        });
+
+        if (equipments.length === 0) {
+            container.innerHTML = `<div class="profile-empty"><p>🛡️ ${t.inv_empty}</p></div>`;
+            return;
+        }
+
+        html = '<div class="inv-grid w-full">';
+        for (const item of equipments) {
+            const catalog_item = shop_items_data.find(x => x._id === item._id);
+            const name = catalog_item ? catalog_item.name : item.name;
+            const is_equipped = raw_equipped.includes(item._id);
+            const usefor = catalog_item ? catalog_item.usefor : "Equipment";
+            const func = catalog_item ? catalog_item.func : "";
+
+            let bonus_desc = "";
+            if (func) {
+                const parts = func.split('+');
+                if (parts.length === 2) {
+                    bonus_desc = `Bonus: ${parts[0].toUpperCase()} +${parts[1]}`;
+                } else {
+                    bonus_desc = func.toUpperCase();
+                }
+            }
+
+            const card_class = is_equipped 
+                ? "shop-item-card border-accent bg-accent/[0.01] hover:border-accent/60" 
+                : "shop-item-card hover:border-accent/40 hover:shadow-[0_0_12px_rgba(255,200,0,0.1)]";
+
+            html += `
+                <div class="${card_class}">
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="shop-item-type">🛡️ ${escape_html(usefor)}</span>
+                            ${is_equipped ? `<span class="text-[10px] font-bold text-accent bg-accent/15 px-2 py-0.5 rounded border border-accent/20">${t.inv_equipped}</span>` : ""}
+                        </div>
+                        <h4 class="shop-item-name">${escape_html(name)}</h4>
+                        <p class="shop-item-desc text-xs text-slate-400 leading-relaxed">${escape_html(bonus_desc)}</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-white/[0.04]">
+                        <button class="w-full py-2 text-xs font-bold rounded-lg bg-accent text-white border border-accent/20 hover:bg-accent/80 transition-all duration-300 active:scale-95 cursor-pointer inv-equip-btn"
+                                data-item-id="${escape_html(item._id)}">
+                            ${is_equipped ? escape_html(t.inv_unequip_btn) : escape_html(t.inv_equip_btn)}
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        html += '</div>';
+
+    } else if (active_inventory_tab === "skills") {
+        if (raw_skills.length === 0) {
+            container.innerHTML = `<div class="profile-empty"><p>🔮 ${t.inv_empty}</p></div>`;
+            return;
+        }
+
+        html = '<div class="inv-grid w-full">';
+        for (const skill of raw_skills) {
+            const skill_id = skill._id || skill.name;
+            const catalog_item = shop_items_data.find(x => x._id === skill_id || x._id === `2-${skill_id}`);
+            const name = catalog_item ? catalog_item.name : skill.name;
+            const desc = catalog_item ? (catalog_item.desc || catalog_item.func) : (LANG === "id" ? "Kemampuan sihir." : "Magical skill.");
+
+            html += `
+                <div class="shop-item-card border-indigo-500/20 bg-indigo-500/[0.01] hover:border-indigo-500/40 hover:shadow-[0_0_12px_rgba(99,102,241,0.15)]">
+                    <div>
+                        <span class="shop-item-type text-indigo-400">🔮 Skill</span>
+                        <h4 class="shop-item-name">${escape_html(name)}</h4>
+                        <p class="shop-item-desc text-xs text-slate-400 leading-relaxed">${escape_html(desc)}</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-white/[0.04]">
+                        <span class="inline-flex justify-center items-center w-full py-1.5 text-xs font-bold text-indigo-400 bg-indigo-500/10 rounded-lg border border-indigo-500/20">Learned</span>
+                    </div>
+                </div>
+            `;
+        }
+        html += '</div>';
+    }
+
+    container.innerHTML = html;
+
+    container.querySelectorAll(".inv-equip-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const itemId = btn.getAttribute("data-item-id");
+            btn.disabled = true;
+            btn.textContent = LANG === "id" ? "Memproses..." : "Processing...";
+            await equip_item(itemId);
+        });
+    });
+}
+
+function init_inventory() {
+    const filter_container = document.getElementById("inventory-filters");
+    if (!filter_container) return;
+
+    filter_container.querySelectorAll(".sub-tab-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            filter_container.querySelectorAll(".sub-tab-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            active_inventory_tab = btn.getAttribute("data-tab");
+            render_inventory();
+        });
+    });
 }
 
 
@@ -1215,6 +1349,7 @@ document.addEventListener("DOMContentLoaded", () => {
     init_chat();
     init_shop();
     init_guilds_and_leaderboard();
+    init_inventory();
 
     const daily_btn = document.getElementById("daily-btn");
     const adventure_btn = document.getElementById("adventure-btn");

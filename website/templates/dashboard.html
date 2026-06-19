@@ -247,10 +247,18 @@
         </div>
 
         <!-- Inventory Card -->
-        <div class="glass-card-style p-6 md:p-8 flex flex-col" id="inventory-card">
-            <h3 class="text-lg font-bold text-white tracking-wide uppercase border-b border-white/10 pb-3 mb-6">
-                🎒 {{ i18n.dash_inventory_title }}
-            </h3>
+        <div class="glass-card-style p-6 md:p-8 flex flex-col hover:border-white/10 transition-all duration-300" id="inventory-card">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-3 mb-6">
+                <h3 class="text-lg font-bold text-white tracking-wide uppercase flex items-center gap-2">
+                    🎒 {{ i18n.dash_inventory_title }}
+                </h3>
+                <!-- Sub tabs -->
+                <div class="flex gap-2" id="inventory-filters">
+                    <button class="sub-tab-btn active" data-tab="items" id="inv-tab-items-btn">{{ i18n.dash_inv_tab_items }}</button>
+                    <button class="sub-tab-btn" data-tab="skills" id="inv-tab-skills-btn">{{ i18n.dash_inv_tab_skills }}</button>
+                    <button class="sub-tab-btn" data-tab="equipment" id="inv-tab-equipment-btn">{{ i18n.dash_inv_tab_equipment }}</button>
+                </div>
+            </div>
             
             <div id="inventory-content" class="flex-1 flex flex-col justify-center min-h-[220px]">
                 <div class="text-center text-slate-400 text-sm animate-pulse">
@@ -400,7 +408,16 @@
         name: "{{ i18n.dash_leaderboard_name }}",
         level: "{{ i18n.dash_leaderboard_level }}",
         karma: "{{ i18n.dash_leaderboard_karma }}",
-        members: "{{ i18n.dash_leaderboard_members }}"
+        members: "{{ i18n.dash_leaderboard_members }}",
+        inv_tab_items: "{{ i18n.dash_inv_tab_items }}",
+        inv_tab_skills: "{{ i18n.dash_inv_tab_skills }}",
+        inv_tab_equipment: "{{ i18n.dash_inv_tab_equipment }}",
+        inv_empty: "{{ i18n.dash_inv_empty }}",
+        inv_equip_btn: "{{ i18n.dash_inv_equip_btn }}",
+        inv_unequip_btn: "{{ i18n.dash_inv_unequip_btn }}",
+        inv_use_btn: "{{ i18n.dash_inv_use_btn }}",
+        inv_quantity: "{{ i18n.dash_inv_quantity }}",
+        inv_equipped: "{{ i18n.dash_inv_equipped }}"
     };
 </script>
 <script src="/static/js/dashboard.js"></script>
