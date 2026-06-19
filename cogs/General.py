@@ -93,7 +93,7 @@ class WebSearchView(discord.ui.View):
 
 class General(commands.Cog):
     """
-    Kumpulan command umum.
+    General purpose commands.
     """
     def __init__(self, bot:commands.AutoShardedBot):
         self.bot = bot
@@ -102,7 +102,7 @@ class General(commands.Cog):
     @check_blacklist()
     async def rvdia_command(self, ctx:commands.Context) -> None:
         """
-        Kumpulan command khusus untuk RVDIA.
+        Special commands for RVDiA.
         """
         await self.rvdia(ctx)
         pass
@@ -111,7 +111,7 @@ class General(commands.Cog):
     @check_blacklist()
     async def user_command(self, ctx:commands.Context, member:discord.Member=None) -> None:
         """
-        Kumpulan command khusus untuk mengetahui info pengguna.
+        Commands for checking user information.
         """
         member = member or ctx.author
         await self.userinfo(ctx, member=member)
@@ -121,21 +121,21 @@ class General(commands.Cog):
     @check_blacklist()
     async def avatar_command(self, ctx:commands.Context, *, member:discord.User=None) -> None:
         """
-        Kumpulan command khusus yang berkaitan dengan avatar pengguna.
+        Commands related to user avatars.
         """
         member = member or ctx.author
         await self.avatar(ctx, global_user=member)
         pass
 
-    @commands.hybrid_command(description='Mengulangi apapun yang kamu katakan!')
+    @commands.hybrid_command(description='Repeats whatever you say!')
     @app_commands.describe(
-        teks='Apa yang kamu ingin aku katakan?',
-        attachment='Lampirkan gambar, kalau mau.'
+        teks='What do you want me to say?',
+        attachment='Attach an image, if you want.'
         )
     @check_blacklist()
     async def say(self, ctx:commands.Context, attachment:discord.Attachment=None, *, teks:str=None):
         """
-        Mengulangi apapun yang kamu katakan!
+        Repeats whatever you say!
         """
         async with ctx.typing():
             user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
@@ -169,7 +169,7 @@ class General(commands.Cog):
     @check_blacklist()
     async def rvdia(self, ctx:commands.Context) -> None:
         """
-        Memperlihatkan segalanya tentang aku!
+        Shows everything about me!
         """
         async with ctx.typing():
             user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
@@ -200,12 +200,12 @@ class General(commands.Cog):
             await ctx.send(embed=embed, view=Url_Buttons())
     
     @rvdia_command.command(name="ping",
-        description = "Menampilkan latency ke Discord API."
+        description = "Shows the latency to the Discord API."
         )
     @check_blacklist()
     async def ping(self, ctx:commands.Context) -> None:
         """
-        Menampilkan latency ke Discord API
+        Shows the latency to the Discord API.
         """
         start_typing = time()
         await ctx.typing()
@@ -220,14 +220,13 @@ class General(commands.Cog):
         embed.description = f"**{i18n.get(lang, 'general.ping_api')}:** `{round(self.bot.latency*1000)} ms`\n**{i18n.get(lang, 'general.ping_typing')}:** `{round(delta_typing*1000, 2)} ms`"
         await ctx.reply(embed=embed)
 
-    @user_command.command(description="Memperlihatkan avatar pengguna Discord.")
-    @app_commands.rename(global_user='pengguna')
-    @app_commands.describe(global_user='Pengguna yang ingin diambil foto profilnya')
+    @user_command.command(description="Shows the avatar of a Discord user.")
+    @app_commands.describe(global_user='User whose profile picture you want to view')
     @has_pfp()
     @check_blacklist()
     async def avatar(self, ctx, *, global_user: discord.User = None):
         """
-        Memperlihatkan avatar pengguna Discord.
+        Shows the avatar of a Discord user.
         Support: (ID, @Mention, username, name#tag)
         """
         async with ctx.typing():
@@ -335,20 +334,19 @@ class General(commands.Cog):
 
 class Utilities(commands.Cog):
     """
-    Kategori command berupa alat-alat dan fitur bermanfaat.
+    Utility commands (weather, time, web search, etc.).
     """
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.hybrid_command(aliases = ['cuaca'], description="Lihat info tentang cuaca di suatu kota atau daerah!")
-    @app_commands.rename(location='lokasi')
+    @commands.hybrid_command(aliases = ['cuaca'], description="Check the weather in a city or area!")
     @app_commands.describe(
-        location = 'Lokasi mana yang ingin diketahui cuacanya?'
+        location = 'City or area to search weather for'
     )
     @check_blacklist()
     async def weather(self, ctx:commands.Context, *, location:str):
         """
-        Lihat info tentang keadaan cuaca di suatu kota atau daerah!
+        Check the weather in a city or area!
         """
         try:
             await ctx.defer()
@@ -415,13 +413,12 @@ class Utilities(commands.Cog):
                 logging.error(f"Error in weather command: {e}", exc_info=True)
                 await ctx.send(i18n.get(lang, "general.weather_error"))
 
-    @commands.hybrid_command(description="Lihat info tentang waktu di suatu kota atau daerah!")
-    @app_commands.describe(location='Daerah mana yang ingin kamu ketahui?')
-    @app_commands.rename(location='lokasi')
+    @commands.hybrid_command(description="Check the current time in a city or area!")
+    @app_commands.describe(location='City or area to search time for')
     @check_blacklist()
     async def time(self, ctx:commands.Context, *, location:str):
         """
-        Lihat info tentang waktu di suatu kota atau daerah!
+        Check the current time in a city or area!
         """
         async with ctx.typing():
             user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})

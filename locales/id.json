@@ -1036,12 +1036,695 @@
         "ending_note": "Ketik \"{help.clean_prefix}{help.invoked_with} (command)\" untuk info command mendetail.\nKetik \"{help.clean_prefix}{help.invoked_with} (group)\" untuk melihat info kategori/group.",
         "command_not_found": "Aku tidak bisa menemukan command itu!\nCheck lagi command yang ada dengan `/help`!",
         "category_conversation": "💬 Obrolan Chat",
+        "category_conversation_description": "Kategori khusus untuk mengobrol dengan RVDiA.",
         "category_fun": "🎲 Hiburan & Game",
+        "category_fun_description": "Command khusus untuk bersenang-senang dan hiburan.",
         "category_game": "⚔️ Re:Volution RPG",
+        "category_game_description": "Mainkan Re:Volution RPG ~ The Dream World!",
         "category_general": "📁 Fitur Umum",
+        "category_general_description": "Fitur umum dan utilitas server.",
         "category_image": "🎨 Pemrosesan Gambar",
+        "category_image_description": "Kumpulan command untuk memproses gambar dan avatar.",
         "category_moderation": "🛡️ Moderasi Server",
+        "category_moderation_description": "Fitur untuk mengelola dan memoderasi server.",
         "category_roleplay": "🎭 Interaksi & Roleplay",
-        "category_event": "⭐ Ajang (Event)"
+        "category_roleplay_description": "Command interaksi dan roleplay antar user.",
+        "category_event": "⭐ Ajang (Event)",
+        "category_event_description": "Ajang server (event) dan mini-game yang sedang aktif.",
+        "category_no_category_description": "Command yang tidak memiliki kategori khusus."
+    },
+    "commands": {
+        "chat": {
+            "description": "Tanyakan pertanyaan atau berikan instruksi padaku!",
+            "arguments": {
+                "message": "Apa yang ingin kamu tanyakan?",
+                "attachment": "Lampirkan berkas (PDF, gambar, atau teks)"
+            }
+        },
+        "memory": {
+            "description": "Kelola memori obrolan kamu dengan RVDiA."
+        },
+        "memory.clear": {
+            "description": "Hapus seluruh riwayat memori obrolan kamu."
+        },
+        "memory.manage": {
+            "description": "Pilih memori tertentu untuk dihapus."
+        },
+        "memory.persist": {
+            "description": "Pilih memori untuk disimpan selamanya atau biarkan terhapus otomatis setelah beberapa waktu."
+        },
+        "settings": {
+            "description": "Kelola pengaturan RVDiA."
+        },
+        "settings.language": {
+            "description": "Ubah pengaturan bahasa obrolan antara Bahasa Indonesia dan Bahasa Inggris.",
+            "arguments": {
+                "lang": "Pilih bahasa yang kamu inginkan"
+            }
+        },
+        "generate": {
+            "description": "Hasilkan karya seni anime menggunakan model MeinaMix V11!",
+            "arguments": {
+                "prompt": "Prompt untuk mendeskripsikan gambar yang ingin dihasilkan",
+                "aspect_ratio": "Pilih rasio aspek gambar (Bawaan: 1:1)",
+                "steps": "Jumlah langkah inferensi (Bawaan: Balanced)",
+                "cfg_scale": "Tingkat kepatuhan AI terhadap prompt (Bawaan: 7.0)",
+                "scheduler": "Metode penjadwal sampling (Bawaan: DPM++ 2M Karras)",
+                "upscale": "Tingkatkan resolusi gambar menggunakan Swin2SR 2x (Bawaan: No)",
+                "negative_prompt": "Hal yang ingin dikecualikan dari gambar (Opsional)"
+            }
+        },
+        "variation": {
+            "description": "Buat variasi dari gambar yang diberikan!",
+            "arguments": {
+                "attachment": "Lampirkan gambar untuk dimodifikasi"
+            }
+        },
+        "ship": {
+            "description": "Jodohkan dua orang dan periksa kecocokan cinta mereka!",
+            "arguments": {
+                "member1": "Orang pertama yang dijodohkan",
+                "member2": "Orang kedua yang dijodohkan"
+            }
+        },
+        "roleplay.hug": {
+            "description": "Peluk seseorang!",
+            "arguments": {
+                "user": "Siapa yang ingin kamu peluk?"
+            }
+        },
+        "roleplay.kiss": {
+            "description": "Cium seseorang!",
+            "arguments": {
+                "user": "Siapa yang ingin kamu cium?"
+            }
+        },
+        "roleplay.slap": {
+            "description": "Tampar seseorang!",
+            "arguments": {
+                "user": "Siapa yang ingin kamu tampar?"
+            }
+        },
+        "roleplay.laugh": {
+            "description": "Ekspresikan tawamu!"
+        },
+        "roleplay.happy": {
+            "description": "Ekspresikan kebahagiaanmu!"
+        },
+        "roleplay.think": {
+            "description": "Ekspresikan bahwa kamu sedang berpikir!"
+        },
+        "roleplay.blush": {
+            "description": "Ekspresikan wajah memerah/tersipu!"
+        },
+        "roleplay.cry": {
+            "description": "Ekspresikan kesedihanmu!"
+        },
+        "roleplay.agree": {
+            "description": "Ekspresikan persetujuanmu!"
+        },
+        "roleplay.pat": {
+            "description": "Elus kepala seseorang!",
+            "arguments": {
+                "user": "Siapa yang ingin kamu elus?"
+            }
+        },
+        "roleplay.bored": {
+            "description": "Ekspresikan kebosananmu!"
+        },
+        "server": {
+            "description": "Command informasi server."
+        },
+        "server.info": {
+            "description": "Lihat informasi tentang server ini!"
+        },
+        "server.icon": {
+            "description": "Tampilkan ikon dari server ini."
+        },
+        "invite": {
+            "description": "Command pengelolaan tautan undangan."
+        },
+        "invite.create": {
+            "description": "Buat tautan undangan instan!",
+            "arguments": {
+                "expire": "Berapa lama sebelum tautan undangan kedaluwarsa? (detik, bawaan: tidak pernah)",
+                "max_use": "Jumlah maksimum orang yang dapat menggunakan undangan ini? (bawaan: tanpa batas)"
+            }
+        },
+        "invite.view": {
+            "description": "Lihat daftar tautan undangan untuk server ini!"
+        },
+        "warn": {
+            "description": "Sistem peringatan pelanggaran (warning)."
+        },
+        "warn.add": {
+            "description": "Berikan peringatan (warning) kepada anggota di server ini.",
+            "arguments": {
+                "member": "Anggota yang melanggar aturan",
+                "reason": "Alasan peringatan"
+            }
+        },
+        "warn.history": {
+            "description": "Lihat riwayat peringatan anggota di server ini.",
+            "arguments": {
+                "member": "Anggota yang ingin diperiksa"
+            }
+        },
+        "warn.remove": {
+            "description": "Hapus semua peringatan untuk seorang anggota.",
+            "arguments": {
+                "member": "Anggota yang peringatannya akan dihapus"
+            }
+        },
+        "warn.list": {
+            "description": "Daftar semua pengguna dengan peringatan di server ini."
+        },
+        "ultban": {
+            "description": "Ban pengguna dari server, meskipun mereka sedang tidak berada di dalamnya.",
+            "arguments": {
+                "user": "Pengguna yang ingin diban (ID atau nama#tag)",
+                "reason": "Alasan ban"
+            }
+        },
+        "unban": {
+            "description": "Unban pengguna yang sebelumnya telah diban.",
+            "arguments": {
+                "user": "Pengguna yang ingin diunban (ID atau nama#tag)"
+            }
+        },
+        "clear": {
+            "description": "Hapus pesan secara massal di saluran chat.",
+            "arguments": {
+                "amount": "Jumlah pesan yang ingin dihapus",
+                "channel": "Saluran target yang ingin dibersihkan (bawaan: saluran saat ini)"
+            }
+        },
+        "rvdia": {
+            "description": "Command khusus untuk RVDiA."
+        },
+        "rvdia.about": {
+            "description": "Tampilkan segala sesuatu tentang diriku!"
+        },
+        "rvdia.ping": {
+            "description": "Tampilkan latensi/ping ke API Discord."
+        },
+        "user": {
+            "description": "Command untuk memeriksa informasi pengguna."
+        },
+        "user.avatar": {
+            "description": "Tampilkan foto profil (avatar) pengguna Discord.",
+            "arguments": {
+                "global_user": "Pengguna yang foto profilnya ingin kamu lihat"
+            }
+        },
+        "user.info": {
+            "description": "Lihat informasi tentang seseorang di server ini.",
+            "arguments": {
+                "member": "Siapa yang ingin diketahui infonya?"
+            }
+        },
+        "say": {
+            "description": "Katakan apa pun yang kamu katakan!",
+            "arguments": {
+                "teks": "Apa yang kamu ingin aku katakan?",
+                "attachment": "Lampirkan gambar, jika kamu mau."
+            }
+        },
+        "weather": {
+            "description": "Periksa cuaca di kota atau wilayah!",
+            "arguments": {
+                "location": "Kota atau daerah yang ingin dicari cuacanya"
+            }
+        },
+        "time": {
+            "description": "Periksa waktu saat ini di kota atau daerah!",
+            "arguments": {
+                "location": "Kota atau daerah yang ingin dicari waktunya"
+            }
+        },
+        "hex": {
+            "description": "Memperlihatkan warna dari nilai hexadecimal.",
+            "arguments": {
+                "hex": "Kode hexadecimal (Contoh: FF0000)."
+            }
+        },
+        "rgb": {
+            "description": "Memperlihatkan warna dari nilai RGB.",
+            "arguments": {
+                "red": "Warna merah (0 - 255)",
+                "green": "Warna hijau (0 - 255)",
+                "blue": "Warna biru (0 - 255)"
+            }
+        },
+        "google": {
+            "description": "Cari info/website di internet menggunakan DuckDuckGo.",
+            "arguments": {
+                "query": "Kata kunci yang ingin dicari"
+            }
+        },
+        "support": {
+            "description": "Kumpulan command khusus untuk memperoleh bantuan dan pemberian saran/kritik."
+        },
+        "support.guild": {
+            "description": "Mengirimkan link untuk server supportku!"
+        },
+        "support.donate": {
+            "description": "Dukung RVDiA melalui Saweria!"
+        },
+        "support.suggest": {
+            "description": "Berikan aku saran untuk perbaikan atau penambahan fitur!",
+            "arguments": {
+                "text": "Apa yang ingin kamu sampaikan?",
+                "attachment": "Apakah ada contoh gambarnya? (Opsional)"
+            }
+        },
+        "game": {
+            "description": "Profil Re:Volution RPG ~ The Dream World."
+        },
+        "game.register": {
+            "description": "Daftarkan dirimu ke Re:Volution RPG!",
+            "arguments": {
+                "name": "Nama karakter impianmu."
+            }
+        },
+        "game.leaderboard": {
+            "description": "Lihat papan peringkat pemain terkuat!"
+        },
+        "game.guide": {
+            "description": "Lihat buku panduan bermain Re:Volution."
+        },
+        "game.changelog": {
+            "description": "Lihat log perubahan/update terbaru untuk Re:Volution."
+        },
+        "game.resign": {
+            "description": "Hapus akun Re:Volution RPG-mu."
+        },
+        "game.daily": {
+            "description": "Klaim hadiah check-in harianmu!"
+        },
+        "game.profile": {
+            "description": "Lihat profil RPG kamu atau periksa profil pemain lain.",
+            "arguments": {
+                "user": "Pengguna yang ingin kamu lihat profilnya."
+            }
+        },
+        "game.fix_account": {
+            "description": "Perbaiki struktur data profil akunmu."
+        },
+        "game.shop": {
+            "description": "Beli item, ramuan, atau perlengkapan perang dari toko!"
+        },
+        "game.adventure": {
+            "description": "Jelajahi dunia mimpi dan lawan monster acak!"
+        },
+        "game.fight": {
+            "description": "Tantang pemain lain ke duel langsung!",
+            "arguments": {
+                "member": "Pemain yang ingin kamu lawan."
+            }
+        },
+        "game.battle": {
+            "description": "Lawan monster bos atau musuh di Re:Volution!",
+            "arguments": {
+                "enemy_tier": "Tingkat level musuh yang ingin kamu lawan.",
+                "enemy_name": "Nama musuh spesifik yang ingin dilawan."
+            }
+        },
+        "game.enemies": {
+            "description": "Daftar semua musuh dan tingkatan bos yang muncul di Re:Volution."
+        },
+        "game.transfer": {
+            "description": "Request pemindahan data akun ke akun Discord baru.",
+            "arguments": {
+                "old_acc": "ID akun Discord lama atau mention akun lamamu.",
+                "reason": "Alasan untuk request pemindahan data."
+            }
+        },
+        "game.guess": {
+            "description": "Main game tebak angka bersamaku!",
+            "arguments": {
+                "level": "Pilih tingkat kesulitan."
+            }
+        },
+        "game.use": {
+            "description": "Gunakan item atau konsumsi ramuan dari inventarismu.",
+            "arguments": {
+                "type": "Jenis/nama item yang ingin digunakan."
+            }
+        },
+        "guild": {
+            "description": "Command Sistem Guild Re:Volution."
+        },
+        "guild.create": {
+            "description": "Buat guild impianmu sendiri!",
+            "arguments": {
+                "name": "Nama guild impianmu"
+            }
+        },
+        "guild.edit": {
+            "description": "Edit pengaturan guild milikmu."
+        },
+        "guild.invite": {
+            "description": "Undang pemain lain untuk bergabung ke guild milikmu.",
+            "arguments": {
+                "user": "Pemain yang ingin kamu undang."
+            }
+        },
+        "guild.icon": {
+            "description": "Atur atau lihat ikon guild milikmu.",
+            "arguments": {
+                "url": "Tautan URL gambar untuk ikon guild baru."
+            }
+        },
+        "premium": {
+            "description": "Command fitur premium."
+        },
+        "premium.claim": {
+            "description": "Klaim keuntungan premium kamu dengan mengunggah bukti pembayaran.",
+            "arguments": {
+                "bukti": "Lampiran tangkapan layar (screenshot) bukti donasi Saweria."
+            }
+        },
+        "approve_premium": {
+            "description": "[ADMIN] Setujui klaim premium seseorang.",
+            "arguments": {
+                "user": "Pengguna yang akan disetujui."
+            }
+        },
+        "image": {
+            "description": "Command pemrosesan gambar."
+        },
+        "image.gpu": {
+            "description": "Periksa status akselerasi GPU."
+        },
+        "image.search": {
+            "description": "Cari gambar di internet dengan navigasi hasil.",
+            "arguments": {
+                "query": "Kata kunci yang ingin dicari."
+            }
+        },
+        "image.grayscale": {
+            "description": "Ubah gambar menjadi hitam putih (grayscale).",
+            "arguments": {
+                "user": "Pengguna yang avatar-nya ingin diedit.",
+                "attachment": "File gambar yang ingin diedit."
+            }
+        },
+        "image.invert": {
+            "description": "Balikkan warna gambar (invert).",
+            "arguments": {
+                "user": "Pengguna yang avatar-nya ingin diedit.",
+                "attachment": "File gambar yang ingin diedit."
+            }
+        },
+        "image.circle": {
+            "description": "Crop gambar menjadi bentuk lingkaran.",
+            "arguments": {
+                "user": "Pengguna yang avatar-nya ingin diedit.",
+                "attachment": "File gambar yang ingin diedit."
+            }
+        },
+        "image.blur": {
+            "description": "Buramkan gambar (blur).",
+            "arguments": {
+                "user": "Pengguna yang avatar-nya ingin diedit.",
+                "attachment": "File gambar yang ingin diedit.",
+                "strength": "Ukuran kernel kekuatan blur."
+            }
+        },
+        "image.sharpen": {
+            "description": "Tajamkan detail pada gambar.",
+            "arguments": {
+                "user": "Pengguna yang avatar-nya ingin diedit.",
+                "attachment": "File gambar yang ingin diedit."
+            }
+        },
+        "image.flip": {
+            "description": "Balikkan gambar secara horizontal atau vertikal.",
+            "arguments": {
+                "user": "Pengguna yang avatar-nya ingin diedit.",
+                "attachment": "File gambar yang ingin diedit.",
+                "axis": "Arah pembalikan gambar (horizontal atau vertikal)."
+            }
+        },
+        "image.rotate": {
+            "description": "Putar gambar dengan sudut tertentu.",
+            "arguments": {
+                "user": "Pengguna yang avatar-nya ingin diedit.",
+                "attachment": "File gambar yang ingin diedit.",
+                "angle": "Sudut putar dalam derajat.",
+                "direction": "Searah jarum jam (cw) atau berlawanan arah jarum jam (ccw)."
+            }
+        },
+        "image.adjust": {
+            "description": "Sesuaikan kecerahan dan kontras gambar.",
+            "arguments": {
+                "user": "Pengguna yang avatar-nya ingin diedit.",
+                "attachment": "File gambar yang ingin diedit.",
+                "brightness": "Faktor pengali kecerahan.",
+                "contrast": "Faktor penyesuaian kontras."
+            }
+        },
+        "image.edge": {
+            "description": "Deteksi tepi pada gambar (edge detection).",
+            "arguments": {
+                "user": "Pengguna yang avatar-nya ingin diedit.",
+                "attachment": "File gambar yang ingin diedit.",
+                "method": "Operator deteksi tepi (canny, sobel, laplacian, dll.)."
+            }
+        },
+        "image.noise": {
+            "description": "Tambahkan noise buatan pada gambar.",
+            "arguments": {
+                "user": "Pengguna yang avatar-nya ingin diedit.",
+                "attachment": "File gambar yang ingin diedit.",
+                "type": "Jenis noise (salt_pepper, gaussian, poisson)."
+            }
+        },
+        "image.equalize": {
+            "description": "Normalisasi histogram gambar untuk menyelaraskan pencahayaan.",
+            "arguments": {
+                "user": "Pengguna yang avatar-nya ingin diedit.",
+                "attachment": "File gambar yang ingin diedit.",
+                "method": "Metode ekualisasi (global, clahe, adaptive)."
+            }
+        },
+        "image.emboss": {
+            "description": "Terapkan efek 3D emboss pada gambar.",
+            "arguments": {
+                "user": "Pengguna yang avatar-nya ingin diedit.",
+                "attachment": "File gambar yang ingin diedit."
+            }
+        },
+        "image.sepia": {
+            "description": "Terapkan filter warna hangat sepia.",
+            "arguments": {
+                "user": "Pengguna yang avatar-nya ingin diedit.",
+                "attachment": "File gambar yang ingin diedit."
+            }
+        },
+        "image.pixelate": {
+            "description": "Pixelate gambar untuk membuat efek retro kotak-kotak.",
+            "arguments": {
+                "user": "Pengguna yang avatar-nya ingin diedit.",
+                "attachment": "File gambar yang ingin diedit.",
+                "pixel_size": "Dimensi ukuran blok pixel."
+            }
+        },
+        "image.vignette": {
+            "description": "Terapkan efek bayangan vignette di sekitar batas gambar.",
+            "arguments": {
+                "user": "Pengguna yang avatar-nya ingin diedit.",
+                "attachment": "File gambar yang ingin diedit.",
+                "sigma": "Radius dari pusat vignette."
+            }
+        },
+        "image.gamma": {
+            "description": "Terapkan koreksi gamma pada gambar.",
+            "arguments": {
+                "user": "Pengguna yang avatar-nya ingin diedit.",
+                "attachment": "File gambar yang ingin diedit.",
+                "gamma": "Faktor koreksi gamma."
+            }
+        },
+        "image.log": {
+            "description": "Terapkan transformasi logaritma rentang dinamis.",
+            "arguments": {
+                "user": "Pengguna yang avatar-nya ingin diedit.",
+                "attachment": "File gambar yang ingin diedit."
+            }
+        },
+        "image.blend": {
+            "description": "Gabungkan dua gambar menjadi satu.",
+            "arguments": {
+                "user1": "Sumber avatar pengguna pertama.",
+                "user2": "Sumber avatar pengguna kedua.",
+                "attachment1": "Gambar sumber pertama.",
+                "attachment2": "Gambar sumber kedua.",
+                "alpha": "Rasio transparansi overlay (0.0 hingga 1.0)."
+            }
+        },
+        "image.threshold": {
+            "description": "Terapkan threshold binarisasi pada gambar.",
+            "arguments": {
+                "user": "Pengguna yang avatar-nya ingin diedit.",
+                "attachment": "File gambar yang ingin diedit.",
+                "threshold_value": "Nilai pemisah binarisasi (0-255).",
+                "method": "Gaya binarisasi (binary, otsu)."
+            }
+        },
+        "image.autocrop": {
+            "description": "Potong otomatis border solid hitam/putih pada gambar.",
+            "arguments": {
+                "user": "Pengguna yang avatar-nya ingin diedit.",
+                "attachment": "File gambar yang ingin diedit.",
+                "tolerance": "Toleransi kecocokan perbedaan warna."
+            }
+        },
+        "image.composite": {
+            "description": "Gabungkan dua gambar menggunakan masker overlay.",
+            "arguments": {
+                "user1": "Sumber pengguna background.",
+                "user2": "Sumber pengguna overlay.",
+                "attachment1": "Gambar background.",
+                "attachment2": "Gambar overlay.",
+                "mode": "Mode blending rumus gambar.",
+                "match_mode": "Opsi penyesuaian dimensi (resize, crop, pad)."
+            }
+        },
+        "image.concat": {
+            "description": "Gabungkan dua gambar secara bersebelahan atau ditumpuk.",
+            "arguments": {
+                "user1": "Pengguna sumber pertama.",
+                "user2": "Pengguna sumber kedua.",
+                "attachment1": "Gambar Kiri/Atas.",
+                "attachment2": "Gambar Kanan/Bawah.",
+                "axis": "Arah sumbu penggabungan (horizontal atau vertikal)."
+            }
+        },
+        "morph": {
+            "description": "Operasi morfologi matematika gambar."
+        },
+        "morph.erode": {
+            "description": "Erosi batas struktur pada gambar.",
+            "arguments": {
+                "user": "Pengguna yang avatar-nya ingin diedit.",
+                "attachment": "File gambar yang ingin diedit.",
+                "iterations": "Siklus pengulangan.",
+                "kernel_size": "Ukuran jendela filter ketetanggaan."
+            }
+        },
+        "morph.dilate": {
+            "description": "Dilasi batas struktur pada gambar.",
+            "arguments": {
+                "user": "Pengguna yang avatar-nya ingin diedit.",
+                "attachment": "File gambar yang ingin diedit.",
+                "iterations": "Siklus pengulangan.",
+                "kernel_size": "Ukuran jendela filter ketetanggaan."
+            }
+        },
+        "morph.skeleton": {
+            "description": "Ekstrak outline kerangka topologi gambar."
+        },
+        "histogram": {
+            "description": "Alat analisis histogram gambar."
+        },
+        "histogram.compare": {
+            "description": "Bandingkan kemiripan antara dua gambar menggunakan histogram.",
+            "arguments": {
+                "user1": "Avatar pengguna pertama.",
+                "user2": "Avatar pengguna kedua.",
+                "attachment1": "Gambar pertama.",
+                "attachment2": "Gambar kedua.",
+                "method": "Rumus jarak histogram (correl, chisqr, intersect, bhattacharyya)."
+            }
+        },
+        "histogram.cdf": {
+            "description": "Plot histogram Fungsi Distribusi Kumulatif (CDF).",
+            "arguments": {
+                "user": "Pengguna yang avatar-nya ingin dianalisis.",
+                "attachment": "File gambar yang ingin dianalisis."
+            }
+        },
+        "wavelet": {
+            "description": "Pemrosesan berbasis transformasi Wavelet."
+        },
+        "wavelet.decomp": {
+            "description": "Lakukan dekomposisi wavelet Haar 2D diskrit.",
+            "arguments": {
+                "user": "Pengguna yang avatar-nya ingin didekomposisi.",
+                "attachment": "File gambar yang ingin didekomposisi.",
+                "level": "Kedalaman rekursi dekomposisi (1-4)."
+            }
+        },
+        "wavelet.denoise": {
+            "description": "Denoise gambar menggunakan thresholding koefisien wavelet.",
+            "arguments": {
+                "user": "Pengguna yang avatar-nya ingin didenoise.",
+                "attachment": "File gambar yang ingin didenoise.",
+                "level": "Tingkat dekomposisi (1-4).",
+                "mode": "Jenis thresholding (hard, soft)."
+            }
+        },
+        "wavelet.compress": {
+            "description": "Kompres gambar dengan memotong detail wavelet frekuensi tinggi.",
+            "arguments": {
+                "user": "Pengguna yang avatar-nya ingin dikompres.",
+                "attachment": "File gambar yang ingin dikompres.",
+                "level": "Tingkat dekomposisi (1-4).",
+                "keep_ratio": "Fraksi koefisien yang ingin dipertahankan."
+            }
+        },
+        "stego": {
+            "description": "Alat Steganografi LSB."
+        },
+        "stego.hide": {
+            "description": "Sembunyikan pesan rahasia di dalam gambar menggunakan encoding LSB.",
+            "arguments": {
+                "message": "Pesan rahasia yang ingin disembunyikan.",
+                "user": "Avatar pengguna sebagai pembawa pesan.",
+                "attachment": "File gambar pembawa pesan."
+            }
+        },
+        "stego.reveal": {
+            "description": "Ekstrak dan decode pesan rahasia LSB dari gambar.",
+            "arguments": {
+                "user": "Avatar pengguna yang berisi pesan.",
+                "attachment": "File gambar pembawa yang berisi pesan."
+            }
+        },
+        "fourier": {
+            "description": "Filter domain frekuensi transformasi Fourier."
+        },
+        "fourier.lpf": {
+            "description": "Terapkan Low-Pass Filter (LPF) frekuensi untuk menghaluskan detail gambar.",
+            "arguments": {
+                "cutoff": "Radius ambang batas cutoff.",
+                "type": "Gaya filter Ideal, Butterworth, atau Gaussian.",
+                "order": "Kemiringan orde filter untuk Butterworth.",
+                "user": "Pengguna yang avatar-nya ingin difilter.",
+                "attachment": "File gambar yang ingin difilter."
+            }
+        },
+        "fourier.hpf": {
+            "description": "Terapkan High-Pass Filter (HPF) frekuensi untuk mengisolasi tepi gambar.",
+            "arguments": {
+                "cutoff": "Radius ambang batas cutoff.",
+                "type": "Gaya filter Ideal, Butterworth, atau Gaussian.",
+                "order": "Kemiringan orde filter untuk Butterworth.",
+                "user": "Pengguna yang avatar-nya ingin difilter.",
+                "attachment": "File gambar yang ingin difilter."
+            }
+        },
+        "fourier.homomorphic": {
+            "description": "Terapkan filter homomorphic untuk menyeimbangkan bayangan dan pencahayaan.",
+            "arguments": {
+                "gamma_l": "Gain frekuensi rendah.",
+                "gamma_h": "Gain frekuensi tinggi.",
+                "cutoff": "Radius ambang batas cutoff.",
+                "user": "Pengguna yang avatar-nya ingin difilter.",
+                "attachment": "File gambar yang ingin difilter."
+            }
+        }
     }
 }

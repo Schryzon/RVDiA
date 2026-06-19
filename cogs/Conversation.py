@@ -292,15 +292,14 @@ class Conversation(commands.Cog):
 
     @commands.hybrid_command(
         aliases=['ask', 'chatbot', 'tanya'],
-        description='Tanyakan atau perhintahkan aku untuk melakukan sesuatu!'
+        description='Ask me questions or command me to do something!'
     )
-    @app_commands.rename(message='pesan', attachment='lampiran')
-    @app_commands.describe(message='Apa yang ingin kamu tanyakan?', attachment='Lampirkan file (PDF, gambar, atau teks)')
+    @app_commands.describe(message='What do you want to ask?', attachment='Attach a file (PDF, image, or text)')
     @commands.cooldown(type=commands.BucketType.user, per=2, rate=1)
     @check_blacklist()
     async def chat(self, ctx: commands.Context, *, message: str = "", attachment: discord.Attachment = None):
         """
-        Tanyakan atau perhintahkan aku untuk melakukan sesuatu!
+        Ask me questions or command me to do something!
         """
         try:
             await ctx.defer()
@@ -399,27 +398,26 @@ class Conversation(commands.Cog):
             except discord.HTTPException as e:
                 if e.code == 50027 or e.status == 401:
                     return await ctx.send(embed=embed, view=regenerate_button)
-                raise e
 
     @commands.hybrid_group(
         name="memory",
         aliases=["memori", "history"],
-        description="Kelola memori chat-mu dengan RVDiA."
+        description="Manage your chat memories with RVDiA."
     )
     @check_blacklist()
     async def memory(self, ctx: commands.Context):
         """
-        Kelola memori chat-mu dengan RVDiA.
+        Manage your chat memories with RVDiA.
         """
         if ctx.invoked_subcommand is None:
             user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
             lang = user_settings.lang if user_settings else "en"
             await ctx.send(i18n.get(lang, "chat.memory_info_guide"))
 
-    @memory.command(name="clear", description="Hapus seluruh riwayat percakapanmu.")
+    @memory.command(name="clear", description="Clear your entire chat memory history.")
     async def memory_clear(self, ctx: commands.Context):
         """
-        Hapus seluruh riwayat percakapanmu.
+        Clear your entire chat memory history.
         """
         user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
         lang = user_settings.lang if user_settings else "en"
@@ -440,10 +438,10 @@ class Conversation(commands.Cog):
         
         await ctx.send(i18n.get(lang, "chat.memory_clear_prompt"), view=confirm_view)
 
-    @memory.command(name="manage", description="Pilih memori tertentu untuk dihapus.")
+    @memory.command(name="manage", description="Select specific memories to delete.")
     async def memory_manage(self, ctx: commands.Context):
         """
-        Pilih memori tertentu untuk dihapus.
+        Select specific memories to delete.
         """
         user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
         lang = user_settings.lang if user_settings else "en"
@@ -459,10 +457,10 @@ class Conversation(commands.Cog):
         view = MemoryManagerView(ctx.author.id, memories, lang=lang)
         await ctx.send(i18n.get(lang, "chat.memory_manage_list"), view=view)
 
-    @memory.command(name="persist", description="Pilih memori untuk disimpan selamanya atau dibiarkan hilang seiring waktu.")
+    @memory.command(name="persist", description="Select memories to keep permanently or let them wither over time.")
     async def memory_persist(self, ctx: commands.Context):
         """
-        Pilih memori untuk disimpan selamanya atau dibiarkan hilang seiring waktu.
+        Select memories to keep permanently or let them wither over time.
         """
         user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
         lang = user_settings.lang if user_settings else "en"
@@ -481,27 +479,27 @@ class Conversation(commands.Cog):
     @commands.hybrid_group(
         name="settings",
         aliases=["setelan", "config"],
-        description="Kelola pengaturan RVDiA."
+        description="Manage RVDiA settings."
     )
     @check_blacklist()
     async def settings(self, ctx: commands.Context):
         """
-        Kelola pengaturan RVDiA.
+        Manage RVDiA settings.
         """
         if ctx.invoked_subcommand is None:
             user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
             lang = user_settings.lang if user_settings else "en"
             await ctx.send(i18n.get(lang, "chat.settings_info_guide"))
 
-    @settings.command(name="language", description="Ubah bahasa chat antara Bahasa Indonesia dan English.")
-    @app_commands.describe(lang="Pilih bahasa / Select language")
+    @settings.command(name="language", description="Change chat language settings between Indonesian and English.")
+    @app_commands.describe(lang="Select your preferred language")
     @app_commands.choices(lang=[
         app_commands.Choice(name="Indonesia 🇮🇩", value="id"),
         app_commands.Choice(name="English 🇺🇸", value="en")
     ])
     async def settings_language(self, ctx: commands.Context, lang: str):
         """
-        Ubah bahasa chat.
+        Change chat language settings.
         """
         user_id = ctx.author.id
         await db.usersettings.upsert(
@@ -523,16 +521,16 @@ class Conversation(commands.Cog):
 
     @commands.hybrid_command(
         aliases=['create'],
-        description='Ciptakan sebuah karya seni anime menggunakan model MeinaMix V11!'
+        description='Generate anime artwork using the MeinaMix V11 model!'
     )
     @app_commands.describe(
-        prompt='Apa yang ingin diciptakan?',
-        aspect_ratio='Pilih rasio aspek gambar (Default: 1:1)',
-        steps='Jumlah langkah inferensi (Default: Balanced)',
-        cfg_scale='Seberapa ketat AI mengikuti prompt (Default: 7.0)',
-        scheduler='Metode sampling scheduler (Default: DPM++ 2M Karras)',
-        upscale='Perbesar resolusi gambar menggunakan Swin2SR 2x (Default: No)',
-        negative_prompt='Hal yang tidak ingin ada di gambar (Opsional)'
+        prompt='Prompt to describe what to generate',
+        aspect_ratio='Choose image aspect ratio (Default: 1:1)',
+        steps='Number of inference steps (Default: Balanced)',
+        cfg_scale='How closely the AI follows the prompt (Default: 7.0)',
+        scheduler='Sampling scheduler method (Default: DPM++ 2M Karras)',
+        upscale='Upscale resolution using Swin2SR 2x (Default: No)',
+        negative_prompt='What to exclude from the image (Optional)'
     )
     @app_commands.choices(
         aspect_ratio=[
@@ -580,7 +578,7 @@ class Conversation(commands.Cog):
         prompt: str
     ):
         """
-        Ciptakan sebuah karya seni anime menggunakan model MeinaMix V11!
+        Generate anime artwork using the MeinaMix V11 model!
         """
         import io
         import aiohttp
@@ -786,14 +784,14 @@ class Conversation(commands.Cog):
 
     @commands.hybrid_command(
         aliases=['edit', 'imageedit'],
-        description='Ciptakan variasi dari gambar yang diberikan!'
+        description='Create variations of the provided image!'
     )
-    @app_commands.describe(attachment='Lampirkan gambar!')
+    @app_commands.describe(attachment='Attach an image to modify')
     @commands.cooldown(type=commands.BucketType.default, per=60, rate=4)
     @check_blacklist()
     async def variation(self, ctx: commands.Context, attachment: discord.Attachment):
         """
-        Ciptakan variasi dari gambar yang diberikan!
+        Create variations of the provided image!
         """
         from scripts.main import disable_command
         return await disable_command(ctx)

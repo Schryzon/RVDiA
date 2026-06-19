@@ -108,7 +108,7 @@ class AppNav(View):
         self.index += 2
         await self.update(interaction)
 
-    @discord.ui.select(row=2, custom_id="pretty_help:select", placeholder="Tekan untuk memilih kategori!")
+    @discord.ui.select(row=2, custom_id="pretty_help:select", placeholder="Select a category...")
     async def select(self, interaction: discord.Interaction, select: Select):
         self.index = int(select.values[0])
         await self.update(interaction)

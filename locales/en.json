@@ -1036,12 +1036,695 @@
         "ending_note": "Type \"{help.clean_prefix}{help.invoked_with} (command)\" for detailed info.\nType \"{help.clean_prefix}{help.invoked_with} (group)\" for category info.",
         "command_not_found": "I couldn't find that command! Please check `/help` for available commands.",
         "category_conversation": "💬 Conversational Chat",
+        "category_conversation_description": "Special category for chatting with RVDiA.",
         "category_fun": "🎲 Fun & Games",
+        "category_fun_description": "Special commands for fun and games.",
         "category_game": "⚔️ Re:Volution RPG",
+        "category_game_description": "Play Re:Volution RPG ~ The Dream World!",
         "category_general": "📁 General Utilities",
+        "category_general_description": "General purpose commands and server utilities.",
         "category_image": "🎨 Image Processing",
+        "category_image_description": "A collection of image processing and avatar tools.",
         "category_moderation": "🛡️ Moderation Tools",
+        "category_moderation_description": "Tools for managing and moderating your server.",
         "category_roleplay": "🎭 Interaction & Roleplay",
-        "category_event": "⭐ Active Event"
+        "category_roleplay_description": "User interaction and roleplay commands.",
+        "category_event": "⭐ Active Event",
+        "category_event_description": "Active server events and mini-games.",
+        "category_no_category_description": "Commands that do not belong to any specific category."
+    },
+    "commands": {
+        "chat": {
+            "description": "Ask me questions or command me to do something!",
+            "arguments": {
+                "message": "What do you want to ask?",
+                "attachment": "Attach a file (PDF, image, or text)"
+            }
+        },
+        "memory": {
+            "description": "Manage your chat memories with RVDiA."
+        },
+        "memory.clear": {
+            "description": "Clear your entire chat memory history."
+        },
+        "memory.manage": {
+            "description": "Select specific memories to delete."
+        },
+        "memory.persist": {
+            "description": "Select memories to keep permanently or let them wither over time."
+        },
+        "settings": {
+            "description": "Manage RVDiA settings."
+        },
+        "settings.language": {
+            "description": "Change chat language settings between Indonesian and English.",
+            "arguments": {
+                "lang": "Select your preferred language"
+            }
+        },
+        "generate": {
+            "description": "Generate anime artwork using the MeinaMix V11 model!",
+            "arguments": {
+                "prompt": "Prompt to describe what to generate",
+                "aspect_ratio": "Choose image aspect ratio (Default: 1:1)",
+                "steps": "Number of inference steps (Default: Balanced)",
+                "cfg_scale": "How closely the AI follows the prompt (Default: 7.0)",
+                "scheduler": "Sampling scheduler method (Default: DPM++ 2M Karras)",
+                "upscale": "Upscale resolution using Swin2SR 2x (Default: No)",
+                "negative_prompt": "What to exclude from the image (Optional)"
+            }
+        },
+        "variation": {
+            "description": "Create variations of the provided image!",
+            "arguments": {
+                "attachment": "Attach an image to modify"
+            }
+        },
+        "ship": {
+            "description": "Match/ship two people together and check their love compatibility!",
+            "arguments": {
+                "member1": "First person to ship",
+                "member2": "Second person to ship"
+            }
+        },
+        "roleplay.hug": {
+            "description": "Hug someone!",
+            "arguments": {
+                "user": "Who do you want to hug?"
+            }
+        },
+        "roleplay.kiss": {
+            "description": "Kiss someone!",
+            "arguments": {
+                "user": "Who do you want to kiss?"
+            }
+        },
+        "roleplay.slap": {
+            "description": "Slap someone!",
+            "arguments": {
+                "user": "Who do you want to slap?"
+            }
+        },
+        "roleplay.laugh": {
+            "description": "Express your laughter!"
+        },
+        "roleplay.happy": {
+            "description": "Express your happiness!"
+        },
+        "roleplay.think": {
+            "description": "Express your thinking!"
+        },
+        "roleplay.blush": {
+            "description": "Express your blushing!"
+        },
+        "roleplay.cry": {
+            "description": "Express your sadness!"
+        },
+        "roleplay.agree": {
+            "description": "Express your agreement!"
+        },
+        "roleplay.pat": {
+            "description": "Pat someone on the head!",
+            "arguments": {
+                "user": "Who do you want to pat?"
+            }
+        },
+        "roleplay.bored": {
+            "description": "Express your boredom!"
+        },
+        "server": {
+            "description": "Server information commands."
+        },
+        "server.info": {
+            "description": "View info about this server!"
+        },
+        "server.icon": {
+            "description": "Display the icon of this server."
+        },
+        "invite": {
+            "description": "Invite link management commands."
+        },
+        "invite.create": {
+            "description": "Create an instant invite link!",
+            "arguments": {
+                "expire": "How long before this invite link expires? (seconds, default: never)",
+                "max_use": "Max number of people who can use this invite? (default: unlimited)"
+            }
+        },
+        "invite.view": {
+            "description": "View the list of invite links for this server!"
+        },
+        "warn": {
+            "description": "Warning system commands."
+        },
+        "warn.add": {
+            "description": "Issue a warning to a member in this server.",
+            "arguments": {
+                "member": "The user who violated rules",
+                "reason": "Reason for the warning"
+            }
+        },
+        "warn.history": {
+            "description": "View warning history of a member in this server.",
+            "arguments": {
+                "member": "The member to query"
+            }
+        },
+        "warn.remove": {
+            "description": "Clear all warnings for a member.",
+            "arguments": {
+                "member": "The member whose warnings will be cleared"
+            }
+        },
+        "warn.list": {
+            "description": "List all users with warnings in this server."
+        },
+        "ultban": {
+            "description": "Ban a user from the server, even if they are not currently in it.",
+            "arguments": {
+                "user": "User to ban (ID or name#tag)",
+                "reason": "Reason for the ban"
+            }
+        },
+        "unban": {
+            "description": "Unban a previously banned user.",
+            "arguments": {
+                "user": "User to unban (ID or name#tag)"
+            }
+        },
+        "clear": {
+            "description": "Bulk delete messages in a channel.",
+            "arguments": {
+                "amount": "Number of messages to delete",
+                "channel": "Target channel to clear (defaults to current channel)"
+            }
+        },
+        "rvdia": {
+            "description": "Special commands for RVDiA."
+        },
+        "rvdia.about": {
+            "description": "Shows everything about me!"
+        },
+        "rvdia.ping": {
+            "description": "Shows the latency to the Discord API."
+        },
+        "user": {
+            "description": "Commands for checking user information."
+        },
+        "user.avatar": {
+            "description": "Shows the avatar of a Discord user.",
+            "arguments": {
+                "global_user": "User whose profile picture you want to view"
+            }
+        },
+        "user.info": {
+            "description": "View information about someone in this server.",
+            "arguments": {
+                "member": "Who do you want to check?"
+            }
+        },
+        "say": {
+            "description": "Repeats whatever you say!",
+            "arguments": {
+                "teks": "What do you want me to say?",
+                "attachment": "Attach an image, if you want."
+            }
+        },
+        "weather": {
+            "description": "Check the weather in a city or area!",
+            "arguments": {
+                "location": "City or area to search weather for"
+            }
+        },
+        "time": {
+            "description": "Check the current time in a city or area!",
+            "arguments": {
+                "location": "City or area to search time for"
+            }
+        },
+        "hex": {
+            "description": "Show the color of a hexadecimal value.",
+            "arguments": {
+                "hex": "Hexadecimal code (e.g. FF0000)."
+            }
+        },
+        "rgb": {
+            "description": "Show the color of an RGB value.",
+            "arguments": {
+                "red": "Red value (0 - 255)",
+                "green": "Green value (0 - 255)",
+                "blue": "Blue value (0 - 255)"
+            }
+        },
+        "google": {
+            "description": "Search the web using DuckDuckGo.",
+            "arguments": {
+                "query": "Search keyword"
+            }
+        },
+        "support": {
+            "description": "Commands to get help or submit suggestions."
+        },
+        "support.guild": {
+            "description": "Send the link to my support server!"
+        },
+        "support.donate": {
+            "description": "Support RVDiA via Saweria!"
+        },
+        "support.suggest": {
+            "description": "Give me suggestions for improvements or new features!",
+            "arguments": {
+                "text": "What do you want to say?",
+                "attachment": "Is there an example image? (Optional)"
+            }
+        },
+        "game": {
+            "description": "Re:Volution RPG ~ The Dream World profile."
+        },
+        "game.register": {
+            "description": "Register yourself to Re:Volution RPG!",
+            "arguments": {
+                "name": "Your dream character name."
+            }
+        },
+        "game.leaderboard": {
+            "description": "View the strongest players leaderboard!"
+        },
+        "game.guide": {
+            "description": "View the Re:Volution gameplay guidebook."
+        },
+        "game.changelog": {
+            "description": "View the latest update changelog for Re:Volution."
+        },
+        "game.resign": {
+            "description": "Delete your Re:Volution RPG account."
+        },
+        "game.daily": {
+            "description": "Claim your daily check-in rewards!"
+        },
+        "game.profile": {
+            "description": "View your RPG profile or check another player's profile.",
+            "arguments": {
+                "user": "The user whose profile you want to check."
+            }
+        },
+        "game.fix_account": {
+            "description": "Fix your account data structure profile."
+        },
+        "game.shop": {
+            "description": "Buy items, potions, or combat gear from the shop!"
+        },
+        "game.adventure": {
+            "description": "Explore the dream world and fight random monsters!"
+        },
+        "game.fight": {
+            "description": "Challenge another player to a live duel!",
+            "arguments": {
+                "member": "The player you want to fight."
+            }
+        },
+        "game.battle": {
+            "description": "Battle boss monsters or enemies in Re:Volution!",
+            "arguments": {
+                "enemy_tier": "The tier level of the enemy you want to fight.",
+                "enemy_name": "The specific name of the enemy to fight."
+            }
+        },
+        "game.enemies": {
+            "description": "List all enemies and boss tiers appearing in Re:Volution."
+        },
+        "game.transfer": {
+            "description": "Request account data transfer to a new Discord account.",
+            "arguments": {
+                "old_acc": "Your old Discord account ID or mention.",
+                "reason": "Reason for the transfer request."
+            }
+        },
+        "game.guess": {
+            "description": "Play a number guessing game with RVDiA!",
+            "arguments": {
+                "level": "Select difficulty level."
+            }
+        },
+        "game.use": {
+            "description": "Use items or consume potions from your inventory.",
+            "arguments": {
+                "type": "The item type/name you want to use."
+            }
+        },
+        "guild": {
+            "description": "Re:Volution Guild System commands."
+        },
+        "guild.create": {
+            "description": "Create your own dream guild!",
+            "arguments": {
+                "name": "Your dream guild name"
+            }
+        },
+        "guild.edit": {
+            "description": "Edit your guild settings."
+        },
+        "guild.invite": {
+            "description": "Invite a player to join your guild.",
+            "arguments": {
+                "user": "The player you want to invite."
+            }
+        },
+        "guild.icon": {
+            "description": "Set or view your guild's icon.",
+            "arguments": {
+                "url": "Image URL for the new guild icon."
+            }
+        },
+        "premium": {
+            "description": "Premium feature commands."
+        },
+        "premium.claim": {
+            "description": "Claim your premium benefits by uploading payment proof.",
+            "arguments": {
+                "bukti": "Attachment of Saweria donation screenshot."
+            }
+        },
+        "approve_premium": {
+            "description": "[ADMIN] Approve premium claim requests.",
+            "arguments": {
+                "user": "The user to approve."
+            }
+        },
+        "image": {
+            "description": "Image processing commands."
+        },
+        "image.gpu": {
+            "description": "Check GPU acceleration status."
+        },
+        "image.search": {
+            "description": "Search images on the web with result pagination.",
+            "arguments": {
+                "query": "The keyword to search for."
+            }
+        },
+        "image.grayscale": {
+            "description": "Convert image to grayscale (black and white).",
+            "arguments": {
+                "user": "User whose avatar you want to edit.",
+                "attachment": "Image file to edit."
+            }
+        },
+        "image.invert": {
+            "description": "Invert image colors.",
+            "arguments": {
+                "user": "User whose avatar you want to edit.",
+                "attachment": "Image file to edit."
+            }
+        },
+        "image.circle": {
+            "description": "Crop image into a circular shape.",
+            "arguments": {
+                "user": "User whose avatar you want to edit.",
+                "attachment": "Image file to edit."
+            }
+        },
+        "image.blur": {
+            "description": "Apply a blur filter to the image.",
+            "arguments": {
+                "user": "User whose avatar you want to edit.",
+                "attachment": "Image file to edit.",
+                "strength": "Blur strength kernel size."
+            }
+        },
+        "image.sharpen": {
+            "description": "Sharpen details in the image.",
+            "arguments": {
+                "user": "User whose avatar you want to edit.",
+                "attachment": "Image file to edit."
+            }
+        },
+        "image.flip": {
+            "description": "Flip the image horizontally or vertically.",
+            "arguments": {
+                "user": "User whose avatar you want to edit.",
+                "attachment": "Image file to edit.",
+                "axis": "Horizontal or vertical flip direction."
+            }
+        },
+        "image.rotate": {
+            "description": "Rotate the image by a specific angle.",
+            "arguments": {
+                "user": "User whose avatar you want to edit.",
+                "attachment": "Image file to edit.",
+                "angle": "Rotation angle in degrees.",
+                "direction": "Clockwise (cw) or counter-clockwise (ccw)."
+            }
+        },
+        "image.adjust": {
+            "description": "Adjust brightness and contrast of the image.",
+            "arguments": {
+                "user": "User whose avatar you want to edit.",
+                "attachment": "Image file to edit.",
+                "brightness": "Brightness multiplier factor.",
+                "contrast": "Contrast factor adjustment."
+            }
+        },
+        "image.edge": {
+            "description": "Perform edge detection filters.",
+            "arguments": {
+                "user": "User whose avatar you want to edit.",
+                "attachment": "Image file to edit.",
+                "method": "Edge detection operator (canny, sobel, laplacian, etc.)."
+            }
+        },
+        "image.noise": {
+            "description": "Add artificial noise to the image.",
+            "arguments": {
+                "user": "User whose avatar you want to edit.",
+                "attachment": "Image file to edit.",
+                "type": "Noise type (salt_pepper, gaussian, poisson)."
+            }
+        },
+        "image.equalize": {
+            "description": "Apply histogram equalization to normalize exposure.",
+            "arguments": {
+                "user": "User whose avatar you want to edit.",
+                "attachment": "Image file to edit.",
+                "method": "Equalization method (global, clahe, adaptive)."
+            }
+        },
+        "image.emboss": {
+            "description": "Apply a 3D emboss filter.",
+            "arguments": {
+                "user": "User whose avatar you want to edit.",
+                "attachment": "Image file to edit."
+            }
+        },
+        "image.sepia": {
+            "description": "Apply a warm sepia tone filter.",
+            "arguments": {
+                "user": "User whose avatar you want to edit.",
+                "attachment": "Image file to edit."
+            }
+        },
+        "image.pixelate": {
+            "description": "Pixelate the image to create a retro blocky effect.",
+            "arguments": {
+                "user": "User whose avatar you want to edit.",
+                "attachment": "Image file to edit.",
+                "pixel_size": "Dimension of pixel blocks."
+            }
+        },
+        "image.vignette": {
+            "description": "Apply a vignette shading filter around borders.",
+            "arguments": {
+                "user": "User whose avatar you want to edit.",
+                "attachment": "Image file to edit.",
+                "sigma": "Radius of the vignette center."
+            }
+        },
+        "image.gamma": {
+            "description": "Apply gamma correction filter.",
+            "arguments": {
+                "user": "User whose avatar you want to edit.",
+                "attachment": "Image file to edit.",
+                "gamma": "Gamma correction factor."
+            }
+        },
+        "image.log": {
+            "description": "Apply logarithmic dynamic range transform.",
+            "arguments": {
+                "user": "User whose avatar you want to edit.",
+                "attachment": "Image file to edit."
+            }
+        },
+        "image.blend": {
+            "description": "Blend two images together.",
+            "arguments": {
+                "user1": "First user avatar source.",
+                "user2": "Second user avatar source.",
+                "attachment1": "First source image.",
+                "attachment2": "Second source image.",
+                "alpha": "Transparency ratio of the overlay (0.0 to 1.0)."
+            }
+        },
+        "image.threshold": {
+            "description": "Apply threshold binarization to image.",
+            "arguments": {
+                "user": "User whose avatar you want to edit.",
+                "attachment": "Image file to edit.",
+                "threshold_value": "Binarization split cutoff value (0-255).",
+                "method": "Binarization style (binary, otsu)."
+            }
+        },
+        "image.autocrop": {
+            "description": "Auto-crop solid borders from the image.",
+            "arguments": {
+                "user": "User whose avatar you want to edit.",
+                "attachment": "Image file to edit.",
+                "tolerance": "Color difference match tolerance."
+            }
+        },
+        "image.composite": {
+            "description": "Blend two images using masking overlays.",
+            "arguments": {
+                "user1": "Background user source.",
+                "user2": "Overlay user source.",
+                "attachment1": "Background image.",
+                "attachment2": "Overlay image.",
+                "mode": "Blending mode formula.",
+                "match_mode": "Dimension fitting option (resize, crop, pad)."
+            }
+        },
+        "image.concat": {
+            "description": "Concatenate two images side-by-side or stacked.",
+            "arguments": {
+                "user1": "First source user.",
+                "user2": "Second source user.",
+                "attachment1": "Left/Top image.",
+                "attachment2": "Right/Bottom image.",
+                "axis": "Join direction axis (horizontal or vertical)."
+            }
+        },
+        "morph": {
+            "description": "Mathematical morphology operations."
+        },
+        "morph.erode": {
+            "description": "Erode structure boundaries in the image.",
+            "arguments": {
+                "user": "User whose avatar you want to edit.",
+                "attachment": "Image file to edit.",
+                "iterations": "Repeat cycles.",
+                "kernel_size": "Neighborhood filter window size."
+            }
+        },
+        "morph.dilate": {
+            "description": "Dilate structure boundaries in the image.",
+            "arguments": {
+                "user": "User whose avatar you want to edit.",
+                "attachment": "Image file to edit.",
+                "iterations": "Repeat cycles.",
+                "kernel_size": "Neighborhood filter window size."
+            }
+        },
+        "morph.skeleton": {
+            "description": "Extract image topological skeleton outlines."
+        },
+        "histogram": {
+            "description": "Image histogram analysis tools."
+        },
+        "histogram.compare": {
+            "description": "Compare similarity between two images using histograms.",
+            "arguments": {
+                "user1": "First user avatar.",
+                "user2": "Second user avatar.",
+                "attachment1": "First image.",
+                "attachment2": "Second image.",
+                "method": "Histogram distance formula (correl, chisqr, intersect, bhattacharyya)."
+            }
+        },
+        "histogram.cdf": {
+            "description": "Plot the Cumulative Distribution Function (CDF) histogram.",
+            "arguments": {
+                "user": "User whose avatar you want to analyze.",
+                "attachment": "Image file to analyze."
+            }
+        },
+        "wavelet": {
+            "description": "Wavelet transform processing."
+        },
+        "wavelet.decomp": {
+            "description": "Perform Haar 2D discrete wavelet decomposition.",
+            "arguments": {
+                "user": "User whose avatar you want to decompose.",
+                "attachment": "Image file to decompose.",
+                "level": "Decomposition recursion depth (1-4)."
+            }
+        },
+        "wavelet.denoise": {
+            "description": "Denoise image using wavelet coefficient thresholding.",
+            "arguments": {
+                "user": "User whose avatar you want to denoise.",
+                "attachment": "Image file to denoise.",
+                "level": "Decomposition levels (1-4).",
+                "mode": "Thresholding type (hard, soft)."
+            }
+        },
+        "wavelet.compress": {
+            "description": "Compress image by pruning high-frequency wavelet details.",
+            "arguments": {
+                "user": "User whose avatar you want to compress.",
+                "attachment": "Image file to compress.",
+                "level": "Decomposition levels (1-4).",
+                "keep_ratio": "Fraction of coefficients to preserve."
+            }
+        },
+        "stego": {
+            "description": "LSB Steganography tools."
+        },
+        "stego.hide": {
+            "description": "Hide a secret message inside an image using LSB encoding.",
+            "arguments": {
+                "message": "Secret payload string to hide.",
+                "user": "User avatar source to carry payload.",
+                "attachment": "Carrier image file."
+            }
+        },
+        "stego.reveal": {
+            "description": "Extract and decode secret LSB payloads hidden in images.",
+            "arguments": {
+                "user": "User avatar containing payload.",
+                "attachment": "Carrier image file containing payload."
+            }
+        },
+        "fourier": {
+            "description": "Fourier transform frequency filters."
+        },
+        "fourier.lpf": {
+            "description": "Apply frequency low-pass filter (LPF) to smooth image details.",
+            "arguments": {
+                "cutoff": "Cutoff threshold radius.",
+                "type": "Ideal, Butterworth, or Gaussian filtering style.",
+                "order": "Filter order slope for Butterworth.",
+                "user": "User whose avatar you want to filter.",
+                "attachment": "Image file to filter."
+            }
+        },
+        "fourier.hpf": {
+            "description": "Apply frequency high-pass filter (HPF) to isolate edges.",
+            "arguments": {
+                "cutoff": "Cutoff threshold radius.",
+                "type": "Ideal, Butterworth, or Gaussian filtering style.",
+                "order": "Filter order slope for Butterworth.",
+                "user": "User whose avatar you want to filter.",
+                "attachment": "Image file to filter."
+            }
+        },
+        "fourier.homomorphic": {
+            "description": "Apply homomorphic filtering to balance shading and illumination.",
+            "arguments": {
+                "gamma_l": "Low frequency gains.",
+                "gamma_h": "High frequency gains.",
+                "cutoff": "Cutoff threshold radius.",
+                "user": "User whose avatar you want to filter.",
+                "attachment": "Image file to filter."
+            }
+        }
     }
 }

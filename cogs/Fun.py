@@ -15,15 +15,14 @@ class Fun(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
                
-    @commands.hybrid_command(aliases=['jodohkan', 'jodoh'], description="Jodohkan seseorang denganmu atau orang lain!")
-    @app_commands.rename(member1='pengguna_1', member2='pengguna_2')
-    @app_commands.describe(member1='Siapa yang nembak nih?', member2='Siapa pasangannya?')
+    @commands.hybrid_command(aliases=['jodohkan', 'jodoh'], description="Match/ship two people together and check their love compatibility!")
+    @app_commands.describe(member1='First person to ship', member2='Second person to ship')
     @commands.cooldown(1, 5, commands.BucketType.user)
     @has_voted()
     @check_blacklist()
     async def ship(self, ctx:commands.Context, member1: discord.Member, member2:discord.Member):
         """
-        Jodohkan seorang teman atau orang lain dengan pengguna lainnya!
+        Match/ship two people together and check their love compatibility!
         """
         async with ctx.typing():
             user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})

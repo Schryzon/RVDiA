@@ -7,7 +7,7 @@ from scripts.utils.i18n import i18n
 
 class Moderation(commands.Cog):
     """
-    Command untuk moderasi server.
+    Commands for server moderation.
     """
 
     def __init__(self, bot):
@@ -17,16 +17,16 @@ class Moderation(commands.Cog):
     @check_blacklist()
     async def server(self, ctx:commands.Context) -> None:
         """
-        Kumpulan command mengenai server ini.
+        Server information commands.
         """
         await self.info(ctx)
         pass
 
-    @server.command(description='Lihat info server ini!')
+    @server.command(description='View info about this server!')
     @check_blacklist()
     async def info(self, ctx:commands.Context):
         """
-        Lihat info server ini!
+        View info about this server!
         """
         async with ctx.typing():
             user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
@@ -46,11 +46,11 @@ class Moderation(commands.Cog):
             embed.set_footer(text=f"ID: {ctx.guild.id}", icon_url=guild_icon)
             await ctx.reply(embed=embed)
 
-    @server.command(description="Memperlihatkan gambar icon server ini.")
+    @server.command(description="Display the icon of this server.")
     @check_blacklist()
     async def icon(self, ctx:commands.Context):
         """
-        Memperlihatkan gambar icon server ini.
+        Display the icon of this server.
         """
         async with ctx.typing():
             user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
@@ -83,22 +83,21 @@ class Moderation(commands.Cog):
     @check_blacklist()
     async def invite(self, ctx:commands.Context) -> None:
         """
-        Kumpulan command menyangkut invite server.
+        Invite link management commands.
         """
         await self.invites(ctx)
         pass
 
-    @invite.command(name='create', description='Buat invite instan!')
+    @invite.command(name='create', description='Create an instant invite link!')
     @commands.bot_has_permissions(manage_guild=True)
     @app_commands.describe(
-        expire = 'Berapa lama invite ini akan kadaluwarsa? (dalam detik, default: tak hingga)',
-        max_use = 'Berapa banyak orang yang bisa join lewat invite ini? (default: tak hingga)'
+        expire = 'How long before this invite link expires? (seconds, default: never)',
+        max_use = 'Max number of people who can use this invite? (default: unlimited)'
         )
-    @app_commands.rename(max_use = 'maksimal_pengguna')
     @check_blacklist()
     async def create(self, ctx:commands.Context, expire:int=0, max_use:int=0):
         """
-        Buat invite instan!
+        Create an instant invite link!
         """
         user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
         lang = user_settings.lang if user_settings else "en"
@@ -112,12 +111,12 @@ class Moderation(commands.Cog):
         msg = i18n.get(lang, "moderation.invite_created", url=str(created_invite))
         await ctx.reply(msg)
 
-    @invite.command(name='view', description = 'Lihat daftar invite server ini!')
+    @invite.command(name='view', description='View the list of invite links for this server!')
     @commands.bot_has_permissions(manage_guild=True)
     @check_blacklist()
     async def invites(self, ctx:commands.Context):
         """
-        Lihat daftar invite server ini!
+        View the list of invite links for this server!
         """
         user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
         lang = user_settings.lang if user_settings else "en"
@@ -153,27 +152,23 @@ class Moderation(commands.Cog):
     @check_blacklist()
     async def warn(self, ctx:commands.Context, member:discord.Member, *, reason = None):
         """
-        Kumpulan command berkaitan dengan pemberian pelanggaran.
+        Warning system commands.
         """
         await self.warn_add(ctx, member, reason=reason)
         
     @warn.command(
         name = 'add',
-        description="Memberikan pelanggaran kepada pengguna. (Harus berada di server ini)"
+        description="Issue a warning to a member in this server."
         )
     @app_commands.describe(
-        member = 'Pengguna yang melanggar',
-        reason = 'Mengapa memberikan pelanggaran?'
-    )
-    @app_commands.rename(
-        member='pengguna',
-        reason='alasan'
+        member = 'The user who violated rules',
+        reason = 'Reason for the warning'
     )
     @commands.has_permissions(manage_messages= True)
     @check_blacklist()
     async def warn_add(self, ctx:commands.Context, member:discord.Member, *, reason = None):
         """
-        Memberikan pelanggaran kepada pengguna.
+        Issue a warning to a member.
         """
         user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
         lang = user_settings.lang if user_settings else "en"
@@ -212,16 +207,17 @@ class Moderation(commands.Cog):
 
     @warn.command(
         name='history',
-        description="Lihat riwayat pelanggaran pengguna di server ini.",
+        description="View warning history of a member in this server.",
     )
     @app_commands.describe(
-        member = 'Pengguna di server ini.'
+        member = 'The member to query'
     )
-    @app_commands.rename(member = 'pengguna')
     @commands.has_permissions(manage_messages = True)
     @check_blacklist()
     async def warnhistory(self, ctx:commands.Context, member:discord.Member=None):
-            """Lihat riwayat pelanggaran pengguna."""
+            """
+            View warning history of a member.
+            """
             member = member or ctx.author
             user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
             lang = user_settings.lang if user_settings else "en"
@@ -250,18 +246,15 @@ class Moderation(commands.Cog):
             emb.set_thumbnail(url = member.display_avatar.url)
             await ctx.reply(embed = emb)
 
-    @warn.command(name='remove', description="Menghilangkan segala data pelanggaran pengguna.")
+    @warn.command(name='remove', description="Clear all warnings for a member.")
     @commands.has_permissions(manage_messages=True)
     @app_commands.describe(
-        member = 'Pengguna yang ingin dihilangkan riwayat pelanggarannya.'
-    )
-    @app_commands.rename(
-        member = 'pengguna'
+        member = 'The member whose warnings will be cleared'
     )
     @check_blacklist()
     async def removewarn(self, ctx:commands.Context, member:discord.Member):
         """
-        Menghilangkan segala data pelanggaran pengguna.
+        Clear all warnings for a member.
         """
         user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
         lang = user_settings.lang if user_settings else "en"
@@ -278,12 +271,12 @@ class Moderation(commands.Cog):
         success_msg = i18n.get(lang, "moderation.warn_remove_success", member=member.mention)
         await ctx.reply(success_msg)
 
-    @warn.command(name='list', description = 'Memperlihatkan semua pengguna yang memiliki pelanggaran di server ini.')
+    @warn.command(name='list', description="List all users with warnings in this server.")
     @commands.has_permissions(manage_messages=True)
     @check_blacklist()
     async def warnlist(self, ctx:commands.Context):
         """
-        Memperlihatkan semua pengguna yang memiliki pelanggaran di server ini.
+        List all users with warnings in this server.
         """
         user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
         lang = user_settings.lang if user_settings else "en"
@@ -312,21 +305,17 @@ class Moderation(commands.Cog):
         embed.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else getenv('normalpfp'))
         await ctx.reply(embed=embed)
 
-    @commands.hybrid_command(name='ultban', description="Ban pengguna dari server, walaupun dia di luar server ini.")
+    @commands.hybrid_command(name='ultban', description="Ban a user from the server, even if they are not currently in it.")
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
     @app_commands.describe(
-        user = 'Pengguna yang ingin diban (Support ID & name#tag)',
-        reason = 'Alasan mengapa diban?'
-    )
-    @app_commands.rename(
-        user = 'pengguna',
-        reason = 'alasan'
+        user = 'User to ban (ID or name#tag)',
+        reason = 'Reason for the ban'
     )
     @check_blacklist()
     async def ultban(self, ctx:commands.Context, user:discord.User, *, reason = None):
         """
-        Ban pengguna dari server
+        Ban a user from the server.
         """
         user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
         lang = user_settings.lang if user_settings else "en"
@@ -345,19 +334,16 @@ class Moderation(commands.Cog):
         embed.set_footer(text=footer_txt, icon_url=ctx.author.display_avatar.url)
         await ctx.reply(embed = embed)
 
-    @commands.hybrid_command(description="Unban seseorang yang telah diban sebelumnya.")
+    @commands.hybrid_command(description="Unban a previously banned user.")
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
     @app_commands.describe(
-        user = 'Pengguna yang ingin di unban (Support ID & name#tag)'
-    )
-    @app_commands.rename(
-        user = 'pengguna'
+        user = 'User to unban (ID or name#tag)'
     )
     @check_blacklist()
     async def unban(self, ctx:commands.Context, user: discord.User):
         """
-        Unban pengguna yang telah diban.
+        Unban a previously banned user.
         """
         async with ctx.typing():
             user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
@@ -372,20 +358,17 @@ class Moderation(commands.Cog):
                 return
 
     @commands.hybrid_command(aliases = ['clean', 'purge', 'delete', 'hapus'], 
-                      description="Menghilangkan pesan berdasarkan jumlah yang diinginkan.")
+                      description="Bulk delete messages in a channel.")
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
     @app_commands.describe(
-        amount = 'Jumlah pesan yang ingin dihapus?',
-        channel = 'Channel manakah yang ingin dihapus pesannya?'
-    )
-    @app_commands.rename(
-        amount = 'jumlah'
+        amount = 'Number of messages to delete',
+        channel = 'Target channel to clear (defaults to current channel)'
     )
     @check_blacklist()
     async def clear(self, ctx:commands.Context, amount:int, channel:discord.TextChannel = None):
         """
-        Menghilangkan pesan berdasarkan jumlah yang diinginkan.
+        Bulk delete messages in a channel.
         """
         user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
         lang = user_settings.lang if user_settings else "en"

@@ -12,7 +12,7 @@ from scripts.utils.i18n import i18n
 
 class Roleplay(commands.GroupCog, group_name = 'roleplay'):
     """
-    Kumpulan command interaksi antar pengguna.
+    User interaction commands (hug, kiss, slap, etc.).
     """
     def __init__(self, bot:commands.AutoShardedBot):
         self.bot=bot
@@ -49,140 +49,136 @@ class Roleplay(commands.GroupCog, group_name = 'roleplay'):
         embed.set_footer(text=f'Source: {source}')
         await interaction.followup.send(embed=embed)
 
-    @app_commands.command(description='Peluk seseorang!')
-    @app_commands.describe(user='Siapa yang ingin kamu peluk?')
-    @app_commands.rename(user='pengguna')
+    @app_commands.command(description='Hug someone!')
+    @app_commands.describe(user='Who do you want to hug?')
     @has_voted()
     @check_blacklist()
     async def hug(self, interaction:discord.Interaction, *, user:discord.Member):
         """
-        Peluk seseorang!
+        Hug someone!
         """
         get_request = await self.nekos_get('hug')
         gif_url = get_request[0]
         anime_name = get_request[1]
         return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'roleplay.action_hug', user)
     
-    @app_commands.command(description='Cium seseorang!')
-    @app_commands.describe(user='Siapa yang ingin kamu cium?')
-    @app_commands.rename(user='pengguna')
+    @app_commands.command(description='Kiss someone!')
+    @app_commands.describe(user='Who do you want to kiss?')
     @has_voted()
     @check_blacklist()
     async def kiss(self, interaction:discord.Interaction, *, user:discord.Member):
         """
-        Cium seseorang!
+        Kiss someone!
         """
         get_request = await self.nekos_get('kiss')
         gif_url = get_request[0]
         anime_name = get_request[1]
         return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'roleplay.action_kiss', user)
     
-    @app_commands.command(description='Tampar seseorang!')
-    @app_commands.describe(user='Siapa yang ingin kamu tampar?')
-    @app_commands.rename(user='pengguna')
+    @app_commands.command(description='Slap someone!')
+    @app_commands.describe(user='Who do you want to slap?')
     @has_voted()
     @check_blacklist()
     async def slap(self, interaction:discord.Interaction, *, user:discord.Member):
         """
-        Tampar seseorang!
+        Slap someone!
         """
         get_request = await self.nekos_get('slap')
         gif_url = get_request[0]
         anime_name = get_request[1]
         return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'roleplay.action_slap', user)
     
-    @app_commands.command(description='Ungkapkan ekspresi tertawamu!')
+    @app_commands.command(description='Express your laughter!')
     @has_voted()
     @check_blacklist()
     async def laugh(self, interaction:discord.Interaction):
         """
-        Ungkapkan ekspresi tertawamu!
+        Express your laughter!
         """
         get_request = await self.nekos_get('laugh')
         gif_url = get_request[0]
         anime_name = get_request[1]
         return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'roleplay.action_laugh')
     
-    @app_commands.command(description='Ungkapkan ekspresi bahagiamu!')
+    @app_commands.command(description='Express your happiness!')
     @has_voted()
     @check_blacklist()
     async def happy(self, interaction:discord.Interaction):
         """
-        Ungkapkan ekspresi bahagiamu!
+        Express your happiness!
         """
         get_request = await self.nekos_get('happy')
         gif_url = get_request[0]
         anime_name = get_request[1]
         return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'roleplay.action_happy')
     
-    @app_commands.command(description='Ungkapkan ekspresi berpikirmu!')
+    @app_commands.command(description='Express your thinking!')
     @has_voted()
     @check_blacklist()
     async def think(self, interaction:discord.Interaction):
         """
-        Ungkapkan ekspresi berpikirmu!
+        Express your thinking!
         """
         get_request = await self.nekos_get('think')
         gif_url = get_request[0]
         anime_name = get_request[1]
         return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'roleplay.action_think')
     
-    @app_commands.command(description='Ungkapkan ekspresi malumu!')
+    @app_commands.command(description='Express your blushing!')
     @has_voted()
     @check_blacklist()
     async def blush(self, interaction:discord.Interaction):
         """
-        Ungkapkan ekspresi malumu!
+        Express your blushing!
         """
         get_request = await self.nekos_get('blush')
         gif_url = get_request[0]
         anime_name = get_request[1]
         return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'roleplay.action_blush')
     
-    @app_commands.command(description='Ungkapkan ekspresi sedihmu!')
+    @app_commands.command(description='Express your sadness!')
     @has_voted()
     @check_blacklist()
     async def cry(self, interaction:discord.Interaction):
         """
-        Ungkapkan ekspresi sedihmu!
+        Express your sadness!
         """
         get_request = await self.nekos_get('cry')
         gif_url = get_request[0]
         anime_name = get_request[1]
         return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'roleplay.action_cry')
 
-    @app_commands.command(description='Ungkapkan ekspresi setujumu!')
+    @app_commands.command(description='Express your agreement!')
     @has_voted()
     @check_blacklist()
     async def agree(self, interaction:discord.Interaction):
         """
-        Ungkapkan ekspresi setujumu!
+        Express your agreement!
         """
         get_request = await self.nekos_get('thumbsup')
         gif_url = get_request[0]
         anime_name = get_request[1]
         return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'roleplay.action_agree')
     
-    @app_commands.command(description='Elus kepala seseorang!')
-    @app_commands.describe(user='Siapa yang ingin kamu elus kepalanya?')
-    @app_commands.rename(user='pengguna')
+    @app_commands.command(description='Pat someone on the head!')
+    @app_commands.describe(user='Who do you want to pat?')
     @has_voted()
     @check_blacklist()
     async def pat(self, interaction:discord.Interaction, *, user:discord.Member):
         """
-        Elus kepala seseorang!
+        Pat someone on the head!
         """
         get_request = await self.nekos_get('pat')
         gif_url = get_request[0]
         anime_name = get_request[1]
         return await self.create_embed_and_sendGIF(interaction, gif_url, anime_name, 'roleplay.action_pat', user)
     
-    @app_commands.command(description='Ungkapkan ekspresi kebosananmu!')
+    @app_commands.command(description='Express your boredom!')
     @has_voted()
     @check_blacklist()
     async def bored(self, interaction:discord.Interaction):
         """
-        Ungkapkan ekspresi kebosananmu!
+        Express your boredom!
         """
         get_request = await self.nekos_get('bored')
         gif_url = get_request[0]

@@ -96,7 +96,15 @@ class Paginator:
         if map_key:
             page_title = i18n.get(self.lang, map_key)
 
-        embed = self._new_page(page_title, (title.description or "") if cog else "")
+        cog_desc = ""
+        if cog:
+            desc_key = f"help.category_{cog_key}_description"
+            cog_desc = i18n.get(self.lang, desc_key, title.description or "")
+        else:
+            if cog_key in ["no category", "tak tergolongkan"]:
+                cog_desc = i18n.get(self.lang, "help.category_no_category_description", "")
+
+        embed = self._new_page(page_title, cog_desc)
         self._add_command_fields(embed, page_title, commands_list)
 
     def _add_command_fields(
@@ -110,10 +118,15 @@ class Paginator:
         no_desc_text = i18n.get(self.lang, "help.no_description")
 
         for command in command_list:
-            if isinstance(command, commands.Command):
-                short_doc = command.short_doc
-            else:
-                short_doc = command.description.split("\n", 1)[0]
+            # Look up dynamic command description
+            desc_key = f"commands.{command.qualified_name.replace(' ', '.')}.description"
+            short_doc = i18n.get(self.lang, desc_key, default="")
+            
+            if not short_doc:
+                if isinstance(command, commands.Command):
+                    short_doc = command.short_doc
+                else:
+                    short_doc = command.description.split("\n", 1)[0] if command.description else ""
                 
             short_doc = short_doc or no_desc_text
 
@@ -130,7 +143,11 @@ class Paginator:
                 tree_lines = [short_doc]
                 for idx, sub in enumerate(subcmds[:5]):
                     connector = "└── " if idx == len(subcmds[:5]) - 1 else "├── "
-                    sub_desc = sub.short_doc if hasattr(sub, "short_doc") else (sub.description.split("\n", 1)[0] if sub.description else "")
+                    # Look up dynamic subcommand description
+                    sub_desc_key = f"commands.{sub.qualified_name.replace(' ', '.')}.description"
+                    sub_desc = i18n.get(self.lang, sub_desc_key, default="")
+                    if not sub_desc:
+                        sub_desc = sub.short_doc if hasattr(sub, "short_doc") else (sub.description.split("\n", 1)[0] if sub.description else "")
                     sub_desc = sub_desc or "..."
                     if len(sub_desc) > 50:
                         sub_desc = sub_desc[:47] + "..."
@@ -161,20 +178,35 @@ class Paginator:
         self._add_page(embed)
 
     def __command_info(self, command: Union[commands.Command, commands.Group]):
-        info = ""
-        if command.description:
-            info += command.description + "\n\n"
-        if command.help:
-            info += command.help
+        from scripts.utils.i18n import i18n
+        help_key = f"commands.{command.qualified_name.replace(' ', '.')}.help"
+        info = i18n.get(self.lang, help_key, default="")
         if not info:
-            from scripts.utils.i18n import i18n
+            desc_key = f"commands.{command.qualified_name.replace(' ', '.')}.description"
+            info = i18n.get(self.lang, desc_key, default="")
+            
+        if not info:
+            info = ""
+            if command.description:
+                info += command.description + "\n\n"
+            if command.help:
+                info += command.help
+                
+        if not info:
             info = i18n.get(self.lang, "help.no_info")
         return info
 
     def add_app_command(self, command: app_commands.commands.Command, signature: str):
         from scripts.utils.i18n import i18n
+        
+        # Look up dynamic command description
+        desc_key = f"commands.{command.qualified_name.replace(' ', '.')}.description"
+        cmd_desc = i18n.get(self.lang, desc_key, default="")
+        if not cmd_desc:
+            cmd_desc = command.description
+            
         page = self._new_page(
-            f"{command.name.title()}", f"{self.prefix}{command.description}{self.suffix}"
+            f"{command.name.title()}", f"{self.prefix}{cmd_desc}{self.suffix}"
         )
         page.add_field(
             name=i18n.get(self.lang, "help.usage"),
@@ -186,9 +218,13 @@ class Paginator:
             command.parameters, key=lambda x: (not x.required, x.name)
         ):
             if parameter.description:
-                description = (
-                    "" if parameter.description == "…" else parameter.description
-                )
+                # Look up dynamic argument/parameter description
+                param_key = f"commands.{command.qualified_name.replace(' ', '.')}.arguments.{parameter.name}"
+                description = i18n.get(self.lang, param_key, default="")
+                if not description:
+                    description = (
+                        "" if parameter.description == "…" else parameter.description
+                    )
                 req_val = "True" if parameter.required else "False"
                 page.add_field(
                     name=parameter.name,
@@ -199,8 +235,14 @@ class Paginator:
         self._add_page(page)
 
     def add_app_group(self, group: app_commands.commands.Group, signature: str):
+        from scripts.utils.i18n import i18n
+        desc_key = f"commands.{group.qualified_name.replace(' ', '.')}.description"
+        group_desc = i18n.get(self.lang, desc_key, default="")
+        if not group_desc:
+            group_desc = group.description
+            
         page = self._new_page(
-            group.qualified_name, f"{self.prefix}{group.description}{self.suffix}"
+            group.qualified_name, f"{self.prefix}{group_desc}{self.suffix}"
         )
         self._add_command_fields(page, group.name, group.walk_commands(), group=True)
 
@@ -346,13 +388,13 @@ class Help(HelpCommand, commands.Cog):
         bot.tree.remove_command(self._app_command_callback.name)
 
     @app_commands.describe(
-        command="Nama dari command, group, atau kategori."
+        command="Name of the command, group, or category."
     )
     @app_commands.command(name="help")
     async def _app_command_callback(
         self, interaction: discord.Interaction, command: str = None
     ):
-        """Menampilkan daftar command dan panduan command."""
+        """Display command list and guide."""
         bot = interaction.client
         ctx = await commands.Context.from_interaction(interaction)
         ctx.bot = bot
