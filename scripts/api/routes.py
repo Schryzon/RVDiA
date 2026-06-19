@@ -571,6 +571,283 @@ async def handle_shop_buy(request: web.Request):
     })
 
 
+# ── Guilds & Leaderboards ────────────────────────────────────
+
+@require_auth
+async def handle_leaderboard(request: web.Request):
+    """GET /api/v1/leaderboard — Returns ranked lists of players or guilds."""
+    lb_type = request.query.get("type", "player")
+
+    if lb_type == "guild":
+        guilds = await db.guild.find_many(include={"members": True})
+        sorted_guilds = sorted(guilds, key=lambda g: len(g.members), reverse=True)
+        
+        guild_list = []
+        for rank, g in enumerate(sorted_guilds[:100], 1):
+            owner = await db.user.find_unique(where={"id": g.ownerId})
+            owner_name = owner.data.get("name", "Unknown") if owner else "Unknown"
+            guild_list.append({
+                "rank": rank,
+                "id": g.id,
+                "name": g.name,
+                "tagline": g.tagline,
+                "icon_url": g.iconUrl,
+                "owner_id": str(g.ownerId),
+                "owner_name": owner_name,
+                "members_count": len(g.members)
+            })
+        return web.json_response({"success": True, "type": "guild", "entries": guild_list})
+        
+    else:
+        users = await db.user.find_many()
+        sorted_users = sorted(users, key=lambda u: (u.data.get("level", 1), u.data.get("karma", 0)), reverse=True)
+        
+        user_list = []
+        for rank, u in enumerate(sorted_users[:100], 1):
+            user_list.append({
+                "rank": rank,
+                "id": str(u.id),
+                "name": u.data.get("name", "Player"),
+                "level": u.data.get("level", 1),
+                "karma": u.data.get("karma", 0),
+            })
+        return web.json_response({"success": True, "type": "player", "entries": user_list})
+
+
+@require_auth
+async def handle_get_guild(request: web.Request):
+    """GET /api/v1/guild — Returns details of the logged-in user's guild."""
+    session = request["session"]
+    user_id = session["user_id"]
+
+    user_record = await db.user.find_unique(
+        where={"id": user_id},
+        include={"guild": {"include": {"members": True}}}
+    )
+    if not user_record:
+        return web.json_response({"error": "No RPG account found."}, status=404)
+
+    guild = user_record.guild
+    if not guild:
+        return web.json_response({"in_guild": False})
+
+    owner = await db.user.find_unique(where={"id": guild.ownerId})
+    owner_name = owner.data.get("name", "Unknown") if owner else "Unknown"
+
+    members_list = []
+    for member in guild.members:
+        members_list.append({
+            "id": str(member.id),
+            "name": member.data.get("name", "Member"),
+            "level": member.data.get("level", 1),
+            "karma": member.data.get("karma", 0),
+        })
+
+    members_list.sort(key=lambda m: (m["id"] == str(guild.ownerId), m["level"], m["karma"]), reverse=True)
+
+    return web.json_response({
+        "in_guild": True,
+        "guild": {
+            "id": guild.id,
+            "name": guild.name,
+            "tagline": guild.tagline,
+            "icon_url": guild.iconUrl,
+            "owner_id": str(guild.ownerId),
+            "owner_name": owner_name,
+            "created_at": guild.createdAt.isoformat(),
+            "members": members_list,
+            "is_owner": guild.ownerId == user_id
+        }
+    })
+
+
+@require_auth
+async def handle_create_guild(request: web.Request):
+    """POST /api/v1/guild/create — Create a new guild (costs 5000 Coins)."""
+    session = request["session"]
+    user_id = session["user_id"]
+
+    try:
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "Invalid JSON body."}, status=400)
+
+    name = body.get("name", "").strip()
+    if not name:
+        return web.json_response({"error": "Guild name cannot be empty."}, status=400)
+    
+    if len(name) > 32:
+        return web.json_response({"error": "Guild name is too long (max 32 chars)."}, status=400)
+
+    user_record = await db.user.find_unique(where={"id": user_id})
+    if not user_record:
+        return web.json_response({"error": "No RPG account found."}, status=404)
+
+    if user_record.guildId:
+        return web.json_response({"error": "You already belong to a guild."}, status=400)
+
+    existing_owned = await db.guild.find_unique(where={"ownerId": user_id})
+    if existing_owned:
+        return web.json_response({"error": f"You already own a guild: {existing_owned.name}"}, status=400)
+
+    data = user_record.data
+    if data.get("coins", 0) < 5000:
+        return web.json_response({"error": f"Insufficient Coins. Cost: 5000 Coins. You have {data.get('coins')} Coins."}, status=400)
+
+    existing_name = await db.guild.find_unique(where={"name": name})
+    if existing_name:
+        return web.json_response({"error": f"Guild name '{name}' is already taken."}, status=400)
+
+    new_guild = await db.guild.create(data={
+        "name": name,
+        "ownerId": user_id
+    })
+
+    data["coins"] -= 5000
+    await db.user.update(
+        where={"id": user_id},
+        data={
+            "guild": {"connect": {"id": new_guild.id}},
+            "data": Json(data)
+        }
+    )
+
+    return web.json_response({
+        "success": True,
+        "guild_name": name,
+        "balance": {
+            "coins": data.get("coins", 0),
+            "karma": data.get("karma", 0)
+        }
+    })
+
+
+@require_auth
+async def handle_edit_guild(request: web.Request):
+    """POST /api/v1/guild/edit — Edit guild details - Owner only."""
+    session = request["session"]
+    user_id = session["user_id"]
+
+    try:
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "Invalid JSON body."}, status=400)
+
+    user_record = await db.user.find_unique(where={"id": user_id}, include={"guild": True})
+    if not user_record or not user_record.guild:
+        return web.json_response({"error": "You are not a member of any guild."}, status=400)
+
+    guild = user_record.guild
+    if guild.ownerId != user_id:
+        return web.json_response({"error": "Only the guild owner can edit details."}, status=403)
+
+    name = body.get("name", "").strip()
+    tagline = body.get("tagline", "").strip()
+    icon_url = body.get("icon_url", "").strip()
+
+    update_data = {}
+    if name:
+        if len(name) > 32:
+            return web.json_response({"error": "Guild name is too long (max 32 chars)."}, status=400)
+        existing = await db.guild.find_unique(where={"name": name})
+        if existing and existing.id != guild.id:
+            return web.json_response({"error": f"Guild name '{name}' is already taken."}, status=400)
+        update_data["name"] = name
+
+    if "tagline" in body:
+        if len(tagline) > 100:
+            return web.json_response({"error": "Tagline is too long (max 100 chars)."}, status=400)
+        update_data["tagline"] = tagline
+
+    if "icon_url" in body:
+        if icon_url and not icon_url.startswith("http"):
+            return web.json_response({"error": "Invalid icon URL. Must start with http/https."}, status=400)
+        update_data["iconUrl"] = icon_url
+
+    if not update_data:
+        return web.json_response({"error": "No fields to update."}, status=400)
+
+    updated_guild = await db.guild.update(where={"id": guild.id}, data=update_data)
+
+    return web.json_response({
+        "success": True,
+        "guild": {
+            "name": updated_guild.name,
+            "tagline": updated_guild.tagline,
+            "icon_url": updated_guild.iconUrl
+        }
+    })
+
+
+@require_auth
+async def handle_kick_guild_member(request: web.Request):
+    """POST /api/v1/guild/kick — Kicks a member from the guild - Owner only."""
+    session = request["session"]
+    user_id = session["user_id"]
+
+    try:
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "Invalid JSON body."}, status=400)
+
+    member_id_str = body.get("member_id")
+    if not member_id_str:
+        return web.json_response({"error": "Missing member_id parameter."}, status=400)
+
+    try:
+        member_id = int(member_id_str)
+    except ValueError:
+        return web.json_response({"error": "Invalid member_id format."}, status=400)
+
+    if member_id == user_id:
+        return web.json_response({"error": "You cannot kick yourself."}, status=400)
+
+    user_record = await db.user.find_unique(where={"id": user_id}, include={"guild": True})
+    if not user_record or not user_record.guild:
+        return web.json_response({"error": "You are not a member of any guild."}, status=400)
+
+    guild = user_record.guild
+    if guild.ownerId != user_id:
+        return web.json_response({"error": "Only the guild owner can kick members."}, status=403)
+
+    target_record = await db.user.find_unique(where={"id": member_id})
+    if not target_record or target_record.guildId != guild.id:
+        return web.json_response({"error": "Target user is not a member of your guild."}, status=404)
+
+    await db.user.update(where={"id": member_id}, data={"guild": {"disconnect": True}})
+
+    return web.json_response({
+        "success": True,
+        "kicked_member_id": member_id_str
+    })
+
+
+@require_auth
+async def handle_leave_guild(request: web.Request):
+    """POST /api/v1/guild/leave — Leave current guild. Disbands if owner."""
+    session = request["session"]
+    user_id = session["user_id"]
+
+    user_record = await db.user.find_unique(where={"id": user_id}, include={"guild": True})
+    if not user_record or not user_record.guild:
+        return web.json_response({"error": "You are not a member of any guild."}, status=400)
+
+    guild = user_record.guild
+
+    if guild.ownerId == user_id:
+        await db.guild.delete(where={"id": guild.id})
+        action = "disband"
+    else:
+        await db.user.update(where={"id": user_id}, data={"guild": {"disconnect": True}})
+        action = "leave"
+
+    return web.json_response({
+        "success": True,
+        "action": action,
+        "guild_name": guild.name
+    })
+
+
 # ── Route Registration ───────────────────────────────────────
 
 def setup_api_routes(app: web.Application):
@@ -585,3 +862,9 @@ def setup_api_routes(app: web.Application):
     app.router.add_post("/api/v1/user/equip", handle_user_equip)
     app.router.add_get("/api/v1/shop", handle_shop_items)
     app.router.add_post("/api/v1/shop/buy", handle_shop_buy)
+    app.router.add_get("/api/v1/leaderboard", handle_leaderboard)
+    app.router.add_get("/api/v1/guild", handle_get_guild)
+    app.router.add_post("/api/v1/guild/create", handle_create_guild)
+    app.router.add_post("/api/v1/guild/edit", handle_edit_guild)
+    app.router.add_post("/api/v1/guild/kick", handle_kick_guild_member)
+    app.router.add_post("/api/v1/guild/leave", handle_leave_guild)

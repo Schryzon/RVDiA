@@ -17,7 +17,7 @@ class Moderation(commands.Cog):
     @check_blacklist()
     async def server(self, ctx:commands.Context) -> None:
         """
-        Kumpulan command mengenai server ini. [GROUP]
+        Kumpulan command mengenai server ini.
         """
         await self.info(ctx)
         pass
@@ -83,7 +83,7 @@ class Moderation(commands.Cog):
     @check_blacklist()
     async def invite(self, ctx:commands.Context) -> None:
         """
-        Kumpulan command menyangkut invite server. [GROUP]
+        Kumpulan command menyangkut invite server.
         """
         await self.invites(ctx)
         pass
@@ -153,7 +153,7 @@ class Moderation(commands.Cog):
     @check_blacklist()
     async def warn(self, ctx:commands.Context, member:discord.Member, *, reason = None):
         """
-        Kumpulan command berkaitan dengan pemberian pelanggaran. [GROUP]
+        Kumpulan command berkaitan dengan pemberian pelanggaran.
         """
         await self.warn_add(ctx, member, reason=reason)
         

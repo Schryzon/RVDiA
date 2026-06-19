@@ -102,7 +102,7 @@ class General(commands.Cog):
     @check_blacklist()
     async def rvdia_command(self, ctx:commands.Context) -> None:
         """
-        Kumpulan command khusus untuk RVDIA. [GROUP]
+        Kumpulan command khusus untuk RVDIA.
         """
         await self.rvdia(ctx)
         pass
@@ -111,7 +111,7 @@ class General(commands.Cog):
     @check_blacklist()
     async def user_command(self, ctx:commands.Context, member:discord.Member=None) -> None:
         """
-        Kumpulan command khusus untuk mengetahui info pengguna. [GROUP]
+        Kumpulan command khusus untuk mengetahui info pengguna.
         """
         member = member or ctx.author
         await self.userinfo(ctx, member=member)
@@ -121,7 +121,7 @@ class General(commands.Cog):
     @check_blacklist()
     async def avatar_command(self, ctx:commands.Context, *, member:discord.User=None) -> None:
         """
-        Kumpulan command khusus yang berkaitan dengan avatar pengguna. [GROUP]
+        Kumpulan command khusus yang berkaitan dengan avatar pengguna.
         """
         member = member or ctx.author
         await self.avatar(ctx, global_user=member)

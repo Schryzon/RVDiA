@@ -182,7 +182,7 @@ class Image(commands.Cog):
     @check_blacklist()
     async def image_group(self, ctx: commands.Context):
         """
-        Kumpulan command untuk memproses gambar. [GROUP]
+        Kumpulan command untuk memproses gambar.
         """
         if ctx.invoked_subcommand is None:
             await ctx.send_help(ctx.command)
@@ -905,7 +905,7 @@ class Image(commands.Cog):
     @check_blacklist()
     async def wavelet_group(self, ctx: commands.Context):
         """
-        Kumpulan command untuk pemrosesan gambar berbasis Wavelet. [GROUP]
+        Kumpulan command untuk pemrosesan gambar berbasis Wavelet.
         """
         if ctx.invoked_subcommand is None:
             await ctx.send_help(ctx.command)
@@ -999,7 +999,7 @@ class Image(commands.Cog):
     @check_blacklist()
     async def stego_group(self, ctx: commands.Context):
         """
-        Kumpulan command LSB Steganografi (menyembunyikan teks di gambar). [GROUP]
+        Kumpulan command LSB Steganografi (menyembunyikan teks di gambar).
         """
         if ctx.invoked_subcommand is None:
             await ctx.send_help(ctx.command)
@@ -1068,7 +1068,7 @@ class Image(commands.Cog):
     @check_blacklist()
     async def fourier_group(self, ctx: commands.Context):
         """
-        Kumpulan filter pemrosesan domain frekuensi (DFT). [GROUP]
+        Kumpulan filter pemrosesan domain frekuensi (DFT).
         """
         if ctx.invoked_subcommand is None:
             await ctx.send_help(ctx.command)

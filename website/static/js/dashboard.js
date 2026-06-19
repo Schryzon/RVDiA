@@ -655,6 +655,556 @@ function init_shop() {
     fetch_shop_items();
 }
 
+// ── Guilds & Leaderboards ────────────────────────────────────
+
+let active_leaderboard_subtab = "players";
+
+const gt = window.__RVDIA_I18N__ || {
+    guild_owner: "Guild Master",
+    created_on: "Created",
+    no_guild: "You are not a member of any guild.",
+    create_btn: "Create Guild",
+    create_placeholder: "Enter Guild Name...",
+    create_fee: "Fee: 5,000 Coins",
+    tagline_placeholder: "Add a guild tagline...",
+    icon_placeholder: "Guild Icon URL...",
+    save_btn: "Save Changes",
+    leave_btn: "Leave Guild",
+    disband_btn: "Disband Guild",
+    disband_confirm: "Are you sure you want to disband this guild? This action is permanent!",
+    leave_confirm: "Are you sure you want to leave this guild?",
+    members_list: "Guild Members",
+    kick_btn: "Kick",
+    kick_confirm: "Are you sure you want to kick this member?",
+    rank: "Rank",
+    name: "Name",
+    level: "Level",
+    karma: "Karma",
+    members: "Members"
+};
+
+async function fetch_guild_hub() {
+    const container = document.getElementById("guild-hub-content");
+    if (!container) return;
+
+    try {
+        const resp = await fetch("/api/v1/guild");
+        const data = await resp.json();
+
+        if (data.error) {
+            container.innerHTML = `<div class="profile-empty"><p>❌ ${data.error}</p></div>`;
+            return;
+        }
+
+        if (!data.in_guild) {
+            container.innerHTML = `
+                <div class="max-w-md w-full mx-auto text-center space-y-4 p-4">
+                    <div class="text-4xl">🏰</div>
+                    <p class="text-slate-400 text-sm">${escape_html(gt.no_guild)}</p>
+                    <div class="space-y-2.5">
+                        <input type="text" id="guild-create-name" placeholder="${escape_html(gt.create_placeholder)}" maxlength="32"
+                               class="guild-form-input text-center">
+                        <button id="guild-create-btn" class="w-full bg-accent text-white font-bold py-3 px-4 rounded-xl border border-accent/20 transition-all duration-300 hover:bg-accent/80 hover:shadow-[0_0_12px_rgba(255,200,0,0.3)] active:scale-95 disabled:opacity-50">
+                            ${escape_html(gt.create_btn)} (${escape_html(gt.create_fee)})
+                        </button>
+                    </div>
+                </div>
+            `;
+            const btn = document.getElementById("guild-create-btn");
+            const input = document.getElementById("guild-create-name");
+            if (btn && input) {
+                btn.addEventListener("click", async () => {
+                    const name = input.value.trim();
+                    if (name) await create_guild(name, btn);
+                });
+            }
+            return;
+        }
+
+        const g = data.guild;
+        const default_icon = "https://cdn.discordapp.com/embed/avatars/0.png";
+        const icon_src = g.icon_url || default_icon;
+        const tagline_empty = LANG === "id" ? "Selamat datang di guildku!" : "Welcome to my guild!";
+        
+        let members_rows = "";
+        for (const [idx, m] of g.members.entries()) {
+            const is_member_owner = m.id === g.owner_id;
+            const role_badge = is_member_owner 
+                ? `<span class="text-[9px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded ml-1.5">Owner</span>`
+                : "";
+                
+            let action_btn = "";
+            if (g.is_owner && !is_member_owner) {
+                action_btn = `
+                    <button class="px-2.5 py-1 text-2xs font-extrabold uppercase rounded bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all duration-300 active:scale-95 guild-kick-btn cursor-pointer"
+                            data-member-id="${escape_html(m.id)}" data-member-name="${escape_html(m.name)}">
+                        ${escape_html(gt.kick_btn)}
+                    </button>
+                `;
+            }
+
+            members_rows += `
+                <tr>
+                    <td class="font-mono text-slate-500 pl-2">#${idx + 1}</td>
+                    <td>
+                        <span class="text-white font-bold">${escape_html(m.name)}</span>
+                        ${role_badge}
+                    </td>
+                    <td class="font-mono">Lv. ${m.level}</td>
+                    <td class="font-mono text-slate-400">${m.karma}</td>
+                    <td class="text-right pr-2">${action_btn}</td>
+                </tr>
+            `;
+        }
+
+        const action_button_html = g.is_owner 
+            ? `<button id="guild-leave-btn" class="w-full px-4 py-2.5 text-xs font-bold rounded-xl bg-red-600/10 text-red-400 border border-red-600/20 hover:bg-red-600 hover:text-white transition-all duration-300 active:scale-95 cursor-pointer">${escape_html(gt.disband_btn)}</button>`
+            : `<button id="guild-leave-btn" class="w-full px-4 py-2.5 text-xs font-bold rounded-xl bg-red-600/10 text-red-400 border border-red-600/20 hover:bg-red-600 hover:text-white transition-all duration-300 active:scale-95 cursor-pointer">${escape_html(gt.leave_btn)}</button>`;
+
+        const owner_panel_html = g.is_owner 
+            ? `
+                <div class="glass-card-style p-5 border border-white/[0.04] flex flex-col justify-between">
+                    <div class="space-y-4">
+                        <h4 class="text-xs font-extrabold uppercase tracking-widest text-slate-400">Settings</h4>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wide block mb-1">Tagline</label>
+                                <input type="text" id="guild-edit-tagline" placeholder="${escape_html(gt.tagline_placeholder)}" value="${escape_html(g.tagline || '')}" maxlength="100" class="guild-form-input">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wide block mb-1">Icon URL</label>
+                                <input type="text" id="guild-edit-icon" placeholder="${escape_html(gt.icon_placeholder)}" value="${escape_html(g.icon_url || '')}" class="guild-form-input">
+                            </div>
+                        </div>
+                    </div>
+                    <button id="guild-save-btn" class="w-full bg-indigo-600 text-white font-bold py-2.5 px-4 rounded-xl border border-indigo-500/20 transition-all duration-300 hover:bg-indigo-500 hover:shadow-[0_0_10px_rgba(99,102,241,0.3)] active:scale-95 mt-4">
+                        ${escape_html(gt.save_btn)}
+                    </button>
+                </div>
+              `
+            : "";
+
+        container.innerHTML = `
+            <div class="guild-card-grid w-full">
+                <!-- Guild Details -->
+                <div class="guild-card">
+                    <img src="${escape_html(icon_src)}" alt="Icon" class="guild-icon-large">
+                    <h3 class="guild-name-title">${escape_html(g.name)}</h3>
+                    <p class="guild-tagline-text">${escape_html(g.tagline || tagline_empty)}</p>
+                    
+                    <div class="w-full space-y-1 mt-auto">
+                        <div class="guild-stat-row">
+                            <span class="guild-stat-lbl">${escape_html(gt.guild_owner)}</span>
+                            <span class="guild-stat-val">${escape_html(g.owner_name)}</span>
+                        </div>
+                        <div class="guild-stat-row">
+                            <span class="guild-stat-lbl">${escape_html(gt.created_on)}</span>
+                            <span class="guild-stat-val">${new Date(g.created_at).toLocaleDateString()}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="w-full mt-4">
+                        ${action_button_html}
+                    </div>
+                </div>
+
+                <!-- Owner Settings / Fallback Member Info -->
+                ${g.is_owner ? owner_panel_html : `
+                    <div class="guild-card justify-center">
+                        <div class="text-3xl mb-2">⚔️</div>
+                        <p class="text-sm font-bold text-white mb-1">Ready for Battle</p>
+                        <p class="text-xs text-slate-400 max-w-[200px]">Contribute to your guild ranks by level ups and adventures!</p>
+                    </div>
+                `}
+
+                <!-- Members List -->
+                <div class="col-span-1 md:col-span-1 border border-white/[0.04] bg-white/[0.005] rounded-2xl p-5 overflow-x-auto max-h-[350px] overflow-y-auto w-full">
+                    <h4 class="text-xs font-extrabold uppercase tracking-widest text-slate-400 mb-4">${escape_html(gt.members_list)} (${g.members.length})</h4>
+                    <table class="guild-table">
+                        <thead>
+                            <tr>
+                                <th class="pl-2">#</th>
+                                <th>Name</th>
+                                <th>LVL</th>
+                                <th>Karma</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${members_rows}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        const leave_btn = document.getElementById("guild-leave-btn");
+        if (leave_btn) {
+            leave_btn.addEventListener("click", async () => {
+                await leave_or_disband_guild(g.is_owner, leave_btn);
+            });
+        }
+
+        const save_btn = document.getElementById("guild-save-btn");
+        if (save_btn) {
+            save_btn.addEventListener("click", async () => {
+                const tagline = document.getElementById("guild-edit-tagline").value.trim();
+                const icon = document.getElementById("guild-edit-icon").value.trim();
+                await save_guild_settings(tagline, icon, save_btn);
+            });
+        }
+
+        container.querySelectorAll(".guild-kick-btn").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                const m_id = btn.getAttribute("data-member-id");
+                const m_name = btn.getAttribute("data-member-name");
+                await kick_guild_member(m_id, m_name, btn);
+            });
+        });
+
+    } catch (err) {
+        console.error("fetch_guild_hub error:", err);
+        container.innerHTML = `<div class="profile-empty"><p>Failed to load Guild Hub.</p></div>`;
+    }
+}
+
+async function create_guild(name, btn) {
+    const orig_text = btn.innerHTML;
+    btn.disabled = true;
+    btn.textContent = LANG === "id" ? "Memproses..." : "Creating...";
+
+    const status_el = document.getElementById("action-status-msg");
+
+    try {
+        const resp = await fetch("/api/v1/guild/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name })
+        });
+        const data = await resp.json();
+
+        if (data.error) {
+            if (status_el) {
+                status_el.textContent = `❌ ${data.error}`;
+                status_el.style.color = "#ef4444";
+            }
+            btn.innerHTML = orig_text;
+            btn.disabled = false;
+        } else {
+            if (status_el) {
+                status_el.textContent = LANG === "id" 
+                    ? `✅ Berhasil mendirikan Guild ${data.guild_name}!` 
+                    : `✅ Guild ${data.guild_name} successfully founded!`;
+                status_el.style.color = "#10b981";
+            }
+            await fetch_profile();
+            await fetch_guild_hub();
+        }
+    } catch (err) {
+        if (status_el) {
+            status_el.textContent = "❌ Connection error.";
+            status_el.style.color = "#ef4444";
+        }
+        btn.innerHTML = orig_text;
+        btn.disabled = false;
+    }
+
+    setTimeout(() => {
+        if (status_el && (status_el.textContent.includes("✅") || status_el.textContent.includes("❌"))) {
+            status_el.textContent = "";
+        }
+    }, 4000);
+}
+
+async function save_guild_settings(tagline, iconUrl, btn) {
+    const orig_text = btn.innerHTML;
+    btn.disabled = true;
+    btn.textContent = LANG === "id" ? "Menyimpan..." : "Saving...";
+
+    const status_el = document.getElementById("action-status-msg");
+
+    try {
+        const resp = await fetch("/api/v1/guild/edit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tagline, icon_url: iconUrl })
+        });
+        const data = await resp.json();
+
+        if (data.error) {
+            if (status_el) {
+                status_el.textContent = `❌ ${data.error}`;
+                status_el.style.color = "#ef4444";
+            }
+            btn.innerHTML = orig_text;
+            btn.disabled = false;
+        } else {
+            if (status_el) {
+                status_el.textContent = LANG === "id" ? "✅ Pengaturan Guild disimpan!" : "✅ Guild settings saved!";
+                status_el.style.color = "#10b981";
+            }
+            await fetch_guild_hub();
+        }
+    } catch (err) {
+        if (status_el) {
+            status_el.textContent = "❌ Connection error.";
+            status_el.style.color = "#ef4444";
+        }
+        btn.innerHTML = orig_text;
+        btn.disabled = false;
+    }
+
+    setTimeout(() => {
+        if (status_el && (status_el.textContent.includes("✅") || status_el.textContent.includes("❌"))) {
+            status_el.textContent = "";
+        }
+    }, 4000);
+}
+
+async function kick_guild_member(memberId, memberName, btn) {
+    const t = window.__RVDIA_I18N__ || {};
+    const confirm_prompt = (t.kick_confirm || "Are you sure you want to kick this member?").replace("{name}", memberName);
+    if (!confirm(confirm_prompt)) return;
+
+    btn.disabled = true;
+    btn.textContent = t.kicked_msg || "...";
+
+    const status_el = document.getElementById("action-status-msg");
+
+    try {
+        const resp = await fetch("/api/v1/guild/kick", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ member_id: memberId })
+        });
+        const data = await resp.json();
+
+        if (data.error) {
+            if (status_el) {
+                status_el.textContent = `❌ ${data.error}`;
+                status_el.style.color = "#ef4444";
+            }
+            btn.disabled = false;
+            btn.textContent = t.kick_btn || "Kick";
+        } else {
+            if (status_el) {
+                status_el.textContent = LANG === "id" 
+                    ? `✅ Mengeluarkan ${memberName} dari guild.` 
+                    : `✅ Kicked ${memberName} from guild.`;
+                status_el.style.color = "#10b981";
+            }
+            await fetch_guild_hub();
+        }
+    } catch (err) {
+        if (status_el) {
+            status_el.textContent = "❌ Connection error.";
+            status_el.style.color = "#ef4444";
+        }
+        btn.disabled = false;
+        btn.textContent = t.kick_btn || "Kick";
+    }
+
+    setTimeout(() => {
+        if (status_el && (status_el.textContent.includes("✅") || status_el.textContent.includes("❌"))) {
+            status_el.textContent = "";
+        }
+    }, 4000);
+}
+
+async function leave_or_disband_guild(isOwner, btn) {
+    const t = window.__RVDIA_I18N__ || {};
+    const confirm_prompt = isOwner 
+        ? (t.disband_confirm || "Are you sure you want to disband this guild? This action is permanent!")
+        : (t.leave_confirm || "Are you sure you want to leave this guild?");
+    if (!confirm(confirm_prompt)) return;
+
+    btn.disabled = true;
+    btn.textContent = t.leave_msg || "...";
+
+    const status_el = document.getElementById("action-status-msg");
+
+    try {
+        const resp = await fetch("/api/v1/guild/leave", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" }
+        });
+        const data = await resp.json();
+
+        if (data.error) {
+            if (status_el) {
+                status_el.textContent = `❌ ${data.error}`;
+                status_el.style.color = "#ef4444";
+            }
+            btn.disabled = false;
+            btn.textContent = isOwner ? (t.disband_btn || "Disband Guild") : (t.leave_btn || "Leave Guild");
+        } else {
+            if (status_el) {
+                status_el.textContent = data.action === "disband"
+                    ? (LANG === "id" ? `✅ Guild ${data.guild_name} dibubarkan.` : `✅ Guild ${data.guild_name} disbanded.`)
+                    : (LANG === "id" ? `✅ Keluar dari Guild ${data.guild_name}.` : `✅ Left Guild ${data.guild_name}.`);
+                status_el.style.color = "#10b981";
+            }
+            await fetch_profile();
+            await fetch_guild_hub();
+        }
+    } catch (err) {
+        if (status_el) {
+            status_el.textContent = "❌ Connection error.";
+            status_el.style.color = "#ef4444";
+        }
+        btn.disabled = false;
+        btn.textContent = isOwner ? (t.disband_btn || "Disband Guild") : (t.leave_btn || "Leave Guild");
+    }
+
+    setTimeout(() => {
+        if (status_el && (status_el.textContent.includes("✅") || status_el.textContent.includes("❌"))) {
+            status_el.textContent = "";
+        }
+    }, 4000);
+}
+
+async function fetch_leaderboard() {
+    const container = document.getElementById("leaderboard-content");
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="flex items-center justify-center h-[220px]">
+            <div class="text-center text-slate-400 text-sm animate-pulse">
+                ${LANG === "id" ? "Memuat peringkat..." : "Loading ranks..."}
+            </div>
+        </div>
+    `;
+
+    try {
+        const resp = await fetch(`/api/v1/leaderboard?type=${active_leaderboard_subtab}`);
+        const data = await resp.json();
+
+        if (data.error) {
+            container.innerHTML = `<div class="profile-empty"><p>❌ ${data.error}</p></div>`;
+            return;
+        }
+
+        const entries = data.entries || [];
+        if (entries.length === 0) {
+            container.innerHTML = `<div class="profile-empty"><p>${LANG === "id" ? "Peringkat kosong." : "Leaderboard is empty."}</p></div>`;
+            return;
+        }
+
+        let html = `
+            <div class="overflow-x-auto w-full">
+                <table class="guild-table">
+                    <thead>
+                        <tr>
+                            <th class="pl-2 w-16">${escape_html(gt.rank)}</th>
+                            <th>${escape_html(gt.name)}</th>
+                            ${active_leaderboard_subtab === "players" ? `
+                                <th>${escape_html(gt.level)}</th>
+                                <th>${escape_html(gt.karma)}</th>
+                            ` : `
+                                <th>Tagline</th>
+                                <th>${escape_html(gt.members)}</th>
+                                <th>Master</th>
+                            `}
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        for (const entry of entries) {
+            let row_cells = "";
+            let rank_badge = `#${entry.rank}`;
+            if (entry.rank === 1) rank_badge = "🥇";
+            else if (entry.rank === 2) rank_badge = "🥈";
+            else if (entry.rank === 3) rank_badge = "🥉";
+
+            const highlight_cls = (entry.rank <= 3) ? "font-black text-amber-400" : "font-mono text-slate-500";
+
+            if (active_leaderboard_subtab === "players") {
+                row_cells = `
+                    <td class="${highlight_cls} pl-2">${rank_badge}</td>
+                    <td class="text-white font-bold">${escape_html(entry.name)}</td>
+                    <td class="font-mono">Lv. ${entry.level}</td>
+                    <td class="font-mono text-slate-400">${entry.karma}</td>
+                `;
+            } else {
+                const default_guild_icon = "https://cdn.discordapp.com/embed/avatars/1.png";
+                const guild_icon = entry.icon_url || default_guild_icon;
+                row_cells = `
+                    <td class="${highlight_cls} pl-2">${rank_badge}</td>
+                    <td>
+                        <div class="flex items-center gap-2">
+                            <img src="${escape_html(guild_icon)}" alt="icon" class="w-6 h-6 rounded border border-white/10 object-cover">
+                            <span class="text-white font-bold">${escape_html(entry.name)}</span>
+                        </div>
+                    </td>
+                    <td class="text-slate-400 max-w-xs truncate italic">${escape_html(entry.tagline || "")}</td>
+                    <td class="font-mono">${entry.members_count}</td>
+                    <td class="text-slate-400 font-medium">${escape_html(entry.owner_name)}</td>
+                `;
+            }
+
+            html += `<tr>${row_cells}</tr>`;
+        }
+
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+        container.innerHTML = html;
+
+    } catch (err) {
+        console.error("fetch_leaderboard error:", err);
+        container.innerHTML = `<div class="profile-empty"><p>Failed to load rankings.</p></div>`;
+    }
+}
+
+function init_guilds_and_leaderboard() {
+    const guild_tab = document.getElementById("tab-guild-btn");
+    const lb_tab = document.getElementById("tab-leaderboard-btn");
+    const guild_panel = document.getElementById("guild-hub-panel");
+    const lb_panel = document.getElementById("leaderboard-panel");
+
+    if (guild_tab && lb_tab && guild_panel && lb_panel) {
+        guild_tab.addEventListener("click", () => {
+            guild_tab.classList.add("active");
+            lb_tab.classList.remove("active");
+            guild_panel.classList.remove("hidden");
+            lb_panel.classList.add("hidden");
+            fetch_guild_hub();
+        });
+
+        lb_tab.addEventListener("click", () => {
+            lb_tab.classList.add("active");
+            guild_tab.classList.remove("active");
+            lb_panel.classList.remove("hidden");
+            guild_panel.classList.add("hidden");
+            fetch_leaderboard();
+        });
+    }
+
+    const sub_players = document.getElementById("subtab-players-btn");
+    const sub_guilds = document.getElementById("subtab-guilds-btn");
+
+    if (sub_players && sub_guilds) {
+        sub_players.addEventListener("click", () => {
+            sub_players.classList.add("active");
+            sub_guilds.classList.remove("active");
+            active_leaderboard_subtab = "players";
+            fetch_leaderboard();
+        });
+
+        sub_guilds.addEventListener("click", () => {
+            sub_guilds.classList.add("active");
+            sub_players.classList.remove("active");
+            active_leaderboard_subtab = "guilds";
+            fetch_leaderboard();
+        });
+    }
+
+    fetch_guild_hub();
+}
+
 
 // ── Init ────────────────────────────────────────────────────
 
@@ -664,10 +1214,12 @@ document.addEventListener("DOMContentLoaded", () => {
     fetch_stats();
     init_chat();
     init_shop();
+    init_guilds_and_leaderboard();
 
     const daily_btn = document.getElementById("daily-btn");
     const adventure_btn = document.getElementById("adventure-btn");
     if (daily_btn) daily_btn.addEventListener("click", claim_daily);
     if (adventure_btn) adventure_btn.addEventListener("click", go_adventure);
 });
+
 

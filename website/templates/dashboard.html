@@ -118,6 +118,54 @@
         .shop-buy-btn {
             @apply px-3.5 py-2 text-xs font-bold rounded-lg bg-accent text-white border border-accent/20 transition-all duration-300 hover:bg-accent/80 hover:shadow-[0_0_8px_rgba(255,200,0,0.3)] active:scale-95 disabled:opacity-30 disabled:pointer-events-none cursor-pointer;
         }
+        .section-tab-btn {
+            @apply px-5 py-2.5 text-xs md:text-sm font-extrabold uppercase tracking-wider rounded-xl border border-white/[0.06] bg-white/[0.02] text-slate-400 transition-all duration-300 hover:text-white hover:border-white/10 active:scale-95 cursor-pointer;
+        }
+        .section-tab-btn.active {
+            @apply bg-accent text-white border-accent/20 shadow-[0_0_12px_rgba(255,200,0,0.2)];
+        }
+        .sub-tab-btn {
+            @apply px-4 py-2 text-xs font-bold rounded-lg border border-white/[0.04] bg-white/[0.01] text-slate-400 transition-all duration-300 hover:text-white hover:border-white/10 active:scale-95 cursor-pointer;
+        }
+        .sub-tab-btn.active {
+            @apply bg-indigo-600 text-white border-indigo-500/20 shadow-[0_0_10px_rgba(99,102,241,0.2)];
+        }
+        .guild-card-grid {
+            @apply grid grid-cols-1 md:grid-cols-3 gap-6;
+        }
+        .guild-card {
+            @apply p-6 rounded-2xl bg-white/[0.01] border border-white/[0.05] flex flex-col items-center text-center justify-center relative overflow-hidden;
+        }
+        .guild-icon-large {
+            @apply w-24 h-24 rounded-2xl border border-white/10 object-cover shadow-lg mb-4 bg-white/[0.02];
+        }
+        .guild-name-title {
+            @apply text-xl font-black text-white leading-tight mb-1;
+        }
+        .guild-tagline-text {
+            @apply text-xs text-slate-400 italic mb-4 max-w-xs;
+        }
+        .guild-stat-row {
+            @apply w-full flex items-center justify-between py-2 border-b border-white/[0.04] text-xs font-semibold;
+        }
+        .guild-stat-lbl {
+            @apply text-slate-500 uppercase tracking-wider;
+        }
+        .guild-stat-val {
+            @apply text-slate-200;
+        }
+        .guild-form-input {
+            @apply w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-accent transition-all duration-300 mb-3;
+        }
+        .guild-table {
+            @apply w-full text-left border-collapse;
+        }
+        .guild-table th {
+            @apply text-[10px] font-extrabold uppercase tracking-widest text-slate-500 pb-3 border-b border-white/10;
+        }
+        .guild-table td {
+            @apply py-3 border-b border-white/[0.03] text-sm text-slate-300 font-semibold;
+        }
     }
 </style>
 
@@ -235,6 +283,53 @@
         </div>
     </div>
 
+    <!-- Guild & Leaderboard Section -->
+    <div class="space-y-6">
+        <!-- Main Section Selector Tabs -->
+        <div class="flex gap-3 border-b border-white/10 pb-4">
+            <button class="section-tab-btn active" id="tab-guild-btn">{{ i18n.dash_guild_tab }}</button>
+            <button class="section-tab-btn" id="tab-leaderboard-btn">{{ i18n.dash_leaderboard_tab }}</button>
+        </div>
+
+        <!-- Guild Hub Panel -->
+        <div class="glass-card-style p-6 md:p-8" id="guild-hub-panel">
+            <div class="border-b border-white/10 pb-4 mb-6">
+                <h3 class="text-lg font-bold text-white tracking-wide uppercase">
+                    {{ i18n.dash_guild_title }}
+                </h3>
+            </div>
+            
+            <div id="guild-hub-content" class="min-h-[220px] flex items-center justify-center">
+                <div class="text-center text-slate-400 text-sm animate-pulse">
+                    {{ i18n.dash_loading }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Leaderboard Panel (Hidden by default) -->
+        <div class="glass-card-style p-6 md:p-8 hidden" id="leaderboard-panel">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4 mb-6">
+                <h3 class="text-lg font-bold text-white tracking-wide uppercase">
+                    {{ i18n.dash_leaderboard_title }}
+                </h3>
+                <!-- Sub tabs -->
+                <div class="flex gap-2">
+                    <button class="sub-tab-btn active" id="subtab-players-btn">{{ i18n.dash_leaderboard_players }}</button>
+                    <button class="sub-tab-btn" id="subtab-guilds-btn">{{ i18n.dash_leaderboard_guilds }}</button>
+                </div>
+            </div>
+
+            <!-- Leaderboard Content -->
+            <div id="leaderboard-content" class="min-h-[220px]">
+                <div class="flex items-center justify-center h-[220px]">
+                    <div class="text-center text-slate-400 text-sm animate-pulse">
+                        {{ i18n.dash_loading }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Web Chat Widget -->
     <div class="chat-widget" id="chat-widget">
         <!-- Collapsed Toggle -->
@@ -284,7 +379,28 @@
         type_consumable: "{{ i18n.dash_shop_tab_items }}",
         type_equipment: "{{ i18n.dash_shop_tab_equipment }}",
         type_skill: "{{ i18n.dash_shop_tab_skills }}",
-        koin: "{{ lang == 'en' and 'Coins' or 'Koin' }}"
+        koin: "{{ lang == 'en' and 'Coins' or 'Koin' }}",
+        guild_owner: "{{ i18n.dash_guild_owner }}",
+        created_on: "{{ i18n.dash_guild_created_on }}",
+        no_guild: "{{ i18n.dash_guild_no_guild }}",
+        create_btn: "{{ i18n.dash_guild_create_btn }}",
+        create_placeholder: "{{ i18n.dash_guild_create_placeholder }}",
+        create_fee: "{{ i18n.dash_guild_create_cost }}",
+        tagline_placeholder: "{{ i18n.dash_guild_tagline_placeholder }}",
+        icon_placeholder: "{{ i18n.dash_guild_icon_placeholder }}",
+        save_btn: "{{ i18n.dash_guild_save_btn }}",
+        leave_btn: "{{ i18n.dash_guild_leave_btn }}",
+        disband_btn: "{{ i18n.dash_guild_disband_btn }}",
+        disband_confirm: "{{ i18n.dash_guild_disband_confirm }}",
+        leave_confirm: "{{ i18n.dash_guild_leave_confirm }}",
+        members_list: "{{ i18n.dash_guild_members_list }}",
+        kick_btn: "{{ i18n.dash_guild_member_kick }}",
+        kick_confirm: "{{ i18n.dash_guild_kick_confirm }}",
+        rank: "{{ i18n.dash_leaderboard_rank }}",
+        name: "{{ i18n.dash_leaderboard_name }}",
+        level: "{{ i18n.dash_leaderboard_level }}",
+        karma: "{{ i18n.dash_leaderboard_karma }}",
+        members: "{{ i18n.dash_leaderboard_members }}"
     };
 </script>
 <script src="/static/js/dashboard.js"></script>
