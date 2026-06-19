@@ -7,6 +7,7 @@ import traceback
 import sys
 import logging
 from scripts.utils.i18n import i18n
+from scripts.main import db
 
 """
 Error handlers, it's where the ifs and elifs go crazy!
