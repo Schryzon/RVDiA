@@ -180,6 +180,52 @@ async def handle_web_chat(request: web.Request):
         return web.json_response({"error": "Failed to generate response."}, status=500)
 
 
+async def handle_public_web_chat(request: web.Request):
+    """POST /api/v1/public/chat — Public session-based chat endpoint.
+    Bypasses standard Discord OAuth authentication.
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "Invalid JSON body."}, status=400)
+
+    session_id = body.get("session_id", "").strip()
+    message = body.get("message", "").strip()
+    lang = body.get("lang", "en")
+
+    if not session_id:
+        return web.json_response({"error": "Missing session_id."}, status=400)
+
+    if len(session_id) > 100:
+        return web.json_response({"error": "session_id is too long."}, status=400)
+
+    if not message:
+        return web.json_response({"error": "Message cannot be empty."}, status=400)
+
+    if len(message) > 2000:
+        return web.json_response({"error": "Message too long (max 2000 chars)."}, status=400)
+
+    import hashlib
+    sha256 = hashlib.sha256(session_id.encode("utf-8")).digest()
+    virtual_user_id = int.from_bytes(sha256[:8], byteorder="big", signed=True) & 0x7FFFFFFFFFFFFFFF
+
+    try:
+        result = await chat_service.generate_chat_response(
+            user_id=virtual_user_id,
+            user_name="Guest",
+            message=message,
+            lang=lang,
+        )
+        return web.json_response({
+            "response": result["response"],
+            "image_url": result.get("image_url"),
+        })
+    except Exception as e:
+        logging.error(f"Public web chat error for session {session_id} (virtual user {virtual_user_id}): {e}", exc_info=True)
+        return web.json_response({"error": "Failed to generate response."}, status=500)
+
+
+
 # ── RPG Actions ──────────────────────────────────────────────
 
 @require_auth
@@ -386,6 +432,7 @@ def setup_api_routes(app: web.Application):
     app.router.add_get("/api/v1/user/inventory", handle_user_inventory)
     app.router.add_get("/api/v1/stats", handle_bot_stats)
     app.router.add_post("/api/v1/chat", handle_web_chat)
+    app.router.add_post("/api/v1/public/chat", handle_public_web_chat)
     app.router.add_post("/api/v1/user/daily", handle_user_daily)
     app.router.add_post("/api/v1/user/adventure", handle_user_adventure)
     app.router.add_post("/api/v1/user/equip", handle_user_equip)
