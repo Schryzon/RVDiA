@@ -38,36 +38,36 @@
 
 ---
 
-## 🧭 Table of Contents
-1. [Core Features](#-core-features)
-2. [Database Architecture & Schema](#-database-architecture--schema)
-3. [Gated Local GPU Image Generation Pipeline](#-gated-local-gpu-image-generation-pipeline)
-4. [Web Dashboard & REST API Endpoints](#-web-dashboard--rest-api-endpoints)
-5. [Embeddable Web Chat Widget](#-embeddable-web-chat-widget)
-6. [Local Development Setup (Windows)](#-local-development-setup-windows)
-7. [Deployment](#-deployment)
-8. [Credits & Contributors](#-credits--contributors)
+## Table of Contents
+1. [Core Features](#core-features)
+2. [Database Schema & Architecture](#database-schema--architecture)
+3. [Local GPU Generation Pipeline](#local-gpu-generation-pipeline)
+4. [Web Dashboard & REST APIs](#web-dashboard--rest-apis)
+5. [Embeddable Web Chat Widget](#embeddable-web-chat-widget)
+6. [Local Development Setup](#local-development-setup)
+7. [Deployment](#deployment)
+8. [Credits & Contributors](#credits--contributors)
 
 ---
 
-## ⚡ Core Features
+## Core Features
 
-### 🎮 Turn-Based RPG Battle Engine
+### Turn-Based RPG Battle Engine
 * **Tactical In-Battle Interface**: Features paginated Select Menus (complying with Discord's API limits) for skills and equipments, complete with real-time health trackers and active state monitoring.
 * **Shop & Inventory**: Over **100+ items, skills, and equipments** configured in JSON and dynamically translated based on locale settings.
 * **Boss Fights & Elite Tiers**: Challenging bosses with complex phases (e.g., Demi-fiend, Nahobino) and unique mechanisms.
 
-### 🖼️ Advanced Image Processing Toolkit
+### Advanced Image Processing Toolkit
 * **Mathematical Comparison**: Employs OpenCV and Matplotlib to analyze and graph visual histograms side-by-side. Supports multiple metric engines (`correl`, `chisqr`, `intersect`, `bhattacharyya`).
 * **Paginated Navigation**: Built-in interactive Discord UI button components enabling fast Next/Prev searching for internet images directly inside message threads.
 
-### 🧠 Persistent AI Memories
+### Persistent AI Memories
 * **Contextual Recall**: Integrates Google Gemini API with [Prisma Client Python](https://prisma-client-py.readthedocs.io/) and vector embeddings to search, record, and write persistent user interactions.
 * **Linguistic Title Casing**: Intelligent formatter processing title-casing rules tailored specifically for Indonesian and English grammatical structures.
 
 ---
 
-## 🗄️ Database Architecture & Schema
+## Database Schema & Architecture
 
 RVDiA relies on PostgreSQL for persistence, mapped via [schema.prisma](file:///c:/Users/nyoma/OneDrive/Desktop/RVDIA/schema.prisma). The core models are organized as follows:
 
@@ -113,7 +113,7 @@ erDiagram
 
 ---
 
-## 🎨 Gated Local GPU Image Generation Pipeline
+## Local GPU Generation Pipeline
 
 To perform heavy Stable Diffusion inference (`Meina/MeinaMix_V11`) without exhausting memory on a low-VRAM development machine (RTX 3050 4GB), RVDiA offloads rendering to a localized laptop server. The process is gated by interactive Windows notification checks to prevent background disruptions:
 
@@ -168,14 +168,14 @@ sequenceDiagram
 
 ---
 
-## 📊 Web Dashboard & REST API Endpoints
+## Web Dashboard & REST APIs
 
 The web interface is hosted on `aiohttp` and `Jinja2` with zero Node dependencies, utilizing standard CSS and clean Javascript logic.
 
-### 🔒 Authentication
+### Authentication
 Authentication utilizes a secure Discord OAuth2 authorization flow. Sessions are persisted client-side using HMAC-signed cookies to prevent hijacking.
 
-### 🌐 Endpoints Definition (in [routes.py](file:///c:/Users/nyoma/OneDrive/Desktop/RVDIA/scripts/api/routes.py))
+### Endpoints Definition (in [routes.py](file:///c:/Users/nyoma/OneDrive/Desktop/RVDIA/scripts/api/routes.py))
 
 | Method | Endpoint | Description | Auth Required |
 | :--- | :--- | :--- | :---: |
@@ -195,18 +195,18 @@ Authentication utilizes a secure Discord OAuth2 authorization flow. Sessions are
 
 ---
 
-## 💬 Embeddable Web Chat Widget
+## Embeddable Web Chat Widget
 
 RVDiA features an embeddable chat script allowing users to interface with the AI assistant from external web pages.
 
-### 🔑 Security & Session-Hashing
+### Security & Session-Hashing
 To avoid polluting the database with arbitrary guest entries, the public endpoint `/api/v1/public/chat` handles stateless traffic by mapping incoming client UUIDs:
 1. Client generates a random UUID on their first load and saves it to `localStorage`.
 2. The server hashes this string using **SHA-256** and extracts the first 8 bytes.
 3. This creates a positive 63-bit signed integer representation which serves as a virtual Discord user ID context in PostgreSQL.
 4. Allows persistent, isolated chat threads per web visitor without requiring Discord login credentials.
 
-### 🚀 Quickstart Embed
+### Quickstart Embed
 Include this script tag inside your HTML body to launch the chatbot:
 ```html
 <script 
@@ -217,21 +217,21 @@ Include this script tag inside your HTML body to launch the chatbot:
 </script>
 ```
 
-### 🛠️ Developer Testbed
+### Developer Testbed
 Creators can visit the built-in development sandbox at `/widget-demo` to inspect the embedded script, configure language settings, and view real-time API logs detailing requests, UUID-to-ID hashes, and response packages.
 
 ---
 
-## 💻 Local Development Setup (Windows)
+## Local Development Setup
 
 Follow these steps to set up and run RVDiA on a Windows machine.
 
-### 📋 Prerequisites
+### Prerequisites
 * **PowerShell 5.1+** (or modern PowerShell Core)
 * **Python 3.12** (Scoop package manager is recommended: `scoop install python312`)
 * **PostgreSQL** database instance.
 
-### 🔧 Step-by-Step Installation
+### Step-by-Step Installation
 1. **Clone the repository**:
    ```powershell
    git clone https://github.com/Schryzon/RVDiA.git
@@ -268,7 +268,7 @@ Follow these steps to set up and run RVDiA on a Windows machine.
 
 ---
 
-## 🚀 Deployment
+## Deployment
 
 RVDiA is configured for seamless deployment on **Railway** using the provided [Dockerfile](file:///c:/Users/nyoma/OneDrive/Desktop/RVDIA/Dockerfile) and [railway.toml](file:///c:/Users/nyoma/OneDrive/Desktop/RVDIA/railway.toml).
 
@@ -276,7 +276,7 @@ When launching in a production container, [start.sh](file:///c:/Users/nyoma/OneD
 
 ---
 
-## 🤝 Credits & Contributors
+## Credits & Contributors
 
 ### Special Acknowledgments
 * **Concept Inspiration**: Riverdia.

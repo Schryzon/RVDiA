@@ -7,7 +7,15 @@ import time
 from datetime import datetime, timedelta
 from prisma import Json
 from discord.ui import View, Button, button
-from scripts.main import db, level_up, send_level_up_msg, split_reward_string, give_rewards, default_data, check_compatible
+from scripts.main import db
+from scripts.game.game import (
+    level_up,
+    send_level_up_msg,
+    split_reward_string,
+    give_rewards,
+    default_data,
+    check_compatible
+)
 from scripts.utils.i18n import i18n
 
 async def get_user_lang(user_id: int) -> str:
