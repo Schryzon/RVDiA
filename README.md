@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://repository-images.githubusercontent.com/610636239/51177a45-e951-42e4-bb6d-128c0bb39d5f" alt="RVDiA's Banner" width="65%" height="65%">
+  <img src="website/static/images/banner.png" alt="RVDiA's Banner" width="65%" height="65%">
 </div>
 
 <p align="center">
@@ -30,36 +30,92 @@
   </a>
 </p>
 
-# RVDiA
-## "Revolusioner, Virtual, Independen."
-Revolutionary Virtual Discord Assistant (RVDiA) is an **Indonesian-oriented Fun Bot focused on Games and Image Processing**.
+---
 
-## What's Special About This Bot?
-This bot is in Indonesian and has special commands for members of the G-Tech Re'sman club. It also offers a variety of utilities, its own RPG (role-playing game) system, and a **dynamic web dashboard**.
+# 🤖 RVDiA (Revolusioner, Virtual, Independen)
 
-## Core Features & Recent Updates
-- **RPG Battle System**: A deep, turn-based combat system with levels, stats, and skills.
-    - **Massive Content**: Over **100+ items and skills** available in the paginated Shop.
-    - **Elite Challenges**: New **FINAL BOSS** tier featuring multi-phase threats like Demi-fiend and Nahobino.
-    - **Tactical UI**: Enhanced in-battle UI with real-time stat checking and **Select Menu optimizations** (paginated items/skills) to comply with Discord API limits.
-- **Advanced Image Analysis**: Professional-grade image processing toolkit powered by OpenCV and Matplotlib.
-    - **Visual Histogram Comparison**: Compare two images with mathematical precision (`correl`, `chisqr`, etc.) and receive a **side-by-side visual plot**.
-    - **Paginated Image Lookup**: Search for images directly in Discord with an interactive navigation system (Next/Prev buttons).
-- **AI Memory & Logic**: Persistent personality driven by Google Gemini and Prisma.
-    - **Smart Memory**: Efficient memory management using Prisma with optimized query logic.
-    - **Smart Title Casing**: Intelligent text formatting handler that respects linguistic rules for both Indonesian and English.
-- **Dynamic Web Dashboard**: Built with `aiohttp` and `Jinja2` featuring premium Glassmorphism aesthetics, responsive layouts, and multilingual support (ID/EN).
-    - **Secure OAuth2 Auth**: Complete authentication flow with Discord, utilizing HMAC-signed cookies for secure session storage.
-    - **REST API Endpoints**:
-        - `/api/v1/user/profile` — Fetches authenticated user profile and details.
-        - `/api/v1/user/inventory` — Retrieves the user's RPG inventory.
-        - `/api/v1/stats` — Exposes system statistics and command execution metrics.
-        - `/api/v1/chat` — Connects the web client to the backend chat service.
-    - **Interactive Frontend**: Rich client-side dashboard with real-time stats updates, animated numeric counters, and a fully functional live chat console.
-- **Top.gg API Integration**: Built-in automated server and shard status reporting using the latest Top.gg API v1 batch metrics endpoint.
+**Revolutionary Virtual Discord Assistant (RVDiA)** is a high-performance, Indonesian-oriented Discord entertainment companion and utility bot built entirely on a modern Python stack. It features deep AI-driven personality integration, an advanced local GPU rendering pipeline, professional-grade image processing, a turn-based RPG battle engine, and a premium **web dashboard** that allows real-time configuration, player interactions, and widget embeddings.
 
-## Gated Local GPU Image Generation Pipeline
-To run Stable Diffusion (`Meina/MeinaMix_V11`) on a low-VRAM laptop (e.g. RTX 3050 4GB) without interrupting web browsing, RVDiA offloads image generation to a local server gated by interactive Windows notification prompts.
+---
+
+## 🧭 Table of Contents
+1. [Core Features](#-core-features)
+2. [Database Architecture & Schema](#-database-architecture--schema)
+3. [Gated Local GPU Image Generation Pipeline](#-gated-local-gpu-image-generation-pipeline)
+4. [Web Dashboard & REST API Endpoints](#-web-dashboard--rest-api-endpoints)
+5. [Embeddable Web Chat Widget](#-embeddable-web-chat-widget)
+6. [Local Development Setup (Windows)](#-local-development-setup-windows)
+7. [Deployment](#-deployment)
+8. [Credits & Contributors](#-credits--contributors)
+
+---
+
+## ⚡ Core Features
+
+### 🎮 Turn-Based RPG Battle Engine
+* **Tactical In-Battle Interface**: Features paginated Select Menus (complying with Discord's API limits) for skills and equipments, complete with real-time health trackers and active state monitoring.
+* **Shop & Inventory**: Over **100+ items, skills, and equipments** configured in JSON and dynamically translated based on locale settings.
+* **Boss Fights & Elite Tiers**: Challenging bosses with complex phases (e.g., Demi-fiend, Nahobino) and unique mechanisms.
+
+### 🖼️ Advanced Image Processing Toolkit
+* **Mathematical Comparison**: Employs OpenCV and Matplotlib to analyze and graph visual histograms side-by-side. Supports multiple metric engines (`correl`, `chisqr`, `intersect`, `bhattacharyya`).
+* **Paginated Navigation**: Built-in interactive Discord UI button components enabling fast Next/Prev searching for internet images directly inside message threads.
+
+### 🧠 Persistent AI Memories
+* **Contextual Recall**: Integrates Google Gemini API with [Prisma Client Python](https://prisma-client-py.readthedocs.io/) and vector embeddings to search, record, and write persistent user interactions.
+* **Linguistic Title Casing**: Intelligent formatter processing title-casing rules tailored specifically for Indonesian and English grammatical structures.
+
+---
+
+## 🗄️ Database Architecture & Schema
+
+RVDiA relies on PostgreSQL for persistence, mapped via [schema.prisma](file:///c:/Users/nyoma/OneDrive/Desktop/RVDIA/schema.prisma). The core models are organized as follows:
+
+```mermaid
+erDiagram
+    User ||--o| Inventory : "owns"
+    User ||--o| Guild : "member of"
+    User ||--o| UserSettings : "customizes"
+    User ||--o{ Message : "sends"
+    User ||--o{ Memory : "associates"
+
+    User {
+        BigInt id PK
+        Int hp
+        Int max_hp
+        Json data "Level, EXP, Coins, Karma, Stats"
+        DateTime premiumUntil
+    }
+
+    Guild {
+        Int id PK
+        String name
+        String tagline
+        String iconUrl
+        BigInt ownerId
+    }
+
+    Inventory {
+        Int id PK
+        BigInt userId FK
+        Json items "IDs & quantities"
+        Json skills "learned skills"
+        Json equipments "equipped items"
+    }
+
+    UserSettings {
+        BigInt userId PK
+        String lang "en/id"
+    }
+```
+
+* **Relations Cascading**: Disbanding a guild safely disconnects all user relations in the database. Deleting users cleanly cascade-deletes their related `Inventory` record.
+
+---
+
+## 🎨 Gated Local GPU Image Generation Pipeline
+
+To perform heavy Stable Diffusion inference (`Meina/MeinaMix_V11`) without exhausting memory on a low-VRAM development machine (RTX 3050 4GB), RVDiA offloads rendering to a localized laptop server. The process is gated by interactive Windows notification checks to prevent background disruptions:
 
 ```mermaid
 sequenceDiagram
@@ -110,39 +166,124 @@ sequenceDiagram
     end
 ```
 
-## Want to Tinker with It Yourself?
-1. Clone this repo or download the latest release from tags;
-2. Get a Discord bot token & Top.gg token;
-3. Get a PostgreSQL Database URL (`DATABASE_URL`) for Prisma;
-4. Get an OpenWeather API key, OpenAI key (for DALL-E), and Google Gemini API key (`googlekey`).
-* There might be more necessities.
+---
 
-(For the `.env` format, check out `.env.example`. Remember to keep your bot secure!)
+## 📊 Web Dashboard & REST API Endpoints
 
-## Additional Information
-This project is __just for fun__ and to improve my programming skills regarding virtual bots and web apps.
+The web interface is hosted on `aiohttp` and `Jinja2` with zero Node dependencies, utilizing standard CSS and clean Javascript logic.
 
-Currently, RVDiA is configured to be hosted using **Railway via Docker**. So, if you want to run the bot, I recommend using Railway's services. But, if you just want to run the bot locally on your personal computer, that's no problem.
+### 🔒 Authentication
+Authentication utilizes a secure Discord OAuth2 authorization flow. Sessions are persisted client-side using HMAC-signed cookies to prevent hijacking.
 
-Run `./start.sh` (or deploy via Docker) to start the bot. This script will automatically generate the Prisma client, push the database schema, and run both RVDiA and the Xelvie monitor. The web dashboard will be accessible at `http://localhost:8080` (or the configured `PORT`).
+### 🌐 Endpoints Definition (in [routes.py](file:///c:/Users/nyoma/OneDrive/Desktop/RVDIA/scripts/api/routes.py))
 
-Join the [CyroN Central server](https://discord.gg/QqWCnk6zxw) on Discord and contact me (Schryzon) if you have any issues, questions, or want to collaborate on RVDiA's development.
-
-### Credits
-Special thanks to Riverdia (for inspiring the bot's name), iMaze, Mouchi, Dez, Zenchew, Ismita, Pockii, Kyuu, Kazama, Bcntt, Nateflakes, nathawiguna, opensourze, Shiruto, Satya Yoga, and many more for helping me with previous projects!
-
-**Made with ❤️ and dedication, Jayananda and contributors**
-
-## Community
-- [Contributing Guidelines](CONTRIBUTING.md)
-- [Code of Conduct](CODE_OF_CONDUCT.md)
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :---: |
+| **GET** | `/api/v1/user/profile` | Fetches authenticated user's profile metadata and currencies. | Yes |
+| **GET** | `/api/v1/user/inventory` | Fetches the user's item, skill, and equipment logs. | Yes |
+| **GET** | `/api/v1/stats` | System metrics (uptime, CPU/RAM, command executions). | No |
+| **POST** | `/api/v1/chat` | Send a prompt to the context-aware chat engine. | Yes |
+| **GET** | `/api/v1/shop` | Fetches the translated list of marketplace items, categorized. | Yes |
+| **POST** | `/api/v1/shop/buy` | Purchase a shop item (consumable, skill, equipment). | Yes |
+| **GET** | `/api/v1/leaderboard` | Fetches Top Players or Guilds ranked rankings. | Yes |
+| **GET** | `/api/v1/guild` | Fetches active guild stats, tagline, icon, and member list. | Yes |
+| **POST** | `/api/v1/guild/create`| Spawns a guild for 5,000 Coins. | Yes |
+| **POST** | `/api/v1/guild/edit` | Modifies the guild name, tagline, or icon URL. | Yes |
+| **POST** | `/api/v1/guild/kick` | Kicks a member (only available to the guild owner). | Yes |
+| **POST** | `/api/v1/guild/leave` | Leave/disband the guild. | Yes |
+| **POST** | `/api/v1/public/chat` | Session-hashed public endpoint for the web widget. | No |
 
 ---
 
-Farewell, Yuyuko, Pandora, and Historia. You will be missed.
+## 💬 Embeddable Web Chat Widget
 
-`Verified: 01/08/2023`
+RVDiA features an embeddable chat script allowing users to interface with the AI assistant from external web pages.
 
-`End of Life: 08/04/2025`
+### 🔑 Security & Session-Hashing
+To avoid polluting the database with arbitrary guest entries, the public endpoint `/api/v1/public/chat` handles stateless traffic by mapping incoming client UUIDs:
+1. Client generates a random UUID on their first load and saves it to `localStorage`.
+2. The server hashes this string using **SHA-256** and extracts the first 8 bytes.
+3. This creates a positive 63-bit signed integer representation which serves as a virtual Discord user ID context in PostgreSQL.
+4. Allows persistent, isolated chat threads per web visitor without requiring Discord login credentials.
 
-`Rebirth: 30/04/2026`
+### 🚀 Quickstart Embed
+Include this script tag inside your HTML body to launch the chatbot:
+```html
+<script 
+  src="http://localhost:8080/static/js/rvdia-widget.js"
+  data-api-url="http://localhost:8080" 
+  data-lang="id"
+  defer>
+</script>
+```
+
+### 🛠️ Developer Testbed
+Creators can visit the built-in development sandbox at `/widget-demo` to inspect the embedded script, configure language settings, and view real-time API logs detailing requests, UUID-to-ID hashes, and response packages.
+
+---
+
+## 💻 Local Development Setup (Windows)
+
+Follow these steps to set up and run RVDiA on a Windows machine.
+
+### 📋 Prerequisites
+* **PowerShell 5.1+** (or modern PowerShell Core)
+* **Python 3.12** (Scoop package manager is recommended: `scoop install python312`)
+* **PostgreSQL** database instance.
+
+### 🔧 Step-by-Step Installation
+1. **Clone the repository**:
+   ```powershell
+   git clone https://github.com/Schryzon/RVDiA.git
+   cd RVDiA
+   ```
+
+2. **Configure Environment Variables**:
+   Copy `.env.example` to `.env` and fill out your api credentials, discord developer credentials, and local postgres database link:
+   ```powershell
+   copy .env.example .env
+   ```
+
+3. **Install Requirements**:
+   ```powershell
+   pip install -r requirements.txt
+   ```
+
+4. **Initialize Prisma Client**:
+   Generate database abstractions and sync models:
+   ```powershell
+   # Generate schema bindings
+   prisma generate
+   
+   # Synchronize models to Postgres
+   prisma db push --accept-data-loss
+   ```
+
+5. **Launch the Engine**:
+   Run the main bot and web panel:
+   ```powershell
+   python RVDIA.py
+   ```
+   The dashboard will be active at `http://localhost:8080`.
+
+---
+
+## 🚀 Deployment
+
+RVDiA is configured for seamless deployment on **Railway** using the provided [Dockerfile](file:///c:/Users/nyoma/OneDrive/Desktop/RVDIA/Dockerfile) and [railway.toml](file:///c:/Users/nyoma/OneDrive/Desktop/RVDIA/railway.toml).
+
+When launching in a production container, [start.sh](file:///c:/Users/nyoma/OneDrive/Desktop/RVDIA/start.sh) runs automatically, ensuring the prisma database models are pushed and client headers are rebuilt before spawning `RVDIA.py`.
+
+---
+
+## 🤝 Credits & Contributors
+
+### Special Acknowledgments
+* **Concept Inspiration**: Riverdia.
+* **Advisors & Core Testers**: iMaze, Mouchi, Dez, Zenchew, Ismita, Pockii, Kyuu, Kazama, Bcntt, Nateflakes, nathawiguna, opensourze, Shiruto, Satya Yoga.
+
+---
+
+**Made with ❤️ and dedication by Jayananda and contributors.**
+
+*Rebirth: 30/04/2026*
