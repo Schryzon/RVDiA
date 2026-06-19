@@ -34,7 +34,7 @@
 
 # 🤖 RVDiA (Revolusioner, Virtual, Independen)
 
-**Revolutionary Virtual Discord Assistant (RVDiA)** is a high-performance, Indonesian-oriented Discord entertainment companion and utility bot built entirely on a modern Python stack. It features deep AI-driven personality integration, an advanced local GPU rendering pipeline, professional-grade image processing, a turn-based RPG battle engine, and a premium **web dashboard** that allows real-time configuration, player interactions, and widget embeddings.
+**Revolutionary Virtual Digital Assistant (RVDiA)** is a high-performance, Indonesian-oriented entertainment companion and utility bot built entirely on a modern Python stack. It features deep AI-driven personality integration, an advanced local GPU rendering pipeline, professional-grade image processing, a turn-based RPG battle engine, and a premium **web dashboard** that allows real-time configuration, player interactions, and widget embeddings.
 
 ---
 

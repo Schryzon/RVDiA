@@ -2,7 +2,7 @@
 Schryzon (Widiyasa Jayananda)
 G-Tech Re'sman Programming Division
 University of Mataram Informatics
-RVDiA (Revolutionary Virtual Discord Assistant)
+RVDiA (Revolutionary Virtual Digital Assistant)
 Feel free to modify and do other stuff.
 Contributions are welcome.
 Licensed under the AGPL-3.0 License.

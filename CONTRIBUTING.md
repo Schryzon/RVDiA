@@ -1,6 +1,6 @@
 # Contributing to RVDiA
 
-Thank you for your interest in contributing to **Revolutionary Virtual Discord Assistant (RVDiA)**! We welcome contributions from everyone, whether it's fixing bugs, adding new features, or improving documentation.
+Thank you for your interest in contributing to **Revolutionary Virtual Digital Assistant (RVDiA)**! We welcome contributions from everyone, whether it's fixing bugs, adding new features, or improving documentation.
 
 ## How to Contribute
 
