@@ -82,6 +82,11 @@ class RVDIA(commands.AutoShardedBot):
     self.loop.create_task(start_web_server(self))
     logging.info("Web Server task created.")
 
+    # Start the Telegram Bot Polling Adapter
+    from scripts.telegram_bot import start_telegram_bot
+    self.loop.create_task(start_telegram_bot(self))
+    logging.info("Telegram Bot task created.")
+
 
 
 rvdia = RVDIA() # Must create instance
