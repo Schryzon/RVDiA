@@ -194,8 +194,51 @@ async def handle_dashboard(request):
     })
 
 
+@web.middleware
+async def security_headers_middleware(request: web.Request, handler):
+    # CORS preflight handling for cross-origin integration
+    if request.method == "OPTIONS":
+        response = web.Response(status=204)
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, X-Internal-Key, Authorization"
+        return response
+        
+    try:
+        response = await handler(request)
+    except web.HTTPException as ex:
+        response = ex
+        
+    # Apply baseline security headers
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    
+    # Configure Content Security Policy (CSP) for HTML pages
+    content_type = response.headers.get("Content-Type", "")
+    if "text/html" in content_type:
+        csp = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com; "
+            "img-src 'self' data: https://cdn.discordapp.com; "
+            "connect-src 'self' https://cdn.tailwindcss.com;"
+        )
+        response.headers["Content-Security-Policy"] = csp
+        
+    # Apply CORS to public API endpoints
+    path = request.path
+    if path.startswith("/api/v1/chat") or path.startswith("/api/v1/stats"):
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, X-Internal-Key, Authorization"
+        
+    return response
+
+
 async def start_web_server(bot):
-    app = web.Application()
+    app = web.Application(middlewares=[security_headers_middleware])
     app['bot'] = bot
     
     # Setup Jinja2 templating
