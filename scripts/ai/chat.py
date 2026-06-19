@@ -5,11 +5,11 @@ import pytz
 from datetime import datetime
 from google import genai
 from google.genai import types
-from scripts.memory import memory_manager
-from scripts.search import search_web, search_images, format_search_results
+from scripts.ai.memory import memory_manager
+from scripts.utils.search import search_web, search_images, format_search_results
 from scripts.main import clean_truncate
 
-from scripts.i18n import i18n
+from scripts.utils.i18n import i18n
 
 class ChatService:
     def __init__(self):

@@ -13,10 +13,10 @@ from prisma import Prisma
 from discord.ui import View, Button
 from discord.ext import commands
 from dotenv import load_dotenv
-from scripts.errors import NoProfilePicture, Blacklisted, NoEventAvailable, NotVoted
-from scripts.errors import NoGameAccount, NoPremiumStatus
+from scripts.utils.errors import NoProfilePicture, Blacklisted, NoEventAvailable, NotVoted
+from scripts.utils.errors import NoGameAccount, NoPremiumStatus
 from datetime import datetime
-from scripts.i18n import i18n
+from scripts.utils.i18n import i18n
 
 load_dotenv()
 

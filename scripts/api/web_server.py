@@ -9,8 +9,8 @@ from datetime import datetime, timedelta
 from aiohttp import web
 from discord.ext import commands
 from scripts.main import db
-from scripts.api_auth import setup_auth_routes, get_session
-from scripts.api_routes import setup_api_routes
+from scripts.api.auth import setup_auth_routes, get_session
+from scripts.api.routes import setup_api_routes
 
 def load_locales():
     locales = {}

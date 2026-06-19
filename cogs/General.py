@@ -20,7 +20,7 @@ from io import BytesIO
 from discord.ui import View, Button, button
 from scripts.main import heading, Url_Buttons, has_pfp, AIClient, db
 from scripts.main import event_available, titlecase, check_blacklist, check_vote, smart_title_case
-from scripts.i18n import i18n
+from scripts.utils.i18n import i18n
     
 day_of_week = {
     '1':"Senin",
@@ -532,7 +532,7 @@ class Utilities(commands.Cog):
             lang = user_settings.lang if user_settings else "en"
 
             try:
-                from scripts.search import search_web
+                from scripts.utils.search import search_web
                 
                 is_nsfw = False
                 channel = ctx.channel

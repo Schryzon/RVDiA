@@ -8,7 +8,7 @@ from aiohttp import ClientSession
 from discord import app_commands
 from discord.ext import commands
 from scripts.main import db, has_voted, check_blacklist
-from scripts.i18n import i18n
+from scripts.utils.i18n import i18n
 
 class Roleplay(commands.GroupCog, group_name = 'roleplay'):
     """

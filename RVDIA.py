@@ -25,15 +25,15 @@ from dotenv import load_dotenv
 from pkgutil import iter_modules
 from scripts.help_menu.help import Help
 from cogs.Conversation import Regenerate_Answer_Button
-from scripts.chat_service import chat_service
-from scripts.i18n import i18n
+from scripts.ai.chat import chat_service
+from scripts.utils.i18n import i18n
 from discord.ext import commands, tasks
 from random import choice as rand
 from contextlib import suppress
 from datetime import datetime
 from scripts.main import titlecase, check_vote, db, get_commands_context, clean_truncate
-from scripts.memory import memory_manager
-from scripts.error_logger import format_error_report
+from scripts.ai.memory import memory_manager
+from scripts.utils.error_logger import format_error_report
 load_dotenv() # Loads the .env file from python-dotenv pack
 
 class RVDIA(commands.AutoShardedBot):
@@ -74,7 +74,7 @@ class RVDIA(commands.AutoShardedBot):
 
   async def setup_hook(self):
     from scripts.main import db
-    from scripts.web_server import start_web_server
+    from scripts.api.web_server import start_web_server
     await db.connect()
     logging.info("Prisma Database connected.")
     
@@ -121,8 +121,6 @@ async def on_ready():
       change_status.start()
       logging.info('change_status() starting!')
 
-    update_guild_status.start()
-
     logging.info("RVDiA is ready.")
 
 
@@ -154,174 +152,6 @@ async def change_status():
   await rvdia.change_presence(status = discord.Status.idle, activity=type)
 
 
-@tasks.loop(hours=1)
-async def update_guild_status():
-    """
-    Sends data regarding shard and server count to Top.gg
-    """
-    try:
-      token = os.getenv('topggtoken')
-      if not token:
-        logging.warning("No topggtoken found in environment variables.")
-        return
-      token = token.strip('"')
-      headers = {
-          'Authorization': f'Bearer {token}',
-          'Content-Type': 'application/json'
-      }
-      payload = {
-          'data': [
-              {
-                  'metrics': {
-                      'server_count': len(rvdia.guilds),
-                      'shard_count': rvdia.shard_count or 0
-                  }
-              }
-          ]
-      }
-      async with aiohttp.ClientSession(headers=headers) as session:
-          async with session.post('https://top.gg/api/v1/projects/@me/metrics/batch', json=payload) as response:
-              if response.status == 204:
-                  logging.info('Posted server updates to Top.gg!')
-              else:
-                  resp_text = await response.text()
-                  logging.error(f'Failed to post updates to Top.gg! Status: {response.status}, Response: {resp_text}')
-
-    except Exception as error:
-       logging.error(f'Error sending server count update!\n{error.__class__.__name__}: {error}')
-
-
-@rvdia.command(aliases = ['on', 'enable'], hidden=True)
-@commands.is_owner()
-async def load(ctx, ext):
-  """
-  Manually load cogs
-  """
-  if ext == "__init__":
-    await ctx.send(f"Stupid.")
-    return
-  try:
-    rvdia.load_extension(f"cogs.{ext}")
-    await ctx.send(f"Cog `{ext}.py` sekarang aktif!")
-  except commands.ExtensionAlreadyLoaded:
-    await ctx.send(f"Cog `{ext}.py` sudah diaktifkan!")
-  except commands.ExtensionNotFound:
-    await ctx.send(f"Cog `{ext}.py` tidak ditemukan!")
-
-
-@rvdia.command(aliases = ['off', 'disable'], hidden=True)
-@commands.is_owner()
-async def unload(ctx, ext):
-  """
-  Manually unload cogs
-  """
-  if ext == "__init__":
-    await ctx.send(f"Stupid.")
-    return
-  try:
-    rvdia.unload_extension(f"cogs.{ext}")
-    await ctx.send(f"Cog `{ext}.py` sekarang tidak aktif!")
-  except commands.ExtensionNotFound:
-    await ctx.send(f"Cog `{ext}.py` tidak ditemukan!")
-  except commands.ExtensionNotLoaded:
-    await ctx.send(f"Cog `{ext}.py` sudah dimatikan!")
-
-@rvdia.command(hidden=True)
-@commands.is_owner()
-async def sync(ctx):
-    """
-    Sync slash commands
-    """
-    synced = await rvdia.tree.sync()
-    await ctx.send(f"Synced {len(synced)} commands.")
-
-@rvdia.command(hidden = True)
-@commands.is_owner()
-async def cogs(ctx):
-    """
-    Cogs list
-    """
-    embed = discord.Embed(title = "RVDIA Cog List", description = "\n".join(cogs_list), color = ctx.author.colour)
-    embed.set_thumbnail(url = rvdia.user.avatar)
-    embed.set_footer(text = "Cogs were taken from \".RVDIA/cogs\"")
-    await ctx.send(embed=embed)
-
-@rvdia.command(hidden=True)
-@commands.is_owner()
-async def refresh(ctx):
-  """
-  In case something went horribly wrong
-  """
-  dynamic_cogs = [c.name for c in iter_modules(['cogs'], prefix='cogs.')]
-  results = []
-  for cog in dynamic_cogs:
-    if not cog == 'cogs.__init__':
-        try:
-            with suppress(commands.ExtensionNotLoaded):
-                await rvdia.unload_extension(cog)
-            await rvdia.load_extension(cog)
-            results.append(f"✅ `{cog}`")
-        except Exception as e:
-            results.append(f"❌ `{cog}`: {str(e)[:50]}")
-            logging.error(f"Failed to load cog {cog}: {e}")
-            
-  embed = discord.Embed(title="Cogs Refresh Status", description="\n".join(results), color=rvdia.color)
-  await ctx.reply(embed=embed)
-
-@rvdia.command(hidden=True)
-@commands.is_owner()
-async def restart(ctx:commands.Context): # In case for timeout
-   await ctx.send('Restarting...')
-   channel = ctx.channel
-   await rvdia.close()
-   await asyncio.sleep(2)
-   rvdia.run(token=os.getenv('token'))
-   await rvdia.wait_until_ready()
-   logging.warning('RVDIA has been remotely restarted!')
-   await channel.send("RVDiA telah direstart!")
-
-@rvdia.command(hidden=True)
-@commands.is_owner()
-async def status(ctx:commands.Context, *, status):
-   if status.lower() == 'restart' or status.lower() == 'reset':
-      if not change_status.is_running:
-         return change_status.start()
-   change_status.cancel()
-   await rvdia.change_presence(status = discord.Status.idle, activity=discord.Game(status))
-   await ctx.reply('Changed my status!')
-
-@rvdia.command(hidden=True)
-@commands.is_owner()
-async def blacklist(ctx:commands.Context, user:discord.User, *, reason:str=None):
-   match user.id:
-      case rvdia.owner_id:
-         return await ctx.reply('Tidak bisa blacklist owner!')
-      case rvdia.user.id:
-         return await ctx.reply('Tidak bisa blacklist diriku sendiri!')
-      case _:
-         pass
-      
-   check_blacklist = await db.blacklist.find_unique(where={'id': user.id})
-   if not check_blacklist:
-      await db.blacklist.create(data={'id': user.id, 'reason': reason})
-      embed = discord.Embed(title='‼️ BLACKLISTED ‼️', timestamp=ctx.message.created_at, color=0xff0000)
-      embed.description = f'**`{user}`** telah diblacklist dari menggunakan RVDIA!'
-      embed.set_thumbnail(url=user.avatar.url if not user.avatar is None else os.getenv('normalpfp'))
-      embed.add_field(name='Alasan:', value=reason, inline=False)
-      return await ctx.reply(embed=embed)
-   
-   await ctx.reply(f'`{user}` telah diblacklist!')
-
-@rvdia.command(hidden=True)
-@commands.is_owner()
-async def whitelist(ctx:commands.Context, user:discord.User):
-   check_blacklist = await db.blacklist.find_unique(where={'id': user.id})
-   if not check_blacklist:
-      return await ctx.reply(f'**`{user}`** tidak diblacklist dari menggunakan RVDIA!')
-   
-   await db.blacklist.delete(where={'id': user.id})
-   await ctx.reply(f'`{user}` telah diwhitelist!')
-
 # Handler variable
 fitur = "Unknown"
 
@@ -341,7 +171,7 @@ async def send_reply_message(msg:discord.Message, message_embed:discord.Embed):
         lang = user_settings.lang if user_settings else "en"
         
         # Parse attachments if any
-        from scripts.attachment_handler import handle_attachment
+        from scripts.image.attachment import handle_attachment
         attachment_text = ""
         image_raw_bytes = None
         image_mime_type = None

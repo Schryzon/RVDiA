@@ -79,7 +79,7 @@ class Paginator:
 
         page_title = title.qualified_name if cog else title
         cog_key = page_title.lower()
-        from scripts.i18n import i18n
+        from scripts.utils.i18n import i18n
         map_key = {
             "conversation": "help.category_conversation",
             "fun": "help.category_fun",
@@ -106,7 +106,7 @@ class Paginator:
         command_list: List[Union[commands.Command, app_commands.commands.Command]],
         group: bool = False,
     ):
-        from scripts.i18n import i18n
+        from scripts.utils.i18n import i18n
         no_desc_text = i18n.get(self.lang, "help.no_description")
 
         for command in command_list:
@@ -167,12 +167,12 @@ class Paginator:
         if command.help:
             info += command.help
         if not info:
-            from scripts.i18n import i18n
+            from scripts.utils.i18n import i18n
             info = i18n.get(self.lang, "help.no_info")
         return info
 
     def add_app_command(self, command: app_commands.commands.Command, signature: str):
-        from scripts.i18n import i18n
+        from scripts.utils.i18n import i18n
         page = self._new_page(
             f"{command.name.title()}", f"{self.prefix}{command.description}{self.suffix}"
         )
@@ -205,7 +205,7 @@ class Paginator:
         self._add_command_fields(page, group.name, group.walk_commands(), group=True)
 
     def add_command(self, command: commands.Command, signature: str):
-        from scripts.i18n import i18n
+        from scripts.utils.i18n import i18n
         page = self._new_page(
             command.qualified_name.title(),
             f"{self.prefix}{self.__command_info(command)}{self.suffix}" or "",
@@ -235,7 +235,7 @@ class Paginator:
         self._add_command_fields(page, group.name, commands_list, group=True)
 
     def add_index(self, title: str, bot: commands.Bot):
-        from scripts.i18n import i18n
+        from scripts.utils.i18n import i18n
         title = i18n.get(self.lang, "help.index_title")
         no_desc_text = i18n.get(self.lang, "help.no_description")
         
@@ -260,7 +260,7 @@ class Paginator:
         lst = []
         start = 0 if self.show_index else 1
         pages = len(self._pages) - 1 if self.show_index else len(self._pages)
-        from scripts.i18n import i18n
+        from scripts.utils.i18n import i18n
         for page_no, page in enumerate(self._pages, start):
             page: discord.Embed
             if not self.show_index or page_no != 0:
@@ -417,7 +417,7 @@ class Help(HelpCommand, commands.Cog):
 
     def get_ending_note(self):
         """Returns help command's ending note. This is mainly useful to override for i18n purposes."""
-        from scripts.i18n import i18n
+        from scripts.utils.i18n import i18n
         # Set self.lang fallback in case prepare_help_command hasn't set it yet
         lang = getattr(self, "lang", "en")
         note = self.ending_note or i18n.get(lang, "help.ending_note")
@@ -560,7 +560,7 @@ class Help(HelpCommand, commands.Cog):
 
     async def send_error_message(self, error: str, /) -> None:
         """Check if the conext is from an app command or text command and send an error message"""
-        from scripts.i18n import i18n
+        from scripts.utils.i18n import i18n
         lang = getattr(self, "lang", "en")
         msg = i18n.get(lang, "help.command_not_found")
         

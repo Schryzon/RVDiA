@@ -12,11 +12,11 @@ from discord.ext import commands, tasks
 from discord.ui import View, Button, button
 from PIL import Image
 from scripts.main import smart_title_case, check_blacklist, AIClient, db, get_commands_context, clean_truncate
-from scripts.memory import memory_manager
-from scripts.chat_service import chat_service
-from scripts.error_logger import format_error_report
-from scripts.search import search_web, search_images, format_search_results
-from scripts.i18n import i18n
+from scripts.ai.memory import memory_manager
+from scripts.ai.chat import chat_service
+from scripts.utils.error_logger import format_error_report
+from scripts.utils.search import search_web, search_images, format_search_results
+from scripts.utils.i18n import i18n
 
 
 class Regenerate_Answer_Button(View):
@@ -336,7 +336,7 @@ class Conversation(commands.Cog):
             image_mime_type = None
             
             if target_attachment:
-                from scripts.attachment_handler import handle_attachment
+                from scripts.image.attachment import handle_attachment
                 att_res = await handle_attachment(target_attachment)
                 if att_res["text"]:
                     attachment_text = att_res["text"]
@@ -584,7 +584,7 @@ class Conversation(commands.Cog):
         """
         import io
         import aiohttp
-        from scripts.errors import ArtistOffline, GenerationDeclined, GenerationFailed, NSFWBlocked, GenerationTimeout
+        from scripts.utils.errors import ArtistOffline, GenerationDeclined, GenerationFailed, NSFWBlocked, GenerationTimeout
         
         # Reconstruct prompt for prefix command if choices parsing was bypassed
         if ctx.interaction is None:

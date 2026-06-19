@@ -1,45 +1,86 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
-    <h2 class="section-title">{{ i18n.commands_title }}</h2>
-    <p style="text-align: center; color: #ccc; margin-bottom: 2rem;">{{ i18n.commands_subtitle }}</p>
+<div class="max-w-4xl mx-auto px-4 py-6">
+    <h2 class="text-3xl font-extrabold text-center text-white mb-2 tracking-tight">
+        {{ i18n.commands_title }}
+    </h2>
+    <p class="text-center text-slate-400 text-sm mb-8">
+        {{ i18n.commands_subtitle }}
+    </p>
     
-    <div class="search-container">
-        <input type="text" id="command-search" placeholder="{{ i18n.search_commands }}">
+    <!-- Search Box -->
+    <div class="relative max-w-md mx-auto mb-10">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+        </div>
+        <input type="text" id="command-search" 
+               placeholder="{{ i18n.search_commands }}"
+               class="block w-full pl-10 pr-4 py-3 bg-white/[0.04] border border-white/10 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-300 text-sm">
     </div>
 
-    <div class="categories-list">
+    <!-- Commands List -->
+    <div class="space-y-10" id="categories-list">
         {% for cat in categories %}
-        <div class="category-section">
-            <h3 class="category-title">{{ cat.name }}</h3>
-            <div class="commands-grid">
+        <div class="category-section space-y-4">
+            <h3 class="text-lg font-bold text-accent tracking-wide uppercase border-b border-white/10 pb-2">
+                {{ cat.name }}
+            </h3>
+            
+            <div class="grid grid-cols-1 gap-4">
                 {% for cmd in cat.commands %}
-                <div class="command-card collapsible" id="cmd-{{ cmd.name }}">
-                    <div class="command-header">
-                        <span class="command-name">{{ cmd.name }}</span>
+                <!-- Command Card -->
+                <div x-data="{ open: false }" 
+                     class="command-card glass-card-style p-5 cursor-pointer hover:border-white/20 select-none"
+                     id="cmd-{{ cmd.name }}"
+                     @click="open = !open">
+                    
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="command-name text-sm font-semibold bg-white/[0.04] border border-white/10 px-2.5 py-1 rounded-md text-white font-mono">
+                                /{{ cmd.name }}
+                            </span>
+                        </div>
                         {% if cmd.subcommands or cmd.aliases %}
-                        <span class="expand-icon">▼</span>
+                        <span class="text-slate-500 text-xs transition-transform duration-300" :class="{'rotate-180': open}">
+                            ▼
+                        </span>
                         {% endif %}
                     </div>
-                    <p class="command-desc">{{ cmd.description or i18n.no_description }}</p>
                     
-                    <div class="command-details">
+                    <p class="command-desc text-slate-400 text-sm mt-3 leading-relaxed">
+                        {{ cmd.description or i18n.no_description }}
+                    </p>
+                    
+                    <!-- Collapsible Details Container -->
+                    <div x-show="open" 
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 -translate-y-2"
+                         x-transition:enter-end="opacity-100 translate-y-0"
+                         @click.stop
+                         class="mt-4 pt-4 border-t border-white/[0.06] space-y-4 cursor-default">
+                        
+                        <!-- Aliases -->
                         {% if cmd.aliases %}
-                        <div class="detail-item">
-                            <strong>Aliases:</strong> 
-                            <span class="alias-tag">{{ cmd.aliases|join(', ') }}</span>
+                        <div class="text-xs">
+                            <strong class="text-slate-300 font-medium">Aliases:</strong> 
+                            <span class="ml-2 font-mono text-slate-400 bg-white/[0.03] px-1.5 py-0.5 rounded border border-white/[0.05]">
+                                {{ cmd.aliases|join(', ') }}
+                            </span>
                         </div>
                         {% endif %}
 
+                        <!-- Subcommands -->
                         {% if cmd.subcommands %}
-                        <div class="subcommands-section">
-                            <strong>Subcommands:</strong>
-                            <div class="subcommands-list">
+                        <div class="space-y-2">
+                            <strong class="text-xs text-slate-300 font-medium block">Subcommands:</strong>
+                            <div class="space-y-2 pl-2 border-l border-white/10">
                                 {% for sub in cmd.subcommands %}
-                                <div class="subcommand-item">
-                                    <code>{{ cmd.name }} {{ sub.name }}</code>
-                                    <p>{{ sub.description or i18n.no_description }}</p>
+                                <div class="subcommand-item text-xs space-y-1 py-1">
+                                    <code class="text-accent font-bold font-mono">/{{ cmd.name }} {{ sub.name }}</code>
+                                    <p class="text-slate-400 leading-relaxed">{{ sub.description or i18n.no_description }}</p>
                                 </div>
                                 {% endfor %}
                             </div>

@@ -3,7 +3,7 @@ from discord import app_commands
 from scripts.main import db, check_blacklist
 from os import getenv
 from discord.ext import commands
-from scripts.i18n import i18n
+from scripts.utils.i18n import i18n
 
 class Moderation(commands.Cog):
     """

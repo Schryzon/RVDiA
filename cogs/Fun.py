@@ -6,7 +6,7 @@ from discord.ext import commands
 from PIL import Image
 from io import BytesIO
 from scripts.main import db, has_voted, check_blacklist
-from scripts.i18n import i18n
+from scripts.utils.i18n import i18n
 
 class Fun(commands.Cog):
     """

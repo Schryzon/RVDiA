@@ -6,18 +6,18 @@ import os
 import traceback
 import sys
 import logging
-from scripts.i18n import i18n
+from scripts.utils.i18n import i18n
 
 """
 Error handlers, it's where the ifs and elifs go crazy!
 """
 
-from scripts.errors import (
+from scripts.utils.errors import (
     NoProfilePicture,
     Blacklisted, NoEventAvailable, NotVoted, NoGameAccount, AccountIncompatible,
     ArtistOffline, GenerationDeclined, GenerationFailed, NSFWBlocked, GenerationTimeout
 )
-from scripts.error_logger import format_error_report
+from scripts.utils.error_logger import format_error_report
 
 class Support_Button(View):
         def __init__(self):

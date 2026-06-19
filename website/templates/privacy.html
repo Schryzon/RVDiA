@@ -1,8 +1,12 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="page-content">
-    <h1>{{ i18n.privacy_title }}</h1>
-    {{ i18n.privacy_content | safe }}
+<div class="glass-card-style p-6 md:p-10 max-w-4xl mx-auto space-y-6">
+    <h1 class="text-3xl font-extrabold text-white tracking-tight border-b border-white/10 pb-4 mb-4">
+        {{ i18n.privacy_title }}
+    </h1>
+    <div class="prose prose-invert max-w-none text-slate-300 text-sm leading-relaxed space-y-4">
+        {{ i18n.privacy_content | safe }}
+    </div>
 </div>
 {% endblock %}

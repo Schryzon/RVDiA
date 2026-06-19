@@ -6,9 +6,9 @@ Protected by session-based authentication.
 import time
 import logging
 from aiohttp import web
-from scripts.api_auth import require_auth, get_session
+from scripts.api.auth import require_auth, get_session
 from scripts.main import db
-from scripts.chat_service import chat_service
+from scripts.ai.chat import chat_service
 
 
 # ── User Profile ─────────────────────────────────────────────

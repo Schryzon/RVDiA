@@ -8,14 +8,14 @@ import io
 from discord.ext import commands
 from discord import app_commands
 from scripts.main import db, check_blacklist, has_pfp, smart_title_case
-from scripts.search import search_images
-from scripts.image_processing import (
+from scripts.utils.search import search_images
+from scripts.image.processing import (
     Image_Ops, Convolution, Histogram, Equalization, 
     Enhancement, Specialization, Edge_Detection, 
     Morphology, gpu_available, gpu_info, _GPU_NAME,
     Wavelet, Stego, FreqFilter
 )
-from scripts.i18n import i18n
+from scripts.utils.i18n import i18n
 
 class ImageSearchView(discord.ui.View):
     """

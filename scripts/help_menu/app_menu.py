@@ -33,7 +33,7 @@ class AppNav(View):
         self.pages = pages
 
         # Translate select placeholder dynamically
-        from scripts.i18n import i18n
+        from scripts.utils.i18n import i18n
         self.select.placeholder = i18n.get(lang, "help.select_placeholder")
 
         if pages and len(pages) == 1:

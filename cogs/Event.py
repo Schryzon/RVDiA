@@ -3,7 +3,7 @@ import os
 from discord import app_commands
 from discord.ext import commands
 from scripts.main import db, check_blacklist, event_available
-from scripts.i18n import i18n
+from scripts.utils.i18n import i18n
 
 class Event(commands.GroupCog, group_name = 'event'):
     """

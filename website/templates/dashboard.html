@@ -1,78 +1,184 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="dashboard-container">
+<style type="text/tailwindcss">
+    @layer components {
+        .profile-header-row {
+            @apply flex justify-between items-center mb-1;
+        }
+        .profile-name {
+            @apply text-xl font-bold text-white;
+        }
+        .profile-level {
+            @apply text-sm font-semibold bg-accent/25 border border-accent/35 text-white px-2.5 py-0.5 rounded-md font-mono;
+        }
+        .profile-guild {
+            @apply text-xs font-semibold text-slate-400 mb-6 flex items-center gap-1;
+        }
+        .bar-group {
+            @apply mb-4;
+        }
+        .bar-label {
+            @apply flex justify-between text-xs font-semibold text-slate-300 mb-1.5;
+        }
+        .progress-bar {
+            @apply h-2.5 bg-white/[0.04] border border-white/10 rounded-full overflow-hidden;
+        }
+        .progress-fill {
+            @apply h-full transition-all duration-1000 rounded-full;
+        }
+        .hp-fill {
+            /* dynamic background set via js style attribute */
+        }
+        .exp-fill {
+            @apply bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)];
+        }
+        .profile-stats-grid {
+            @apply grid grid-cols-3 gap-3.5 mt-6;
+        }
+        .profile-stat {
+            @apply flex flex-col items-center justify-center p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center transition-all duration-300 hover:border-white/10 hover:bg-white/[0.04];
+        }
+        .stat-icon {
+            @apply text-xl mb-1;
+        }
+        .stat-num {
+            @apply text-base font-bold text-white;
+        }
+        .stat-name {
+            @apply text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5;
+        }
+        .profile-empty {
+            @apply text-center text-slate-400 text-sm py-8;
+        }
+        .profile-placeholder {
+            @apply text-center text-slate-400 text-sm animate-pulse;
+        }
+        .inv-grid {
+            @apply grid grid-cols-1 sm:grid-cols-2 gap-3.5;
+        }
+        .inv-item {
+            @apply relative flex justify-between items-center p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] transition-all duration-300 hover:bg-white/[0.04] hover:border-white/10 text-sm;
+        }
+        .inv-item.equipped {
+            @apply border-accent bg-accent/5 hover:bg-accent/10;
+        }
+        .inv-item-name {
+            @apply font-semibold text-slate-200;
+        }
+        .inv-item-qty {
+            @apply font-mono text-xs text-slate-400 bg-white/[0.04] px-1.5 py-0.5 rounded border border-white/5;
+        }
+        .inv-equipped-badge {
+            @apply absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 bg-accent text-[9px] font-black rounded-full border-2 border-dark-900 text-white shadow-md;
+        }
+        .skill-item {
+            @apply border-indigo-500/20 bg-indigo-500/[0.02] hover:bg-indigo-500/[0.05];
+        }
+    }
+</style>
+
+<div class="max-w-6xl mx-auto px-4 py-4 md:py-8 space-y-6 md:space-y-8">
+    
     <!-- Dashboard Header -->
-    <div class="dash-header">
-        <div class="dash-user-info">
-            <img src="{{ user.avatar_url }}" alt="Avatar" class="dash-avatar" id="dash-avatar">
-            <div>
-                <h2 class="dash-username" id="dash-username">{{ user.username }}</h2>
-                <span class="dash-badge" id="dash-premium-badge" style="display:none;">⭐ Premium</span>
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 md:p-6 glass-card-style">
+        <div class="flex items-center gap-4">
+            <img src="{{ user.avatar_url }}" alt="Avatar" class="w-16 h-16 rounded-full border-2 border-accent object-cover shadow-lg" id="dash-avatar">
+            <div class="space-y-1">
+                <h2 class="text-xl md:text-2xl font-black text-white leading-tight" id="dash-username">{{ user.username }}</h2>
+                <span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20" id="dash-premium-badge" style="display:none;">
+                    ⭐ Premium
+                </span>
             </div>
         </div>
-        <a href="/api/auth/logout?lang={{ lang }}" class="btn btn-secondary btn-sm" id="logout-btn">{{ i18n.logout }}</a>
+        <a href="/api/auth/logout?lang={{ lang }}" class="btn-outline !py-2 !px-4 text-sm" id="logout-btn">
+            {{ i18n.logout }}
+        </a>
     </div>
 
     <!-- Stats Bar -->
-    <div class="dash-stats-bar" id="stats-bar">
-        <div class="stat-item">
-            <span class="stat-value" id="stat-servers">—</span>
-            <span class="stat-label">{{ i18n.dash_servers }}</span>
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6" id="stats-bar">
+        <!-- Stat Item 1 -->
+        <div class="glass-card-style p-5 flex flex-col items-center justify-center text-center">
+            <span class="text-2xl md:text-3xl font-black text-accent drop-shadow-sm" id="stat-servers">—</span>
+            <span class="text-xs text-slate-400 font-semibold tracking-wider uppercase mt-1">{{ i18n.dash_servers }}</span>
         </div>
-        <div class="stat-item">
-            <span class="stat-value" id="stat-users">—</span>
-            <span class="stat-label">{{ i18n.dash_users }}</span>
+        <!-- Stat Item 2 -->
+        <div class="glass-card-style p-5 flex flex-col items-center justify-center text-center">
+            <span class="text-2xl md:text-3xl font-black text-accent drop-shadow-sm" id="stat-users">—</span>
+            <span class="text-xs text-slate-400 font-semibold tracking-wider uppercase mt-1">{{ i18n.dash_users }}</span>
         </div>
-        <div class="stat-item">
-            <span class="stat-value" id="stat-memories">—</span>
-            <span class="stat-label">{{ i18n.dash_memories }}</span>
+        <!-- Stat Item 3 -->
+        <div class="glass-card-style p-5 flex flex-col items-center justify-center text-center">
+            <span class="text-2xl md:text-3xl font-black text-accent drop-shadow-sm" id="stat-memories">—</span>
+            <span class="text-xs text-slate-400 font-semibold tracking-wider uppercase mt-1">{{ i18n.dash_memories }}</span>
         </div>
-        <div class="stat-item">
-            <span class="stat-value" id="stat-uptime">—</span>
-            <span class="stat-label">{{ i18n.dash_uptime }}</span>
+        <!-- Stat Item 4 -->
+        <div class="glass-card-style p-5 flex flex-col items-center justify-center text-center">
+            <span class="text-2xl md:text-3xl font-black text-sky-brand drop-shadow-sm" id="stat-uptime">—</span>
+            <span class="text-xs text-slate-400 font-semibold tracking-wider uppercase mt-1">{{ i18n.dash_uptime }}</span>
         </div>
     </div>
 
     <!-- Main Grid -->
-    <div class="dash-grid">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+        
         <!-- RPG Profile Card -->
-        <div class="dash-card profile-card" id="profile-card">
-            <h3 class="dash-card-title">{{ i18n.dash_profile_title }}</h3>
-            <div id="profile-content" class="profile-loading">
-                <div class="profile-placeholder">{{ i18n.dash_loading }}</div>
+        <div class="glass-card-style p-6 md:p-8 flex flex-col" id="profile-card">
+            <h3 class="text-lg font-bold text-white tracking-wide uppercase border-b border-white/10 pb-3 mb-6">
+                ⚔️ {{ i18n.dash_profile_title }}
+            </h3>
+            
+            <div id="profile-content" class="flex-1 flex flex-col justify-center min-h-[220px]">
+                <div class="text-center text-slate-400 text-sm animate-pulse">
+                    {{ i18n.dash_loading }}
+                </div>
             </div>
         </div>
 
         <!-- Inventory Card -->
-        <div class="dash-card inventory-card" id="inventory-card">
-            <h3 class="dash-card-title">{{ i18n.dash_inventory_title }}</h3>
-            <div id="inventory-content" class="profile-loading">
-                <div class="profile-placeholder">{{ i18n.dash_loading }}</div>
+        <div class="glass-card-style p-6 md:p-8 flex flex-col" id="inventory-card">
+            <h3 class="text-lg font-bold text-white tracking-wide uppercase border-b border-white/10 pb-3 mb-6">
+                🎒 {{ i18n.dash_inventory_title }}
+            </h3>
+            
+            <div id="inventory-content" class="flex-1 flex flex-col justify-center min-h-[220px]">
+                <div class="text-center text-slate-400 text-sm animate-pulse">
+                    {{ i18n.dash_loading }}
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Web Chat Widget -->
     <div class="chat-widget" id="chat-widget">
+        <!-- Collapsed Toggle -->
         <div class="chat-toggle" id="chat-toggle">
-            <span class="chat-toggle-icon">💬</span>
-            <span class="chat-toggle-text">{{ i18n.dash_chat_title }}</span>
+            <span class="text-lg">💬</span>
+            <span class="text-sm font-semibold tracking-wide">{{ i18n.dash_chat_title }}</span>
         </div>
+
+        <!-- Chat Panel -->
         <div class="chat-panel" id="chat-panel">
             <div class="chat-header">
-                <span>{{ i18n.dash_chat_title }}</span>
+                <span class="text-sm font-bold text-white tracking-wide uppercase">💬 {{ i18n.dash_chat_title }}</span>
                 <button class="chat-close" id="chat-close">✕</button>
             </div>
+            
+            <!-- Messages Area -->
             <div class="chat-messages" id="chat-messages">
-                <div class="chat-bubble bot-bubble visible">
+                <div class="chat-bubble bot-bubble visible bg-accent/10 border border-accent/20 text-slate-200 self-start p-3 rounded-2xl rounded-bl-sm text-sm max-w-[85%]">
                     <p>{{ i18n.dash_chat_greeting }}</p>
                 </div>
             </div>
+            
+            <!-- Input Area -->
             <div class="chat-input-area">
-                <input type="text" id="chat-input" placeholder="{{ i18n.dash_chat_placeholder }}" maxlength="2000" autocomplete="off">
+                <input type="text" id="chat-input" placeholder="{{ i18n.dash_chat_placeholder }}" maxlength="2000" autocomplete="off"
+                       class="flex-1 bg-white/[0.04] border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-slate-400 text-sm focus:outline-none focus:border-accent transition-all duration-300">
+                
                 <button class="chat-send" id="chat-send">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white">
                         <line x1="22" y1="2" x2="11" y2="13"></line>
                         <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                     </svg>
@@ -83,7 +189,7 @@
 </div>
 
 <script>
-    // pass lang to dashboard.js
+    // Pass lang context to dashboard.js
     window.__RVDIA_LANG__ = "{{ lang }}";
 </script>
 <script src="/static/js/dashboard.js"></script>

@@ -1,32 +1,68 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="hero">
-    <img src="/static/images/banner.jpg" alt="RVDiA Banner" class="banner-img">
-    <h1>{{ i18n.hero_title }}</h1>
-    <p>{{ i18n.hero_subtitle }}</p>
+<section class="flex flex-col items-center text-center py-10 md:py-16">
+    <!-- Hero Banner Image -->
+    <div class="relative w-full max-w-4xl mb-8 md:mb-12 rounded-3xl overflow-hidden shadow-2xl border border-white/10 group">
+        <div class="absolute inset-0 bg-gradient-to-t from-dark-900 via-transparent to-transparent opacity-60 z-10"></div>
+        <img src="/static/images/banner.png" alt="RVDiA Banner" class="w-full h-auto object-cover transform group-hover:scale-[1.01] transition-transform duration-700">
+    </div>
 
-    <div class="cta-buttons">
+    <!-- Hero Titles -->
+    <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight mb-4 text-white drop-shadow-sm font-sans">
+        {{ i18n.hero_title }}
+    </h1>
+    <p class="text-lg sm:text-xl text-slate-300 max-w-2xl mb-8 md:mb-10 font-light px-4">
+        {{ i18n.hero_subtitle }}
+    </p>
+
+    <!-- Call to Actions -->
+    <div class="flex flex-col sm:flex-row gap-4 sm:gap-6 w-full max-w-md px-4">
         <a href="https://discord.com/api/oauth2/authorize?client_id=957471338577166417&permissions=1514446056561&scope=bot%20applications.commands"
-            class="btn btn-primary" target="_blank">{{ i18n.invite }}</a>
-        <a href="https://discord.gg/QqWCnk6zxw" class="btn btn-secondary" target="_blank">{{ i18n.support }}</a>
+           class="btn-accent text-base py-3 px-8 shadow-accent/20" target="_blank">
+            <svg class="w-5 height-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
+            </svg>
+            {{ i18n.invite }}
+        </a>
+        <a href="https://discord.gg/QqWCnk6zxw" class="btn-outline text-base py-3 px-8" target="_blank">
+            <svg class="w-5 h-5 text-sky-brand" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            {{ i18n.support }}
+        </a>
     </div>
 </section>
 
-<div class="container">
-    <h2 class="section-title">{{ i18n.features_title }}</h2>
-    <div class="features-grid">
-        <div class="glass-card">
-            <h3>{{ i18n.feature_1_title }}</h3>
-            <p>{{ i18n.feature_1_desc }}</p>
+<!-- Features section -->
+<div class="mt-8 md:mt-16 max-w-6xl mx-auto px-4">
+    <h2 class="text-3xl font-bold tracking-tight text-center text-white mb-10 md:mb-12">
+        {{ i18n.features_title }}
+    </h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+        <!-- Feature 1 -->
+        <div class="glass-card-style p-6 md:p-8 hover:border-accent hover:shadow-accent/5 hover:-translate-y-1">
+            <div class="w-12 h-12 rounded-2xl bg-accent/20 flex items-center justify-center text-2xl text-accent mb-5">
+                ⚔️
+            </div>
+            <h3 class="text-xl font-bold text-white mb-3">{{ i18n.feature_1_title }}</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">{{ i18n.feature_1_desc }}</p>
         </div>
-        <div class="glass-card">
-            <h3>{{ i18n.feature_2_title }}</h3>
-            <p>{{ i18n.feature_2_desc }}</p>
+        <!-- Feature 2 -->
+        <div class="glass-card-style p-6 md:p-8 hover:border-accent hover:shadow-accent/5 hover:-translate-y-1">
+            <div class="w-12 h-12 rounded-2xl bg-sky-brand/20 flex items-center justify-center text-2xl text-sky-brand mb-5">
+                🎨
+            </div>
+            <h3 class="text-xl font-bold text-white mb-3">{{ i18n.feature_2_title }}</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">{{ i18n.feature_2_desc }}</p>
         </div>
-        <div class="glass-card">
-            <h3>{{ i18n.feature_3_title }}</h3>
-            <p>{{ i18n.feature_3_desc }}</p>
+        <!-- Feature 3 -->
+        <div class="glass-card-style p-6 md:p-8 hover:border-accent hover:shadow-accent/5 hover:-translate-y-1">
+            <div class="w-12 h-12 rounded-2xl bg-pink-brand/20 flex items-center justify-center text-2xl text-pink-brand mb-5">
+                💬
+            </div>
+            <h3 class="text-xl font-bold text-white mb-3">{{ i18n.feature_3_title }}</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">{{ i18n.feature_3_desc }}</p>
         </div>
     </div>
 </div>

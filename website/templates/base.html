@@ -4,10 +4,70 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ i18n.title }}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS v3 CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        accent: {
+                            light: '#a83c55',
+                            DEFAULT: '#86273d', // signature maroon
+                            dark: '#611b2b',
+                        },
+                        sky: {
+                            brand: '#0ea5e9',
+                        },
+                        dark: {
+                            950: '#070a13',
+                            900: '#0b0f19',
+                            800: '#111827',
+                            700: '#1f2937',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'Inter', 'system-ui', 'sans-serif'],
+                    },
+                    backdropBlur: {
+                        glass: '16px',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Alpine.js CDN -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Custom CSS (for animations, constructs, backgrounds) -->
     <link rel="stylesheet" href="/static/css/styles.css">
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .glass-card-style {
+                @apply bg-white/[0.03] backdrop-blur-glass border border-white/[0.08] rounded-2xl shadow-xl transition-all duration-300;
+            }
+            .glass-nav-style {
+                @apply bg-dark-900/70 backdrop-blur-glass border-b border-white/[0.08];
+            }
+            .btn-accent {
+                @apply bg-accent hover:bg-accent-light text-white font-semibold px-6 py-2.5 rounded-xl shadow-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] inline-flex items-center justify-center gap-2;
+            }
+            .btn-outline {
+                @apply border border-white/20 hover:border-white/40 hover:bg-white/[0.04] text-white font-semibold px-6 py-2.5 rounded-xl transition-all duration-300 inline-flex items-center justify-center gap-2;
+            }
+        }
+    </style>
 </head>
-<body>
+<body class="relative min-h-screen text-slate-100 bg-dark-900" x-data="{ mobileMenuOpen: false }">
+    
     <!-- Fantasy Royal Background Elements -->
     <div class="fantasy-bg">
         <!-- Floating Kingdom Constructs -->
@@ -25,6 +85,7 @@
         <div class="sparkle sp-6"></div>
         <div class="sparkle sp-7"></div>
     </div>
+
     <!-- Page Loader Overlay -->
     <div id="page-loader" class="page-loader">
         <div class="loader-content">
@@ -32,51 +93,123 @@
         </div>
     </div>
 
-    <nav>
-        <a href="/?lang={{ lang }}" class="logo">RVDiA</a>
-        <div class="menu-toggle" id="mobile-menu">
-            <span class="bar"></span>
-            <span class="bar"></span>
-            <span class="bar"></span>
+    <!-- Sticky Glass Navbar -->
+    <nav class="sticky top-0 z-50 glass-nav-style">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Left: Logo -->
+                <div class="flex-shrink-0">
+                    <a href="/?lang={{ lang }}" class="text-2xl font-black tracking-wider text-accent drop-shadow-[0_0_8px_rgba(134,39,61,0.4)] hover:opacity-90 transition-opacity">
+                        RVDiA
+                    </a>
+                </div>
+
+                <!-- Center/Right: Desktop Links -->
+                <div class="hidden md:flex items-center gap-6">
+                    <ul class="flex items-center gap-6 font-medium text-sm text-slate-300">
+                        <li><a href="/?lang={{ lang }}" class="hover:text-white transition-colors duration-200">{{ i18n.home }}</a></li>
+                        <li><a href="/commands?lang={{ lang }}" class="hover:text-white transition-colors duration-200">{{ i18n.commands }}</a></li>
+                        <li><a href="/privacy?lang={{ lang }}" class="hover:text-white transition-colors duration-200">{{ i18n.privacy }}</a></li>
+                        <li><a href="/terms?lang={{ lang }}" class="hover:text-white transition-colors duration-200">{{ i18n.terms }}</a></li>
+                        <li><a href="/license?lang={{ lang }}" class="hover:text-white transition-colors duration-200">{{ i18n.license_title }}</a></li>
+                    </ul>
+                    
+                    <div class="h-4 w-px bg-white/10 mx-2"></div>
+
+                    <div class="flex items-center gap-4">
+                        {% if user and user.logged_in %}
+                        <a href="/dashboard?lang={{ lang }}" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/10 hover:border-accent hover:bg-accent/10 transition-all duration-300">
+                            <img src="{{ user.avatar_url }}" alt="Avatar" class="w-7 h-7 rounded-full object-cover">
+                            <span class="text-sm font-semibold pr-1">{{ user.username }}</span>
+                        </a>
+                        {% else %}
+                        <a href="/login?lang={{ lang }}" class="btn-accent py-1.5 px-4 text-sm font-semibold !rounded-full shadow-none">
+                            {{ i18n.get('login_nav', 'Login') }}
+                        </a>
+                        {% endif %}
+
+                        <!-- Lang switch -->
+                        <div class="flex items-center bg-white/[0.03] border border-white/10 rounded-lg p-0.5 text-xs font-semibold">
+                            <a href="?lang=id" class="px-2 py-1 rounded-md transition-all {% if lang == 'id' %}bg-accent text-white{% else %}text-slate-400 hover:text-white{% endif %}">ID</a>
+                            <a href="?lang=en" class="px-2 py-1 rounded-md transition-all {% if lang == 'en' %}bg-accent text-white{% else %}text-slate-400 hover:text-white{% endif %}">EN</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Mobile Menu Toggle Button -->
+                <div class="flex md:hidden">
+                    <button @click="mobileMenuOpen = !mobileMenuOpen" type="button" class="inline-flex items-center justify-center p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.05] focus:outline-none transition-colors">
+                        <svg class="h-6 w-6" :class="{'hidden': mobileMenuOpen, 'block': !mobileMenuOpen }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                        <svg class="h-6 w-6" :class="{'block': mobileMenuOpen, 'hidden': !mobileMenuOpen }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
         </div>
-        <ul class="nav-links">
-            <li><a href="/?lang={{ lang }}">{{ i18n.home }}</a></li>
-            <li><a href="/commands?lang={{ lang }}">{{ i18n.commands }}</a></li>
-            <li><a href="/privacy?lang={{ lang }}">{{ i18n.privacy }}</a></li>
-            <li><a href="/terms?lang={{ lang }}">{{ i18n.terms }}</a></li>
-            <li><a href="/license?lang={{ lang }}">{{ i18n.license_title }}</a></li>
-            {% if user and user.logged_in %}
-            <li><a href="/dashboard?lang={{ lang }}" class="nav-dash-link">{{ i18n.get('dashboard_nav', 'Dashboard') }}</a></li>
-            {% else %}
-            <li><a href="/login?lang={{ lang }}" class="nav-login-link">{{ i18n.get('login_nav', 'Login') }}</a></li>
-            {% endif %}
-            <li class="mobile-only lang-switch-mobile">
-                <a href="?lang=id">ID</a>
-                <a href="?lang=en">EN</a>
-            </li>
-        </ul>
-        <div class="nav-right desktop-only">
-            {% if user and user.logged_in %}
-            <a href="/dashboard?lang={{ lang }}" class="nav-user-pill">
-                <img src="{{ user.avatar_url }}" alt="Avatar" class="nav-avatar">
-                <span>{{ user.username }}</span>
-            </a>
-            {% endif %}
-            <div class="lang-switch">
-                <a href="?lang=id">ID</a>
-                <a href="?lang=en">EN</a>
+
+        <!-- Mobile Drawer menu (Alpine.js) -->
+        <div x-show="mobileMenuOpen" 
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 -translate-y-4"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 translate-y-0"
+             x-transition:leave-end="opacity-0 -translate-y-4"
+             class="md:hidden border-b border-white/[0.08] bg-dark-900/95 backdrop-blur-lg absolute top-16 left-0 w-full"
+             style="display: none;">
+            <div class="px-4 pt-2 pb-4 space-y-1">
+                <a href="/?lang={{ lang }}" class="block px-3 py-2 rounded-lg text-base font-medium text-slate-300 hover:text-white hover:bg-white/[0.05]">{{ i18n.home }}</a>
+                <a href="/commands?lang={{ lang }}" class="block px-3 py-2 rounded-lg text-base font-medium text-slate-300 hover:text-white hover:bg-white/[0.05]">{{ i18n.commands }}</a>
+                <a href="/privacy?lang={{ lang }}" class="block px-3 py-2 rounded-lg text-base font-medium text-slate-300 hover:text-white hover:bg-white/[0.05]">{{ i18n.privacy }}</a>
+                <a href="/terms?lang={{ lang }}" class="block px-3 py-2 rounded-lg text-base font-medium text-slate-300 hover:text-white hover:bg-white/[0.05]">{{ i18n.terms }}</a>
+                <a href="/license?lang={{ lang }}" class="block px-3 py-2 rounded-lg text-base font-medium text-slate-300 hover:text-white hover:bg-white/[0.05]">{{ i18n.license_title }}</a>
+                
+                <div class="h-px bg-white/10 my-2"></div>
+                
+                <div class="flex items-center justify-between px-3 py-2">
+                    {% if user and user.logged_in %}
+                    <a href="/dashboard?lang={{ lang }}" class="flex items-center gap-2">
+                        <img src="{{ user.avatar_url }}" alt="Avatar" class="w-8 h-8 rounded-full object-cover">
+                        <span class="text-sm font-semibold">{{ user.username }}</span>
+                    </a>
+                    {% else %}
+                    <a href="/login?lang={{ lang }}" class="btn-accent py-1.5 px-4 text-sm font-semibold !rounded-full shadow-none w-full text-center">
+                        {{ i18n.get('login_nav', 'Login') }}
+                    </a>
+                    {% endif %}
+                </div>
+
+                <div class="flex items-center justify-center gap-4 pt-2">
+                    <a href="?lang=id" class="px-4 py-1.5 rounded-lg border border-white/10 text-sm font-semibold {% if lang == 'id' %}bg-accent text-white{% else %}text-slate-400{% endif %}">ID</a>
+                    <a href="?lang=en" class="px-4 py-1.5 rounded-lg border border-white/10 text-sm font-semibold {% if lang == 'en' %}bg-accent text-white{% else %}text-slate-400{% endif %}">EN</a>
+                </div>
             </div>
         </div>
     </nav>
 
-    <main id="main-content">
+    <!-- Main Content Container -->
+    <main id="main-content" class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
         {% block content %}{% endblock %}
     </main>
 
-    <footer>
-        <p>{{ i18n.footer_made_with }} | <a href="/privacy?lang={{ lang }}" style="color:var(--accent-color);">{{ i18n.privacy }}</a> | <a href="/terms?lang={{ lang }}" style="color:var(--accent-color);">{{ i18n.terms }}</a> | <a href="/license?lang={{ lang }}" style="color:var(--accent-color);">{{ i18n.license_title }}</a></p>
+    <!-- Footer -->
+    <footer class="relative z-10 border-t border-white/[0.08] bg-dark-950/80 backdrop-blur-md py-8 mt-12 text-center text-sm text-slate-400">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-3">
+            <p>{{ i18n.footer_made_with }}</p>
+            <div class="flex items-center justify-center gap-4 text-xs font-semibold">
+                <a href="/privacy?lang={{ lang }}" class="hover:text-white transition-colors">{{ i18n.privacy }}</a>
+                <span class="text-white/10">|</span>
+                <a href="/terms?lang={{ lang }}" class="hover:text-white transition-colors">{{ i18n.terms }}</a>
+                <span class="text-white/10">|</span>
+                <a href="/license?lang={{ lang }}" class="hover:text-white transition-colors">{{ i18n.license_title }}</a>
+            </div>
+        </div>
     </footer>
 
+    <!-- SPA link interceptor scripts -->
     <script src="/static/js/script.js"></script>
 </body>
 </html>
