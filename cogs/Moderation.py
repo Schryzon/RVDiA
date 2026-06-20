@@ -393,5 +393,189 @@ class Moderation(commands.Cog):
         success_msg = i18n.get(lang, "moderation.clear_success", amount=amount, channel=channel.mention)
         return await ctx.channel.send(success_msg, delete_after = 5.0)
 
+    @commands.hybrid_group(name="automod", description="Manage Discord's native AutoMod rules.")
+    @commands.has_permissions(manage_guild=True)
+    @commands.bot_has_permissions(manage_guild=True)
+    @check_blacklist()
+    async def automod(self, ctx: commands.Context):
+        """
+        Manage Discord's native AutoMod rules.
+        """
+        if ctx.invoked_subcommand is None:
+            await ctx.send_help(ctx.command)
+
+    @automod.command(name="list", description="List all active Discord native AutoMod rules in the server.")
+    @commands.has_permissions(manage_guild=True)
+    @commands.bot_has_permissions(manage_guild=True)
+    @check_blacklist()
+    async def list(self, ctx: commands.Context):
+        """
+        List all active Discord native AutoMod rules in the server.
+        """
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
+        try:
+            rules = await ctx.guild.fetch_automod_rules()
+            if not rules:
+                return await ctx.reply(i18n.get(lang, "moderation.automod_list_empty"))
+
+            lines = []
+            for r in rules:
+                trigger_name = r.trigger.type.name
+                enabled_str = "YES" if r.enabled else "NO"
+                lines.append(i18n.get(lang, "moderation.automod_rule_item", name=r.name, id=r.id, trigger=trigger_name, enabled=enabled_str))
+
+            embed = discord.Embed(
+                title=i18n.get(lang, "moderation.automod_list_title", name=ctx.guild.name),
+                description="\n".join(lines),
+                color=self.bot.color
+            )
+            await ctx.reply(embed=embed)
+        except Exception as e:
+            await ctx.reply(i18n.get(lang, "moderation.automod_error", error=str(e)))
+
+    @automod.command(name="create_keyword", description="Create a keyword-based AutoMod rule to block specific words.")
+    @commands.has_permissions(manage_guild=True)
+    @commands.bot_has_permissions(manage_guild=True)
+    @app_commands.describe(
+        name="The unique name of the AutoMod rule.",
+        words="Comma-separated words/phrases to block (e.g. hack, scam, *nitro*).",
+        alert_channel="Optional channel to send alerts to when a word is blocked."
+    )
+    @check_blacklist()
+    async def create_keyword(self, ctx: commands.Context, name: str, words: str, alert_channel: discord.TextChannel = None):
+        """
+        Create a keyword-based AutoMod rule to block specific words.
+        """
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
+        words_list = [w.strip() for w in words.split(",") if w.strip()]
+        if not words_list:
+            return await ctx.reply("Please provide at least one valid word to block.", ephemeral=True)
+
+        try:
+            trigger = discord.AutoModTrigger(type=discord.AutoModRuleTriggerType.keyword, keyword_filter=words_list)
+            actions = [discord.AutoModRuleAction()]
+            if alert_channel:
+                actions.append(discord.AutoModRuleAction(channel_id=alert_channel.id))
+
+            await ctx.guild.create_automod_rule(
+                name=name,
+                event_type=discord.AutoModRuleEventType.message_send,
+                trigger=trigger,
+                actions=actions,
+                enabled=True,
+                reason=f"Created via RVDiA automod command by {ctx.author}"
+            )
+            await ctx.reply(i18n.get(lang, "moderation.automod_keyword_created", name=name))
+        except Exception as e:
+            await ctx.reply(i18n.get(lang, "moderation.automod_error", error=str(e)))
+
+    @automod.command(name="create_spam", description="Create or enable a mention spam filter rule.")
+    @commands.has_permissions(manage_guild=True)
+    @commands.bot_has_permissions(manage_guild=True)
+    @app_commands.describe(
+        mention_limit="Max number of unique mentions allowed in a single message (default: 5)."
+    )
+    @check_blacklist()
+    async def create_spam(self, ctx: commands.Context, mention_limit: int = 5):
+        """
+        Create or enable a mention spam filter rule.
+        """
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
+        try:
+            trigger = discord.AutoModTrigger(type=discord.AutoModRuleTriggerType.mention_spam, mention_limit=mention_limit)
+            actions = [discord.AutoModRuleAction()]
+
+            await ctx.guild.create_automod_rule(
+                name=f"RVDiA Mention Spam Filter ({mention_limit})",
+                event_type=discord.AutoModRuleEventType.message_send,
+                trigger=trigger,
+                actions=actions,
+                enabled=True,
+                reason=f"Created via RVDiA automod command by {ctx.author}"
+            )
+            await ctx.reply(i18n.get(lang, "moderation.automod_spam_created", limit=mention_limit))
+        except Exception as e:
+            await ctx.reply(i18n.get(lang, "moderation.automod_error", error=str(e)))
+
+    @automod.command(name="create_preset", description="Enable a pre-configured keyword preset rule from Discord.")
+    @commands.has_permissions(manage_guild=True)
+    @commands.bot_has_permissions(manage_guild=True)
+    @app_commands.describe(
+        preset_type="The category preset to enable (profanity, sexual_content, slurs)."
+    )
+    @app_commands.choices(preset_type=[
+        app_commands.Choice(name="Profanity", value="profanity"),
+        app_commands.Choice(name="Sexual Content", value="sexual_content"),
+        app_commands.Choice(name="Slurs", value="slurs")
+    ])
+    @check_blacklist()
+    async def create_preset(self, ctx: commands.Context, preset_type: str):
+        """
+        Enable a pre-configured keyword preset rule from Discord.
+        """
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
+        try:
+            presets_object = discord.AutoModPresets.none()
+            if preset_type == "profanity":
+                presets_object.profanity = True
+            elif preset_type == "sexual_content":
+                presets_object.sexual_content = True
+            elif preset_type == "slurs":
+                presets_object.slurs = True
+
+            trigger = discord.AutoModTrigger(type=discord.AutoModRuleTriggerType.keyword_preset, presets=presets_object)
+            actions = [discord.AutoModRuleAction()]
+
+            rule_name = f"RVDiA Preset Filter - {preset_type.replace('_', ' ').title()}"
+            await ctx.guild.create_automod_rule(
+                name=rule_name,
+                event_type=discord.AutoModRuleEventType.message_send,
+                trigger=trigger,
+                actions=actions,
+                enabled=True,
+                reason=f"Created via RVDiA automod command by {ctx.author}"
+            )
+            await ctx.reply(i18n.get(lang, "moderation.automod_preset_created", preset=preset_type.replace('_', ' ').title()))
+        except Exception as e:
+            await ctx.reply(i18n.get(lang, "moderation.automod_error", error=str(e)))
+
+    @automod.command(name="delete", description="Delete a Discord native AutoMod rule by its name or ID.")
+    @commands.has_permissions(manage_guild=True)
+    @commands.bot_has_permissions(manage_guild=True)
+    @app_commands.describe(
+        rule_name_or_id="The name or ID of the AutoMod rule to delete."
+    )
+    @check_blacklist()
+    async def delete(self, ctx: commands.Context, rule_name_or_id: str):
+        """
+        Delete a Discord native AutoMod rule by its name or ID.
+        """
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
+        try:
+            rules = await ctx.guild.fetch_automod_rules()
+            target_rule = None
+            for r in rules:
+                if str(r.id) == rule_name_or_id or r.name.lower() == rule_name_or_id.lower():
+                    target_rule = r
+                    break
+
+            if not target_rule:
+                return await ctx.reply(i18n.get(lang, "moderation.automod_rule_not_found", query=rule_name_or_id))
+
+            await target_rule.delete(reason=f"Deleted via RVDiA automod command by {ctx.author}")
+            await ctx.reply(i18n.get(lang, "moderation.automod_deleted", name=target_rule.name))
+        except Exception as e:
+            await ctx.reply(i18n.get(lang, "moderation.automod_error", error=str(e)))
+
 async def setup(bot):
     await bot.add_cog(Moderation(bot))

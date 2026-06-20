@@ -215,7 +215,16 @@
         "clear_limit_error": "I have a limit of deleting `99` messages!",
         "clear_deleting_here": "Deleting **`{amount}`** messages...",
         "clear_deleting_there": "Deleting **`{amount}`** messages in {channel}...",
-        "clear_success": "I have successfully deleted {amount} messages from {channel}."
+        "clear_success": "I have successfully deleted {amount} messages from {channel}.",
+        "automod_list_title": "Native AutoMod Rules in {name}",
+        "automod_list_empty": "No active native AutoMod rules found in this server.",
+        "automod_rule_item": "• **{name}** (ID: `{id}`)\n  Trigger: `{trigger}` | Enabled: `{enabled}`",
+        "automod_keyword_created": "Successfully created keyword AutoMod rule: **{name}**!",
+        "automod_spam_created": "Successfully enabled mention spam filter with limit **{limit}**!",
+        "automod_preset_created": "Successfully enabled preset AutoMod rule for: **{preset}**!",
+        "automod_deleted": "Successfully deleted AutoMod rule: **{name}**!",
+        "automod_rule_not_found": "Could not find an AutoMod rule with name or ID: **{query}**",
+        "automod_error": "Failed to configure AutoMod: {error}"
     },
     "image": {
         "search_footer": "Result {current}/{total} | Source: {source}",
@@ -1217,6 +1226,38 @@
             "arguments": {
                 "amount": "Number of messages to delete",
                 "channel": "Target channel to clear (defaults to current channel)"
+            }
+        },
+        "automod": {
+            "description": "Manage Discord's native AutoMod rules."
+        },
+        "automod.list": {
+            "description": "List all active Discord native AutoMod rules in the server."
+        },
+        "automod.create_keyword": {
+            "description": "Create a keyword-based AutoMod rule to block specific words.",
+            "arguments": {
+                "name": "The unique name of the AutoMod rule.",
+                "words": "Comma-separated words/phrases to block (e.g. hack, scam, *nitro*).",
+                "alert_channel": "Optional channel to send alerts to when a word is blocked."
+            }
+        },
+        "automod.create_spam": {
+            "description": "Create or enable a mention spam filter rule.",
+            "arguments": {
+                "mention_limit": "Max number of unique mentions allowed in a single message (default: 5)."
+            }
+        },
+        "automod.create_preset": {
+            "description": "Enable a pre-configured keyword preset rule from Discord.",
+            "arguments": {
+                "preset_type": "The category preset to enable (profanity, sexual_content, slurs)."
+            }
+        },
+        "automod.delete": {
+            "description": "Delete a Discord native AutoMod rule by its name or ID.",
+            "arguments": {
+                "rule_name_or_id": "The name or ID of the AutoMod rule to delete."
             }
         },
         "rvdia": {

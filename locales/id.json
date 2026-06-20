@@ -215,7 +215,16 @@
         "clear_limit_error": "Aku mempunyai batas untuk menghapus `99` pesan!",
         "clear_deleting_here": "Menghapus **`{amount}`** pesan...",
         "clear_deleting_there": "Menghapus **`{amount}`** pesan di {channel}...",
-        "clear_success": "Aku telah menghapus {amount} pesan dari {channel}."
+        "clear_success": "Aku telah menghapus {amount} pesan dari {channel}.",
+        "automod_list_title": "Aturan AutoMod Bawaan di {name}",
+        "automod_list_empty": "Tidak ditemukan aturan AutoMod bawaan yang aktif di server ini.",
+        "automod_rule_item": "• **{name}** (ID: `{id}`)\n  Pemicu: `{trigger}` | Aktif: `{enabled}`",
+        "automod_keyword_created": "Berhasil membuat aturan AutoMod kata kunci: **{name}**!",
+        "automod_spam_created": "Berhasil mengaktifkan filter mention spam dengan batas **{limit}**!",
+        "automod_preset_created": "Berhasil mengaktifkan aturan AutoMod preset untuk: **{preset}**!",
+        "automod_deleted": "Berhasil menghapus aturan AutoMod: **{name}**!",
+        "automod_rule_not_found": "Tidak dapat menemukan aturan AutoMod dengan nama atau ID: **{query}**",
+        "automod_error": "Gagal mengonfigurasi AutoMod: {error}"
     },
     "image": {
         "search_footer": "Hasil {current}/{total} | Sumber: {source}",
@@ -1217,6 +1226,38 @@
             "arguments": {
                 "amount": "Jumlah pesan yang ingin dihapus",
                 "channel": "Saluran target yang ingin dibersihkan (bawaan: saluran saat ini)"
+            }
+        },
+        "automod": {
+            "description": "Kelola aturan AutoMod bawaan Discord."
+        },
+        "automod.list": {
+            "description": "Daftar semua aturan AutoMod bawaan Discord yang aktif di server ini."
+        },
+        "automod.create_keyword": {
+            "description": "Buat aturan AutoMod berbasis kata kunci untuk memblokir kata-kata tertentu.",
+            "arguments": {
+                "name": "Nama unik dari aturan AutoMod.",
+                "words": "Daftar kata kunci yang dipisahkan koma untuk diblokir (Contoh: hack, scam, *nitro*).",
+                "alert_channel": "Saluran opsional untuk mengirimkan notifikasi saat pesan diblokir."
+            }
+        },
+        "automod.create_spam": {
+            "description": "Buat atau aktifkan aturan filter mention spam.",
+            "arguments": {
+                "mention_limit": "Jumlah maksimum sebutan (mentions) unik dalam satu pesan (default: 5)."
+            }
+        },
+        "automod.create_preset": {
+            "description": "Aktifkan filter preset kata kunci bawaan dari Discord.",
+            "arguments": {
+                "preset_type": "Kategori preset yang ingin diaktifkan (profanity, sexual_content, slurs)."
+            }
+        },
+        "automod.delete": {
+            "description": "Hapus aturan AutoMod bawaan Discord berdasarkan nama atau ID.",
+            "arguments": {
+                "rule_name_or_id": "Nama atau ID dari aturan AutoMod yang ingin dihapus."
             }
         },
         "rvdia": {

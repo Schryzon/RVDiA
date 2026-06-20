@@ -112,4 +112,19 @@ Whenever you create or modify a command, you **MUST** update both [locales/en.js
 
 This dynamic approach keeps Discord slash command syncing fast and clean in English, while providing a fully localized, rich help menu experience matching the user's language settings!
 
+
+---
+
+## ✦ 6. Discord Native AutoMod Guidelines
+
+RVDiA supports server moderation using **Discord's Native AutoMod API**. This allows administrators to manage safety filters programmatically.
+
+### Core Architecture:
+* **Gateway Intent-Free**: Native AutoMod rules run directly on Discord's servers. RVDiA manages them via REST API calls (e.g. `Guild.create_automod_rule`), avoiding the need for the privileged gateway `Message Content Intent`.
+* **Required Permissions**: 
+  * The bot must have the **Manage Server** (`manage_guild`) permission to view, edit, or delete rules. This permission is included by default in the bot's standard invite link permissions bitmask (`1514446056561`).
+  * Command decorators must enforce `@commands.has_permissions(manage_guild=True)` and `@commands.bot_has_permissions(manage_guild=True)` to prevent unauthorized rule tampering.
+
+---
+
 Glub glub, wiggle wiggle! 🐟😺 Keep the machinery running smoothly!
