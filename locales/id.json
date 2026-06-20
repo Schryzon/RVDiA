@@ -1629,6 +1629,31 @@
         "histogram": {
             "description": "Alat analisis histogram gambar."
         },
+        "histogram.show": {
+            "description": "Tampilkan histogram gambar.",
+            "arguments": {
+                "user": "User yang avatar-nya ingin dilihat histogram-nya",
+                "attachment": "Gambar yang ingin dilihat histogram-nya"
+            }
+        },
+        "histogram.match": {
+            "description": "Samakan histogram antara dua gambar (match).",
+            "arguments": {
+                "user1": "User pertama",
+                "user2": "User kedua",
+                "attachment1": "Gambar pertama",
+                "attachment2": "Gambar kedua"
+            }
+        },
+        "histogram.transfer": {
+            "description": "Transfer warna dari satu gambar ke gambar lain.",
+            "arguments": {
+                "source_user": "User sumber warna",
+                "ref_user": "User referensi warna",
+                "source_attachment": "Gambar sumber warna",
+                "ref_attachment": "Gambar referensi warna"
+            }
+        },
         "histogram.compare": {
             "description": "Bandingkan kemiripan antara dua gambar menggunakan histogram.",
             "arguments": {

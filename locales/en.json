@@ -1629,6 +1629,31 @@
         "histogram": {
             "description": "Image histogram analysis tools."
         },
+        "histogram.show": {
+            "description": "Show the image histogram.",
+            "arguments": {
+                "user": "User whose avatar histogram you want to view.",
+                "attachment": "Image file to view the histogram of."
+            }
+        },
+        "histogram.match": {
+            "description": "Match the histogram of two images.",
+            "arguments": {
+                "user1": "First user source.",
+                "user2": "Second user source.",
+                "attachment1": "First source image.",
+                "attachment2": "Second source image."
+            }
+        },
+        "histogram.transfer": {
+            "description": "Transfer colors from one image to another.",
+            "arguments": {
+                "source_user": "Color source user.",
+                "ref_user": "Color reference user.",
+                "source_attachment": "Color source image.",
+                "ref_attachment": "Color reference image."
+            }
+        },
         "histogram.compare": {
             "description": "Compare similarity between two images using histograms.",
             "arguments": {

@@ -59,161 +59,155 @@ class Game(commands.Cog):
     @check_blacklist()
     async def game(self, ctx: commands.Context):
         """
-        Lihat profil pengguna di Re:Volution ~ The Dream World!
+        Show a user's profile in Re:Volution ~ The Dream World!
         """
         await execute_profile(ctx, self.bot)
 
-    @game.command(description='Daftarkan dirimu ke Re:Volution!')
-    @app_commands.describe(name='Nama karakter impianmu.')
+    @game.command(description='Register yourself to Re:Volution!')
+    @app_commands.describe(name='The name of your dream character.')
     @check_blacklist()
     async def register(self, ctx: commands.Context, name: str = None):
         """
-        Daftarkan dirimu ke Re:Volution!
+        Register yourself to Re:Volution!
         """
         await execute_register(ctx, name)
 
-    @game.command(description='Lihat papan peringkat terkuat!')
+    @game.command(description='View the leaderboard of the strongest players!')
     @check_blacklist()
     async def leaderboard(self, ctx: commands.Context):
         """
-        Lihat papan peringkat terkuat!
+        View the leaderboard of the strongest players!
         """
         await execute_leaderboard(ctx)
 
-    @game.command(description='Buku panduan bermain Re:Volution.')
+    @game.command(description='Guidebook for playing Re:Volution.')
     @check_blacklist()
     async def guide(self, ctx: commands.Context):
         """
-        Buku panduan bermain Re:Volution.
+        Guidebook for playing Re:Volution.
         """
         await execute_guide(ctx, self.bot)
 
-    @game.command(description='Daftar update terbaru Re:Volution.')
+    @game.command(description='Latest update list of Re:Volution.')
     @check_blacklist()
     async def changelog(self, ctx: commands.Context):
         """
-        Daftar update terbaru Re:Volution.
+        Latest update list of Re:Volution.
         """
         await execute_changelog(ctx, self.bot)
 
-    @game.command(description='Hapus akun Re:Volution-mu.')
+    @game.command(description='Delete your Re:Volution account.')
     @has_registered()
     @check_blacklist()
     async def resign(self, ctx: commands.Context):
         """
-        Hapus akun Re:Volution-mu.
+        Delete your Re:Volution account.
         """
         await execute_resign(ctx)
 
-    @game.command(description='Klaim hadiah harianmu!')
+    @game.command(description='Claim your daily reward!')
     @has_registered()
     @check_compatible()
     @check_blacklist()
     async def daily(self, ctx: commands.Context):
         """
-        Klaim hadiah harianmu!
+        Claim your daily reward!
         """
         await execute_daily(ctx, self.bot)
 
-    @game.command(description='Lihat profilmu atau pengguna lain.')
-    @app_commands.describe(user='Siapa yang ingin kamu lihat?')
-    @app_commands.rename(user='pengguna')
+    @game.command(description='View your profile or another user\'s profile.')
+    @app_commands.describe(user='Whose profile do you want to view?')
     @has_registered()
     @check_compatible()
     @check_blacklist()
     async def profile(self, ctx: commands.Context, *, user: discord.User = None):
         """
-        Lihat profilmu atau pengguna lain.
+        View your profile or another user's profile.
         """
         await execute_profile(ctx, self.bot, user)
 
-    @game.command(description='Perbaiki struktur data akunmu.')
+    @game.command(description='Fix your account data structure.')
     @has_registered()
     @check_blacklist()
     async def fix_account(self, ctx: commands.Context):
         """
-        Gunakan ini jika akunmu mengalami masalah struktur data atau item tidak muncul di tempatnya.
+        Use this if your account has data structure issues or items do not appear in the correct place.
         """
         await execute_fix_account(ctx)
 
-    @game.command(description="Beli item atau perlengkapan perang!")
+    @game.command(description="Buy items or battle equipment!")
     @has_registered()
     @check_compatible()
     @check_blacklist()
     async def shop(self, ctx: commands.Context):
         """
-        Beli item atau perlengkapan perang!
+        Buy items or battle equipment!
         """
         await execute_shop(ctx)
 
-    @game.command(description="Jelajahi dunia mimpi!")
+    @game.command(description="Explore the dream world!")
     @has_registered()
     @check_compatible()
     @check_blacklist()
     async def adventure(self, ctx: commands.Context):
         """
-        Jelajahi dunia mimpi!
+        Explore the dream world!
         """
         await execute_adventure(ctx)
 
-    @game.command(description='Tantang seseorang ke sebuah duel!')
-    @app_commands.describe(member='Siapa yang ingin kamu lawan?')
-    @app_commands.rename(member='pengguna')
+    @game.command(description='Challenge someone to a duel!')
+    @app_commands.describe(member='Who do you want to fight?')
     @has_registered()
     @check_compatible()
     @check_blacklist()
     async def fight(self, ctx: commands.Context, *, member: discord.Member):
         """
-        Tantang seseorang ke sebuah duel!
+        Challenge someone to a duel!
         """
         await execute_fight(ctx, self.bot, member)
 
-    @game.command(description='Lawan musuh-musuh yang ada di Re:Volution!')
-    @app_commands.describe(enemy_tier='Musuh level berapa yang ingin kamu lawan?')
-    @app_commands.rename(enemy_tier='level')
-    @app_commands.describe(enemy_name='Nama musuh yang ingin kamu lawan?')
-    @app_commands.rename(enemy_name='nama_musuh')
+    @game.command(description='Fight enemies in Re:Volution!')
+    @app_commands.describe(enemy_tier='What level of enemy do you want to fight?')
+    @app_commands.describe(enemy_name='The name of the enemy you want to fight?')
     @app_commands.choices(enemy_tier=[
         app_commands.Choice(name='BOSS', value='boss'),
         app_commands.Choice(name='BONUS', value='bonus'),
         app_commands.Choice(name='ELITE', value='elite'),
-        app_commands.Choice(name='High (Tinggi)', value='high'),
-        app_commands.Choice(name="Normal (Sedang)", value='normal'),
-        app_commands.Choice(name='Low (Rendah)', value='low')
+        app_commands.Choice(name='High', value='high'),
+        app_commands.Choice(name="Normal", value='normal'),
+        app_commands.Choice(name='Low', value='low')
     ])
     @has_registered()
     @check_compatible()
     @check_blacklist()
     async def battle(self, ctx: commands.Context, enemy_tier: app_commands.Choice[str], enemy_name: str = None):
         """
-        Lawan musuh-musuh yang ada di Re:Volution ~ The Dream World!
+        Fight enemies in Re:Volution ~ The Dream World!
         """
         await execute_battle(ctx, self.bot, enemy_tier.value, enemy_name)
 
-    @game.command(description='Lihat daftar musuh yang muncul di Re:Volution!', aliases=['enemy'])
+    @game.command(description='View the list of enemies in Re:Volution!', aliases=['enemy'])
     @has_registered()
     async def enemies(self, ctx: commands.Context):
         """
-        Lihat daftar musuh yang muncul di Re:Volution ~ The Dream World!
+        View the list of enemies in Re:Volution ~ The Dream World!
         """
         await execute_enemies(ctx)
 
-    @game.command(description='Request untuk pemindahan data akun.')
-    @app_commands.describe(old_acc="Akun Discord lamamu atau ID akun Discord lamamu.")
-    @app_commands.describe(reason="Alasan request pemindahan data akun.")
-    @app_commands.rename(reason="alasan")
-    @app_commands.rename(old_acc="akun_lama")
+    @game.command(description='Request account data transfer.')
+    @app_commands.describe(old_acc="Your old Discord account or Discord account ID.")
+    @app_commands.describe(reason="Reason for the account transfer request.")
     @has_registered()
     @check_compatible()
     @check_blacklist()
     async def transfer(self, ctx: commands.Context, old_acc: discord.User, *, reason: str):
         """
-        Request untuk pemindahan data akun.
+        Request account data transfer.
         """
         await execute_transfer(ctx, self.bot, old_acc, reason)
 
-    @game.command(description='Ayo main tebak angka bersamaku!')
-    @app_commands.describe(level='Tingkat kesulitan mana yang akan kamu pilih?')
+    @game.command(description='Let\'s play a number guessing game with me!')
+    @app_commands.describe(level='Which difficulty level will you choose?')
     @app_commands.choices(level=[
         app_commands.Choice(name='SUPER', value='SUPER'),
         app_commands.Choice(name='HARD', value='HARD'),
@@ -223,124 +217,123 @@ class Game(commands.Cog):
     @check_blacklist()
     async def guess(self, ctx: commands.Context, level: app_commands.Choice[str]):
         """
-        Ayo main tebak angka bersamaku!
+        Let's play a number guessing game with me!
         """
         await execute_guess(ctx, level.value)
 
-    @game.command(description="Gunakan barang atau perlengkapan perang!")
-    @app_commands.describe(type='Jenis barang yang ingin digunakan?')
+    @game.command(description="Use an item or equipment!")
+    @app_commands.describe(type='The type of item you want to use.')
     @app_commands.choices(type=[
-        app_commands.Choice(name='Barang (Consumable)', value='item'),
-        app_commands.Choice(name='Perlengkapan (Equipment)', value='equipment')
+        app_commands.Choice(name='Item (Consumable)', value='item'),
+        app_commands.Choice(name='Equipment', value='equipment')
     ])
-    @app_commands.rename(type='jenis')
     @has_registered()
     @check_compatible()
     @check_blacklist()
     async def use(self, ctx: commands.Context, type: app_commands.Choice[str]):
         """
-        Gunakan barang atau perlengkapan perang!
+        Use an item or equipment!
         """
         await execute_use(ctx, type.value)
 
     # ── Guild Commands ────────────────────────────────────────
 
-    @commands.hybrid_group(name="guild", description="Sistem Guild Re:Volution", fallback="info")
+    @commands.hybrid_group(name="guild", description="Re:Volution Guild System", fallback="info")
     @check_blacklist()
     async def guild(self, ctx: commands.Context):
         """
-        Lihat informasi guild kamu atau guild orang lain.
+        View your guild info or another guild's info.
         """
         await execute_guild_info(ctx)
 
-    @guild.command(name="create", description="Buat guild baru! (Biaya: 5000 Koin)")
-    @app_commands.describe(name="Nama guild impianmu")
+    @guild.command(name="create", description="Create a new guild! (Cost: 5000 Coins)")
+    @app_commands.describe(name="Your dream guild name")
     @check_blacklist()
     async def guild_create(self, ctx: commands.Context, name: str):
         """
-        Buat guild baru untuk komunitasmu!
+        Create a new guild for your community!
         """
         await execute_guild_create(ctx, name)
 
-    @guild.command(name="edit", description="Ubah identitas guildmu (Hanya Owner)")
+    @guild.command(name="edit", description="Edit your guild details (Owner only)")
     @app_commands.describe(
-        name="Nama baru guild",
-        tagline="Tagline keren guildmu",
-        icon_url="URL Gambar untuk ikon guild"
+        name="New guild name",
+        tagline="Your guild's cool tagline",
+        icon_url="Image URL for the guild icon"
     )
     @check_blacklist()
     async def guild_edit(self, ctx: commands.Context, name: str = None, tagline: str = None, icon_url: str = None):
         """
-        Ubah detail guildmu agar terlihat lebih keren!
+        Edit your guild details to make it look cooler!
         """
         await execute_guild_edit(ctx, name, tagline, icon_url)
 
-    @guild.command(name="invite", description="Undang seseorang ke guildmu")
-    @app_commands.describe(user="User yang ingin diundang")
+    @guild.command(name="invite", description="Invite someone to your guild")
+    @app_commands.describe(user="The user to invite")
     @check_blacklist()
     async def guild_invite(self, ctx: commands.Context, user: discord.Member):
         """
-        Undang temanmu untuk bergabung dalam guild!
+        Invite a friend to join the guild!
         """
         await execute_guild_invite(ctx, user)
 
-    @guild.command(name="leave", description="Keluar dari guild saat ini")
+    @guild.command(name="leave", description="Leave your current guild")
     @check_blacklist()
     async def guild_leave(self, ctx: commands.Context):
         """
-        Keluar dari guild. Jika kamu Owner, guild akan dibubarkan!
+        Leave the guild. If you are the Owner, the guild will be disbanded!
         """
         await execute_guild_leave(ctx)
 
-    @guild.command(name="leaderboard", aliases=["lb"], description="Lihat guild terkuat di Re:Volution!")
+    @guild.command(name="leaderboard", aliases=["lb"], description="View the strongest guilds in Re:Volution!")
     @check_blacklist()
     async def guild_leaderboard(self, ctx: commands.Context):
         """
-        Papan peringkat Guild berdasarkan jumlah anggota.
+        Guild leaderboard based on member count.
         """
         await execute_guild_leaderboard(ctx)
 
-    @guild.command(name="icon", description="Lihat atau ubah ikon guildmu!")
-    @app_commands.describe(url="URL Gambar baru untuk ikon guild (Kosongkan untuk melihat ikon saat ini)")
+    @guild.command(name="icon", description="View or change your guild icon!")
+    @app_commands.describe(url="Image URL for the new guild icon (Leave empty to view current icon)")
     @check_blacklist()
     async def guild_icon(self, ctx: commands.Context, url: str = None):
         """
-        Lihat atau ubah ikon guildmu agar terlihat lebih megah!
+        View or change your guild icon to make it look grander!
         """
         await execute_guild_icon(ctx, url)
 
     # ── Premium Commands ──────────────────────────────────────
 
-    @commands.hybrid_group(name="premium", description="Fitur Premium Re:Volution", fallback="info")
+    @commands.hybrid_group(name="premium", description="Re:Volution Premium features", fallback="info")
     @check_blacklist()
     async def premium(self, ctx: commands.Context):
         """
-        Lihat status dan keuntungan menjadi Dream Weaver.
+        View status and benefits of becoming a Dream Weaver.
         """
         await execute_premium_info(ctx)
 
-    @premium.command(name="buy", description="Cara menjadi Dream Weaver (15k IDR / 30 Hari)")
+    @premium.command(name="buy", description="How to become a Dream Weaver (15k IDR / 30 Days)")
     @check_blacklist()
     async def premium_buy(self, ctx: commands.Context):
         """
-        Instruksi berlangganan Premium.
+        Premium subscription instructions.
         """
         await execute_premium_buy(ctx, self.bot)
 
-    @premium.command(name="claim", description="Klaim status Premium dengan mengunggah bukti pembayaran!")
-    @app_commands.describe(bukti="Screenshot bukti pembayaran Saweria-mu")
+    @premium.command(name="claim", description="Claim Premium status by uploading payment proof!")
+    @app_commands.describe(bukti="Screenshot of your Saweria payment proof")
     @check_blacklist()
     async def premium_claim(self, ctx: commands.Context, bukti: discord.Attachment):
         """
-        Kirim bukti pembayaranmu untuk diverifikasi oleh admin!
+        Submit your payment proof to be verified by an admin!
         """
         await execute_premium_claim(ctx, self.bot, bukti)
 
-    @commands.command(name="approve_premium", description="[ADMIN] Setujui klaim premium seseorang")
+    @commands.command(name="approve_premium", description="[ADMIN] Approve premium claim for a user")
     @commands.is_owner()
     async def approve_premium(self, ctx: commands.Context, user: discord.User):
         """
-        [ADMIN] Setujui klaim premium seseorang.
+        [ADMIN] Approve premium claim for a user.
         """
         await execute_approve_premium(ctx, user)
 

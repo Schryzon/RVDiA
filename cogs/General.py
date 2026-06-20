@@ -468,12 +468,12 @@ class Utilities(commands.Cog):
             embed.add_field(name=i18n.get(lang, "general.time_day"), value=i18n.get(lang, "general.time_day_val", day=day_name, doy=data['day_of_year']), inline=False)
             await ctx.send(embed=embed)
 
-    @commands.hybrid_command(description="Memperlihatkan warna dari nilai hexadecimal.")
-    @app_commands.describe(hex='Kode hexadecimal (Contoh: FF0000).')
+    @commands.hybrid_command(description="Show the color of a hexadecimal value.")
+    @app_commands.describe(hex='Hexadecimal code (e.g., FF0000).')
     @has_pfp()
     @check_blacklist()
     async def hex(self, ctx:commands.Context, hex:str):
-        """Memperlihatkan warna dari nilai hexadecimal."""
+        """Show the color of a hexadecimal value."""
         if "#" in hex:
             hex = hex.split('#')[1]
 
@@ -500,16 +500,16 @@ class Utilities(commands.Cog):
                 await session.close()
                 await ctx.reply(content=f"Hex: #{hex.upper()}\nRGB: ({red}, {green}, {blue})", file=discord.File(image, f'{hex.upper()}.png'))
 
-    @commands.hybrid_command(description="Memperlihatkan warna dari nilai RGB.")
+    @commands.hybrid_command(description="Show the color of an RGB value.")
     @app_commands.describe(
-        red='Warna merah (0 - 255)',
-        green='Warna hijau (0 - 255)',
-        blue='Warna biru (0 - 255)'
+        red='Red value (0 - 255)',
+        green='Green value (0 - 255)',
+        blue='Blue value (0 - 255)'
         )
     @has_pfp()
     @check_blacklist()
     async def rgb(self, ctx:commands.Context, red:int, green:int, blue:int):
-        """Memperlihatkan warna dari nilai RGB."""
+        """Show the color of an RGB value."""
         rgb = [red, green, blue]
         user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
         lang = user_settings.lang if user_settings else "en"
@@ -519,11 +519,11 @@ class Utilities(commands.Cog):
         hex_value = '{:02x}{:02x}{:02x}'.format(red, green, blue)
         await self.hex(ctx, hex_value)
 
-    @commands.hybrid_command(aliases=['search'], description="Cari info/website di internet menggunakan DuckDuckGo.")
-    @app_commands.describe(query="Kata kunci yang ingin dicari")
+    @commands.hybrid_command(aliases=['search'], description="Search the web using DuckDuckGo.")
+    @app_commands.describe(query="Search keyword")
     @check_blacklist()
     async def google(self, ctx: commands.Context, *, query: str):
-        """Cari info/website di internet menggunakan DuckDuckGo."""
+        """Search the web using DuckDuckGo."""
         async with ctx.typing():
             user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
             lang = user_settings.lang if user_settings else "en"
@@ -555,7 +555,7 @@ class Utilities(commands.Cog):
 
 class Support(commands.GroupCog, group_name='support'):
     """
-    Kumpulan command khusus untuk memperoleh bantuan dan pemberian saran/kritik.
+    Commands to get support or submit suggestions.
     """
     def __init__(self, bot):
         self.bot = bot
@@ -584,35 +584,33 @@ class Support(commands.GroupCog, group_name='support'):
             )
             self.add_item(donate)
 
-    @app_commands.command(description = 'Mengirimkan link untuk server supportku!')
+    @app_commands.command(description = 'Send the link to my support server!')
     async def guild(self, interaction:discord.Interaction):
         """
-        Mengirimkan link untuk server supportku!
+        Send the link to my support server!
         """
         user_settings = await db.usersettings.find_unique(where={'userId': interaction.user.id})
         lang = user_settings.lang if user_settings else "en"
         msg = i18n.get(lang, "general.support_guild")
         await interaction.response.send_message(msg, view=self.Support_Button())
 
-    @app_commands.command(description = 'Dukung RVDiA melalui Saweria!')
+    @app_commands.command(description = 'Support RVDiA via Saweria!')
     async def donate(self, interaction:discord.Interaction):
         """
-        Dukung RVDiA melalui Saweria!
+        Support RVDiA via Saweria!
         """
         user_settings = await db.usersettings.find_unique(where={'userId': interaction.user.id})
         lang = user_settings.lang if user_settings else "en"
         msg = i18n.get(lang, "general.support_donate")
         await interaction.response.send_message(msg, view=self.Donate_Button())
 
-    @app_commands.command(description = 'Berikan aku saran untuk perbaikan atau penambahan fitur!')
-    @app_commands.rename(text='saran')
-    @app_commands.rename(attachment='lampiran')
-    @app_commands.describe(text='Apa yang ingin kamu sampaikan?')
-    @app_commands.describe(attachment='Apakah ada contoh gambarnya? (Opsional)')
+    @app_commands.command(description = 'Give me suggestions for improvements or new features!')
+    @app_commands.describe(text='What suggestions or feedback do you want to submit?')
+    @app_commands.describe(attachment='An optional screenshot or image of the suggestion')
     @check_blacklist()
     async def suggest(self, interaction:discord.Interaction, text:str, attachment:discord.Attachment = None):
         """
-        Berikan aku saran untuk perbaikan atau penambahan fitur!
+        Give me suggestions for improvements or new features!
         """
         user_settings = await db.usersettings.find_unique(where={'userId': interaction.user.id})
         lang = user_settings.lang if user_settings else "en"

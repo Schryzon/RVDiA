@@ -68,7 +68,7 @@ class ImageSearchView(discord.ui.View):
 
 class Image(commands.Cog):
     """
-    Kumpulan command untuk memproses gambar dan avatar.
+    A collection of commands for image and avatar processing.
     """
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
@@ -182,15 +182,15 @@ class Image(commands.Cog):
     @check_blacklist()
     async def image_group(self, ctx: commands.Context):
         """
-        Kumpulan command untuk memproses gambar.
+        A collection of commands for image processing.
         """
         if ctx.invoked_subcommand is None:
             await ctx.send_help(ctx.command)
 
-    @image_group.command(description="Lihat status akselerasi GPU.")
+    @image_group.command(description="Check GPU acceleration status.")
     @check_blacklist()
     async def gpu(self, ctx: commands.Context):
-        """Lihat status akselerasi GPU."""
+        """Check GPU acceleration status."""
         user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
         lang = user_settings.lang if user_settings else "en"
 
@@ -202,11 +202,11 @@ class Image(commands.Cog):
         embed.set_footer(text=i18n.get(lang, "image.gpu_footer"))
         await ctx.reply(embed=embed)
         
-    @image_group.command(name="search", description="Cari gambar di internet dengan navigasi hasil.")
-    @app_commands.describe(query="Query pencarian gambar")
+    @image_group.command(name="search", description="Search images on the web with result pagination.")
+    @app_commands.describe(query="The keyword to search for.")
     @check_blacklist()
     async def search(self, ctx: commands.Context, query: str):
-        """Cari gambar di internet dan tampilkan hasilnya dengan navigasi."""
+        """Search images on the web and view results with pagination."""
         async with ctx.typing():
             user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
             lang = user_settings.lang if user_settings else "en"
@@ -237,8 +237,8 @@ class Image(commands.Cog):
             except Exception as e:
                 await ctx.reply(i18n.get(lang, "image.search_error", error=str(e)))
 
-    @image_group.command(description="Ubah gambar menjadi hitam putih (grayscale).")
-    @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit")
+    @image_group.command(description="Convert image to grayscale (black and white).")
+    @app_commands.describe(user="User whose avatar you want to edit", attachment="Image file to edit")
     @check_blacklist()
     async def grayscale(self, ctx: commands.Context, user: discord.User = None, attachment: discord.Attachment = None):
         async with ctx.typing():
@@ -248,8 +248,8 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
 
-    @image_group.command(description="Balikkan warna gambar (invert).")
-    @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit")
+    @image_group.command(description="Invert image colors.")
+    @app_commands.describe(user="User whose avatar you want to edit", attachment="Image file to edit")
     @check_blacklist()
     async def invert(self, ctx: commands.Context, user: discord.User = None, attachment: discord.Attachment = None):
         async with ctx.typing():
@@ -259,8 +259,8 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
 
-    @image_group.command(description="Crop gambar menjadi lingkaran.")
-    @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit")
+    @image_group.command(description="Crop image into a circular shape.")
+    @app_commands.describe(user="User whose avatar you want to edit", attachment="Image file to edit")
     @check_blacklist()
     async def circle(self, ctx: commands.Context, user: discord.User = None, attachment: discord.Attachment = None):
         async with ctx.typing():
@@ -270,8 +270,8 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
 
-    @image_group.command(description="Buramkan gambar (blur).")
-    @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit", strength="Kekuatan blur (default: 5)")
+    @image_group.command(description="Apply a blur filter to the image.")
+    @app_commands.describe(user="User whose avatar you want to edit", attachment="Image file to edit", strength="Blur strength kernel size (default: 5)")
     @check_blacklist()
     async def blur(self, ctx: commands.Context, user: discord.User = None, attachment: discord.Attachment = None, strength: int = 5):
         async with ctx.typing():
@@ -285,8 +285,8 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
 
-    @image_group.command(description="Tajamkan gambar (sharpen).")
-    @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit")
+    @image_group.command(description="Sharpen details in the image.")
+    @app_commands.describe(user="User whose avatar you want to edit", attachment="Image file to edit")
     @check_blacklist()
     async def sharpen(self, ctx: commands.Context, user: discord.User = None, attachment: discord.Attachment = None):
         async with ctx.typing():
@@ -299,8 +299,8 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
 
-    @image_group.command(description="Balikkan gambar secara horizontal atau vertikal.")
-    @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit", axis="Sumbu balik (horizontal/vertical)")
+    @image_group.command(description="Flip the image horizontally or vertically.")
+    @app_commands.describe(user="User whose avatar you want to edit", attachment="Image file to edit", axis="Horizontal or vertical flip direction")
     @check_blacklist()
     async def flip(self, ctx: commands.Context, axis: str = "horizontal", user: discord.User = None, attachment: discord.Attachment = None):
         user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
@@ -315,8 +315,8 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
 
-    @image_group.command(description="Putar gambar.")
-    @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit", angle="Sudut putar (derajat)", direction="Arah putar (ccw/cw)")
+    @image_group.command(description="Rotate the image by a specific angle.")
+    @app_commands.describe(user="User whose avatar you want to edit", attachment="Image file to edit", angle="Rotation angle in degrees", direction="Clockwise (cw) or counter-clockwise (ccw) direction")
     @check_blacklist()
     async def rotate(self, ctx: commands.Context, angle: float, direction: str = "ccw", user: discord.User = None, attachment: discord.Attachment = None):
         user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
@@ -331,8 +331,8 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
 
-    @image_group.command(description="Sesuaikan kecerahan dan kontras gambar.")
-    @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit", brightness="Faktor kecerahan (1.0 = normal)", contrast="Faktor kontras (0 = normal)")
+    @image_group.command(description="Adjust brightness and contrast of the image.")
+    @app_commands.describe(user="User whose avatar you want to edit", attachment="Image file to edit", brightness="Brightness multiplier factor (1.0 = normal)", contrast="Contrast factor adjustment (0 = normal)")
     @check_blacklist()
     async def adjust(self, ctx: commands.Context, brightness: float = 1.0, contrast: int = 0, user: discord.User = None, attachment: discord.Attachment = None):
         async with ctx.typing():
@@ -342,8 +342,8 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
 
-    @image_group.command(description="Deteksi tepi pada gambar (edge detection).")
-    @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit", method="Metode deteksi (canny/sobel/laplacian/prewitt/roberts/scharr)")
+    @image_group.command(description="Perform edge detection filters.")
+    @app_commands.describe(user="User whose avatar you want to edit", attachment="Image file to edit", method="Edge detection operator (canny/sobel/laplacian/prewitt/roberts/scharr)")
     @check_blacklist()
     async def edge(self, ctx: commands.Context, method: str = "canny", user: discord.User = None, attachment: discord.Attachment = None):
         user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
@@ -367,8 +367,8 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
 
-    @image_group.command(description="Tambahkan noise pada gambar.")
-    @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit", type="Tipe noise (salt_pepper/gaussian/poisson)")
+    @image_group.command(description="Add artificial noise to the image.")
+    @app_commands.describe(user="User whose avatar you want to edit", attachment="Image file to edit", type="Noise type (salt_pepper/gaussian/poisson)")
     @check_blacklist()
     async def noise(self, ctx: commands.Context, type: str = "salt_pepper", user: discord.User = None, attachment: discord.Attachment = None):
         user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
@@ -389,8 +389,8 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
 
-    @image_group.command(description="Normalisasi histogram gambar (equalize).")
-    @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit", method="Metode (global/clahe/adaptive)")
+    @image_group.command(description="Apply histogram equalization to normalize exposure.")
+    @app_commands.describe(user="User whose avatar you want to edit", attachment="Image file to edit", method="Equalization method (global/clahe/adaptive)")
     @check_blacklist()
     async def equalize(self, ctx: commands.Context, method: str = "global", user: discord.User = None, attachment: discord.Attachment = None):
         user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
@@ -411,8 +411,8 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
 
-    @image_group.command(description="Terapkan efek emboss.")
-    @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit")
+    @image_group.command(description="Apply a 3D emboss filter.")
+    @app_commands.describe(user="User whose avatar you want to edit", attachment="Image file to edit")
     @check_blacklist()
     async def emboss(self, ctx: commands.Context, user: discord.User = None, attachment: discord.Attachment = None):
         async with ctx.typing():
@@ -424,8 +424,8 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
 
-    @image_group.command(description="Terapkan filter sepia.")
-    @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit")
+    @image_group.command(description="Apply a warm sepia tone filter.")
+    @app_commands.describe(user="User whose avatar you want to edit", attachment="Image file to edit")
     @check_blacklist()
     async def sepia(self, ctx: commands.Context, user: discord.User = None, attachment: discord.Attachment = None):
         async with ctx.typing():
@@ -444,8 +444,8 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
 
-    @image_group.command(description="Terapkan efek pixelate.")
-    @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit", pixel_size="Ukuran pixel (default: 16)")
+    @image_group.command(description="Pixelate the image to create a retro blocky effect.")
+    @app_commands.describe(user="User whose avatar you want to edit", attachment="Image file to edit", pixel_size="Dimension of pixel blocks (default: 16)")
     @check_blacklist()
     async def pixelate(self, ctx: commands.Context, pixel_size: int = 16, user: discord.User = None, attachment: discord.Attachment = None):
         async with ctx.typing():
@@ -461,8 +461,8 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
 
-    @image_group.command(description="Terapkan efek vignette.")
-    @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit", sigma="Ukuran vignette (default: 150)")
+    @image_group.command(description="Apply a vignette shading filter around borders.")
+    @app_commands.describe(user="User whose avatar you want to edit", attachment="Image file to edit", sigma="Radius of the vignette center (default: 150)")
     @check_blacklist()
     async def vignette(self, ctx: commands.Context, sigma: int = 150, user: discord.User = None, attachment: discord.Attachment = None):
         async with ctx.typing():
@@ -482,8 +482,8 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
 
-    @image_group.command(description="Terapkan gamma correction.")
-    @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit", gamma="Nilai gamma (default: 1.5)")
+    @image_group.command(description="Apply gamma correction filter.")
+    @app_commands.describe(user="User whose avatar you want to edit", attachment="Image file to edit", gamma="Gamma correction factor (default: 1.5)")
     @check_blacklist()
     async def gamma(self, ctx: commands.Context, gamma: float = 1.5, user: discord.User = None, attachment: discord.Attachment = None):
         async with ctx.typing():
@@ -493,8 +493,8 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
 
-    @image_group.command(description="Terapkan log transform.")
-    @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit")
+    @image_group.command(description="Apply logarithmic dynamic range transform.")
+    @app_commands.describe(user="User whose avatar you want to edit", attachment="Image file to edit")
     @check_blacklist()
     async def log(self, ctx: commands.Context, user: discord.User = None, attachment: discord.Attachment = None):
         async with ctx.typing():
@@ -504,8 +504,8 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
 
-    @image_group.command(description="Gabungkan dua gambar (blend).")
-    @app_commands.describe(user1="User pertama", user2="User kedua", attachment1="Gambar pertama", attachment2="Gambar kedua", alpha="Transparansi (0.0 - 1.0)")
+    @image_group.command(description="Blend two images together.")
+    @app_commands.describe(user1="First user avatar source", user2="Second user avatar source", attachment1="First source image", attachment2="Second source image", alpha="Transparency ratio of the overlay (0.0 - 1.0)")
     @check_blacklist()
     async def blend(self, ctx: commands.Context, user1: discord.User = None, user2: discord.User = None, attachment1: discord.Attachment = None, attachment2: discord.Attachment = None, alpha: float = 0.5):
         async with ctx.typing():
@@ -553,12 +553,12 @@ class Image(commands.Cog):
     @commands.hybrid_group(name='histogram')
     @check_blacklist()
     async def histogram_group(self, ctx: commands.Context):
-        """Kumpulan command untuk analisis histogram."""
+        """Image histogram analysis tools."""
         if ctx.invoked_subcommand is None:
             await ctx.send_help(ctx.command)
 
-    @histogram_group.command(name="show", description="Tampilkan histogram gambar.")
-    @app_commands.describe(user="User yang avatar-nya ingin dilihat histogram-nya", attachment="Gambar yang ingin dilihat histogram-nya")
+    @histogram_group.command(name="show", description="Show the image histogram.")
+    @app_commands.describe(user="User whose avatar histogram you want to view", attachment="Image file to view the histogram of")
     @check_blacklist()
     async def histogram_show(self, ctx: commands.Context, user: discord.User = None, attachment: discord.Attachment = None):
         async with ctx.typing():
@@ -576,8 +576,8 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
 
-    @histogram_group.command(name="match", description="Samakan histogram antara dua gambar (match).")
-    @app_commands.describe(user1="User pertama", user2="User kedua", attachment1="Gambar pertama", attachment2="Gambar kedua")
+    @histogram_group.command(name="match", description="Match the histogram of two images.")
+    @app_commands.describe(user1="First user source", user2="Second user source", attachment1="First source image", attachment2="Second source image")
     @check_blacklist()
     async def match(self, ctx: commands.Context, user1: discord.User = None, user2: discord.User = None, attachment1: discord.Attachment = None, attachment2: discord.Attachment = None):
         async with ctx.typing():
@@ -621,8 +621,8 @@ class Image(commands.Cog):
             except Exception as e:
                 await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
 
-    @histogram_group.command(name="transfer", description="Transfer warna dari satu gambar ke gambar lain.")
-    @app_commands.describe(source_user="User sumber warna", ref_user="User referensi warna", source_attachment="Gambar sumber warna", ref_attachment="Gambar referensi warna")
+    @histogram_group.command(name="transfer", description="Transfer colors from one image to another.")
+    @app_commands.describe(source_user="Color source user", ref_user="Color reference user", source_attachment="Color source image", ref_attachment="Color reference image")
     @check_blacklist()
     async def transfer(self, ctx: commands.Context, source_user: discord.User = None, ref_user: discord.User = None, source_attachment: discord.Attachment = None, ref_attachment: discord.Attachment = None):
         async with ctx.typing():
@@ -666,8 +666,8 @@ class Image(commands.Cog):
             except Exception as e:
                 await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
 
-    @image_group.command(description="Binarisasi gambar (threshold).")
-    @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit", threshold_value="Nilai threshold (0-255)", method="Metode (binary/otsu)")
+    @image_group.command(description="Apply threshold binarization to image.")
+    @app_commands.describe(user="User whose avatar you want to edit", attachment="Image file to edit", threshold_value="Binarization split cutoff value (0-255)", method="Binarization style (binary/otsu)")
     @check_blacklist()
     async def threshold(self, ctx: commands.Context, threshold_value: int = 127, method: str = "binary", user: discord.User = None, attachment: discord.Attachment = None):
         user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
@@ -683,8 +683,8 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
 
-    @image_group.command(description="Potong border hitam/putih otomatis (autocrop).")
-    @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit", tolerance="Toleransi warna (default: 0)")
+    @image_group.command(description="Auto-crop solid borders from the image.")
+    @app_commands.describe(user="User whose avatar you want to edit", attachment="Image file to edit", tolerance="Color difference match tolerance (default: 0)")
     @check_blacklist()
     async def autocrop(self, ctx: commands.Context, tolerance: int = 0, user: discord.User = None, attachment: discord.Attachment = None):
         async with ctx.typing():
@@ -694,8 +694,8 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
 
-    @image_group.command(description="Gabungkan dua gambar dengan mode masking (composite).")
-    @app_commands.describe(user1="User pertama", user2="User kedua", attachment1="Gambar pertama (background)", attachment2="Gambar kedua (overlay)", mode="Mode blend (normal/add/multiply/screen/overlay)", match_mode="Mode penyesuaian ukuran (resize/crop/pad)")
+    @image_group.command(description="Blend two images using masking overlays.")
+    @app_commands.describe(user1="Background user source", user2="Overlay user source", attachment1="Background image", attachment2="Overlay image", mode="Blending mode formula (normal/add/multiply/screen/overlay)", match_mode="Dimension fitting option (resize/crop/pad)")
     @check_blacklist()
     async def composite(self, ctx: commands.Context, user1: discord.User = None, user2: discord.User = None, attachment1: discord.Attachment = None, attachment2: discord.Attachment = None, mode: str = "normal", match_mode: str = "resize"):
         user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
@@ -729,8 +729,8 @@ class Image(commands.Cog):
             except ValueError as e: await ctx.reply(str(e))
             except Exception as e: await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
 
-    @image_group.command(description="Gabungkan dua gambar secara bersebelahan (concat).")
-    @app_commands.describe(user1="User pertama", user2="User kedua", attachment1="Gambar kiri/atas", attachment2="Gambar kanan/bawah", axis="Sumbu gabung (horizontal/vertical)")
+    @image_group.command(description="Concatenate two images side-by-side or stacked.")
+    @app_commands.describe(user1="First source user", user2="Second source user", attachment1="Left/Top image", attachment2="Right/Bottom image", axis="Join direction axis (horizontal/vertical)")
     @check_blacklist()
     async def concat(self, ctx: commands.Context, user1: discord.User = None, user2: discord.User = None, attachment1: discord.Attachment = None, attachment2: discord.Attachment = None, axis: str = "horizontal"):
         user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
@@ -764,12 +764,12 @@ class Image(commands.Cog):
     @commands.hybrid_group(name='morph')
     @check_blacklist()
     async def morph_group(self, ctx: commands.Context):
-        """Kumpulan command untuk operasi morfologi gambar."""
+        """Mathematical morphology operations."""
         if ctx.invoked_subcommand is None:
             await ctx.send_help(ctx.command)
 
-    @morph_group.command(description="Erosi gambar (menguruskan fitur).")
-    @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit", iterations="Jumlah iterasi (default: 1)", kernel_size="Ukuran kernel (default: 3)")
+    @morph_group.command(description="Erode structure boundaries in the image.")
+    @app_commands.describe(user="User whose avatar you want to edit", attachment="Image file to edit", iterations="Repeat cycles (default: 1)", kernel_size="Neighborhood filter window size (default: 3)")
     @check_blacklist()
     async def erode(self, ctx: commands.Context, iterations: int = 1, kernel_size: int = 3, user: discord.User = None, attachment: discord.Attachment = None):
         async with ctx.typing():
@@ -782,8 +782,8 @@ class Image(commands.Cog):
                 lang = user_settings.lang if user_settings else "en"
                 await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
 
-    @morph_group.command(description="Dilasi gambar (menebalkan fitur).")
-    @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit", iterations="Jumlah iterasi (default: 1)", kernel_size="Ukuran kernel (default: 3)")
+    @morph_group.command(description="Dilate structure boundaries in the image.")
+    @app_commands.describe(user="User whose avatar you want to edit", attachment="Image file to edit", iterations="Repeat cycles (default: 1)", kernel_size="Neighborhood filter window size (default: 3)")
     @check_blacklist()
     async def dilate(self, ctx: commands.Context, iterations: int = 1, kernel_size: int = 3, user: discord.User = None, attachment: discord.Attachment = None):
         async with ctx.typing():
@@ -796,8 +796,8 @@ class Image(commands.Cog):
                 lang = user_settings.lang if user_settings else "en"
                 await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
 
-    @morph_group.command(description="Ekstrak skeleton/kerangka gambar (hanya untuk grayscale/binary).")
-    @app_commands.describe(user="User yang avatar-nya ingin diedit", attachment="Gambar yang ingin diedit")
+    @morph_group.command(description="Extract image topological skeleton outlines (grayscale/binary only).")
+    @app_commands.describe(user="User whose avatar you want to edit", attachment="Image file to edit")
     @check_blacklist()
     async def skeleton(self, ctx: commands.Context, user: discord.User = None, attachment: discord.Attachment = None):
         async with ctx.typing():
@@ -821,8 +821,8 @@ class Image(commands.Cog):
                 lang = user_settings.lang if user_settings else "en"
                 await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
 
-    @histogram_group.command(name="compare", description="Bandingkan dua gambar menggunakan histogram.")
-    @app_commands.describe(user1="User pertama", user2="User kedua", attachment1="Gambar pertama", attachment2="Gambar kedua", method="Metode perbandingan (correl/chisqr/intersect/bhattacharyya)")
+    @histogram_group.command(name="compare", description="Compare similarity between two images using histograms.")
+    @app_commands.describe(user1="First user avatar", user2="Second user avatar", attachment1="First image", attachment2="Second image", method="Histogram distance formula (correl/chisqr/intersect/bhattacharyya)")
     @check_blacklist()
     async def hist_compare(self, ctx: commands.Context, user1: discord.User = None, user2: discord.User = None, attachment1: discord.Attachment = None, attachment2: discord.Attachment = None, method: str = "correl"):
         user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
@@ -868,8 +868,8 @@ class Image(commands.Cog):
             except Exception as e:
                 await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
 
-    @histogram_group.command(name="cdf", description="Tampilkan grafik CDF (Cumulative Distribution Function) gambar.")
-    @app_commands.describe(user="User yang avatar-nya ingin dilihat CDF-nya", attachment="Gambar yang ingin dilihat CDF-nya")
+    @histogram_group.command(name="cdf", description="Plot the Cumulative Distribution Function (CDF) histogram.")
+    @app_commands.describe(user="User whose avatar you want to analyze", attachment="Image file to analyze")
     @check_blacklist()
     async def histogram_cdf(self, ctx: commands.Context, user: discord.User = None, attachment: discord.Attachment = None):
         async with ctx.typing():
@@ -905,13 +905,13 @@ class Image(commands.Cog):
     @check_blacklist()
     async def wavelet_group(self, ctx: commands.Context):
         """
-        Kumpulan command untuk pemrosesan gambar berbasis Wavelet.
+        Wavelet transform processing.
         """
         if ctx.invoked_subcommand is None:
             await ctx.send_help(ctx.command)
 
-    @wavelet_group.command(name="decomp", description="Dekomposisi wavelet Haar 2D pada gambar.")
-    @app_commands.describe(user="User yang avatar-nya ingin didekomposisi", attachment="Gambar yang ingin didekomposisi", level="Tingkat dekomposisi (1-4, default: 2)")
+    @wavelet_group.command(name="decomp", description="Perform Haar 2D discrete wavelet decomposition.")
+    @app_commands.describe(user="User whose avatar you want to decompose", attachment="Image file to decompose", level="Decomposition recursion depth (1-4, default: 2)")
     @check_blacklist()
     async def wavelet_decomp(self, ctx: commands.Context, level: int = 2, user: discord.User = None, attachment: discord.Attachment = None):
         user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
@@ -959,8 +959,8 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
 
-    @wavelet_group.command(name="denoise", description="Denoise gambar menggunakan wavelet thresholding.")
-    @app_commands.describe(user="User yang avatar-nya ingin didenoise", attachment="Gambar yang ingin didenoise", level="Tingkat dekomposisi (1-4, default: 2)", mode="Mode thresholding (hard/soft)")
+    @wavelet_group.command(name="denoise", description="Denoise image using wavelet coefficient thresholding.")
+    @app_commands.describe(user="User whose avatar you want to denoise", attachment="Image file to denoise", level="Decomposition levels (1-4, default: 2)", mode="Thresholding type (hard/soft)")
     @check_blacklist()
     async def wavelet_denoise(self, ctx: commands.Context, level: int = 2, mode: str = "soft", user: discord.User = None, attachment: discord.Attachment = None):
         user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
@@ -977,8 +977,8 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
 
-    @wavelet_group.command(name="compress", description="Kompresi gambar menggunakan wavelet thresholding.")
-    @app_commands.describe(user="User yang avatar-nya ingin dikompres", attachment="Gambar yang ingin dikompres", level="Tingkat dekomposisi (1-4, default: 3)", keep_ratio="Persentase koefisien yang disimpan (0.01 - 1.0, default: 0.1)")
+    @wavelet_group.command(name="compress", description="Compress image by pruning high-frequency wavelet details.")
+    @app_commands.describe(user="User whose avatar you want to compress", attachment="Image file to compress", level="Decomposition levels (1-4, default: 3)", keep_ratio="Fraction of coefficients to preserve (0.01 - 1.0, default: 0.1)")
     @check_blacklist()
     async def wavelet_compress(self, ctx: commands.Context, level: int = 3, keep_ratio: float = 0.1, user: discord.User = None, attachment: discord.Attachment = None):
         user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
@@ -999,13 +999,13 @@ class Image(commands.Cog):
     @check_blacklist()
     async def stego_group(self, ctx: commands.Context):
         """
-        Kumpulan command LSB Steganografi (menyembunyikan teks di gambar).
+        LSB Steganography tools.
         """
         if ctx.invoked_subcommand is None:
             await ctx.send_help(ctx.command)
 
-    @stego_group.command(name="hide", description="Sembunyikan pesan rahasia di dalam gambar.")
-    @app_commands.describe(message="Pesan rahasia yang ingin disembunyikan", user="User yang avatar-nya ingin digunakan", attachment="Gambar yang ingin digunakan")
+    @stego_group.command(name="hide", description="Hide a secret message inside an image using LSB encoding.")
+    @app_commands.describe(message="Secret payload string to hide", user="User avatar source to carry payload", attachment="Carrier image file")
     @check_blacklist()
     async def stego_hide(self, ctx: commands.Context, message: str, user: discord.User = None, attachment: discord.Attachment = None):
         user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
@@ -1036,8 +1036,8 @@ class Image(commands.Cog):
             except Exception as e:
                 await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
 
-    @stego_group.command(name="reveal", description="Ekstrak dan baca pesan rahasia dari gambar stego.")
-    @app_commands.describe(user="User yang avatar-nya ingin dibaca pesannya", attachment="Gambar yang ingin dibaca pesannya")
+    @stego_group.command(name="reveal", description="Extract and decode secret LSB payloads hidden in images.")
+    @app_commands.describe(user="User avatar containing payload", attachment="Carrier image file containing payload")
     @check_blacklist()
     async def stego_reveal(self, ctx: commands.Context, user: discord.User = None, attachment: discord.Attachment = None):
         async with ctx.typing():
@@ -1068,18 +1068,18 @@ class Image(commands.Cog):
     @check_blacklist()
     async def fourier_group(self, ctx: commands.Context):
         """
-        Kumpulan filter pemrosesan domain frekuensi (DFT).
+        Fourier transform frequency filters.
         """
         if ctx.invoked_subcommand is None:
             await ctx.send_help(ctx.command)
 
-    @fourier_group.command(name="lpf", description="Terapkan Low-Pass Filter (LPF) di domain frekuensi untuk memburamkan/menghaluskan gambar.")
+    @fourier_group.command(name="lpf", description="Apply frequency low-pass filter (LPF) to smooth image details.")
     @app_commands.describe(
-        cutoff="Frekuensi cutoff (default: 30)", 
-        type="Jenis filter (ideal/butterworth/gaussian, default: gaussian)",
-        order="Orde filter untuk Butterworth (default: 2)",
-        user="User yang avatar-nya ingin difilter", 
-        attachment="Gambar yang ingin difilter"
+        cutoff="Cutoff threshold radius (default: 30)", 
+        type="Ideal, Butterworth, or Gaussian filtering style (default: gaussian)",
+        order="Filter order slope for Butterworth (default: 2)",
+        user="User whose avatar you want to filter", 
+        attachment="Image file to filter"
     )
     @check_blacklist()
     async def fourier_lpf(self, ctx: commands.Context, cutoff: float = 30.0, type: str = "gaussian", order: int = 2, user: discord.User = None, attachment: discord.Attachment = None):
@@ -1110,13 +1110,13 @@ class Image(commands.Cog):
             except Exception as e:
                 await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
 
-    @fourier_group.command(name="hpf", description="Terapkan High-Pass Filter (HPF) di domain frekuensi untuk mendeteksi tepi/detail gambar.")
+    @fourier_group.command(name="hpf", description="Apply frequency high-pass filter (HPF) to isolate edges.")
     @app_commands.describe(
-        cutoff="Frekuensi cutoff (default: 30)", 
-        type="Jenis filter (ideal/butterworth/gaussian, default: gaussian)",
-        order="Orde filter untuk Butterworth (default: 2)",
-        user="User yang avatar-nya ingin difilter", 
-        attachment="Gambar yang ingin difilter"
+        cutoff="Cutoff threshold radius (default: 30)", 
+        type="Ideal, Butterworth, or Gaussian filtering style (default: gaussian)",
+        order="Filter order slope for Butterworth (default: 2)",
+        user="User whose avatar you want to filter", 
+        attachment="Image file to filter"
     )
     @check_blacklist()
     async def fourier_hpf(self, ctx: commands.Context, cutoff: float = 30.0, type: str = "gaussian", order: int = 2, user: discord.User = None, attachment: discord.Attachment = None):
@@ -1147,13 +1147,13 @@ class Image(commands.Cog):
             except Exception as e:
                 await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
 
-    @fourier_group.command(name="homomorphic", description="Terapkan filter homomorphic untuk menyeimbangkan pencahayaan gambar.")
+    @fourier_group.command(name="homomorphic", description="Apply homomorphic filtering to balance shading and illumination.")
     @app_commands.describe(
-        gamma_l="Gain frekuensi rendah (pencahayaan, default: 0.5)",
-        gamma_h="Gain frekuensi tinggi (reflektansi/tepi, default: 2.0)",
-        cutoff="Frekuensi cutoff (default: 30)",
-        user="User yang avatar-nya ingin difilter", 
-        attachment="Gambar yang ingin difilter"
+        gamma_l="Low frequency gains (default: 0.5)",
+        gamma_h="High frequency gains (default: 2.0)",
+        cutoff="Cutoff threshold radius (default: 30)",
+        user="User whose avatar you want to filter", 
+        attachment="Image file to filter"
     )
     @check_blacklist()
     async def fourier_homomorphic(self, ctx: commands.Context, gamma_l: float = 0.5, gamma_h: float = 2.0, cutoff: float = 30.0, user: discord.User = None, attachment: discord.Attachment = None):
