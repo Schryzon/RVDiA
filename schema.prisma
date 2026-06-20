@@ -87,4 +87,27 @@ model UserSettings {
   lang   String @default("en") // Default to "en" for globally-acceptable behavior
 }
 
+model WorldBoss {
+  id            Int      @id @default(autoincrement())
+  name          String
+  tier          String
+  hp            Int
+  maxHp         Int
+  isActive      Boolean  @default(true)
+  rewards       Json     // Rewards config: coins, exp, items
+  lastResetTime DateTime @default(now())
+}
+
+model WorldBossContribution {
+  id          Int      @id @default(autoincrement())
+  bossId      Int
+  userId      BigInt
+  username    String   @default("Player")
+  damage      Int
+  lastHitTime DateTime @default(now())
+
+  @@unique([bossId, userId])
+}
+
+
 

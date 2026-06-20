@@ -26,6 +26,17 @@ from scripts.game.profile import (
     execute_use
 )
 
+from scripts.game.customization import (
+    execute_class_selection,
+    execute_allocate_points,
+    StatType
+)
+
+from scripts.game.worldboss_cmd import (
+    execute_worldboss_status,
+    execute_worldboss_attack
+)
+
 from scripts.game.fight import (
     execute_fight,
     execute_battle,
@@ -236,6 +247,35 @@ class Game(commands.Cog):
         """
         await execute_use(ctx, type.value)
 
+    @game.command(name="class", description="Choose your character class (One-time selection).")
+    @app_commands.describe(class_name="Choose Warrior, Mage, or Rogue")
+    @app_commands.choices(class_name=[
+        app_commands.Choice(name="Warrior (HP +30, ATK +5, DEF +3)", value="warrior"),
+        app_commands.Choice(name="Mage (HP -10, ATK +10, AGL +2)", value="mage"),
+        app_commands.Choice(name="Rogue (HP +10, ATK +3, AGL +8)", value="rogue")
+    ])
+    @has_registered()
+    @check_blacklist()
+    async def class_command(self, ctx: commands.Context, class_name: app_commands.Choice[str]):
+        """
+        Choose your character class (One-time selection).
+        """
+        await execute_class_selection(ctx, class_name.value)
+
+    @game.command(description="Allocate available stat points to ATK, DEF, or AGL.")
+    @app_commands.describe(
+        stat="Stat to allocate points to",
+        amount="Amount of points to allocate"
+    )
+    @has_registered()
+    @check_compatible()
+    @check_blacklist()
+    async def allocate(self, ctx: commands.Context, stat: StatType, amount: int):
+        """
+        Allocate available stat points.
+        """
+        await execute_allocate_points(ctx, stat, amount)
+
     # ── Guild Commands ────────────────────────────────────────
 
     @commands.hybrid_group(name="guild", description="Re:Volution Guild System", fallback="info")
@@ -336,6 +376,24 @@ class Game(commands.Cog):
         [ADMIN] Approve premium claim for a user.
         """
         await execute_approve_premium(ctx, user)
+
+    # ── World Boss Commands ───────────────────────────────────
+
+    @commands.hybrid_group(name="worldboss", description="World Boss Raid System", fallback="status")
+    @check_blacklist()
+    async def worldboss(self, ctx: commands.Context):
+        """
+        Check active World Boss status
+        """
+        await execute_worldboss_status(ctx)
+
+    @worldboss.command(name="attack", description="Attack the active World Boss!")
+    @check_blacklist()
+    async def worldboss_attack(self, ctx: commands.Context):
+        """
+        Attack the active World Boss!
+        """
+        await execute_worldboss_attack(ctx)
 
 
 async def setup(bot):

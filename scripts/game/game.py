@@ -4,7 +4,7 @@ from datetime import datetime
 from discord.ext import commands
 from prisma import Json
 from scripts.main import db
-from scripts.utils.errors import AccountIncompatible
+from scripts.utils.errors import AccountIncompatible, NoGameAccount, NoClassSelected
 
 default_data = {
     'name':'Player',
@@ -19,7 +19,9 @@ default_data = {
     'agility':8,
     'items':{},
     'special_skills':[],
-    'equipments':[]
+    'equipments':[],
+    'class':'None',
+    'stat_points':0
 }
 
 async def level_up(ctx):
@@ -40,9 +42,8 @@ async def level_up(ctx):
         data['exp'] = 0
         data['next_exp'] = new_next_exp
         data['level'] = user_level
-        data['attack'] += 2
-        data['defense'] += 2
-        data['agility'] += 2
+        # Grant 5 stat points per level
+        data['stat_points'] = data.get('stat_points', 0) + 5
         
         # Also increase HP and Max HP
         new_hp = user.max_hp + 20
@@ -112,10 +113,18 @@ async def give_rewards(ctx:commands.Context, user:discord.Member, exp:int, coins
     
 def check_compatible():
     async def predicate(ctx:commands.Context):
-        # With Prisma and JSONB, we are more flexible, but we can still check for keys if needed.
-        # For now, let's just ensure the account exists.
         user = await db.user.find_unique(where={'id': ctx.author.id})
         if not user:
-            return False
+            raise NoGameAccount('User has no game account!')
+        
+        data = user.data
+        if not isinstance(data, dict):
+            raise AccountIncompatible('Invalid account format!')
+            
+        level = data.get('level', 1)
+        player_class = data.get('class', 'None')
+        if level > 1 and player_class == 'None':
+            raise NoClassSelected('User must choose a class!')
+            
         return True
     return commands.check(predicate)

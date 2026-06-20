@@ -6,6 +6,7 @@ from discord.ext import commands
 from pkgutil import iter_modules
 from contextlib import suppress
 from scripts.main import db
+from scripts.game.worldboss import force_spawn_boss
 
 class Owner(commands.Cog):
     """
@@ -158,6 +159,15 @@ class Owner(commands.Cog):
         
         await db.blacklist.delete(where={'id': user.id})
         await ctx.reply(f'`{user}` telah diwhitelist!')
+
+    @commands.command(name="spawnboss", hidden=True)
+    @commands.is_owner()
+    async def spawnboss(self, ctx: commands.Context, name: str = None, tier: str = None, max_hp: int = None):
+        """
+        [ADMIN] Force spawn/reset the World Boss.
+        """
+        boss = await force_spawn_boss(name, tier, max_hp)
+        await ctx.reply(f"⚔️ **World Boss spawned successfully!**\n- **Name**: `{boss.name}`\n- **Tier**: `{boss.tier}`\n- **HP**: `{boss.hp}/{boss.maxHp}`")
 
 async def setup(bot):
     await bot.add_cog(Owner(bot))

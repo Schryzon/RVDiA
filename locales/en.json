@@ -157,6 +157,7 @@
         "not_voted": "You haven't voted for me yet!\nVote for me on Top.gg to use this command!",
         "not_voted_label": "Vote for Me!",
         "no_game_account": "You haven't registered your account in Land of Revolution yet!\nRegister your account using `{prefix}game register`",
+        "no_class_selected": "You are a veteran player! Before you can continue, you must select your class using `{prefix}game class` to claim retroactive stat points!",
         "database_connection_reset": "Oops, looks like I'm having trouble connecting to the database. Please try again in a bit.\nIf the error persists, please report it to the Support Server!",
         "message_reference_unknown": "Huh?!\nIt seems I'm having trouble finding the message you replied to!",
         "rival_no_account": "It seems your rival hasn't created a Re:Volution account yet! 😔",
@@ -267,6 +268,20 @@
     },
     "game": {
         "paywith_koin": "Coins",
+        "worldboss_status_title": "Active World Boss: {name}",
+        "worldboss_status_hp": "HP Level",
+        "worldboss_no_contributions": "No contributions yet. Be the first to attack!",
+        "worldboss_leaderboard_field": "Top Contributors (Damage Leaderboard)",
+        "worldboss_rewards_field": "Defeat Rewards Pool",
+        "worldboss_status_footer": "Raid resets daily or when the boss is defeated.",
+        "worldboss_cooldown_msg": "Your weapons are cooling down! You can attack again in {min}m {sec}s.",
+        "worldboss_attack_miss": "You swung your weapon at {boss} but missed completely! 💨",
+        "worldboss_attack_hit": "You struck {boss} and dealt `{damage}` damage! 🗡️",
+        "worldboss_defeated_desc": "has been defeated! Proportional rewards have been sent to all contributors!",
+        "worldboss_level_required": "You must be at least Level `{level}` to fight the World Boss! 🔰",
+        "worldboss_knocked_out": "You are knocked out! You cannot fight the World Boss with 0 HP. Heal up first! ❤️",
+        "worldboss_retaliation_instakill": "💥 **{boss} counter-attacked with a DEADLY INSTAKILL!** You have been knocked out!",
+        "worldboss_retaliation_hit": "🛡️ **{boss} counter-attacked and dealt `{damage}` damage to you!** Your HP: `{hp}/{max_hp}`",
         "paywith_karma": "Karma",
         "type_consumable": "Consumable",
         "type_equipment": "Equipment",
@@ -837,6 +852,13 @@
         "profile_title": "Re:Volution Profile ~ {name}",
         "profile_stats": "Stats",
         "profile_wealth": "Wealth",
+        "class_already_selected": "You have already selected the class {class_name} and cannot change it again!",
+        "class_invalid": "Invalid class! Choose between Warrior, Mage, or Rogue.",
+        "class_select_success": "Successfully selected class **{class_name}**!\nBase stat adjustments: HP {hp:+} | ATK {atk:+} | DEF {def_:+} | AGL {agl:+}\nYou also received **{points}** retroactive stat points!",
+        "allocate_invalid_amount": "The amount of points to allocate must be greater than 0!",
+        "allocate_insufficient_points": "Insufficient stat points! You only have **{available}** points left.",
+        "allocate_invalid_stat": "Invalid stat! Choose between ATK, DEF, or AGL.",
+        "allocate_success": "Successfully allocated **{amount}** points to **{stat}**! Remaining stat points: **{remaining}**.",
         "shop_title": "Xaneria Shop",
         "shop_desc": "\"Hey, hey! Welcome. Please, what would you like to buy?\"",
         "shop_footer": "To buy an item, click below! v",
@@ -1269,6 +1291,9 @@
         "rvdia.ping": {
             "description": "Shows the latency to the Discord API."
         },
+        "avatar": {
+            "description": "Commands related to user avatars."
+        },
         "user": {
             "description": "Commands for checking user information."
         },
@@ -1369,6 +1394,19 @@
                 "user": "The user whose profile you want to check."
             }
         },
+        "game.class": {
+            "description": "Choose your character class (One-time selection).",
+            "arguments": {
+                "class_name": "Choose Warrior, Mage, or Rogue"
+            }
+        },
+        "game.allocate": {
+            "description": "Allocate available stat points to ATK, DEF, or AGL.",
+            "arguments": {
+                "stat": "Stat to allocate points to (ATK, DEF, AGL)",
+                "amount": "Number of points to allocate"
+            }
+        },
         "game.fix_account": {
             "description": "Fix your account data structure profile."
         },
@@ -1412,6 +1450,12 @@
             "arguments": {
                 "type": "The item type/name you want to use."
             }
+        },
+        "worldboss": {
+            "description": "World Boss Raid System status."
+        },
+        "worldboss.attack": {
+            "description": "Attack the active World Boss!"
         },
         "guild": {
             "description": "Re:Volution Guild System commands."

@@ -21,6 +21,10 @@ class NoGameAccount(commands.CommandError):
   """Raised when user hasn't created a game account yet"""
   pass
 
+class NoClassSelected(commands.CommandError):
+  """Raised when a player (level > 1) has no class selected yet"""
+  pass
+
 class AccountIncompatible(commands.CommandError):
   """Raised when a Re:Volution account doesn't match the format"""
   pass

@@ -641,30 +641,15 @@ async def execute_profile(ctx, bot, user=None):
         msg = i18n.get(lang, "game.profile_not_registered")
         return await ctx.reply(msg)
     
-    data = user_record.data
-    is_p = user_record.premiumUntil and user_record.premiumUntil > datetime.now()
-    title_prefix = "💎 " if is_p else ""
-    
-    title_lbl = i18n.get(lang, "game.profile_title", name=data['name'])
-    embed = discord.Embed(title=f"{title_prefix}{title_lbl}", color=0x86273d)
-    embed.set_thumbnail(url=target.display_avatar.url)
-    
-    hp_str = f"❤️ `{user_record.hp}/{user_record.max_hp}` HP"
-    level_lbl = i18n.get(lang, "game.profile_level")
-    exp_lbl = i18n.get(lang, "game.profile_exp")
-    status_lbl = i18n.get(lang, "game.profile_status")
-    stats_lbl = i18n.get(lang, "game.profile_stats")
-    stats_val = i18n.get(lang, "game.profile_stats_val", atk=data['attack'], def_=data['defense'], agl=data['agility'])
-    wealth_lbl = i18n.get(lang, "game.profile_wealth")
-    wealth_val = i18n.get(lang, "game.profile_wealth_val", emoji=bot.coin_emoji, coins=data['coins'], karma=data['karma'])
-    
-    embed.add_field(name=level_lbl, value=f"🔰 `{data['level']}`", inline=True)
-    embed.add_field(name=exp_lbl, value=f"⬆️ `{data['exp']}/{data['next_exp']}`", inline=True)
-    embed.add_field(name=status_lbl, value=hp_str, inline=True)
-    embed.add_field(name=stats_lbl, value=stats_val, inline=True)
-    embed.add_field(name=wealth_lbl, value=wealth_val, inline=True)
-    
-    await ctx.reply(embed=embed)
+    try:
+        await ctx.defer()
+    except Exception:
+        pass
+        
+    from scripts.image.card_generator import generate_profile_card
+    is_p = bool(user_record.premiumUntil and user_record.premiumUntil > datetime.now())
+    card_file = await generate_profile_card(target, user_record, is_p)
+    await ctx.reply(file=card_file)
 
 async def execute_fix_account(ctx):
     lang = await get_user_lang(ctx.author.id)

@@ -15,7 +15,7 @@ Error handlers, it's where the ifs and elifs go crazy!
 
 from scripts.utils.errors import (
     NoProfilePicture,
-    Blacklisted, NoEventAvailable, NotVoted, NoGameAccount, AccountIncompatible,
+    Blacklisted, NoEventAvailable, NotVoted, NoGameAccount, NoClassSelected, AccountIncompatible,
     ArtistOffline, GenerationDeclined, GenerationFailed, NSFWBlocked, GenerationTimeout
 )
 from scripts.utils.error_logger import format_error_report
@@ -185,6 +185,10 @@ class Error(commands.Cog):
 
     elif isinstance(error, NoGameAccount):
       msg = i18n.get(lang, "errors.no_game_account", prefix=ctx.clean_prefix)
+      await ctx.reply(msg)
+
+    elif isinstance(error, NoClassSelected):
+      msg = i18n.get(lang, "errors.no_class_selected", prefix=ctx.clean_prefix)
       await ctx.reply(msg)
 
     elif isinstance(error, ConnectionResetError) or "reset by peer" in str(error) or "Can't reach database" in str(error):

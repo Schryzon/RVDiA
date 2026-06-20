@@ -204,6 +204,16 @@ async def handle_widget_demo(request):
     })
 
 
+async def handle_playground(request):
+    """Render the signal and image processing playground page."""
+    i18n, lang = get_i18n(request)
+    return aiohttp_jinja2.render_template('playground.html', request, {
+        'i18n': i18n,
+        'lang': lang,
+        'user': _get_user_ctx(request),
+    })
+
+
 @web.middleware
 async def security_headers_middleware(request: web.Request, handler):
     # CORS preflight handling for cross-origin integration
@@ -272,6 +282,7 @@ async def start_web_server(bot):
     app.router.add_get('/login', handle_login_page)
     app.router.add_get('/dashboard', handle_dashboard)
     app.router.add_get('/widget-demo', handle_widget_demo)
+    app.router.add_get('/playground', handle_playground)
     app.router.add_post('/internal/dm', handle_internal_dm)
     
     runner = web.AppRunner(app)

@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-6" x-data="playgroundApp()">
+    <!-- Header -->
+    <div class="text-center mb-10">
+        <h1 class="text-4xl font-extrabold tracking-tight text-white mb-3">
+            {{ i18n.get('img_playground_title', 'Signal & Image Processing Playground') }}
+        </h1>
+        <p class="text-slate-400 max-w-2xl mx-auto text-sm md:text-base">
+            {{ i18n.get('img_playground_subtitle', 'Upload an image to test GPU-like filters, LSB Steganography, and 2D Fourier (FFT) analysis. Run completely in your browser with zero server CPU load!') }}
+        </p>
+    </div>
+
+    <!-- Main Workspace Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Sidebar Controls -->
+        <div class="lg:col-span-1 space-y-6">
+            <!-- Image Upload & State Card -->
+            <div class="glass-card-style p-6 border border-white/10 relative overflow-hidden">
+                <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <span>📁</span> {{ i18n.get('playground_image_source', 'Image Source') }}
+                </h3>
+                
+                <div class="flex flex-col items-center justify-center border-2 border-dashed border-white/15 hover:border-accent rounded-xl p-6 transition-colors duration-300 bg-white/[0.01] cursor-pointer relative"
+                     @click="$refs.fileInput.click()"
+                     @dragover.prevent
+                     @drop.prevent="handleDrop($event)">
+                    <input type="file" ref="fileInput" class="hidden" accept="image/*" @change="handleFileSelect($event)">
+                    <span class="text-4xl mb-3">🖼️</span>
+                    <span class="text-sm font-semibold text-slate-200 text-center">{{ i18n.get('playground_upload_prompt', 'Click or drag & drop image') }}</span>
+                    <span class="text-xs text-slate-400 mt-1">Supports PNG, JPG, WEBP</span>
+                </div>
+
+                <div class="mt-4 flex gap-2 w-full" x-show="hasImage">
+                    <button class="btn-accent !py-2 !px-4 text-xs font-semibold flex-1" @click="resetImage">
+                        {{ i18n.get('playground_reset_btn', 'Reset Image') }}
+                    </button>
+                    <a :href="downloadUrl" download="rvdia_processed.png" class="btn-outline !py-2 !px-4 text-xs font-semibold flex-1 text-center" x-show="hasImage && activeFilter !== 'none'">
+                        {{ i18n.get('playground_download_btn', 'Download') }}
+                    </a>
+                </div>
+            </div>
+
+            <!-- Standard Image Filters Card -->
+            <div class="glass-card-style p-6 border border-white/10" :class="{'opacity-50 pointer-events-none': !hasImage}">
+                <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <span>✨</span> {{ i18n.get('playground_filters', 'Visual Filters') }}
+                </h3>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <button class="px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-center"
+                            :class="activeFilter === 'none' ? 'bg-accent border-accent text-white' : 'border-white/10 hover:border-white/20 text-slate-300'"
+                            @click="applyFilter('none')">
+                        Normal
+                    </button>
+                    <button class="px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-center"
+                            :class="activeFilter === 'grayscale' ? 'bg-accent border-accent text-white' : 'border-white/10 hover:border-white/20 text-slate-300'"
+                            @click="applyFilter('grayscale')">
+                        Grayscale
+                    </button>
+                    <button class="px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-center"
+                            :class="activeFilter === 'sepia' ? 'bg-accent border-accent text-white' : 'border-white/10 hover:border-white/20 text-slate-300'"
+                            @click="applyFilter('sepia')">
+                        Sepia
+                    </button>
+                    <button class="px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-center"
+                            :class="activeFilter === 'invert' ? 'bg-accent border-accent text-white' : 'border-white/10 hover:border-white/20 text-slate-300'"
+                            @click="applyFilter('invert')">
+                        Invert
+                    </button>
+                    <button class="px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-center"
+                            :class="activeFilter === 'vignette' ? 'bg-accent border-accent text-white' : 'border-white/10 hover:border-white/20 text-slate-300'"
+                            @click="applyFilter('vignette')">
+                        Vignette
+                    </button>
+                    <button class="px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-center"
+                            :class="activeFilter === 'pixelate' ? 'bg-accent border-accent text-white' : 'border-white/10 hover:border-white/20 text-slate-300'"
+                            @click="applyFilter('pixelate')">
+                        Pixelate
+                    </button>
+                    <button class="px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-center"
+                            :class="activeFilter === 'emboss' ? 'bg-accent border-accent text-white' : 'border-white/10 hover:border-white/20 text-slate-300'"
+                            @click="applyFilter('emboss')">
+                        Emboss
+                    </button>
+                    <button class="px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-center"
+                            :class="activeFilter === 'circle' ? 'bg-accent border-accent text-white' : 'border-white/10 hover:border-white/20 text-slate-300'"
+                            @click="applyFilter('circle')">
+                        Circle-Crop
+                    </button>
+                </div>
+            </div>
+
+            <!-- Steganography Card -->
+            <div class="glass-card-style p-6 border border-white/10" :class="{'opacity-50 pointer-events-none': !hasImage}">
+                <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <span>🔐</span> Steganography (LSB)
+                </h3>
+                
+                <div class="space-y-4">
+                    <div class="flex gap-2 p-1 bg-white/[0.03] border border-white/10 rounded-xl">
+                        <button class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all"
+                                :class="stegoMode === 'encode' ? 'bg-accent text-white' : 'text-slate-400 hover:text-slate-200'"
+                                @click="stegoMode = 'encode'">
+                            Encode
+                        </button>
+                        <button class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all"
+                                :class="stegoMode === 'decode' ? 'bg-accent text-white' : 'text-slate-400 hover:text-slate-200'"
+                                @click="stegoMode = 'decode'; decodeMessage()">
+                            Decode
+                        </button>
+                    </div>
+
+                    <!-- Encode Panel -->
+                    <div x-show="stegoMode === 'encode'" class="space-y-3">
+                        <textarea x-model="stegoText" placeholder="{{ i18n.get('stego_textarea_placeholder', 'Enter secret text message to hide inside image...') }}"
+                                  class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-accent transition-colors" rows="3"></textarea>
+                        <button class="btn-accent w-full !py-2 text-xs font-semibold" @click="encodeMessage">
+                            {{ i18n.get('stego_hide_btn', 'Hide Text in Image') }}
+                        </button>
+                    </div>
+
+                    <!-- Decode Panel -->
+                    <div x-show="stegoMode === 'decode'" class="space-y-2">
+                        <div class="p-3 bg-white/5 border border-white/10 rounded-xl">
+                            <span class="text-[10px] text-slate-500 font-bold block mb-1 uppercase">Decoded Message:</span>
+                            <p class="text-xs text-slate-200 break-all select-all font-mono" x-text="decodedText || 'No hidden message found.'"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Display / Viewports -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Viewport Cards -->
+            <div class="glass-card-style p-6 border border-white/10 flex flex-col items-center justify-center min-h-[400px]">
+                <div x-show="!hasImage" class="text-center py-12">
+                    <span class="text-6xl animate-pulse block mb-4">🌌</span>
+                    <h3 class="text-xl font-bold text-white mb-2">{{ i18n.get('playground_no_image', 'No Image Loaded') }}</h3>
+                    <p class="text-slate-400 max-w-sm text-sm">{{ i18n.get('playground_no_image_desc', 'Upload an image in the sidebar to start digital signal filtering operations.') }}</p>
+                </div>
+
+                <div x-show="hasImage" class="w-full flex flex-col md:flex-row gap-6">
+                    <!-- Original -->
+                    <div class="flex-1 flex flex-col items-center">
+                        <span class="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide">Original</span>
+                        <div class="border border-white/10 rounded-2xl overflow-hidden bg-dark-950 p-2 shadow-inner flex items-center justify-center w-full aspect-square">
+                            <img ref="sourceImg" class="max-w-full max-h-full object-contain rounded-lg hidden" @load="onSourceImageLoad">
+                            <canvas ref="sourceCanvas" class="max-w-full max-h-full object-contain rounded-lg"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Processed -->
+                    <div class="flex-1 flex flex-col items-center">
+                        <span class="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide flex items-center gap-1">
+                            <span>Output:</span>
+                            <span class="text-accent-light font-extrabold capitalize" x-text="activeFilter === 'none' ? 'Normal' : activeFilter"></span>
+                        </span>
+                        <div class="border border-white/10 rounded-2xl overflow-hidden bg-dark-950 p-2 shadow-inner flex items-center justify-center w-full aspect-square relative">
+                            <canvas ref="outputCanvas" class="max-w-full max-h-full object-contain rounded-lg"></canvas>
+                            <!-- Processing overlay -->
+                            <div class="absolute inset-0 bg-dark-900/60 backdrop-blur-sm flex items-center justify-center rounded-2xl transition-opacity" x-show="isProcessing">
+                                <div class="flex flex-col items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full border-2 border-accent border-t-transparent animate-spin"></div>
+                                    <span class="text-xs text-slate-300 font-semibold uppercase tracking-wider">Filtering...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fourier Analysis Card -->
+            <div class="glass-card-style p-6 border border-white/10" :class="{'opacity-50 pointer-events-none': !hasImage}">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-white/[0.08] pb-4 mb-6">
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        <span>📊</span> 2D Fourier (FFT) Magnitude Spectrum
+                    </h3>
+                    
+                    <div class="flex items-center gap-4 mt-3 sm:mt-0">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-slate-400 font-semibold">Filter Radius:</span>
+                            <input type="range" min="5" max="120" x-model="fourierRadius" @input="updateFourier" class="w-24 accent-accent bg-white/15 h-1.5 rounded-lg appearance-none cursor-pointer">
+                            <span class="text-xs font-mono text-slate-300 w-8" x-text="fourierRadius + 'px'"></span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="px-2.5 py-1 rounded bg-white/5 border border-white/10 hover:border-white/20 text-xs font-semibold text-slate-300"
+                                    :class="fourierType === 'lowpass' ? '!bg-accent !border-accent !text-white' : ''"
+                                    @click="fourierType = 'lowpass'; updateFourier()">
+                                Lowpass
+                            </button>
+                            <button class="px-2.5 py-1 rounded bg-white/5 border border-white/10 hover:border-white/20 text-xs font-semibold text-slate-300"
+                                    :class="fourierType === 'highpass' ? '!bg-accent !border-accent !text-white' : ''"
+                                    @click="fourierType = 'highpass'; updateFourier()">
+                                Highpass
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col md:flex-row gap-6 items-center justify-center">
+                    <!-- FFT Spectrum Canvas -->
+                    <div class="flex flex-col items-center">
+                        <span class="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide">Frequency Spectrum (Magnitude)</span>
+                        <div class="border border-white/10 rounded-2xl bg-dark-950 p-2 w-48 h-48 flex items-center justify-center">
+                            <canvas ref="fftCanvas" class="w-full h-full object-contain rounded-lg"></canvas>
+                        </div>
+                        <span class="text-[10px] text-slate-500 mt-2 text-center max-w-[200px]">Center = Low frequencies. Outer edges = High frequencies. Circular overlay displays the filter radius.</span>
+                    </div>
+
+                    <!-- FFT Filter result -->
+                    <div class="flex-1 flex flex-col items-start gap-4">
+                        <div class="p-4 rounded-xl bg-white/[0.02] border border-white/5 space-y-2 w-full text-slate-300 text-xs leading-relaxed">
+                            <p><strong>💡 What is this?</strong></p>
+                            <p>This panel computes the <strong>2D Fast Fourier Transform (FFT)</strong> of the uploaded image to decompose it into its spatial frequency components.</p>
+                            <p>• <strong>Lowpass filter</strong> keeps the center (smooth transitions, blurry image, blocks noise).</p>
+                            <p>• <strong>Highpass filter</strong> keeps the outer edges (detects lines/outlines, keeps sharp textures, blocks solid backgrounds).</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/playground.js"></script>
+{% endblock %}

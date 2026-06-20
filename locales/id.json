@@ -157,6 +157,7 @@
         "not_voted": "Kamu belum vote aku!\nVote aku di Top.gg untuk bisa menggunakan command ini!",
         "not_voted_label": "Vote Aku!",
         "no_game_account": "Kamu belum mendaftarkan akunmu ke Land of Revolution!\nDaftarkan akunmu dengan `{prefix}game register`",
+        "no_class_selected": "Kamu adalah pemain veteran! Sebelum melanjutkan, kamu harus memilih class menggunakan `{prefix}game class` untuk mengklaim poin status retroaktif!",
         "database_connection_reset": "Wah, sepertinya aku ada gangguan nyambung ke database, mohon dicoba lagi sebentar.\nJika error terus muncul, silahkan laporkan ke Support Server!",
         "message_reference_unknown": "Hah?!\nSepertinya aku sedang mengalami masalah menemukan pesan yang kamu reply!",
         "rival_no_account": "Sepertinya lawanmu belum membuat akun Re:Volution! 😔",
@@ -267,6 +268,20 @@
     },
     "game": {
         "paywith_koin": "Koin",
+        "worldboss_status_title": "World Boss Aktif: {name}",
+        "worldboss_status_hp": "Tingkat HP",
+        "worldboss_no_contributions": "Belum ada kontribusi. Jadilah yang pertama menyerang!",
+        "worldboss_leaderboard_field": "Kontributor Teratas (Papan Peringkat Damage)",
+        "worldboss_rewards_field": "Total Hadiah Kemenangan",
+        "worldboss_status_footer": "Raid direset setiap hari atau saat bos dikalahkan.",
+        "worldboss_cooldown_msg": "Senjatamu sedang cooldown! Kamu bisa menyerang lagi dalam {min}m {sec}s.",
+        "worldboss_attack_miss": "Kamu mengayunkan senjatamu ke {boss} tapi meleset sepenuhnya! 💨",
+        "worldboss_attack_hit": "Kamu menyerang {boss} dan memberikan `{damage}` damage! 🗡️",
+        "worldboss_defeated_desc": "telah dikalahkan! Hadiah proporsional telah dikirim ke semua kontributor!",
+        "worldboss_level_required": "Kamu harus minimal Level `{level}` untuk melawan World Boss! 🔰",
+        "worldboss_knocked_out": "Kamu pingsan! Kamu tidak bisa melawan World Boss dengan 0 HP. Sembuhkan diri dulu! ❤️",
+        "worldboss_retaliation_instakill": "💥 **{boss} menyerang balik dengan INSTAKILL YANG MEMATIKAN!** Kamu langsung pingsan!",
+        "worldboss_retaliation_hit": "🛡️ **{boss} menyerang balik dan memberikan `{damage}` damage kepadamu!** HP-mu: `{hp}/{max_hp}`",
         "paywith_karma": "Karma",
         "type_consumable": "Consumable",
         "type_equipment": "Equipment",
@@ -837,6 +852,13 @@
         "profile_title": "Profil Re:Volution ~ {name}",
         "profile_stats": "Stats",
         "profile_wealth": "Harta",
+        "class_already_selected": "Kamu sudah memilih class {class_name} dan tidak bisa mengubahnya lagi!",
+        "class_invalid": "Class tidak valid! Pilih antara Warrior, Mage, atau Rogue.",
+        "class_select_success": "Berhasil memilih class **{class_name}**!\nPenyesuaian stat dasar: HP {hp:+} | ATK {atk:+} | DEF {def_:+} | AGL {agl:+}\nKamu juga mendapatkan **{points}** poin status retroaktif!",
+        "allocate_invalid_amount": "Jumlah poin yang dialokasikan harus lebih besar dari 0!",
+        "allocate_insufficient_points": "Poin statusmu tidak cukup! Kamu hanya memiliki **{available}** poin tersisa.",
+        "allocate_invalid_stat": "Stat tidak valid! Pilih antara ATK, DEF, atau AGL.",
+        "allocate_success": "Berhasil mengalokasikan **{amount}** poin ke **{stat}**! Sisa poin status: **{remaining}**.",
         "shop_title": "Toko Xaneria",
         "shop_desc": "\"Hey, hey! Selamat datang. Silahkan, mau beli apa?\"",
         "shop_footer": "Untuk membeli sebuah item, klik di bawah ini! v",
@@ -1269,6 +1291,9 @@
         "rvdia.ping": {
             "description": "Tampilkan latensi/ping ke API Discord."
         },
+        "avatar": {
+            "description": "Command yang berhubungan dengan avatar pengguna."
+        },
         "user": {
             "description": "Command untuk memeriksa informasi pengguna."
         },
@@ -1369,6 +1394,19 @@
                 "user": "Pengguna yang ingin kamu lihat profilnya."
             }
         },
+        "game.class": {
+            "description": "Pilih class karaktermu (Hanya satu kali pemilihan).",
+            "arguments": {
+                "class_name": "Pilih Warrior, Mage, atau Rogue"
+            }
+        },
+        "game.allocate": {
+            "description": "Alokasikan poin status yang tersedia ke ATK, DEF, atau AGL.",
+            "arguments": {
+                "stat": "Stat yang ingin dialokasikan (ATK, DEF, AGL)",
+                "amount": "Jumlah poin yang ingin dialokasikan"
+            }
+        },
         "game.fix_account": {
             "description": "Perbaiki struktur data profil akunmu."
         },
@@ -1412,6 +1450,12 @@
             "arguments": {
                 "type": "Jenis/nama item yang ingin digunakan."
             }
+        },
+        "worldboss": {
+            "description": "Status Sistem World Boss Raid."
+        },
+        "worldboss.attack": {
+            "description": "Serang World Boss yang sedang aktif!"
         },
         "guild": {
             "description": "Command Sistem Guild Re:Volution."
