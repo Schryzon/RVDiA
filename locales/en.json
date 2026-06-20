@@ -96,7 +96,7 @@
         "hex_invalid": "`{hex}` is not a valid hexadecimal code!",
         "rgb_invalid": "One of the RGB values exceeds 255!\nMake sure RGB values are valid!",
         "support_guild": "To join my server to learn more about RVDiA, click the link below!\nhttps://discord.gg/QqWCnk6zxw\nOr click the blurple button below.",
-        "support_donate": "To support RVDiA financially, click the link below!\nhttps://saweria.co/schryzon\nOr click the button below. Thank you!",
+        "support_donate": "To support RVDiA financially, click the link below!\nhttps://github.com/sponsors/Schryzon\nOr click the button below. Thank you!",
         "suggest_not_configured": "Suggestion feature is not configured! ❌",
         "suggest_title": "New Suggestion!",
         "suggest_author": "From {user}",
@@ -1330,7 +1330,7 @@
             "description": "Send the link to my support server!"
         },
         "support.donate": {
-            "description": "Support RVDiA via Saweria!"
+            "description": "Support RVDiA via GitHub Sponsors!"
         },
         "support.suggest": {
             "description": "Give me suggestions for improvements or new features!",

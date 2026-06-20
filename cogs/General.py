@@ -573,14 +573,21 @@ class Support(commands.GroupCog, group_name='support'):
             self.add_item(support_server)
 
     class Donate_Button(View):
-        def __init__(self):
+        def __init__(self, lang="en"):
             super().__init__(timeout=None)
 
+            if lang == "en":
+                label = "GitHub Sponsors"
+                url = "https://github.com/sponsors/Schryzon"
+            else:
+                label = "Saweria Link"
+                url = "https://saweria.co/schryzon"
+
             donate = Button(
-                label= "Saweria Link",
+                label=label,
                 emoji = '<:rvdia_happy:1121412270220660803>',
                 style = discord.ButtonStyle.blurple,
-                url = 'https://saweria.co/schryzon'
+                url = url
             )
             self.add_item(donate)
 
@@ -594,15 +601,15 @@ class Support(commands.GroupCog, group_name='support'):
         msg = i18n.get(lang, "general.support_guild")
         await interaction.response.send_message(msg, view=self.Support_Button())
 
-    @app_commands.command(description = 'Support RVDiA via Saweria!')
+    @app_commands.command(description = "Support RVDiA's development!")
     async def donate(self, interaction:discord.Interaction):
         """
-        Support RVDiA via Saweria!
+        Support RVDiA's development!
         """
         user_settings = await db.usersettings.find_unique(where={'userId': interaction.user.id})
         lang = user_settings.lang if user_settings else "en"
         msg = i18n.get(lang, "general.support_donate")
-        await interaction.response.send_message(msg, view=self.Donate_Button())
+        await interaction.response.send_message(msg, view=self.Donate_Button(lang))
 
     @app_commands.command(description = 'Give me suggestions for improvements or new features!')
     @app_commands.describe(text='What suggestions or feedback do you want to submit?')
