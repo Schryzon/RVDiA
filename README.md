@@ -38,7 +38,7 @@
 
 ### 🌌 Codenamed Adapters
 * 🔮 **Discord Bot**: Codenamed **RVDiA Genryu** (源流 - "The Origin/Source"). It acts as the primary coordinator, managing AI interactions, local GPU generation routing, and cogs.
-* ⚡ **Telegram Bot**: Codenamed **RVDiA Zora** (Sky). It serves as the lightweight, database-synced multi-play client.
+* ⚡ **Telegram Bot**: Codenamed **RVDiA Zora** (空 - "Sky"). It serves as the lightweight, database-synced multi-play client.
 
 It features deep AI-driven personality integration, an advanced local GPU rendering pipeline, professional-grade image processing, a turn-based RPG battle engine, and a premium **web dashboard** that allows real-time configuration, player interactions, and widget embeddings.
 

@@ -282,13 +282,17 @@ async def on_message(msg:discord.Message):
             
     await rvdia.process_commands(msg) # Execute commands from here
 
-    if msg.reference:
+    if msg.reference and msg.reference.message_id is not None:
         try:
           fetched_message = None
           for attempt in range(3):
               try:
                   fetched_message = await msg.channel.fetch_message(msg.reference.message_id)
                   break
+              except discord.NotFound:
+                  return
+              except discord.Forbidden:
+                  return
               except discord.DiscordServerError as dse:
                   if attempt < 2:
                       await asyncio.sleep(1 + attempt)
