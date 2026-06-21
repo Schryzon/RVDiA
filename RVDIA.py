@@ -332,9 +332,13 @@ async def on_message(msg:discord.Message):
           else:
               return
           
-          is_chat_reply = message_embed.footer.text in (
-              chat_service.get_translation("id", "help_suggest_reply"),
-              chat_service.get_translation("en", "help_suggest_reply")
+          is_chat_reply = message_embed.footer.text and any(
+              term in message_embed.footer.text for term in (
+                  chat_service.get_translation("id", "help_suggest_reply"),
+                  chat_service.get_translation("en", "help_suggest_reply"),
+                  chat_service.get_translation("id", "footer_reply_continue"),
+                  chat_service.get_translation("en", "footer_reply_continue")
+              )
           )
           is_transfer_request = message_embed.footer.text in (
               i18n.get("id", "game.transfer_embed_footer"),
