@@ -598,7 +598,7 @@ class Image(commands.Cog):
             except Exception as e:
                 await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
 
-    @image_group.command(description="Blend two images together.")
+    @commands.hybrid_command(description="Blend two images together.")
     @app_commands.describe(user1="First user avatar source", user2="Second user avatar source", attachment1="First source image", attachment2="Second source image", alpha="Transparency ratio of the overlay (0.0 - 1.0)")
     @check_blacklist()
     async def blend(self, ctx: commands.Context, user1: discord.User = None, user2: discord.User = None, attachment1: discord.Attachment = None, attachment2: discord.Attachment = None, alpha: float = 0.5):
@@ -788,7 +788,7 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
 
-    @image_group.command(description="Blend two images using masking overlays.")
+    @commands.hybrid_command(description="Blend two images using masking overlays.")
     @app_commands.describe(user1="Background user source", user2="Overlay user source", attachment1="Background image", attachment2="Overlay image", mode="Blending mode formula (normal/add/multiply/screen/overlay)", match_mode="Dimension fitting option (resize/crop/pad)")
     @check_blacklist()
     async def composite(self, ctx: commands.Context, user1: discord.User = None, user2: discord.User = None, attachment1: discord.Attachment = None, attachment2: discord.Attachment = None, mode: str = "normal", match_mode: str = "resize"):
@@ -823,7 +823,7 @@ class Image(commands.Cog):
             except ValueError as e: await ctx.reply(str(e))
             except Exception as e: await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
 
-    @image_group.command(description="Concatenate two images side-by-side or stacked.")
+    @commands.hybrid_command(description="Concatenate two images side-by-side or stacked.")
     @app_commands.describe(user1="First source user", user2="Second source user", attachment1="Left/Top image", attachment2="Right/Bottom image", axis="Join direction axis (horizontal/vertical)")
     @check_blacklist()
     async def concat(self, ctx: commands.Context, user1: discord.User = None, user2: discord.User = None, attachment1: discord.Attachment = None, attachment2: discord.Attachment = None, axis: str = "horizontal"):

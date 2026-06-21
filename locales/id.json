@@ -1693,7 +1693,7 @@
             },
             "help": "Contoh string pipeline: `grayscale,invert,blur:5`.\nOperator satu gambar yang didukung: `grayscale`, `invert`, `circle`, `sepia`, `blur:strength`, `sharpen`, `emboss`, `pixelate:size`, `vignette:sigma`, `gamma:value`, `log`, `posterize:levels`, `solarize:threshold`, `sketch:ksize`, `edge:method`, `noise:type`, `equalize:method`, `threshold:value:style`, `erode:iter:ksize`, `dilate:iter:ksize`, `skeleton`, `lpf:cutoff:type:order`, `hpf:cutoff:type:order`, `homomorphic:gl:gh:cutoff`.\nOperator dua gambar yang didukung: `blend:alpha`, `composite:mode`, `concat:axis`."
         },
-        "image.blend": {
+        "blend": {
             "description": "Gabungkan dua gambar menjadi satu.",
             "arguments": {
                 "user1": "Sumber avatar pengguna pertama.",
@@ -1720,7 +1720,7 @@
                 "tolerance": "Toleransi kecocokan perbedaan warna."
             }
         },
-        "image.composite": {
+        "composite": {
             "description": "Gabungkan dua gambar menggunakan masker overlay.",
             "arguments": {
                 "user1": "Sumber pengguna background.",
@@ -1731,7 +1731,7 @@
                 "match_mode": "Opsi penyesuaian dimensi (resize, crop, pad)."
             }
         },
-        "image.concat": {
+        "concat": {
             "description": "Gabungkan dua gambar secara bersebelahan atau ditumpuk.",
             "arguments": {
                 "user1": "Pengguna sumber pertama.",

@@ -1693,7 +1693,7 @@
             },
             "help": "Example pipeline string: `grayscale,invert,blur:5`.\nSupported single-image operators: `grayscale`, `invert`, `circle`, `sepia`, `blur:strength`, `sharpen`, `emboss`, `pixelate:size`, `vignette:sigma`, `gamma:value`, `log`, `posterize:levels`, `solarize:threshold`, `sketch:ksize`, `edge:method`, `noise:type`, `equalize:method`, `threshold:value:style`, `erode:iter:ksize`, `dilate:iter:ksize`, `skeleton`, `lpf:cutoff:type:order`, `hpf:cutoff:type:order`, `homomorphic:gl:gh:cutoff`.\nSupported two-image operators: `blend:alpha`, `composite:mode`, `concat:axis`."
         },
-        "image.blend": {
+        "blend": {
             "description": "Blend two images together.",
             "arguments": {
                 "user1": "First user avatar source.",
@@ -1720,7 +1720,7 @@
                 "tolerance": "Color difference match tolerance."
             }
         },
-        "image.composite": {
+        "composite": {
             "description": "Blend two images using masking overlays.",
             "arguments": {
                 "user1": "Background user source.",
@@ -1731,7 +1731,7 @@
                 "match_mode": "Dimension fitting option (resize, crop, pad)."
             }
         },
-        "image.concat": {
+        "concat": {
             "description": "Concatenate two images side-by-side or stacked.",
             "arguments": {
                 "user1": "First source user.",
