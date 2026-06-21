@@ -1658,6 +1658,41 @@
                 "attachment": "File gambar yang ingin diedit."
             }
         },
+        "image.posterize": {
+            "description": "Terapkan filter kuantisasi warna posterize.",
+            "arguments": {
+                "levels": "Jumlah level warna (default: 4).",
+                "user": "Pengguna yang avatar-nya ingin diedit.",
+                "attachment": "File gambar yang ingin diedit."
+            }
+        },
+        "image.solarize": {
+            "description": "Terapkan filter solarisasi untuk membalikkan piksel di atas ambang batas.",
+            "arguments": {
+                "threshold": "Nilai ambang batas intensitas (0-255, default: 128).",
+                "user": "Pengguna yang avatar-nya ingin diedit.",
+                "attachment": "File gambar yang ingin diedit."
+            }
+        },
+        "image.sketch": {
+            "description": "Terapkan filter sketsa pensil yang realistis.",
+            "arguments": {
+                "ksize": "Ukuran kernel blur Gaussian (harus ganjil, default: 21).",
+                "user": "Pengguna yang avatar-nya ingin diedit.",
+                "attachment": "File gambar yang ingin diedit."
+            }
+        },
+        "image.eval": {
+            "description": "Evaluasi urutan operasi pada gambar (pemrosesan pipeline).",
+            "arguments": {
+                "batch_process": "Filter dipisahkan koma untuk diterapkan secara berurutan (misal: grayscale,invert,blur:5).",
+                "user": "Pengguna yang avatar-nya ingin diedit.",
+                "attachment": "File gambar yang ingin diedit.",
+                "user2": "Sumber avatar pengguna kedua (opsional).",
+                "attachment2": "Gambar sumber kedua (opsional)."
+            },
+            "help": "Contoh string pipeline: `grayscale,invert,blur:5`.\nOperator satu gambar yang didukung: `grayscale`, `invert`, `circle`, `sepia`, `blur:strength`, `sharpen`, `emboss`, `pixelate:size`, `vignette:sigma`, `gamma:value`, `log`, `posterize:levels`, `solarize:threshold`, `sketch:ksize`, `edge:method`, `noise:type`, `equalize:method`, `threshold:value:style`, `erode:iter:ksize`, `dilate:iter:ksize`, `skeleton`, `lpf:cutoff:type:order`, `hpf:cutoff:type:order`, `homomorphic:gl:gh:cutoff`.\nOperator dua gambar yang didukung: `blend:alpha`, `composite:mode`, `concat:axis`."
+        },
         "image.blend": {
             "description": "Gabungkan dua gambar menjadi satu.",
             "arguments": {
@@ -1853,6 +1888,15 @@
                 "cutoff": "Radius ambang batas cutoff.",
                 "user": "Pengguna yang avatar-nya ingin difilter.",
                 "attachment": "File gambar yang ingin difilter."
+            }
+        },
+        "fourier.modulate": {
+            "description": "Visualisasikan teorema konvolusi Modulasi Fourier.",
+            "arguments": {
+                "frequency": "Frekuensi spasial kisi grating (default: 0.05).",
+                "angle": "Sudut orientasi kisi grating dalam derajat (default: 45.0).",
+                "user": "Pengguna yang avatar-nya ingin dianalisis.",
+                "attachment": "File gambar yang ingin dianalisis."
             }
         }
     }

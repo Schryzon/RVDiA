@@ -504,6 +504,100 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
 
+    @image_group.command(description="Apply a posterize color quantization filter.")
+    @app_commands.describe(user="User whose avatar you want to edit", attachment="Image file to edit", levels="Number of color levels (default: 4)")
+    @check_blacklist()
+    async def posterize(self, ctx: commands.Context, levels: int = 4, user: discord.User = None, attachment: discord.Attachment = None):
+        async with ctx.typing():
+            try:
+                bytes_data = await self._get_image_bytes(ctx, user, attachment)
+                await self._process_and_reply(ctx, bytes_data, "posterize.png", Image_Ops.posterize, levels)
+            except ValueError as e:
+                await ctx.reply(str(e))
+
+    @image_group.command(description="Apply solarization filter to invert pixels above a threshold.")
+    @app_commands.describe(user="User whose avatar you want to edit", attachment="Image file to edit", threshold="Intensity threshold value (0-255, default: 128)")
+    @check_blacklist()
+    async def solarize(self, ctx: commands.Context, threshold: int = 128, user: discord.User = None, attachment: discord.Attachment = None):
+        async with ctx.typing():
+            try:
+                bytes_data = await self._get_image_bytes(ctx, user, attachment)
+                await self._process_and_reply(ctx, bytes_data, "solarize.png", Image_Ops.solarize, threshold)
+            except ValueError as e:
+                await ctx.reply(str(e))
+
+    @image_group.command(description="Apply a realistic pencil sketch filter.")
+    @app_commands.describe(user="User whose avatar you want to edit", attachment="Image file to edit", ksize="Gaussian blur kernel size (must be odd, default: 21)")
+    @check_blacklist()
+    async def sketch(self, ctx: commands.Context, ksize: int = 21, user: discord.User = None, attachment: discord.Attachment = None):
+        async with ctx.typing():
+            try:
+                bytes_data = await self._get_image_bytes(ctx, user, attachment)
+                await self._process_and_reply(ctx, bytes_data, "sketch.png", Image_Ops.pencil_sketch, ksize)
+            except ValueError as e:
+                await ctx.reply(str(e))
+
+    @image_group.command(name="eval", description="Evaluate a sequence of operations on an image (pipeline processing).")
+    @app_commands.describe(
+        batch_process="Comma-separated filters to apply sequentially (e.g. grayscale,invert,blur:5)",
+        user="User whose avatar you want to edit", 
+        attachment="Image file to edit",
+        user2="Second user avatar source (optional, for blend/composite)",
+        attachment2="Second source image (optional, for blend/composite)"
+    )
+    @check_blacklist()
+    async def eval_command(
+        self, 
+        ctx: commands.Context, 
+        batch_process: str, 
+        user: discord.User = None, 
+        attachment: discord.Attachment = None,
+        user2: discord.User = None,
+        attachment2: discord.Attachment = None
+    ):
+        async with ctx.typing():
+            user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+            lang = user_settings.lang if user_settings else "en"
+            try:
+                bytes_data1 = await self._get_image_bytes(ctx, user, attachment)
+                bytes_data2 = None
+                if attachment2:
+                    bytes_data2 = await attachment2.read()
+                elif user2:
+                    if user2.avatar is None:
+                        raise ValueError(i18n.get(lang, "image.no_avatar", user=user2.display_name))
+                    bytes_data2 = await user2.display_avatar.with_format("png").read()
+                
+                img1 = cv2.imdecode(np.frombuffer(bytes_data1, np.uint8), cv2.IMREAD_COLOR)
+                if img1 is None:
+                    return await ctx.reply(i18n.get(lang, "image.read_failed"))
+                img1_rgb = cv2.cvtColor(img1, cv2.COLOR_BGR2RGB)
+                
+                img2_rgb = None
+                if bytes_data2:
+                    img2 = cv2.imdecode(np.frombuffer(bytes_data2, np.uint8), cv2.IMREAD_COLOR)
+                    if img2 is not None:
+                        img2_rgb = cv2.cvtColor(img2, cv2.COLOR_BGR2RGB)
+                
+                result = Image_Ops.eval_pipeline(img1_rgb, batch_process, img2_rgb)
+                
+                if result.ndim == 3:
+                    if result.shape[2] == 3:
+                        result_bgr = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
+                    else:
+                        result_bgr = result[..., :3]
+                else:
+                    result_bgr = result
+                    
+                _, buffer = cv2.imencode('.png', result_bgr)
+                io_buf = io.BytesIO(buffer)
+                
+                await ctx.reply(file=discord.File(io_buf, "eval.png"))
+            except ValueError as e:
+                await ctx.reply(str(e))
+            except Exception as e:
+                await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
+
     @image_group.command(description="Blend two images together.")
     @app_commands.describe(user1="First user avatar source", user2="Second user avatar source", attachment1="First source image", attachment2="Second source image", alpha="Transparency ratio of the overlay (0.0 - 1.0)")
     @check_blacklist()
@@ -1168,6 +1262,22 @@ class Image(commands.Cog):
                 await ctx.reply(str(e))
             except Exception as e:
                 await ctx.reply(i18n.get(lang, "image.process_error", error=str(e)))
+
+    @fourier_group.command(name="modulate", description="Visualize spatial modulation and Fourier convolution theorem.")
+    @app_commands.describe(
+        frequency="Spatial frequency of the sinusoidal grating (default: 0.05)",
+        angle="Angle of the grating in degrees (default: 45.0)",
+        user="User whose avatar you want to process",
+        attachment="Image file to process"
+    )
+    @check_blacklist()
+    async def fourier_modulate(self, ctx: commands.Context, frequency: float = 0.05, angle: float = 45.0, user: discord.User = None, attachment: discord.Attachment = None):
+        async with ctx.typing():
+            try:
+                bytes_data = await self._get_image_bytes(ctx, user, attachment)
+                await self._process_and_reply(ctx, bytes_data, "modulation_theorem.png", FreqFilter.modulate, frequency, angle)
+            except ValueError as e:
+                await ctx.reply(str(e))
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Image(bot))

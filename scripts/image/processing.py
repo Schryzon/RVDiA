@@ -2698,6 +2698,265 @@ class Image_Ops:
         return noisy
 
     @staticmethod
+    @gpu_accelerated
+    def pencil_sketch(image: ArrayLike, ksize: int = 21, sigma: float = 0.0) -> ArrayLike:
+        image = _validate_image(image)
+        xp_mod = _xp(image)
+        if image.ndim == 3:
+            gray = (0.299 * image[..., 0] + 0.587 * image[..., 1] + 0.114 * image[..., 2]).astype(xp_mod.uint8)
+        else:
+            gray = image.astype(xp_mod.uint8)
+            
+        inv = 255 - gray
+        
+        inv_cpu = to_cpu(inv)
+        if ksize % 2 == 0:
+            ksize += 1
+        blur_cpu = cv2.GaussianBlur(inv_cpu, (ksize, ksize), sigma)
+        blur = to_gpu(blur_cpu) if xp_mod is not np else blur_cpu
+        
+        denom = 255 - blur
+        denom = xp_mod.where(denom == 0, 1, denom)
+        sketch = (gray.astype(xp_mod.float32) * 255) / denom.astype(xp_mod.float32)
+        sketch = xp_mod.clip(sketch, 0, 255).astype(xp_mod.uint8)
+        
+        return xp_mod.stack([sketch, sketch, sketch], axis=-1)
+
+    @staticmethod
+    @gpu_accelerated
+    def posterize(image: ArrayLike, levels: int = 4) -> ArrayLike:
+        image = _validate_image(image)
+        xp_mod = _xp(image)
+        if levels < 2:
+            levels = 2
+        step = 255 / (levels - 1)
+        posterized = xp_mod.round(image.astype(xp_mod.float32) / step) * step
+        return xp_mod.clip(posterized, 0, 255).astype(xp_mod.uint8)
+
+    @staticmethod
+    @gpu_accelerated
+    def solarize(image: ArrayLike, threshold: int = 128) -> ArrayLike:
+        image = _validate_image(image)
+        xp_mod = _xp(image)
+        solarized = xp_mod.where(image >= threshold, 255 - image, image)
+        return solarized.astype(image.dtype)
+
+    @staticmethod
+    def eval_pipeline(image1: ArrayLike, pipeline_str: str, image2: ArrayLike | None = None) -> ArrayLike:
+        image1 = _validate_image(image1)
+        xp_mod = _xp(image1)
+        current = image1.copy() if xp_mod is not np else np.copy(image1)
+        
+        ops = [o.strip() for o in pipeline_str.split(",") if o.strip()]
+        
+        for op in ops:
+            parts = op.split(":")
+            name = parts[0].lower()
+            args = parts[1:]
+            
+            if name == "grayscale":
+                current = Image_Ops.to_grayscale(current)
+                if current.ndim == 2 and image1.ndim == 3:
+                    current = xp_mod.stack([current, current, current], axis=-1)
+            elif name == "invert":
+                current = Image_Ops.invert(current)
+            elif name == "circle":
+                current = Image_Ops.crop_circle(current)
+            elif name == "sepia":
+                img_f = current.astype(xp_mod.float32)
+                sepia_matrix = xp_mod.array([[0.393, 0.769, 0.189],
+                                             [0.349, 0.686, 0.168],
+                                             [0.272, 0.534, 0.131]], dtype=xp_mod.float32)
+                if xp_mod is not np:
+                    sepia_img = img_f @ sepia_matrix.T
+                else:
+                    sepia_img = cv2.transform(img_f, sepia_matrix)
+                current = xp_mod.clip(sepia_img, 0, 255).astype(xp_mod.uint8)
+            elif name == "blur":
+                strength = 5
+                if args:
+                    try: strength = int(args[0])
+                    except ValueError: pass
+                kernel = Convolution.Kernels.box_blur(strength)
+                current = Convolution.apply(current, kernel)
+            elif name == "sharpen":
+                kernel = Convolution.Kernels.sharpen()
+                current = Convolution.apply(current, kernel)
+            elif name == "emboss":
+                kernel = Convolution.Kernels.emboss()
+                current = Convolution.apply(current, kernel)
+            elif name == "pixelate":
+                size = 16
+                if args:
+                    try: size = int(args[0])
+                    except ValueError: pass
+                current_cpu = to_cpu(current)
+                h, w = current_cpu.shape[:2]
+                small = cv2.resize(current_cpu, (max(1, w // size), max(1, h // size)), interpolation=cv2.INTER_LINEAR)
+                res = cv2.resize(small, (w, h), interpolation=cv2.INTER_NEAREST)
+                current = to_gpu(res) if xp_mod is not np else res
+            elif name == "vignette":
+                sigma = 150
+                if args:
+                    try: sigma = int(args[0])
+                    except ValueError: pass
+                current_cpu = to_cpu(current)
+                h, w = current_cpu.shape[:2]
+                kernel_x = cv2.getGaussianKernel(w, sigma)
+                kernel_y = cv2.getGaussianKernel(h, sigma)
+                kernel = kernel_y * kernel_x.T
+                mask = kernel / kernel.max()
+                vignette_img = np.copy(current_cpu)
+                for i in range(min(3, current_cpu.ndim)):
+                    if current_cpu.ndim == 3:
+                        vignette_img[:, :, i] = vignette_img[:, :, i] * mask
+                    else:
+                        vignette_img = vignette_img * mask
+                res = vignette_img.astype(np.uint8)
+                current = to_gpu(res) if xp_mod is not np else res
+            elif name == "gamma":
+                g = 1.5
+                if args:
+                    try: g = float(args[0])
+                    except ValueError: pass
+                current = Enhancement.gamma_correction(current, g)
+            elif name == "log":
+                current = Enhancement.log_transform(current)
+            elif name == "posterize":
+                levels = 4
+                if args:
+                    try: levels = int(args[0])
+                    except ValueError: pass
+                current = Image_Ops.posterize(current, levels)
+            elif name == "solarize":
+                threshold = 128
+                if args:
+                    try: threshold = int(args[0])
+                    except ValueError: pass
+                current = Image_Ops.solarize(current, threshold)
+            elif name == "sketch":
+                ksize = 21
+                if args:
+                    try: ksize = int(args[0])
+                    except ValueError: pass
+                current = Image_Ops.pencil_sketch(current, ksize)
+            elif name == "flip":
+                axis = "horizontal"
+                if args and args[0].lower() in ["horizontal", "vertical"]:
+                    axis = args[0].lower()
+                current = Image_Ops.flip(current, axis)
+            elif name == "rotate":
+                angle = 90.0
+                direction = "ccw"
+                if args:
+                    try: angle = float(args[0])
+                    except ValueError: pass
+                if len(args) > 1 and args[1].lower() in ["cw", "ccw"]:
+                    direction = args[1].lower()
+                current = Image_Ops.rotate(current, angle, direction)
+            elif name == "adjust":
+                brightness = 1.0
+                contrast = 0
+                if args:
+                    try: brightness = float(args[0])
+                    except ValueError: pass
+                if len(args) > 1:
+                    try: contrast = int(args[1])
+                    except ValueError: pass
+                current = Enhancement.brightness_contrast(current, brightness, contrast)
+            elif name == "edge":
+                method = "canny"
+                if args and args[0].lower() in ["canny", "sobel", "laplacian", "prewitt", "roberts", "scharr"]:
+                    method = args[0].lower()
+                current_cpu = to_cpu(current)
+                if method == "canny": res = Edge_Detection.canny(current_cpu)
+                elif method == "sobel": res = Edge_Detection.sobel(current_cpu)
+                elif method == "laplacian": res = Edge_Detection.laplacian(current_cpu)
+                elif method == "prewitt": res = Edge_Detection.prewitt(current_cpu)
+                elif method == "roberts": res = Edge_Detection.roberts(current_cpu)
+                else: res = Edge_Detection.scharr(current_cpu)
+                if res.ndim == 2:
+                    res = cv2.cvtColor(res, cv2.COLOR_GRAY2RGB)
+                current = to_gpu(res) if xp_mod is not np else res
+            elif name == "noise":
+                ntype = "salt_pepper"
+                if args and args[0].lower() in ["salt_pepper", "gaussian", "poisson"]:
+                    ntype = args[0].lower()
+                if ntype == "salt_pepper": current = Image_Ops.add_salt_pepper(current)
+                elif ntype == "gaussian": current = Enhancement.add_gaussian_noise(current)
+                else: current = Enhancement.add_poisson_noise(current)
+            elif name == "equalize":
+                method = "global"
+                if args and args[0].lower() in ["global", "clahe", "adaptive"]:
+                    method = args[0].lower()
+                if method == "global": current = Equalization.equalize(current)
+                elif method == "clahe": current = Equalization.clahe(current)
+                else: current = Equalization.adaptive(current)
+            elif name == "threshold":
+                val = 127
+                method = "binary"
+                if args:
+                    try: val = int(args[0])
+                    except ValueError: pass
+                if len(args) > 1 and args[1].lower() in ["binary", "otsu"]:
+                    method = args[1].lower()
+                current = Image_Ops.threshold(current, val, method == "otsu")
+            elif name == "autocrop":
+                tol = 0
+                if args:
+                    try: tol = int(args[0])
+                    except ValueError: pass
+                current = Image_Ops.autocrop(current, tol)
+            elif name in ["erode", "dilate"]:
+                iter_count = 1
+                k_size = 3
+                if args:
+                    try: iter_count = int(args[0])
+                    except ValueError: pass
+                if len(args) > 1:
+                    try: k_size = int(args[1])
+                    except ValueError: pass
+                if name == "erode": current = Morphology.erode(current, k_size, iter_count)
+                else: current = Morphology.dilate(current, k_size, iter_count)
+            elif name == "skeleton":
+                current_cpu = to_cpu(current)
+                if current_cpu.ndim == 3:
+                    gray = cv2.cvtColor(current_cpu, cv2.COLOR_RGB2GRAY)
+                else:
+                    gray = current_cpu
+                _, binary = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+                skel = Morphology.skeleton(binary)
+                res = cv2.cvtColor(skel, cv2.COLOR_GRAY2RGB)
+                current = to_gpu(res) if xp_mod is not np else res
+            elif image2 is not None:
+                img2_val = _validate_image(image2)
+                if name == "blend":
+                    alpha = 0.5
+                    if args:
+                        try: alpha = float(args[0])
+                        except ValueError: pass
+                    current = Image_Ops.blend(current, img2_val, alpha=alpha)
+                elif name == "composite":
+                    mode = "normal"
+                    match_mode = "resize"
+                    if args:
+                        mode = args[0].lower()
+                    if len(args) > 1:
+                        match_mode = args[1].lower()
+                    current = Image_Ops.composite(current, img2_val, mode=mode, match_mode=match_mode)
+                elif name == "concat":
+                    axis = "horizontal"
+                    if args and args[0].lower() in ["horizontal", "vertical"]:
+                        axis = args[0].lower()
+                    current = Image_Ops.concat(current, img2_val, axis=axis)
+                elif name == "match":
+                    current = Specialization.match(current, img2_val)
+                elif name == "transfer":
+                    current = Specialization.transfer_color(current, img2_val)
+                    
+        return current
+
+    @staticmethod
     def intensity_threshold_mask(
         image1: ArrayLike,
         image2: ArrayLike,
@@ -7241,6 +7500,86 @@ class FreqFilter:
         plt.axis("off")
         plt.tight_layout()
         plt.show()
+
+    @staticmethod
+    def modulate(image: ArrayLike, frequency: float = 0.05, angle: float = 45.0) -> ArrayLike:
+        import io
+        image = to_cpu(_validate_image(image))
+        if image.ndim == 3:
+            gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY).astype(np.float64) / 255.0
+        else:
+            gray = image.astype(np.float64) / 255.0
+            
+        h, w = gray.shape[:2]
+        
+        theta = np.deg2rad(angle)
+        y_grid, x_grid = np.meshgrid(np.arange(h), np.arange(w), indexing='ij')
+        fx = frequency * np.cos(theta)
+        fy = frequency * np.sin(theta)
+        
+        grating = 0.5 + 0.5 * np.cos(2 * np.pi * (fx * x_grid + fy * y_grid))
+        modulated = gray * grating
+        
+        def get_fft_spectrum(img):
+            f = np.fft.fft2(img)
+            fshift = np.fft.fftshift(f)
+            magnitude = np.abs(fshift)
+            spec = np.log1p(magnitude)
+            s_min, s_max = spec.min(), spec.max()
+            if s_max - s_min > 1e-6:
+                spec = (spec - s_min) / (s_max - s_min) * 255.0
+            else:
+                spec = np.zeros_like(spec)
+            return spec.astype(np.uint8)
+            
+        fft_orig = get_fft_spectrum(gray)
+        fft_grating = get_fft_spectrum(grating)
+        fft_modulated = get_fft_spectrum(modulated)
+        
+        fig, axes = plt.subplots(2, 3, figsize=(12, 8), dpi=100)
+        
+        axes[0, 0].imshow(gray, cmap="gray")
+        axes[0, 0].set_title("Original (Spatial)", fontsize=11, fontweight="bold")
+        axes[0, 0].axis("off")
+        
+        axes[0, 1].imshow(grating, cmap="gray")
+        axes[0, 1].set_title("Grating (Spatial)", fontsize=11, fontweight="bold")
+        axes[0, 1].axis("off")
+        
+        axes[0, 2].imshow(modulated, cmap="gray")
+        axes[0, 2].set_title("Modulated (Spatial)", fontsize=11, fontweight="bold")
+        axes[0, 2].axis("off")
+        
+        axes[1, 0].imshow(fft_orig, cmap="gray")
+        axes[1, 0].set_title("Original (FFT Spectrum)", fontsize=11, fontweight="bold")
+        axes[1, 0].axis("off")
+        
+        axes[1, 1].imshow(fft_grating, cmap="gray")
+        axes[1, 1].set_title("Grating (FFT Spectrum)", fontsize=11, fontweight="bold")
+        axes[1, 1].axis("off")
+        
+        axes[1, 2].imshow(fft_modulated, cmap="gray")
+        axes[1, 2].set_title("Modulated (FFT Spectrum)", fontsize=11, fontweight="bold")
+        axes[1, 2].axis("off")
+        
+        fig.text(0.36, 0.72, r"$\times$", fontsize=30, ha="center", va="center")
+        fig.text(0.66, 0.72, r"$=$", fontsize=30, ha="center", va="center")
+        
+        fig.text(0.36, 0.28, r"$\ast$", fontsize=35, ha="center", va="center")
+        fig.text(0.66, 0.28, r"$=$", fontsize=30, ha="center", va="center")
+        
+        fig.suptitle("Fourier Convolution Theorem: Spatial Modulation vs Frequency Convolution", fontsize=14, fontweight="bold")
+        
+        plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+        
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png', bbox_inches='tight')
+        plt.close()
+        buf.seek(0)
+        
+        file_bytes = np.asarray(bytearray(buf.read()), dtype=np.uint8)
+        out_img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+        return cv2.cvtColor(out_img, cv2.COLOR_BGR2RGB)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
