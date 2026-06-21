@@ -91,6 +91,18 @@ class RVDIA(commands.AutoShardedBot):
 
 rvdia = RVDIA() # Must create instance
 
+@rvdia.tree.interaction_check
+async def global_interaction_check(interaction: discord.Interaction) -> bool:
+    user_id = interaction.user.id
+    is_blacklisted = await db.blacklist.find_unique(where={'id': user_id})
+    if is_blacklisted:
+        user_settings = await db.usersettings.find_unique(where={'userId': user_id})
+        lang = user_settings.lang if user_settings else "en"
+        msg = i18n.get(lang, "general.blacklisted") or "Sorry, you have been blacklisted from using RVDIA!"
+        await interaction.response.send_message(f"⚠️ {msg}", ephemeral=True)
+        return False
+    return True
+
 cogs_list = [cogs.name for cogs in iter_modules(['cogs'], prefix='cogs.')] # iter_modules() for easier task
 
 @rvdia.event
@@ -255,6 +267,11 @@ async def on_message(msg:discord.Message):
     global fitur
 
     if msg.author.bot == True:
+        return
+
+    # Check blacklist globally
+    is_blacklisted = await db.blacklist.find_unique(where={'id': msg.author.id})
+    if is_blacklisted:
         return
 
     if not msg.guild:
