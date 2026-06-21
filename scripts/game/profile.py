@@ -4,7 +4,7 @@ import discord
 import random
 import json
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from prisma import Json
 from discord.ui import View, Button, button
 from scripts.main import db
@@ -647,7 +647,7 @@ async def execute_profile(ctx, bot, user=None):
         pass
         
     from scripts.image.card_generator import generate_profile_card
-    is_p = bool(user_record.premiumUntil and user_record.premiumUntil > datetime.now())
+    is_p = bool(user_record.premiumUntil and user_record.premiumUntil > datetime.now(timezone.utc))
     card_file = await generate_profile_card(target, user_record, is_p)
     await ctx.reply(file=card_file)
 

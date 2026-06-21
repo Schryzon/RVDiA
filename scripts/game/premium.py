@@ -1,5 +1,5 @@
 import discord
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from os import getenv
 from scripts.main import db
 from scripts.utils.i18n import i18n
@@ -14,7 +14,7 @@ async def execute_premium_info(ctx):
         msg = i18n.get(lang, "game.premium_not_registered")
         return await ctx.reply(msg)
         
-    is_p = user_record.premiumUntil and user_record.premiumUntil > datetime.now()
+    is_p = user_record.premiumUntil and user_record.premiumUntil > datetime.now(timezone.utc)
     
     embed = discord.Embed(title="💎 Dream Weaver Premium 💎", color=0x00ffff)
     if is_p:
@@ -70,7 +70,7 @@ async def execute_approve_premium(ctx, user: discord.User):
         msg = i18n.get(staff_lang, "game.premium_approve_not_found")
         return await ctx.reply(msg)
         
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     if user_record.premiumUntil and user_record.premiumUntil > now:
         new_expiry = user_record.premiumUntil + timedelta(days=30)
     else:

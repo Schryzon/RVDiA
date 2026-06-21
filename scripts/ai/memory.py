@@ -2,7 +2,7 @@ import os
 import asyncio
 from sentence_transformers import SentenceTransformer
 from scripts.main import db
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import torch
 
@@ -65,7 +65,7 @@ class MemoryManager:
     async def clean_withered_memories(self, days: int = 7) -> int:
         """Deletes memories that are not persistent and are older than `days` days."""
         from datetime import timedelta
-        cutoff = datetime.now() - timedelta(days=days)
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
         deleted = await db.memory.delete_many(
             where={
                 'isPersistent': False,

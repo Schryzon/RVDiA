@@ -1294,6 +1294,25 @@
         "avatar": {
             "description": "Command yang berhubungan dengan avatar pengguna."
         },
+        "verify": {
+            "description": "Verifikasi dirimu untuk mendapatkan akses server menggunakan CAPTCHA.",
+            "arguments": {
+                "role_name": "Nama role yang akan diberikan setelah verifikasi (Default: Verified)"
+            }
+        },
+        "ocr": {
+            "description": "Ekstrak dan salin teks dari gambar atau dokumen PDF menggunakan AI.",
+            "arguments": {
+                "attachment": "Unggah gambar (PNG, JPG, WebP) atau dokumen PDF"
+            }
+        },
+        "remind": {
+            "description": "Atur pengingat di latar belakang.",
+            "arguments": {
+                "time_str": "Durasi waktu (misal: 10m, 2h, 1d) atau waktu absolut (misal: 15:30)",
+                "message": "Pesan pengingat"
+            }
+        },
         "user": {
             "description": "Command untuk memeriksa informasi pengguna."
         },

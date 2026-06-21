@@ -15,7 +15,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 from scripts.utils.errors import NoProfilePicture, Blacklisted, NoEventAvailable, NotVoted
 from scripts.utils.errors import NoGameAccount, NoPremiumStatus
-from datetime import datetime
+from datetime import datetime, timezone
 from scripts.utils.i18n import i18n
 
 load_dotenv()
@@ -119,7 +119,7 @@ def is_premium():
         user = await db.user.find_unique(where={'id': ctx.author.id})
         if not user or not user.premiumUntil:
             raise NoPremiumStatus(i18n.get(lang, "errors.premium_exclusive"))
-        if user.premiumUntil < datetime.now():
+        if user.premiumUntil < datetime.now(timezone.utc):
             raise NoPremiumStatus(i18n.get(lang, "errors.premium_expired"))
         return True
     return commands.check(predicate)

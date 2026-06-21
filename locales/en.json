@@ -1294,6 +1294,25 @@
         "avatar": {
             "description": "Commands related to user avatars."
         },
+        "verify": {
+            "description": "Verify yourself to gain server access using a CAPTCHA.",
+            "arguments": {
+                "role_name": "The name of the role to assign upon verification (Default: Verified)"
+            }
+        },
+        "ocr": {
+            "description": "Extract and transcribe text from images or PDF documents using AI.",
+            "arguments": {
+                "attachment": "Upload an image (PNG, JPG, WebP) or PDF file"
+            }
+        },
+        "remind": {
+            "description": "Set a background reminder.",
+            "arguments": {
+                "time_str": "Time duration (e.g. 10m, 2h, 1d) or absolute time (e.g. 15:30)",
+                "message": "The reminder message"
+            }
+        },
         "user": {
             "description": "Commands for checking user information."
         },

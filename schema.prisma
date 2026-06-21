@@ -109,5 +109,16 @@ model WorldBossContribution {
   @@unique([bossId, userId])
 }
 
+model Reminder {
+  id         Int      @id @default(autoincrement())
+  userId     BigInt
+  channelId  BigInt
+  message    String
+  targetTime DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([targetTime])
+}
+
 
 

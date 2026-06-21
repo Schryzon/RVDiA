@@ -1,6 +1,6 @@
 import discord
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from discord.ext import commands
 from prisma import Json
 from scripts.main import db
@@ -25,7 +25,14 @@ default_data = {
 }
 
 async def level_up(ctx):
-    user_id = ctx.id if isinstance(ctx, (discord.Member, discord.User)) else ctx.author.id
+    if hasattr(ctx, 'author'):
+        user_id = ctx.author.id
+    elif hasattr(ctx, 'user'):
+        user_id = ctx.user.id
+    elif hasattr(ctx, 'id'):
+        user_id = ctx.id
+    else:
+        return False
     user = await db.user.find_unique(where={'id': user_id})
     if not user:
         return False
@@ -92,7 +99,7 @@ async def give_rewards(ctx:commands.Context, user:discord.Member, exp:int, coins
         return
         
     # Premium Bonus (2x)
-    is_premium = user_record.premiumUntil and user_record.premiumUntil > datetime.now()
+    is_premium = user_record.premiumUntil and user_record.premiumUntil > datetime.now(timezone.utc)
     if is_premium:
         exp *= 2
         coins *= 2

@@ -1,5 +1,5 @@
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from prisma import Json
 from scripts.main import db
 from scripts.game.game import give_rewards
@@ -20,7 +20,7 @@ async def get_active_boss():
         where={"isActive": True}
     )
 
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
 
     # Generate a new boss if none exists, or the active one is older than 24 hours
     if not boss or (now - boss.lastResetTime) > timedelta(hours=24):
@@ -72,7 +72,7 @@ async def attack_boss(user_id: int, username: str, damage: int) -> dict:
             where={"id": contribution.id},
             data={
                 "damage": contribution.damage + actual_damage,
-                "lastHitTime": datetime.now()
+                "lastHitTime": datetime.now(timezone.utc)
             }
         )
     else:
@@ -82,7 +82,7 @@ async def attack_boss(user_id: int, username: str, damage: int) -> dict:
                 "userId": user_id,
                 "username": username,
                 "damage": actual_damage,
-                "lastHitTime": datetime.now()
+                "lastHitTime": datetime.now(timezone.utc)
             }
         )
 
@@ -196,7 +196,7 @@ async def force_spawn_boss(name: str = None, tier: str = None, max_hp: int = Non
             "maxHp": template["max_hp"],
             "isActive": True,
             "rewards": Json(rewards_config),
-            "lastResetTime": datetime.now()
+            "lastResetTime": datetime.now(timezone.utc)
         }
     )
     return boss

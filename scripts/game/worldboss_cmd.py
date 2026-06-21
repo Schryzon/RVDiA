@@ -1,7 +1,7 @@
 import discord
 import random
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from scripts.main import db
 from scripts.utils.i18n import i18n
 from scripts.game.worldboss import get_active_boss, attack_boss
@@ -90,7 +90,7 @@ async def execute_worldboss_attack(ctx):
 
     if contribution:
         cooldown_limit = contribution.lastHitTime + timedelta(minutes=15)
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         if now < cooldown_limit:
             remaining = int((cooldown_limit - now).total_seconds())
             minutes = remaining // 60
