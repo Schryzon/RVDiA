@@ -1115,7 +1115,19 @@
         "category_roleplay_description": "Command interaksi dan roleplay antar user.",
         "category_event": "⭐ Ajang (Event)",
         "category_event_description": "Ajang server (event) dan mini-game yang sedang aktif.",
-        "category_no_category_description": "Command yang tidak memiliki kategori khusus."
+        "category_no_category_description": "Command yang tidak memiliki kategori khusus.",
+        "category_music": "🎵 Pemutar Musik",
+        "category_music_description": "Putar musik berkualitas tinggi di saluran suara dari SoundCloud atau unggahan langsung.",
+        "category_utilities": "🛠️ Utilitas",
+        "category_utilities_description": "Alat berguna untuk memeriksa cuaca, zona waktu, warna, dan mencari info di web.",
+        "category_support": "💬 Bantuan & Saran",
+        "category_support_description": "Dapatkan bantuan, berdonasi, atau ajukan saran untuk RVDiA.",
+        "category_ocr": "🔍 Pengekstrak Teks OCR",
+        "category_ocr_description": "Ekstrak lapisan teks dari gambar atau dokumen PDF menggunakan AI.",
+        "category_reminder": "⏰ Pengingat",
+        "category_reminder_description": "Atur alarm waktu yang mendukung zona waktu dan pengingat otomatis.",
+        "category_verification": "✅ Verifikasi CAPTCHA",
+        "category_verification_description": "Akses masuk server yang aman menggunakan CAPTCHA."
     },
     "commands": {
         "chat": {
@@ -1960,6 +1972,54 @@
                 "user": "Pengguna yang avatar-nya ingin diproses.",
                 "attachment": "File gambar yang ingin diproses."
             }
+        },
+        "play": {
+            "description": "Putar audio dari SoundCloud atau file yang diunggah!",
+            "arguments": {
+                "query_or_url": "Kata kunci pencarian atau URL SoundCloud",
+                "attachment": "Unggah file audio (.mp3, .wav, .m4a, .ogg) untuk langsung diputar"
+            }
+        },
+        "skip": {
+            "description": "Lewati lagu yang sedang diputar saat ini."
+        },
+        "pause": {
+            "description": "Jeda pemutaran musik saat ini."
+        },
+        "resume": {
+            "description": "Lanjutkan pemutaran musik yang dijeda."
+        },
+        "stop": {
+            "description": "Hentikan pemutaran musik, bersihkan antrean, dan putuskan koneksi."
+        },
+        "nowplaying": {
+            "description": "Tampilkan informasi tentang lagu yang sedang diputar saat ini."
+        },
+        "queue": {
+            "description": "Tampilkan antrean musik saat ini."
         }
+    },
+    "music": {
+        "no_voice_channel": "Kamu harus berada di saluran suara untuk menggunakan command ini!",
+        "missing_args": "Harap berikan kata kunci/URL pencarian atau unggah file audio!",
+        "invalid_file_format": "Format file tidak valid! Diizinkan: .mp3, .wav, .m4a, .ogg, .aac, .flac",
+        "youtube_blocked": "Demi kepatuhan hukum dan keamanan platform, tautan YouTube tidak didukung. Silakan gunakan SoundCloud atau unggah file audio secara langsung! 🛡️",
+        "no_results": "Tidak ada hasil yang ditemukan di SoundCloud!",
+        "added_to_queue": "Berhasil menambahkan **{title}** ke antrean!",
+        "not_playing": "Tidak ada musik yang sedang diputar saat ini!",
+        "already_paused": "Musik sudah dijeda!",
+        "paused": "Memutar musik dijeda!",
+        "not_connected": "Aku tidak terhubung ke saluran suara!",
+        "already_playing": "Musik sedang diputar!",
+        "resumed": "Melanjutkan pemutaran musik!",
+        "stopped": "Menghentikan musik, membersihkan antrean, dan keluar dari saluran suara!",
+        "now_playing_title": "Sedang Diputar",
+        "field_requester": "Diminta Oleh",
+        "field_duration": "Durasi",
+        "field_upcoming": "Lagu Mendatang",
+        "no_upcoming": "Tidak ada lagu mendatang di antrean.",
+        "queue_empty": "Antrean saat ini kosong!",
+        "queue_title": "Antrean Musik",
+        "skipped": "Berhasil melewati lagu saat ini!"
     }
 }

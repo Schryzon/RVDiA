@@ -19,11 +19,13 @@ SESSION_COOKIE = "rvdia_session"
 SESSION_MAX_AGE = 86400 * 7  # 7 days
 
 
+_transient_secret = os.urandom(32)
+
 def _get_secret():
     secret = os.getenv("SESSION_SECRET", os.getenv("INTERNAL_API_KEY", ""))
     if not secret:
-        logging.warning("SESSION_SECRET is not set! Using fallback.")
-        secret = "rvdia-fallback-dev-secret"
+        logging.warning("SESSION_SECRET is not set! Using transient random secret.")
+        return _transient_secret
     return secret.encode()
 
 
@@ -152,12 +154,14 @@ async def handle_oauth_callback(request: web.Request):
     # set signed cookie and redirect to dashboard
     lang = request.query.get("lang", "en")
     response = web.HTTPFound(f"/dashboard?lang={lang}")
+    secure_cookie = request.url.scheme == "https"
     response.set_cookie(
         SESSION_COOKIE,
         _sign_payload(session_payload),
         max_age=SESSION_MAX_AGE,
         httponly=True,
         samesite="Lax",
+        secure=secure_cookie,
         path="/",
     )
     raise response

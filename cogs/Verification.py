@@ -148,6 +148,11 @@ class Verification(commands.Cog):
     @check_blacklist()
     async def verify(self, ctx: commands.Context, role_name: str = "Verified"):
         """Verify yourself to gain server access using a CAPTCHA."""
+        # Prevent privilege escalation: only users with manage_roles/administrator can specify a custom role.
+        if role_name != "Verified":
+            if not ctx.author.guild_permissions.manage_roles and not ctx.author.guild_permissions.administrator:
+                role_name = "Verified"
+
         user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
         lang = user_settings.lang if user_settings else "en"
 

@@ -83,8 +83,8 @@ class RVDIA(commands.AutoShardedBot):
     logging.info("Web Server task created.")
 
     # Start the Telegram Bot Polling Adapter
-    from scripts.telegram_bot import start_telegram_bot
-    self.loop.create_task(start_telegram_bot(self))
+    from Zora import start_zora
+    self.loop.create_task(start_zora(self))
     logging.info("Telegram Bot task created.")
 
 
@@ -349,6 +349,8 @@ async def on_message(msg:discord.Message):
             await send_reply_message(msg, message_embed)
           
           elif is_transfer_request:
+            if not await rvdia.is_owner(msg.author):
+                return
             fitur = "Transfer akun"
             old_acc_field = message_embed.fields[0].value
             old_acc_string = old_acc_field.split(': ')

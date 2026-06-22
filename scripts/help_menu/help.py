@@ -89,6 +89,12 @@ class Paginator:
             "moderation": "help.category_moderation",
             "roleplay": "help.category_roleplay",
             "event": "help.category_event",
+            "music": "help.category_music",
+            "utilities": "help.category_utilities",
+            "support": "help.category_support",
+            "ocr": "help.category_ocr",
+            "reminder": "help.category_reminder",
+            "verification": "help.category_verification",
             "no category": "help.no_category",
             "tak tergolongkan": "help.no_category"
         }.get(cog_key, "")

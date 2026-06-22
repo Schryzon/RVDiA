@@ -1115,7 +1115,19 @@
         "category_roleplay_description": "User interaction and roleplay commands.",
         "category_event": "⭐ Active Event",
         "category_event_description": "Active server events and mini-games.",
-        "category_no_category_description": "Commands that do not belong to any specific category."
+        "category_no_category_description": "Commands that do not belong to any specific category.",
+        "category_music": "🎵 Music Player",
+        "category_music_description": "Play high-quality music in voice channels from SoundCloud or direct uploads.",
+        "category_utilities": "🛠️ Utilities",
+        "category_utilities_description": "Useful tools for checking weather, timezone, colors, and searching the web.",
+        "category_support": "💬 Support & Feedback",
+        "category_support_description": "Get help, donate, or submit suggestions for RVDiA.",
+        "category_ocr": "🔍 OCR Text Extractor",
+        "category_ocr_description": "Extract text layers from images or PDF documents using AI.",
+        "category_reminder": "⏰ Reminders",
+        "category_reminder_description": "Set timezone-aware time alarms and automated reminders.",
+        "category_verification": "✅ CAPTCHA Verification",
+        "category_verification_description": "Secure server entry utilizing CAPTCHA checks."
     },
     "commands": {
         "chat": {
@@ -1960,6 +1972,54 @@
                 "user": "User whose avatar you want to process.",
                 "attachment": "Image file to process."
             }
+        },
+        "play": {
+            "description": "Play audio from SoundCloud or an uploaded file!",
+            "arguments": {
+                "query_or_url": "SoundCloud search query or URL",
+                "attachment": "Upload an audio file (.mp3, .wav, .m4a, .ogg) to play directly"
+            }
+        },
+        "skip": {
+            "description": "Skip the current playing track."
+        },
+        "pause": {
+            "description": "Pause the current music playback."
+        },
+        "resume": {
+            "description": "Resume the paused music playback."
+        },
+        "stop": {
+            "description": "Stop playing music, clear the queue, and disconnect."
+        },
+        "nowplaying": {
+            "description": "Show information about the currently playing track."
+        },
+        "queue": {
+            "description": "Show the current music queue."
         }
+    },
+    "music": {
+        "no_voice_channel": "You must be in a voice channel to use this command!",
+        "missing_args": "Please provide a search query/URL or upload an audio file!",
+        "invalid_file_format": "Invalid file format! Allowed: .mp3, .wav, .m4a, .ogg, .aac, .flac",
+        "youtube_blocked": "For legal and platform safety compliance, YouTube links are not supported. Please use SoundCloud or upload an audio file directly! 🛡️",
+        "no_results": "No results found on SoundCloud!",
+        "added_to_queue": "Added **{title}** to the queue!",
+        "not_playing": "Not currently playing any music!",
+        "already_paused": "Music is already paused!",
+        "paused": "Paused the music playback!",
+        "not_connected": "I am not connected to a voice channel!",
+        "already_playing": "Music is already playing!",
+        "resumed": "Resumed the music playback!",
+        "stopped": "Stopped music, cleared queue, and disconnected from the voice channel!",
+        "now_playing_title": "Now Playing",
+        "field_requester": "Requested By",
+        "field_duration": "Duration",
+        "field_upcoming": "Upcoming Tracks",
+        "no_upcoming": "No upcoming songs in the queue.",
+        "queue_empty": "The queue is currently empty!",
+        "queue_title": "Music Queue",
+        "skipped": "Skipped the current track!"
     }
 }

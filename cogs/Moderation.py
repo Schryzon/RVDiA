@@ -14,6 +14,7 @@ class Moderation(commands.Cog):
         self.bot = bot
     
     @commands.hybrid_group(name='server')
+    @commands.guild_only()
     @check_blacklist()
     async def server(self, ctx:commands.Context) -> None:
         """
@@ -79,6 +80,7 @@ class Moderation(commands.Cog):
             await ctx.reply(embed=embed)
 
     @commands.hybrid_group(name='invite')
+    @commands.guild_only()
     @commands.bot_has_permissions(manage_guild=True)
     @check_blacklist()
     async def invite(self, ctx:commands.Context) -> None:
@@ -148,6 +150,7 @@ class Moderation(commands.Cog):
             await ctx.reply(i18n.get(lang, "moderation.invite_none"))
 
     @commands.hybrid_group(name='warn')
+    @commands.guild_only()
     @commands.has_permissions(manage_messages= True)
     @check_blacklist()
     async def warn(self, ctx:commands.Context, member:discord.Member, *, reason = None):
@@ -306,6 +309,7 @@ class Moderation(commands.Cog):
         await ctx.reply(embed=embed)
 
     @commands.hybrid_command(name='ultban', description="Ban a user from the server, even if they are not currently in it.")
+    @commands.guild_only()
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
     @app_commands.describe(
@@ -335,6 +339,7 @@ class Moderation(commands.Cog):
         await ctx.reply(embed = embed)
 
     @commands.hybrid_command(description="Unban a previously banned user.")
+    @commands.guild_only()
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
     @app_commands.describe(
@@ -359,6 +364,7 @@ class Moderation(commands.Cog):
 
     @commands.hybrid_command(aliases = ['clean', 'purge', 'delete', 'hapus'], 
                       description="Bulk delete messages in a channel.")
+    @commands.guild_only()
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
     @app_commands.describe(
@@ -394,6 +400,7 @@ class Moderation(commands.Cog):
         return await ctx.channel.send(success_msg, delete_after = 5.0)
 
     @commands.hybrid_group(name="automod", description="Manage Discord's native AutoMod rules.")
+    @commands.guild_only()
     @commands.has_permissions(manage_guild=True)
     @commands.bot_has_permissions(manage_guild=True)
     @check_blacklist()
