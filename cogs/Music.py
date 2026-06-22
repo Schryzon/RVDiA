@@ -184,7 +184,7 @@ class Music(commands.Cog):
 
         # Deafen RVDiA upon entry
         if not state.voice_client or not state.voice_client.is_connected():
-            state.voice_client = await ctx.author.voice.channel.connect(self_deafen=True)
+            state.voice_client = await ctx.author.voice.channel.connect(self_deaf=True)
             state.start_loop()
 
         track = None
