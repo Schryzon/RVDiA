@@ -143,15 +143,7 @@ class Paginator:
                 tree_lines = [short_doc]
                 for idx, sub in enumerate(subcmds[:5]):
                     connector = "└── " if idx == len(subcmds[:5]) - 1 else "├── "
-                    # Look up dynamic subcommand description
-                    sub_desc_key = f"commands.{sub.qualified_name.replace(' ', '.')}.description"
-                    sub_desc = i18n.get(self.lang, sub_desc_key, default="")
-                    if not sub_desc:
-                        sub_desc = sub.short_doc if hasattr(sub, "short_doc") else (sub.description.split("\n", 1)[0] if sub.description else "")
-                    sub_desc = sub_desc or "..."
-                    if len(sub_desc) > 50:
-                        sub_desc = sub_desc[:47] + "..."
-                    tree_lines.append(f"{connector}{sub.name} — {sub_desc}")
+                    tree_lines.append(f"{connector}{sub.name}")
                 if len(subcmds) > 5:
                     tree_lines.append(f"└── ... ({len(subcmds) - 5} more)")
                 value_content = "\n".join(tree_lines)
