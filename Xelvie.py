@@ -516,4 +516,53 @@ async def uptime(ctx: commands.Context):
     await ctx.reply(content=status_summary, file=file)
 
 
+@xlv.command(name='help')
+async def xlv_help(ctx: commands.Context):
+    embed = discord.Embed(
+        title="🛡️ X-LV (Xtreme Log-out Vigilante) Help Menu",
+        description="X-LV is RVDIA's status monitor and server security bot. Below is the list of available commands and active auto-moderation systems.",
+        color=discord.Color.from_str("#cba6f7"),
+        timestamp=datetime.now()
+    )
+    
+    if xlv.user and xlv.user.avatar:
+        embed.set_thumbnail(url=xlv.user.avatar.url)
+        
+    embed.add_field(
+        name="💬 Moderation Commands",
+        value=(
+            "`x-clearuser <user_id> [limit]`\n"
+            "↳ *Purges messages from the specified user in this channel. (Default limit: 100)*\n\n"
+            "`x-clearuserglobal <user_id> [limit_per_channel]`\n"
+            "↳ *Purges messages from the specified user across all guild channels. (Default limit: 100, Admin only)*"
+        ),
+        inline=False
+    )
+    
+    embed.add_field(
+        name="🌐 Status Commands",
+        value=(
+            "`x-uptime` (aliases: `statusgraph`, `uptimes`, `pingall`)\n"
+            "↳ *Displays the current health status of services and generates a 50-hour latency history chart.*"
+        ),
+        inline=False
+    )
+    
+    embed.add_field(
+        name="🤖 Active Smart Auto-Mod Gating (Passive)",
+        value=(
+            "• **Invite Shield**: Deletes and bans external Discord invites (except local server invites).\n"
+            "• **Typosquatting/Scam Link Shield**: Blocks domains mimicking Discord or Nitro offers.\n"
+            "• **Local QR Decoder**: Detects QR code login hijacks locally from image attachments.\n"
+            "• **AI Scam Vision**: Uses Gemini to analyze captionless Mr. Beast/Elon Musk crypto and NFT giveaway scam images posted by untrusted/new users."
+        ),
+        inline=False
+    )
+    
+    footer_avatar = xlv.user.avatar.url if (xlv.user and xlv.user.avatar) else None
+    embed.set_footer(text="Prefix: x- | Coded by Schryzon", icon_url=footer_avatar)
+    
+    await ctx.reply(embed=embed)
+
+
 xlv.run(token=str(getenv('xlvtoken')))
