@@ -2260,6 +2260,12 @@ class Image_Ops:
         return np.concatenate([image1, image2], axis=0)
 
     @staticmethod
+    def concat(image1: ArrayLike, image2: ArrayLike, axis: Literal["horizontal", "vertical"] = "horizontal", match: MatchMode = "pad") -> ArrayLike:
+        if axis == "vertical":
+            return Image_Ops.concat_v(image1, image2, match)
+        return Image_Ops.concat_h(image1, image2, match)
+
+    @staticmethod
     def dilate(image: ArrayLike, times: int = 2) -> ArrayLike:
         """Pixel-repeat dilation."""
         image = to_cpu(_validate_image(image))

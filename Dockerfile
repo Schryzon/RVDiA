@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     zlib1g-dev \
     libjpeg-dev \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first

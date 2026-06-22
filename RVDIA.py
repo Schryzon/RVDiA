@@ -87,6 +87,13 @@ class RVDIA(commands.AutoShardedBot):
     self.loop.create_task(start_zora(self))
     logging.info("Telegram Bot task created.")
 
+    # Dynamically find cogs to pick up new files
+    current_cogs = [c.name for c in iter_modules(['cogs'], prefix='cogs.')]
+    for cog in current_cogs:
+      if cog != 'cogs.__init__':
+          await self.load_extension(cog)
+    logging.info('Internal cogs loaded!')
+
 
 
 rvdia = RVDIA() # Must create instance
@@ -112,27 +119,16 @@ async def on_connect():
 @rvdia.event
 async def on_ready():
     """
-    Detect when RVDiA is ready (not connected to Discord).
+    Detect when RVDiA is ready.
     """
     await rvdia.wait_until_ready() # So I "don't" get rate limited
-    
-    # Dynamically find cogs to pick up new files
-    current_cogs = [c.name for c in iter_modules(['cogs'], prefix='cogs.')]
-    for cog in current_cogs:
-      if not cog == 'cogs.__init__':
-          try:
-              await rvdia.load_extension(cog)
-          except commands.ExtensionAlreadyLoaded:
-              pass
-          except Exception as e:
-              logging.error(f"Could not load cog {cog}: {e}")
-    logging.info('Internal cogs loaded!')
     
     if not rvdia.synced:
       synced_commands = await rvdia.tree.sync() # Global slash commands sync, also returns a list of commands.
       await asyncio.sleep(1.5) # Avoid rate limit
       rvdia.synced = [True, len(synced_commands)]
       logging.info('Slash Commands synced to global!')
+
 
     if not change_status.is_running():
       change_status.start()
