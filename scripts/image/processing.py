@@ -2928,6 +2928,64 @@ class Image_Ops:
                 skel = Morphology.skeleton(binary)
                 res = cv2.cvtColor(skel, cv2.COLOR_GRAY2RGB)
                 current = to_gpu(res) if xp_mod is not np else res
+            elif name == "lpf":
+                cutoff = 30.0
+                ftype = "gaussian"
+                order = 2
+                if args:
+                    try: cutoff = float(args[0])
+                    except ValueError: pass
+                    if len(args) > 1 and args[1].lower() in ["ideal", "butterworth", "gaussian"]:
+                        ftype = args[1].lower()
+                    if len(args) > 2:
+                        try: order = int(args[2])
+                        except ValueError: pass
+                current_cpu = to_cpu(current)
+                if ftype == "ideal": res = FreqFilter.ideal_lpf(current_cpu, cutoff)
+                elif ftype == "butterworth": res = FreqFilter.butterworth_lpf(current_cpu, cutoff, order)
+                else: res = FreqFilter.gaussian_lpf(current_cpu, cutoff)
+                current = to_gpu(res) if xp_mod is not np else res
+            elif name == "hpf":
+                cutoff = 30.0
+                ftype = "gaussian"
+                order = 2
+                if args:
+                    try: cutoff = float(args[0])
+                    except ValueError: pass
+                    if len(args) > 1 and args[1].lower() in ["ideal", "butterworth", "gaussian"]:
+                        ftype = args[1].lower()
+                    if len(args) > 2:
+                        try: order = int(args[2])
+                        except ValueError: pass
+                current_cpu = to_cpu(current)
+                if ftype == "ideal": res = FreqFilter.ideal_hpf(current_cpu, cutoff)
+                elif ftype == "butterworth": res = FreqFilter.butterworth_hpf(current_cpu, cutoff, order)
+                else: res = FreqFilter.gaussian_hpf(current_cpu, cutoff)
+                current = to_gpu(res) if xp_mod is not np else res
+            elif name == "homomorphic":
+                gamma_l = 0.5
+                gamma_h = 2.0
+                cutoff = 30.0
+                if args:
+                    try: gamma_l = float(args[0])
+                    except ValueError: pass
+                    if len(args) > 1:
+                        try: gamma_h = float(args[1])
+                        except ValueError: pass
+                    if len(args) > 2:
+                        try: cutoff = float(args[2])
+                        except ValueError: pass
+                current_cpu = to_cpu(current)
+                res = FreqFilter.homomorphic(current_cpu, gamma_l, gamma_h, cutoff)
+                current = to_gpu(res) if xp_mod is not np else res
+            elif name == "fft":
+                current_cpu = to_cpu(current)
+                res = FreqFilter.fft(current_cpu)
+                current = to_gpu(res) if xp_mod is not np else res
+            elif name == "dct":
+                current_cpu = to_cpu(current)
+                res = FreqFilter.dct(current_cpu)
+                current = to_gpu(res) if xp_mod is not np else res
             elif image2 is not None:
                 img2_val = _validate_image(image2)
                 if name == "blend":
@@ -7580,6 +7638,61 @@ class FreqFilter:
         file_bytes = np.asarray(bytearray(buf.read()), dtype=np.uint8)
         out_img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
         return cv2.cvtColor(out_img, cv2.COLOR_BGR2RGB)
+
+    @staticmethod
+    def fft(image: ArrayLike) -> ArrayLike:
+        """Calculate and return the log-scaled FFT magnitude spectrum of the image."""
+        image = to_cpu(_validate_image(image))
+        if image.ndim == 3:
+            gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        else:
+            gray = image
+        
+        dft = np.fft.fft2(gray.astype(np.float64))
+        dft_shift = np.fft.fftshift(dft)
+        magnitude = np.abs(dft_shift)
+        spec = np.log1p(magnitude)
+        
+        s_min, s_max = spec.min(), spec.max()
+        if s_max - s_min > 1e-6:
+            spec = (spec - s_min) / (s_max - s_min) * 255.0
+        else:
+            spec = np.zeros_like(spec)
+            
+        spectrum = spec.astype(np.uint8)
+        return cv2.cvtColor(spectrum, cv2.COLOR_GRAY2RGB)
+
+    @staticmethod
+    def dct(image: ArrayLike) -> ArrayLike:
+        """Calculate and return the log-scaled DCT magnitude spectrum of the image."""
+        image = to_cpu(_validate_image(image))
+        if image.ndim == 3:
+            gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        else:
+            gray = image
+        
+        gray_f32 = gray.astype(np.float32)
+        h, w = gray_f32.shape
+        pad_h = h + (h % 2) - h
+        pad_w = w + (w % 2) - w
+        if pad_h > 0 or pad_w > 0:
+            gray_f32 = np.pad(gray_f32, ((0, pad_h), (0, pad_w)), mode='edge')
+            
+        dct_coeffs = cv2.dct(gray_f32)
+        magnitude = np.abs(dct_coeffs)
+        spec = np.log1p(magnitude)
+        
+        s_min, s_max = spec.min(), spec.max()
+        if s_max - s_min > 1e-6:
+            spec = (spec - s_min) / (s_max - s_min) * 255.0
+        else:
+            spec = np.zeros_like(spec)
+            
+        if pad_h > 0 or pad_w > 0:
+            spec = spec[:h, :w]
+            
+        spectrum = spec.astype(np.uint8)
+        return cv2.cvtColor(spectrum, cv2.COLOR_GRAY2RGB)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

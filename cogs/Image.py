@@ -1279,5 +1279,27 @@ class Image(commands.Cog):
             except ValueError as e:
                 await ctx.reply(str(e))
 
+    @fourier_group.command(name="fft", description="Calculate and show log-scaled FFT magnitude spectrum.")
+    @app_commands.describe(user="User whose avatar you want to process", attachment="Image file to process")
+    @check_blacklist()
+    async def fourier_fft(self, ctx: commands.Context, user: discord.User = None, attachment: discord.Attachment = None):
+        async with ctx.typing():
+            try:
+                bytes_data = await self._get_image_bytes(ctx, user, attachment)
+                await self._process_and_reply(ctx, bytes_data, "fft_spectrum.png", FreqFilter.fft)
+            except ValueError as e:
+                await ctx.reply(str(e))
+
+    @fourier_group.command(name="dct", description="Calculate and show log-scaled DCT magnitude spectrum.")
+    @app_commands.describe(user="User whose avatar you want to process", attachment="Image file to process")
+    @check_blacklist()
+    async def fourier_dct(self, ctx: commands.Context, user: discord.User = None, attachment: discord.Attachment = None):
+        async with ctx.typing():
+            try:
+                bytes_data = await self._get_image_bytes(ctx, user, attachment)
+                await self._process_and_reply(ctx, bytes_data, "dct_spectrum.png", FreqFilter.dct)
+            except ValueError as e:
+                await ctx.reply(str(e))
+
 async def setup(bot: commands.Bot):
     await bot.add_cog(Image(bot))

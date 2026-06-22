@@ -403,6 +403,13 @@ class Help(HelpCommand, commands.Cog):
             app_commands.sort(key=lambda x: x.name)
         return app_commands
 
+    async def filter_commands(self, commands, *, sort=False):
+        """Bypass expensive permission/blacklist database checks in help menu generation."""
+        filtered = [c for c in commands if not c.hidden]
+        if sort:
+            filtered.sort(key=lambda c: c.name)
+        return filtered
+
     async def prepare_help_command(
         self, ctx: commands.Context, command: commands.Command
     ):

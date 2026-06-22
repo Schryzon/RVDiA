@@ -89,7 +89,10 @@ async def execute_worldboss_attack(ctx):
     )
 
     if contribution:
-        cooldown_limit = contribution.lastHitTime + timedelta(minutes=15)
+        hit_time = contribution.lastHitTime
+        if hit_time.tzinfo is None:
+            hit_time = hit_time.replace(tzinfo=timezone.utc)
+        cooldown_limit = hit_time + timedelta(minutes=15)
         now = datetime.now(timezone.utc)
         if now < cooldown_limit:
             remaining = int((cooldown_limit - now).total_seconds())

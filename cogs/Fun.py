@@ -80,5 +80,100 @@ class Fun(commands.Cog):
             sus.close()
             remove(res_filename)
 
+    @commands.hybrid_command(name="guess", description="Let's play a number guessing game with me!")
+    @app_commands.describe(level='Which difficulty level will you choose?')
+    @app_commands.choices(level=[
+        app_commands.Choice(name='SUPER', value='SUPER'),
+        app_commands.Choice(name='HARD', value='HARD'),
+        app_commands.Choice(name="NORMAL", value='NORMAL'),
+        app_commands.Choice(name='EASY', value='EASY')
+    ])
+    @check_blacklist()
+    async def guess(self, ctx: commands.Context, level: app_commands.Choice[str]):
+        """
+        Let's play a number guessing game with me!
+        """
+        from scripts.game.fight import execute_guess
+        await execute_guess(ctx, level.value)
+
+    @commands.hybrid_command(name="8ball", description="Ask the Magic 8-Ball a question!")
+    @app_commands.describe(question="The question to ask.")
+    @check_blacklist()
+    async def eightball(self, ctx: commands.Context, *, question: str):
+        """Ask the Magic 8-Ball a question!"""
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
+        lang_data = i18n.locales.get(lang, i18n.locales.get("en", {}))
+        responses = lang_data.get("fun", {}).get("8ball_responses", [])
+        if not responses:
+            responses = [
+                "It is certain. 🟢", "Reply hazy, try again. 🟡", "My reply is no. 🔴"
+            ]
+        
+        answer = random.choice(responses)
+        title = i18n.get(lang, "fun.8ball_title")
+        q_label = i18n.get(lang, "fun.8ball_question")
+        a_label = i18n.get(lang, "fun.8ball_answer")
+
+        embed = discord.Embed(title=title, color=0x34495e)
+        embed.add_field(name=f"❓ {q_label}", value=question, inline=False)
+        embed.add_field(name=f"✨ {a_label}", value=answer, inline=False)
+        embed.set_footer(text=ctx.author.name, icon_url=ctx.author.display_avatar.url)
+        await ctx.reply(embed=embed)
+
+    @commands.hybrid_command(name="roll", description="Roll some dice (e.g. 1d6, 2d20).")
+    @app_commands.describe(dice="Dice notation (e.g. 1d6, 2d20). Default is 1d6.")
+    @check_blacklist()
+    async def roll(self, ctx: commands.Context, dice: str = "1d6"):
+        """Roll some dice!"""
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
+        import re
+        match = re.match(r'^(?:(\d+))?d(\d+)$', dice.lower().strip())
+        if not match:
+            err_msg = i18n.get(lang, "fun.roll_invalid")
+            return await ctx.reply(err_msg)
+
+        count = int(match.group(1) or 1)
+        sides = int(match.group(2))
+
+        if count <= 0 or count > 50 or sides <= 1 or sides > 1000:
+            err_msg = i18n.get(lang, "fun.roll_invalid")
+            return await ctx.reply(err_msg)
+
+        rolls = [random.randint(1, sides) for _ in range(count)]
+        total = sum(rolls)
+
+        title = i18n.get(lang, "fun.roll_title")
+        rolls_str = ", ".join(f"`{r}`" for r in rolls)
+        result_desc = i18n.get(lang, "fun.roll_result", rolls=rolls_str, total=total)
+
+        embed = discord.Embed(title=title, description=result_desc, color=ctx.author.color)
+        embed.set_author(name=ctx.author.name, icon_url=ctx.author.display_avatar.url)
+        await ctx.reply(embed=embed)
+
+    @commands.hybrid_command(name="coinflip", description="Flip a coin!")
+    @check_blacklist()
+    async def coinflip(self, ctx: commands.Context):
+        """Flip a coin!"""
+        user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+        lang = user_settings.lang if user_settings else "en"
+
+        is_heads = random.choice([True, False])
+        title = i18n.get(lang, "fun.coin_title")
+
+        if is_heads:
+            res_label = i18n.get(lang, "fun.coin_heads")
+            res_desc = i18n.get(lang, "fun.coin_heads_desc")
+        else:
+            res_label = i18n.get(lang, "fun.coin_tails")
+            res_desc = i18n.get(lang, "fun.coin_tails_desc")
+
+        embed = discord.Embed(title=title, description=f"🪙 **{res_label}**\n\n{res_desc}", color=0xf1c40f)
+        embed.set_footer(text=ctx.author.name, icon_url=ctx.author.display_avatar.url)
+        await ctx.reply(embed=embed)
+
 async def setup (bot):
     await bot.add_cog(Fun(bot))

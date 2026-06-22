@@ -112,7 +112,40 @@
         "ship_range_70": "__Besties for life!__\n{member1} will be a loyal best friend to {member2}! <:hug:1084251318073438289>",
         "ship_range_50": "__They somehow fit together.__\n{member1} fits well as {member2}'s friend. 👍",
         "ship_range_25": "__Not good!__\n{member1} and {member2} will not be happy together. 👎",
-        "ship_range_0": "__This is bad!__\n{member1} and {member2} are an incompatible couple! 💔"
+        "ship_range_0": "__This is bad!__\n{member1} and {member2} are an incompatible couple! 💔",
+        "8ball_responses": [
+            "It is certain. 🟢",
+            "It is decidedly so. 🟢",
+            "Without a doubt. 🟢",
+            "Yes definitely. 🟢",
+            "You may rely on it. 🟢",
+            "As I see it, yes. 🟢",
+            "Most likely. 🟢",
+            "Outlook good. 🟢",
+            "Yes. 🟢",
+            "Signs point to yes. 🟢",
+            "Reply hazy, try again. 🟡",
+            "Ask again later. 🟡",
+            "Better not tell you now. 🟡",
+            "Cannot predict now. 🟡",
+            "Concentrate and ask again. 🟡",
+            "Don't count on it. 🔴",
+            "My reply is no. 🔴",
+            "My sources say no. 🔴",
+            "Outlook not so good. 🔴",
+            "Very doubtful. 🔴"
+        ],
+        "8ball_title": "🔮 The Magic 8-Ball",
+        "8ball_question": "Question",
+        "8ball_answer": "Answer",
+        "roll_title": "🎲 Dice Roller",
+        "roll_result": "You rolled: {rolls}\n**Total:** `{total}`",
+        "roll_invalid": "❌ Invalid dice format! Use formats like `1d6` or `2d20`.",
+        "coin_title": "🪙 Coin Flip",
+        "coin_heads": "Heads! 🪙",
+        "coin_tails": "Tails! 🪙",
+        "coin_heads_desc": "The coin spun and landed on **Heads**!",
+        "coin_tails_desc": "The coin spun and landed on **Tails**!"
     },
     "roleplay": {
         "action_hug": "hugs",
@@ -1458,11 +1491,26 @@
                 "reason": "Reason for the transfer request."
             }
         },
-        "game.guess": {
+        "guess": {
             "description": "Play a number guessing game with RVDiA!",
             "arguments": {
                 "level": "Select difficulty level."
             }
+        },
+        "8ball": {
+            "description": "Ask the Magic 8-Ball a question!",
+            "arguments": {
+                "question": "The question to ask."
+            }
+        },
+        "roll": {
+            "description": "Roll some dice (e.g. 1d6, 2d20).",
+            "arguments": {
+                "dice": "Dice notation (default: 1d6)."
+            }
+        },
+        "coinflip": {
+            "description": "Flip a coin!"
         },
         "game.use": {
             "description": "Use items or consume potions from your inventory.",
@@ -1897,6 +1945,20 @@
                 "angle": "Grating orientation angle in degrees (default: 45.0).",
                 "user": "User whose avatar you want to analyze.",
                 "attachment": "Image file to analyze."
+            }
+        },
+        "fourier.fft": {
+            "description": "Calculate and show the log-scaled FFT magnitude spectrum.",
+            "arguments": {
+                "user": "User whose avatar you want to process.",
+                "attachment": "Image file to process."
+            }
+        },
+        "fourier.dct": {
+            "description": "Calculate and show the log-scaled DCT magnitude spectrum.",
+            "arguments": {
+                "user": "User whose avatar you want to process.",
+                "attachment": "Image file to process."
             }
         }
     }

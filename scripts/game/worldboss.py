@@ -22,8 +22,16 @@ async def get_active_boss():
 
     now = datetime.now(timezone.utc)
 
+    should_reset = False
+    if boss:
+        boss_time = boss.lastResetTime
+        if boss_time.tzinfo is None:
+            boss_time = boss_time.replace(tzinfo=timezone.utc)
+        if (now - boss_time) > timedelta(hours=24):
+            should_reset = True
+
     # Generate a new boss if none exists, or the active one is older than 24 hours
-    if not boss or (now - boss.lastResetTime) > timedelta(hours=24):
+    if not boss or should_reset:
         if boss:
             # Mark the expired boss as inactive
             await db.worldboss.update(

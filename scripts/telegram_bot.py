@@ -505,7 +505,10 @@ async def handle_attack_command(chat_id, telegram_user_id, username, lang):
     )
 
     if contribution:
-        cooldown_limit = contribution.lastHitTime + timedelta(minutes=15)
+        hit_time = contribution.lastHitTime
+        if hit_time.tzinfo is None:
+            hit_time = hit_time.replace(tzinfo=timezone.utc)
+        cooldown_limit = hit_time + timedelta(minutes=15)
         now = datetime.now(timezone.utc)
         if now < cooldown_limit:
             remaining = int((cooldown_limit - now).total_seconds())
@@ -1002,6 +1005,14 @@ async def handle_image_filter_command(chat_id, telegram_user_id, command, args, 
             func = lambda img: FreqFilter.modulate(img, frequency, angle)
             filename = "modulation_theorem.png"
             caption = f"📐 Fourier Modulation Theorem (frequency={frequency}, angle={angle}°)" if lang == "en" else f"📐 Teorema Modulasi Fourier (frequency={frequency}, angle={angle}°)"
+        elif cmd_name == "fft":
+            func = FreqFilter.fft
+            filename = "fft_spectrum.png"
+            caption = "📊 Log-Scaled FFT Magnitude Spectrum" if lang == "en" else "📊 Spektrum Magnitudo FFT Skala Log"
+        elif cmd_name == "dct":
+            func = FreqFilter.dct
+            filename = "dct_spectrum.png"
+            caption = "📊 Log-Scaled DCT Magnitude Spectrum" if lang == "en" else "📊 Spektrum Magnitudo DCT Skala Log"
         elif cmd_name == "posterize":
             levels = 4
             if args:
@@ -1119,7 +1130,9 @@ async def handle_help_command(chat_id, lang):
         f"• /lpf [cutoff] [style] - Low-pass filter (ideal/butterworth/gaussian)\n"
         f"• /hpf [cutoff] [style] - High-pass filter\n"
         f"• /homomorphic [gl] [gh] [cutoff] - Illumination balancing\n"
-        f"• /fourier_modulate [freq] [angle] - Fourier modulation theorem visualization\n\n"
+        f"• /fourier_modulate [freq] [angle] - Fourier modulation theorem visualization\n"
+        f"• /fft - Show log-scaled FFT magnitude spectrum\n"
+        f"• /dct - Show log-scaled DCT magnitude spectrum\n\n"
         f"⛓️ <b>EVALUATION PIPELINE:</b>\n"
         f"• /image_eval [pipeline] - Sequential processing\n"
         f"• /ieval [pipeline] - Alias for /image_eval\n"
@@ -1163,7 +1176,9 @@ async def handle_help_command(chat_id, lang):
         f"• /lpf [cutoff] [style] - Low-pass filter (ideal/butterworth/gaussian)\n"
         f"• /hpf [cutoff] [style] - High-pass filter\n"
         f"• /homomorphic [gl] [gh] [cutoff] - Keseimbangan pencahayaan\n"
-        f"• /fourier_modulate [freq] [angle] - Visualisasi teorema modulasi Fourier\n\n"
+        f"• /fourier_modulate [freq] [angle] - Visualisasi teorema modulasi Fourier\n"
+        f"• /fft - Tampilkan spektrum magnitudo FFT skala log\n"
+        f"• /dct - Tampilkan spektrum magnitudo DCT skala log\n\n"
         f"⛓️ <b>EVALUASI PIPELINE:</b>\n"
         f"• /image_eval [pipeline] - Pemrosesan sekuensial\n"
         f"• /ieval [pipeline] - Alias dari /image_eval\n"
@@ -1255,7 +1270,7 @@ async def handle_telegram_update(bot, update):
         "/grayscale", "/invert", "/circle", "/sepia", "/blur", "/sharpen", "/emboss",
         "/pixelate", "/vignette", "/gamma", "/flip", "/rotate", "/adjust", "/edge",
         "/noise", "/equalize", "/threshold", "/erode", "/dilate", "/skeleton",
-        "/lpf", "/hpf", "/homomorphic", "/fourier_modulate", "/posterize", "/solarize",
+        "/lpf", "/hpf", "/homomorphic", "/fourier_modulate", "/fft", "/dct", "/posterize", "/solarize",
         "/sketch", "/image_eval", "/ieval"
     ]:
         await handle_image_filter_command(chat_id, telegram_user_id, command, args, message, lang)

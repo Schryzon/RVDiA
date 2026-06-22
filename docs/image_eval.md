@@ -48,10 +48,12 @@ These operators modify a single image and pass the output to the next filter in 
 - `dilate:iterations:kernel_size` — Expands brighter areas. (Defaults: `1` iteration, kernel size `3`).
 - `skeleton` — Extracts the topological skeleton of the image.
 
-### 5. Fourier Frequency Filtering
+### 5. Fourier Frequency Filtering & Spectrum Analysis
 - `lpf:cutoff:type:order` — Applies Low-Pass Filtering (frequency domain smoothing). Types: `ideal`, `butterworth`, `gaussian`. (Defaults: `30.0`, `gaussian`, `2`).
 - `hpf:cutoff:type:order` — Applies High-Pass Filtering (frequency domain sharpening). Types: `ideal`, `butterworth`, `gaussian`. (Defaults: `30.0`, `gaussian`, `2`).
 - `homomorphic:gl:gh:cutoff` — Normalizes illumination & boosts contrast. (Defaults: `0.5`, `2.0`, `30.0`).
+- `fft` — Returns the log-scaled Fast Fourier Transform (FFT) magnitude spectrum.
+- `dct` — Returns the log-scaled Discrete Cosine Transform (DCT) magnitude spectrum.
 
 ### 6. Artistic Filters
 - `posterize:levels` — Reduces the number of colors to create a poster-like look. (Default levels: `4`).

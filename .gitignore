@@ -26,4 +26,6 @@ Thumbs.db
 desktop.ini
 
 # Scratch / Temp outputs
-scratch/
+scratch/
+uptime_history.json
+

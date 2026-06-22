@@ -99,7 +99,10 @@ async def give_rewards(ctx:commands.Context, user:discord.Member, exp:int, coins
         return
         
     # Premium Bonus (2x)
-    is_premium = user_record.premiumUntil and user_record.premiumUntil > datetime.now(timezone.utc)
+    premium_time = user_record.premiumUntil
+    if premium_time and premium_time.tzinfo is None:
+        premium_time = premium_time.replace(tzinfo=timezone.utc)
+    is_premium = bool(premium_time and premium_time > datetime.now(timezone.utc))
     if is_premium:
         exp *= 2
         coins *= 2

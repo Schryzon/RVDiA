@@ -1,5 +1,6 @@
 import asyncio
 import re
+import os
 import discord
 import random
 import json
@@ -647,7 +648,10 @@ async def execute_profile(ctx, bot, user=None):
         pass
         
     from scripts.image.card_generator import generate_profile_card
-    is_p = bool(user_record.premiumUntil and user_record.premiumUntil > datetime.now(timezone.utc))
+    premium_time = user_record.premiumUntil
+    if premium_time and premium_time.tzinfo is None:
+        premium_time = premium_time.replace(tzinfo=timezone.utc)
+    is_p = bool(premium_time and premium_time > datetime.now(timezone.utc))
     card_file = await generate_profile_card(target, user_record, is_p)
     await ctx.reply(file=card_file)
 

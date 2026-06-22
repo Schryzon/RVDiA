@@ -112,7 +112,40 @@
         "ship_range_70": "__Besties for life!__\n{member1} akan menjadi sahabat setia untuk {member2}! <:hug:1084251318073438289>",
         "ship_range_50": "__They somehow fit together.__\n{member1} cocok menjadi temannya {member2}. 👍",
         "ship_range_25": "__Not good!__\n{member1} dan {member2} tidak akan berbahagia saat berpasangan. 👎",
-        "ship_range_0": "__This is bad!__\n{member1} dan {member2} merupakan pasangan yang tidak cocok! 💔"
+        "ship_range_0": "__This is bad!__\n{member1} dan {member2} merupakan pasangan yang tidak cocok! 💔",
+        "8ball_responses": [
+            "Sudah pasti. 🟢",
+            "Sangat dipastikan. 🟢",
+            "Tanpa keraguan. 🟢",
+            "Ya, tentu saja. 🟢",
+            "Kamu bisa mengandalkannya. 🟢",
+            "Setahu saya, ya. 🟢",
+            "Kemungkinan besar. 🟢",
+            "Kelihatannya bagus. 🟢",
+            "Ya. 🟢",
+            "Tanda-tanda menunjuk ke ya. 🟢",
+            "Jawaban samar, coba lagi. 🟡",
+            "Tanyakan lagi nanti. 🟡",
+            "Lebih baik tidak memberitahumu sekarang. 🟡",
+            "Tidak bisa memprediksi sekarang. 🟡",
+            "Konsentrasi dan tanyakan lagi. 🟡",
+            "Jangan mengandalkannya. 🔴",
+            "Jawaban saya tidak. 🔴",
+            "Sumber saya mengatakan tidak. 🔴",
+            "Kelihatannya kurang bagus. 🔴",
+            "Sangat diragukan. 🔴"
+        ],
+        "8ball_title": "🔮 Magic 8-Ball",
+        "8ball_question": "Pertanyaan",
+        "8ball_answer": "Jawaban",
+        "roll_title": "🎲 Pelempar Dadu",
+        "roll_result": "Kamu melempar: {rolls}\n**Total:** `{total}`",
+        "roll_invalid": "❌ Format dadu tidak valid! Gunakan format seperti `1d6` atau `2d20`.",
+        "coin_title": "🪙 Lempar Koin",
+        "coin_heads": "Gambar! 🪙",
+        "coin_tails": "Angka! 🪙",
+        "coin_heads_desc": "Koin berputar dan mendarat di **Gambar**!",
+        "coin_tails_desc": "Koin berputar dan mendarat di **Angka**!"
     },
     "roleplay": {
         "action_hug": "Memeluk",
@@ -1458,11 +1491,26 @@
                 "reason": "Alasan untuk request pemindahan data."
             }
         },
-        "game.guess": {
+        "guess": {
             "description": "Main game tebak angka bersamaku!",
             "arguments": {
                 "level": "Pilih tingkat kesulitan."
             }
+        },
+        "8ball": {
+            "description": "Ajukan pertanyaan ke Magic 8-Ball!",
+            "arguments": {
+                "question": "Pertanyaan yang diajukan."
+            }
+        },
+        "roll": {
+            "description": "Lempar beberapa dadu (misal: 1d6, 2d20).",
+            "arguments": {
+                "dice": "Notasi dadu (default: 1d6)."
+            }
+        },
+        "coinflip": {
+            "description": "Lempar koin!"
         },
         "game.use": {
             "description": "Gunakan item atau konsumsi ramuan dari inventarismu.",
@@ -1897,6 +1945,20 @@
                 "angle": "Sudut orientasi kisi grating dalam derajat (default: 45.0).",
                 "user": "Pengguna yang avatar-nya ingin dianalisis.",
                 "attachment": "File gambar yang ingin dianalisis."
+            }
+        },
+        "fourier.fft": {
+            "description": "Hitung dan tampilkan spektrum magnitudo FFT skala log.",
+            "arguments": {
+                "user": "Pengguna yang avatar-nya ingin diproses.",
+                "attachment": "File gambar yang ingin diproses."
+            }
+        },
+        "fourier.dct": {
+            "description": "Hitung dan tampilkan spektrum magnitudo DCT skala log.",
+            "arguments": {
+                "user": "Pengguna yang avatar-nya ingin diproses.",
+                "attachment": "File gambar yang ingin diproses."
             }
         }
     }

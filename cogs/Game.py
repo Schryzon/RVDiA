@@ -40,8 +40,7 @@ from scripts.game.worldboss_cmd import (
 from scripts.game.fight import (
     execute_fight,
     execute_battle,
-    execute_enemies,
-    execute_guess
+    execute_enemies
 )
 
 from scripts.game.guild import (
@@ -216,21 +215,6 @@ class Game(commands.Cog):
         Request account data transfer.
         """
         await execute_transfer(ctx, self.bot, old_acc, reason)
-
-    @game.command(description='Let\'s play a number guessing game with me!')
-    @app_commands.describe(level='Which difficulty level will you choose?')
-    @app_commands.choices(level=[
-        app_commands.Choice(name='SUPER', value='SUPER'),
-        app_commands.Choice(name='HARD', value='HARD'),
-        app_commands.Choice(name="NORMAL", value='NORMAL'),
-        app_commands.Choice(name='EASY', value='EASY')
-    ])
-    @check_blacklist()
-    async def guess(self, ctx: commands.Context, level: app_commands.Choice[str]):
-        """
-        Let's play a number guessing game with me!
-        """
-        await execute_guess(ctx, level.value)
 
     @game.command(description="Use an item or equipment!")
     @app_commands.describe(type='The type of item you want to use.')
