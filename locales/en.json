@@ -2020,6 +2020,9 @@
         "no_upcoming": "No upcoming songs in the queue.",
         "queue_empty": "The queue is currently empty!",
         "queue_title": "Music Queue",
-        "skipped": "Skipped the current track!"
+        "skipped": "Skipped the current track!",
+        "search_results_title": "SoundCloud Search Results",
+        "search_results_desc": "Please select one or more songs from the dropdown menu to queue them:",
+        "select_song_placeholder": "Select songs to play..."
     }
 }

@@ -2020,6 +2020,9 @@
         "no_upcoming": "Tidak ada lagu mendatang di antrean.",
         "queue_empty": "Antrean saat ini kosong!",
         "queue_title": "Antrean Musik",
-        "skipped": "Berhasil melewati lagu saat ini!"
+        "skipped": "Berhasil melewati lagu saat ini!",
+        "search_results_title": "Hasil Pencarian SoundCloud",
+        "search_results_desc": "Silakan pilih satu atau lebih lagu dari menu dropdown untuk dimasukkan ke antrean:",
+        "select_song_placeholder": "Pilih lagu yang ingin diputar..."
     }
 }

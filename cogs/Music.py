@@ -27,11 +27,11 @@ FFMPEG_OPTIONS = {
 
 ytdl = yt_dlp.YoutubeDL(YTDL_OPTIONS)
 
-async def extract_info(query: str) -> dict:
+async def extract_info(query: str, process: bool = True) -> dict:
     """
     Extract video/audio metadata using yt-dlp in a separate thread.
     """
-    return await asyncio.to_thread(ytdl.extract_info, query, download=False)
+    return await asyncio.to_thread(ytdl.extract_info, query, download=False, process=process)
 
 
 class GuildMusicState:
@@ -78,7 +78,13 @@ class GuildMusicState:
                 self.current_track = self.queue.pop(0)
                 
                 try:
-                    source = discord.FFmpegPCMAudio(self.current_track['url'], **FFMPEG_OPTIONS)
+                    url_to_play = self.current_track['url']
+                    # Resolve streaming URL lazily if it's not a direct streaming URL
+                    if "soundcloud.com" in url_to_play or "api.soundcloud.com" in url_to_play:
+                        track_info = await extract_info(url_to_play, process=True)
+                        url_to_play = track_info['url']
+
+                    source = discord.FFmpegPCMAudio(url_to_play, **FFMPEG_OPTIONS)
                     transformer = discord.PCMVolumeTransformer(source)
                     
                     # Set up thread-safe callback to trigger the next song when current finishes
@@ -375,14 +381,17 @@ class Music(commands.Cog):
             search_query = query_or_url if is_url else f"scsearch10:{query_or_url}"
 
             try:
-                # Query SoundCloud
-                info = await extract_info(search_query)
+                # Query SoundCloud with process=False for search queries to speed them up
+                info = await extract_info(search_query, process=is_url)
                 if not info:
                     msg = i18n.get(lang, "music.no_results") or "No results found on SoundCloud!"
                     return await ctx.reply(f"❌ {msg}")
 
                 if 'entries' in info and not is_url:
                     entries = info['entries']
+                    if not isinstance(entries, list):
+                        entries = list(entries)
+                    entries = entries[:10]
                     if not entries:
                         msg = i18n.get(lang, "music.no_results") or "No results found on SoundCloud!"
                         return await ctx.reply(f"❌ {msg}")
@@ -393,7 +402,7 @@ class Music(commands.Cog):
                         color=self.bot.color
                     )
 
-                    for idx, entry in enumerate(entries[:10], start=1):
+                    for idx, entry in enumerate(entries, start=1):
                         title = entry.get('title', 'SoundCloud Track')
                         url = entry.get('webpage_url') or entry.get('url')
                         duration = entry.get('duration', 0)
@@ -408,7 +417,7 @@ class Music(commands.Cog):
                             inline=False
                         )
 
-                    view = SoundCloudSelectView(ctx, ctx.author.id, entries[:10], state, lang)
+                    view = SoundCloudSelectView(ctx, ctx.author.id, entries, state, lang)
                     msg_obj = await ctx.reply(embed=embed, view=view)
                     view.message = msg_obj
                     return

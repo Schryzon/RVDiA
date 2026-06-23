@@ -34,42 +34,76 @@
 
 # 🤖 RVDiA (Revolusioner, Virtual, Independen)
 
-**Revolutionary Virtual Digital Assistant (RVDiA)** is a high-performance, Indonesian-oriented entertainment companion and utility bot built entirely on a modern Python stack.
+**Revolutionary Virtual Digital Assistant (RVDiA)** is a high-performance, Indonesian-oriented entertainment companion, utility bot, and RPG platform built entirely on a modern Python stack.
 
-### 🌌 Codenamed Adapters
-* 🔮 **Discord Bot**: Codenamed **RVDiA Genryu** (源流 - "The Origin/Source"). It acts as the primary coordinator, managing AI interactions, local GPU generation routing, and cogs.
-* ⚡ **Telegram Bot**: Codenamed **RVDiA Zora** (空 - "Sky"). It serves as the lightweight, database-synced multi-play client.
-
-It features deep AI-driven personality integration, an advanced local GPU rendering pipeline, professional-grade image processing, a turn-based RPG battle engine, and a premium **web dashboard** that allows real-time configuration, player interactions, and widget embeddings.
+### 🔮 Codenamed Adapters
+* 🔮 **Discord Bot**: Codenamed **RVDiA Genryu** (源流 - "The Origin/Source"). It acts as the primary coordinator, managing AI interactions, local GPU generation routing, voice clients, and cogs.
+* ⚡ **Telegram Bot**: Codenamed **RVDiA Zora** (空 - "Sky"). It serves as a lightweight, database-synced multi-play client running concurrently within the main event loop.
 
 ---
 
 ## Table of Contents
 1. [Core Features](#core-features)
-2. [Database Schema & Architecture](#database-schema--architecture)
-3. [Local GPU Generation Pipeline](#local-gpu-generation-pipeline)
-4. [Web Dashboard & REST APIs](#web-dashboard--rest-apis)
-5. [Embeddable Web Chat Widget](#embeddable-web-chat-widget)
-6. [Local Development Setup](#local-development-setup)
-7. [Deployment](#deployment)
-8. [Credits & Contributors](#credits--contributors)
+2. [Codebase Directory Structure](#codebase-directory-structure)
+3. [Database Schema & Architecture](#database-schema--architecture)
+4. [Local GPU Generation Pipeline](#local-gpu-generation-pipeline)
+5. [Web Dashboard & REST APIs](#web-dashboard--rest-apis)
+6. [Embeddable Web Chat Widget](#embeddable-web-chat-widget)
+7. [Local Development Setup](#local-development-setup)
+8. [Deployment](#deployment)
+9. [Credits & Contributors](#credits--contributors)
 
 ---
 
 ## Core Features
 
-### Turn-Based RPG Battle Engine
-* **Tactical In-Battle Interface**: Features paginated Select Menus (complying with Discord's API limits) for skills and equipments, complete with real-time health trackers and active state monitoring.
+### ⚔️ Turn-Based RPG Battle Engine (`Re:Volution ~ The Dream World`)
+* **Tactical In-Battle Interface**: Features paginated Select Menus (complying with Discord's UI limits) for skills and equipments, complete with real-time health trackers and active state monitoring.
 * **Shop & Inventory**: Over **100+ items, skills, and equipments** configured in JSON and dynamically translated based on locale settings.
 * **Boss Fights & Elite Tiers**: Challenging bosses with complex phases (e.g., Demi-fiend, Nahobino) and unique mechanisms.
 
-### Advanced Image Processing Toolkit
+### 🖼️ Advanced Image Processing Toolkit
 * **Mathematical Comparison**: Employs OpenCV and Matplotlib to analyze and graph visual histograms side-by-side. Supports multiple metric engines (`correl`, `chisqr`, `intersect`, `bhattacharyya`).
+* **Complex Filtering**: Grayscale, color inversion, circular cropping, blurring, sharpening, Edge detection (Canny, Sobel, Laplacian), noise insertion, histogram equalization (CLAHE), embossing, sepia, pixelation, vignette, gamma correction, Fourier domain filters (LPF, HPF, homomorphic), steganography (LSB hide/reveal), and wavelet decomposition.
 * **Paginated Navigation**: Built-in interactive Discord UI button components enabling fast Next/Prev searching for internet images directly inside message threads.
 
-### Persistent AI Memories
+### 🧠 Persistent AI Memories
 * **Contextual Recall**: Integrates Google Gemini API with [Prisma Client Python](https://prisma-client-py.readthedocs.io/) and vector embeddings to search, record, and write persistent user interactions.
 * **Linguistic Title Casing**: Intelligent formatter processing title-casing rules tailored specifically for Indonesian and English grammatical structures.
+
+### 🎵 Robust Voice & Music Engine
+* **Gateway E2EE DAVE Support**: Upgraded to `discord.py[voice]>=2.7.1` with the mandatory **DAVE (Discord Audio/Video End-to-End Encryption)** protocol.
+* **SoundCloud Fast Search**: Bypasses metadata processing during initial queries using flat extraction (`process=False`), rendering query dropdowns instantly (~0.5s instead of ~10.7s).
+* **Lazy Stream Resolution**: Resolves the streaming media URL on-demand right before the track is played in the voice channel.
+* **Auto-Disconnect & Idle Cleanups**: Automatically leaves the channel if the bot is left alone with only bots for more than 1 minute, or if the queue is empty for over 5 minutes.
+
+---
+
+## Codebase Directory Structure
+
+```ascii
+RVDiA/
+├── cogs/                       # Discord Bot Commands and Cogs
+│   ├── Conversation.py         # Google GenAI Chat & Vector Memories
+│   ├── Image.py                # OpenCV / CuPy Filters & Steganography
+│   ├── Music.py                # Music Player (SoundCloud + Fast Search)
+│   ├── Game.py                 # Turn-based RPG Battle Engine
+│   └── Verification.py         # Verification and Server Gateways
+├── locales/                    # Multilingual Dictionaries (en.json / id.json)
+├── scripts/                    # Parallel Adapters and Backend Logic
+│   ├── api/                    # Web Server, OAuth2, and REST APIs
+│   │   ├── web_server.py       # aiohttp Dashboard Entrypoint
+│   │   └── routes.py           # Dashboard API Endpoints
+│   ├── ai/                     # GPU Server pipelines & Memory managers
+│   ├── telegram_bot.py         # Telegram Polling Adapter (Zora)
+│   └── main.py                 # Shared database (Prisma) connection
+├── website/                    # Static Assets & Web Templates
+│   ├── static/                 # CSS styling, local widget JS, images
+│   └── templates/              # Jinja2 HTML Layouts (Dashboard, Widget)
+├── schema.prisma               # PostgreSQL Database Prisma Schema
+├── Dockerfile                  # Production Slim Image Builder
+└── RVDIA.py                    # Main Entrypoint / Bot Bootstrapper
+```
 
 ---
 
