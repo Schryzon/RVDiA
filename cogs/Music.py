@@ -46,6 +46,7 @@ class GuildMusicState:
         self.voice_client = None
         self.play_next_event = asyncio.Event()
         self.play_loop_task = None
+        self.connecting = False
 
     def start_loop(self):
         if not self.play_loop_task or self.play_loop_task.done():
@@ -129,7 +130,10 @@ class GuildMusicState:
 
     async def disconnect(self):
         if self.voice_client:
-            await self.voice_client.disconnect()
+            try:
+                await self.voice_client.disconnect(force=True)
+            except Exception:
+                pass
             self.voice_client = None
         if self.play_loop_task:
             self.play_loop_task.cancel()
@@ -140,6 +144,121 @@ class GuildMusicState:
 
 def self_url_fallback(track: dict) -> str:
     return track.get('original_url') or track['url']
+
+
+class SoundCloudSelect(discord.ui.Select):
+    def __init__(self, tracks: list, state, lang: str):
+        self.tracks_data = tracks
+        self.state = state
+        self.lang = lang
+
+        options = []
+        for idx, track in enumerate(tracks):
+            title = track.get('title', 'Unknown Title')
+            # Truncate title to fit within select option limit (100 chars)
+            title = title[:95]
+            duration = track.get('duration', 0)
+            duration_str = ""
+            if duration:
+                mins, secs = divmod(int(duration), 60)
+                duration_str = f" ({mins:02d}:{secs:02d})"
+
+            options.append(discord.SelectOption(
+                label=title,
+                value=str(idx),
+                description=f"SoundCloud Track{duration_str}"
+            ))
+
+        super().__init__(
+            placeholder=i18n.get(lang, "music.select_song_placeholder") or "Select songs to play...",
+            min_values=1,
+            max_values=len(tracks),
+            options=options
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        # Check if the user is the one who initiated the command
+        if interaction.user.id != self.view.requester_id:
+            msg = i18n.get(self.lang, "music.not_your_search") or "You cannot interact with this search menu!"
+            return await interaction.response.send_message(f"❌ {msg}", ephemeral=True)
+
+        await interaction.response.defer()
+
+        # Re-check voice connection
+        ctx = self.view.ctx
+        state = self.state
+
+        if not ctx.author.voice:
+            msg = i18n.get(self.lang, "music.no_voice_channel") or "You must be in a voice channel to use this command!"
+            return await interaction.followup.send(f"⚠️ {msg}", ephemeral=True)
+
+        # Deafen RVDiA upon entry
+        if not state.voice_client or not state.voice_client.is_connected():
+            if state.connecting:
+                for _ in range(10):
+                    if state.voice_client and state.voice_client.is_connected():
+                        break
+                    await asyncio.sleep(0.5)
+
+            if not state.voice_client or not state.voice_client.is_connected():
+                state.connecting = True
+                try:
+                    if state.voice_client:
+                        try:
+                            await state.voice_client.disconnect(force=True)
+                        except Exception:
+                            pass
+                        state.voice_client = None
+
+                    state.voice_client = await ctx.author.voice.channel.connect(self_deaf=True)
+                    state.start_loop()
+                finally:
+                    state.connecting = False
+
+        queued_titles = []
+        for val in self.values:
+            selected_idx = int(val)
+            track_info = self.tracks_data[selected_idx]
+
+            track = {
+                'title': track_info.get('title', 'SoundCloud Track'),
+                'url': track_info['url'],
+                'original_url': track_info.get('webpage_url'),
+                'duration': track_info.get('duration', 0),
+                'requester': str(ctx.author),
+                'requester_id': ctx.author.id,
+                'channel': ctx.channel
+            }
+
+            state.queue.append(track)
+            queued_titles.append(track['title'])
+
+        state.start_loop()
+
+        if len(queued_titles) == 1:
+            msg = i18n.get(self.lang, "music.added_to_queue", title=queued_titles[0]) or f"Added **{queued_titles[0]}** to the queue!"
+        else:
+            titles_str = ", ".join(f"**{t}**" for t in queued_titles)
+            msg = f"Added {len(queued_titles)} songs to the queue: {titles_str}"
+
+        self.view.clear_items()
+        await interaction.edit_original_response(content=f"➕ {msg}", embed=None, view=None)
+
+
+class SoundCloudSelectView(discord.ui.View):
+    def __init__(self, ctx, requester_id: int, tracks: list, state, lang: str):
+        super().__init__(timeout=60.0)
+        self.ctx = ctx
+        self.requester_id = requester_id
+        self.message = None
+        self.add_item(SoundCloudSelect(tracks, state, lang))
+
+    async def on_timeout(self):
+        if self.message:
+            try:
+                await self.message.edit(view=None)
+            except Exception:
+                pass
 
 
 class Music(commands.Cog):
@@ -182,11 +301,6 @@ class Music(commands.Cog):
         await ctx.defer()
         state = self.get_state(ctx.guild.id)
 
-        # Deafen RVDiA upon entry
-        if not state.voice_client or not state.voice_client.is_connected():
-            state.voice_client = await ctx.author.voice.channel.connect(self_deaf=True)
-            state.start_loop()
-
         track = None
 
         if attachment:
@@ -215,31 +329,92 @@ class Music(commands.Cog):
                 msg = i18n.get(lang, "music.youtube_blocked") or "For legal and platform safety compliance, YouTube links are not supported. Please use SoundCloud or upload an audio file directly! 🛡️"
                 return await ctx.reply(f"🛡️ {msg}")
 
+            is_url = query_or_url.startswith('http://') or query_or_url.startswith('https://')
+            search_query = query_or_url if is_url else f"scsearch10:{query_or_url}"
+
             try:
                 # Query SoundCloud
-                info = await extract_info(query_or_url)
-                if 'entries' in info:
-                    # If search query, take first result
-                    if not info['entries']:
+                info = await extract_info(search_query)
+                if not info:
+                    msg = i18n.get(lang, "music.no_results") or "No results found on SoundCloud!"
+                    return await ctx.reply(f"❌ {msg}")
+
+                if 'entries' in info and not is_url:
+                    entries = info['entries']
+                    if not entries:
                         msg = i18n.get(lang, "music.no_results") or "No results found on SoundCloud!"
                         return await ctx.reply(f"❌ {msg}")
-                    info = info['entries'][0]
 
-                track = {
-                    'title': info.get('title', 'SoundCloud Track'),
-                    'url': info['url'],
-                    'original_url': info.get('webpage_url', query_or_url),
-                    'duration': info.get('duration', 0),
-                    'requester': str(ctx.author),
-                    'requester_id': ctx.author.id,
-                    'channel': ctx.channel
-                }
+                    embed = discord.Embed(
+                        title=i18n.get(lang, "music.search_results_title") or "SoundCloud Search Results",
+                        description=i18n.get(lang, "music.search_results_desc") or "Please select one or more songs from the dropdown menu to queue them:",
+                        color=self.bot.color
+                    )
+
+                    for idx, entry in enumerate(entries[:10], start=1):
+                        title = entry.get('title', 'SoundCloud Track')
+                        url = entry.get('webpage_url') or entry.get('url')
+                        duration = entry.get('duration', 0)
+                        duration_str = ""
+                        if duration:
+                            mins, secs = divmod(int(duration), 60)
+                            duration_str = f" `{mins:02d}:{secs:02d}`"
+
+                        embed.add_field(
+                            name=f"{idx}. {title}",
+                            value=f"🔗 [Link]({url}){duration_str}",
+                            inline=False
+                        )
+
+                    view = SoundCloudSelectView(ctx, ctx.author.id, entries[:10], state, lang)
+                    msg_obj = await ctx.reply(embed=embed, view=view)
+                    view.message = msg_obj
+                    return
+
+                else:
+                    if 'entries' in info:
+                        if not info['entries']:
+                            msg = i18n.get(lang, "music.no_results") or "No results found on SoundCloud!"
+                            return await ctx.reply(f"❌ {msg}")
+                        info = info['entries'][0]
+
+                    track = {
+                        'title': info.get('title', 'SoundCloud Track'),
+                        'url': info['url'],
+                        'original_url': info.get('webpage_url', query_or_url),
+                        'duration': info.get('duration', 0),
+                        'requester': str(ctx.author),
+                        'requester_id': ctx.author.id,
+                        'channel': ctx.channel
+                    }
             except Exception as e:
                 return await ctx.reply(f"❌ Failed to load audio: `{str(e)}`")
 
         if track:
+            # Deafen RVDiA upon entry
+            if not state.voice_client or not state.voice_client.is_connected():
+                if state.connecting:
+                    for _ in range(10):
+                        if state.voice_client and state.voice_client.is_connected():
+                            break
+                        await asyncio.sleep(0.5)
+
+                if not state.voice_client or not state.voice_client.is_connected():
+                    state.connecting = True
+                    try:
+                        if state.voice_client:
+                            try:
+                                await state.voice_client.disconnect(force=True)
+                            except Exception:
+                                pass
+                            state.voice_client = None
+                        
+                        state.voice_client = await ctx.author.voice.channel.connect(self_deaf=True)
+                        state.start_loop()
+                    finally:
+                        state.connecting = False
+
             state.queue.append(track)
-            # If nothing is currently playing, start the loop
             state.start_loop()
             
             # Send added to queue message
@@ -435,6 +610,17 @@ class Music(commands.Cog):
             )
 
         await ctx.reply(embed=embed)
+
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
+        if member.id != self.bot.user.id:
+            return
+
+        # Bot disconnected from voice channel
+        if before.channel and not after.channel:
+            state = self.states.get(member.guild.id)
+            if state:
+                await state.disconnect()
 
 
 async def setup(bot: commands.Bot):
