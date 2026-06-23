@@ -129,6 +129,12 @@ class GuildMusicState:
             await asyncio.sleep(1.0)
 
     async def disconnect(self):
+        import logging
+        import traceback
+        logging.info("GuildMusicState.disconnect() called! Call stack:")
+        for line in traceback.format_stack():
+            logging.info(line.strip())
+
         if self.voice_client:
             try:
                 await self.voice_client.disconnect(force=True)
