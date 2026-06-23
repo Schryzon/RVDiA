@@ -616,11 +616,17 @@ class Music(commands.Cog):
         if member.id != self.bot.user.id:
             return
 
+        state = self.states.get(member.guild.id)
+        if not state:
+            return
+
+        # If the bot is actively trying to connect, ignore intermediate voice state changes
+        if state.connecting:
+            return
+
         # Bot disconnected from voice channel
         if before.channel and not after.channel:
-            state = self.states.get(member.guild.id)
-            if state:
-                await state.disconnect()
+            await state.disconnect()
 
 
 async def setup(bot: commands.Bot):
