@@ -626,6 +626,8 @@ class Music(commands.Cog):
 
         # Bot disconnected from voice channel
         if before.channel and not after.channel:
+            if state.voice_client and state.voice_client.is_connected():
+                return
             await state.disconnect()
 
 
