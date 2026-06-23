@@ -47,82 +47,108 @@ class GuildMusicState:
         self.play_next_event = asyncio.Event()
         self.play_loop_task = None
         self.connecting = False
+        self.empty_check_task = None
 
     def start_loop(self):
         if not self.play_loop_task or self.play_loop_task.done():
             self.play_loop_task = asyncio.create_task(self.play_loop())
 
     async def play_loop(self):
-        while self.voice_client and self.voice_client.is_connected():
-            self.play_next_event.clear()
-            
-            if not self.queue:
-                try:
-                    # Disconnect if idle for 5 minutes
-                    await asyncio.wait_for(self.wait_for_queue(), timeout=300.0)
-                except asyncio.TimeoutError:
-                    await self.disconnect()
+        if not self.empty_check_task or self.empty_check_task.done():
+            self.empty_check_task = asyncio.create_task(self.channel_empty_loop())
+
+        try:
+            while self.voice_client and self.voice_client.is_connected():
+                self.play_next_event.clear()
+                
+                if not self.queue:
+                    try:
+                        # Disconnect if idle for 5 minutes
+                        await asyncio.wait_for(self.wait_for_queue(), timeout=300.0)
+                    except asyncio.TimeoutError:
+                        await self.disconnect()
+                        break
+
+                if not self.voice_client or not self.voice_client.is_connected():
                     break
 
-            if not self.voice_client or not self.voice_client.is_connected():
-                break
+                if not self.queue:
+                    continue
 
-            if not self.queue:
-                continue
-
-            self.current_track = self.queue.pop(0)
-            
-            try:
-                source = discord.FFmpegPCMAudio(self.current_track['url'], **FFMPEG_OPTIONS)
-                transformer = discord.PCMVolumeTransformer(source)
+                self.current_track = self.queue.pop(0)
                 
-                # Set up thread-safe callback to trigger the next song when current finishes
-                self.voice_client.play(
-                    transformer, 
-                    after=lambda e: self.bot.loop.call_soon_threadsafe(self.play_next_event.set)
-                )
-                
-                # Send Now Playing embed to the requesting channel
-                channel = self.current_track.get('channel')
-                if channel:
-                    user_settings = await db.usersettings.find_unique(where={'userId': self.current_track['requester_id']})
-                    lang = user_settings.lang if user_settings else "en"
+                try:
+                    source = discord.FFmpegPCMAudio(self.current_track['url'], **FFMPEG_OPTIONS)
+                    transformer = discord.PCMVolumeTransformer(source)
                     
-                    title = self.current_track['title']
-                    requester = self.current_track['requester']
-                    
-                    embed = discord.Embed(
-                        title=i18n.get(lang, "music.now_playing_title") or "Now Playing",
-                        description=f"**[{title}]({self_url_fallback(self.current_track)})**",
-                        color=self.bot.color
-                    )
-                    embed.add_field(
-                        name=i18n.get(lang, "music.field_requester") or "Requested By", 
-                        value=f"`{requester}`", 
-                        inline=True
+                    # Set up thread-safe callback to trigger the next song when current finishes
+                    self.voice_client.play(
+                        transformer, 
+                        after=lambda e: self.bot.loop.call_soon_threadsafe(self.play_next_event.set)
                     )
                     
-                    dur = self.current_track.get('duration', 0)
-                    if dur:
-                        mins, secs = divmod(int(dur), 60)
-                        duration_str = f"{mins:02d}:{secs:02d}"
+                    # Send Now Playing embed to the requesting channel
+                    channel = self.current_track.get('channel')
+                    if channel:
+                        user_settings = await db.usersettings.find_unique(where={'userId': self.current_track['requester_id']})
+                        lang = user_settings.lang if user_settings else "en"
+                        
+                        title = self.current_track['title']
+                        requester = self.current_track['requester']
+                        
+                        embed = discord.Embed(
+                            title=i18n.get(lang, "music.now_playing_title") or "Now Playing",
+                            description=f"**[{title}]({self_url_fallback(self.current_track)})**",
+                            color=self.bot.color
+                        )
                         embed.add_field(
-                            name=i18n.get(lang, "music.field_duration") or "Duration", 
-                            value=f"`{duration_str}`", 
+                            name=i18n.get(lang, "music.field_requester") or "Requested By", 
+                            value=f"`{requester}`", 
                             inline=True
                         )
-                    
-                    embed.set_footer(text="RVDiA Music System • SoundCloud & Uploads")
-                    await channel.send(embed=embed)
-            except Exception as e:
-                # In case of playback crash, log to channel if possible
-                channel = self.current_track.get('channel')
-                if channel:
-                    await channel.send(f"❌ Error playing track: `{str(e)}`")
-                self.bot.loop.call_soon_threadsafe(self.play_next_event.set)
+                        
+                        dur = self.current_track.get('duration', 0)
+                        if dur:
+                            mins, secs = divmod(int(dur), 60)
+                            duration_str = f"{mins:02d}:{secs:02d}"
+                            embed.add_field(
+                                name=i18n.get(lang, "music.field_duration") or "Duration", 
+                                value=f"`{duration_str}`", 
+                                inline=True
+                            )
+                        
+                        embed.set_footer(text="RVDiA Music System • SoundCloud & Uploads")
+                        await channel.send(embed=embed)
+                except Exception as e:
+                    # In case of playback crash, log to channel if possible
+                    channel = self.current_track.get('channel')
+                    if channel:
+                        await channel.send(f"❌ Error playing track: `{str(e)}`")
+                    self.bot.loop.call_soon_threadsafe(self.play_next_event.set)
 
-            await self.play_next_event.wait()
-            self.current_track = None
+                await self.play_next_event.wait()
+                self.current_track = None
+        finally:
+            await self.disconnect()
+
+    def is_channel_empty(self) -> bool:
+        if not self.voice_client or not self.voice_client.channel:
+            return True
+        non_bot_members = [m for m in self.voice_client.channel.members if not m.bot]
+        return len(non_bot_members) == 0
+
+    async def channel_empty_loop(self):
+        await asyncio.sleep(10.0)
+        alone_time = 0
+        while self.voice_client and self.voice_client.is_connected():
+            if self.is_channel_empty():
+                alone_time += 10
+                if alone_time >= 60:
+                    await self.disconnect()
+                    break
+            else:
+                alone_time = 0
+            await asyncio.sleep(10.0)
 
     async def wait_for_queue(self):
         while not self.queue and self.voice_client and self.voice_client.is_connected():
@@ -141,9 +167,16 @@ class GuildMusicState:
             except Exception:
                 pass
             self.voice_client = None
-        if self.play_loop_task:
+
+        current_task = asyncio.current_task()
+        if self.play_loop_task and self.play_loop_task != current_task:
             self.play_loop_task.cancel()
-            self.play_loop_task = None
+        self.play_loop_task = None
+
+        if self.empty_check_task and self.empty_check_task != current_task:
+            self.empty_check_task.cancel()
+        self.empty_check_task = None
+
         self.queue.clear()
         self.current_track = None
 
@@ -199,23 +232,26 @@ class SoundCloudSelect(discord.ui.Select):
             return await interaction.followup.send(f"⚠️ {msg}", ephemeral=True)
 
         # Deafen RVDiA upon entry
-        if not state.voice_client or not state.voice_client.is_connected():
+        voice_client = ctx.guild.voice_client
+        if not voice_client or not voice_client.is_connected():
             if state.connecting:
                 for _ in range(10):
-                    if state.voice_client and state.voice_client.is_connected():
+                    voice_client = ctx.guild.voice_client
+                    if voice_client and voice_client.is_connected():
                         break
                     await asyncio.sleep(0.5)
 
-            if not state.voice_client or not state.voice_client.is_connected():
+            voice_client = ctx.guild.voice_client
+            if not voice_client or not voice_client.is_connected():
                 state.connecting = True
                 try:
-                    if state.voice_client:
+                    if voice_client:
                         try:
-                            await state.voice_client.disconnect(force=True)
+                            await voice_client.disconnect(force=True)
                         except Exception:
                             pass
-                        state.voice_client = None
 
+                    state.voice_client = None
                     state.voice_client = await ctx.author.voice.channel.connect(self_deaf=True)
                     state.start_loop()
                 finally:
@@ -398,23 +434,26 @@ class Music(commands.Cog):
 
         if track:
             # Deafen RVDiA upon entry
-            if not state.voice_client or not state.voice_client.is_connected():
+            voice_client = ctx.guild.voice_client
+            if not voice_client or not voice_client.is_connected():
                 if state.connecting:
                     for _ in range(10):
-                        if state.voice_client and state.voice_client.is_connected():
+                        voice_client = ctx.guild.voice_client
+                        if voice_client and voice_client.is_connected():
                             break
                         await asyncio.sleep(0.5)
 
-                if not state.voice_client or not state.voice_client.is_connected():
+                voice_client = ctx.guild.voice_client
+                if not voice_client or not voice_client.is_connected():
                     state.connecting = True
                     try:
-                        if state.voice_client:
+                        if voice_client:
                             try:
-                                await state.voice_client.disconnect(force=True)
+                                await voice_client.disconnect(force=True)
                             except Exception:
                                 pass
-                            state.voice_client = None
-                        
+
+                        state.voice_client = None
                         state.voice_client = await ctx.author.voice.channel.connect(self_deaf=True)
                         state.start_loop()
                     finally:
@@ -617,24 +656,6 @@ class Music(commands.Cog):
 
         await ctx.reply(embed=embed)
 
-    @commands.Cog.listener()
-    async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
-        if member.id != self.bot.user.id:
-            return
-
-        state = self.states.get(member.guild.id)
-        if not state:
-            return
-
-        # If the bot is actively trying to connect, ignore intermediate voice state changes
-        if state.connecting:
-            return
-
-        # Bot disconnected from voice channel
-        if before.channel and not after.channel:
-            if state.voice_client and state.voice_client.is_connected():
-                return
-            await state.disconnect()
 
 
 async def setup(bot: commands.Bot):
