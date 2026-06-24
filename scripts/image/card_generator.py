@@ -154,7 +154,7 @@ async def generate_profile_card(user: discord.Member, user_record, is_premium: b
     
     text_w = draw_base.textlength(title_name, font=font_title_badge)
     badge_x = 205 * scale
-    badge_y = 80 * scale
+    badge_y = 84 * scale
     badge_h = 22 * scale
     badge_w = int(text_w + 16 * scale)
     
@@ -170,7 +170,7 @@ async def generate_profile_card(user: discord.Member, user_record, is_premium: b
         badge_text_w = draw_base.textlength(badge_text, font=font_title_badge)
         p_badge_w = int(badge_text_w + 16 * scale)
         p_badge_x = badge_x + badge_w + 10 * scale
-        p_badge_y = 80 * scale
+        p_badge_y = 84 * scale
 
     # 5. Draw transparent elements on separate overlay to ensure correct alpha compositing
     overlay = Image.new("RGBA", im.size, (0, 0, 0, 0))
@@ -219,13 +219,13 @@ async def generate_profile_card(user: discord.Member, user_record, is_premium: b
         )
         
     # Class Crest
-    draw_crest(overlay_draw, player_class, 225 * scale, 122 * scale, size=24 * scale, scale=scale)
+    draw_crest(overlay_draw, player_class, 225 * scale, 125 * scale, size=24 * scale, scale=scale)
     
     # Unspent Stat Points Alert
     stat_points = data.get('stat_points', 0)
     wealth_start_x = 560 * scale
     if stat_points > 0:
-        alert_y = 122 * scale
+        alert_y = 126 * scale
         overlay_draw.rounded_rectangle(
             (wealth_start_x - 10 * scale, alert_y, wealth_start_x + 190 * scale, alert_y + 28 * scale), 
             radius=6 * scale, 
@@ -298,7 +298,7 @@ async def generate_profile_card(user: discord.Member, user_record, is_premium: b
     
     # Unspent Stat Points Alert text
     if stat_points > 0:
-        alert_y = 122 * scale
+        alert_y = 126 * scale
         draw.text((wealth_start_x + 8 * scale, alert_y + 4 * scale), f"+{stat_points} Stat Points Available", fill=(46, 204, 113, 255), font=font_title_badge)
         
     # 8. EXP Progress Bar
