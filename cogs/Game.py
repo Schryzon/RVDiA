@@ -23,7 +23,8 @@ from scripts.game.profile import (
     execute_shop,
     execute_adventure,
     execute_transfer,
-    execute_use
+    execute_use,
+    execute_titles
 )
 
 from scripts.game.customization import (
@@ -230,6 +231,16 @@ class Game(commands.Cog):
         Use an item or equipment!
         """
         await execute_use(ctx, type.value)
+
+    @game.command(description="View and equip your unlocked titles/nameplates!")
+    @has_registered()
+    @check_compatible()
+    @check_blacklist()
+    async def titles(self, ctx: commands.Context):
+        """
+        View and equip your unlocked titles!
+        """
+        await execute_titles(ctx)
 
     @game.command(name="class", description="Choose your character class (One-time selection).")
     @app_commands.describe(class_name="Choose Warrior, Mage, or Rogue")

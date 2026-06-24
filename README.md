@@ -61,6 +61,9 @@
 * **Tactical In-Battle Interface**: Features paginated Select Menus (complying with Discord's UI limits) for skills and equipments, complete with real-time health trackers and active state monitoring.
 * **Shop & Inventory**: Over **100+ items, skills, and equipments** configured in JSON and dynamically translated based on locale settings.
 * **Boss Fights & Elite Tiers**: Challenging bosses with complex phases (e.g., Demi-fiend, Nahobino) and unique mechanisms.
+* **Collectible Title Nameplates**: Unique achievements unlocked via boss battles or passive triggers, displayed as custom glowing/rainbow badges on high-resolution player profile cards.
+* **Daily Multipliers & Streaks**: Consecutive daily logins build a multiplier bonus (up to +50% rewards). Integrated with Top.gg vote checks to double daily rewards (EXP, Coins, Karma).
+* **Co-op World Boss Battles**: Face off against community-wide World Bosses with real-time HP synchronization. Recruit hunters directly from status screens to send reinforcements calls.
 
 ### 🖼️ Advanced Image Processing Toolkit
 * **Mathematical Comparison**: Employs OpenCV and Matplotlib to analyze and graph visual histograms side-by-side. Supports multiple metric engines (`correl`, `chisqr`, `intersect`, `bhattacharyya`).
@@ -75,6 +78,7 @@
 * **Gateway E2EE DAVE Support**: Upgraded to `discord.py[voice]>=2.7.1` with the mandatory **DAVE (Discord Audio/Video End-to-End Encryption)** protocol.
 * **SoundCloud Fast Search**: Bypasses metadata processing during initial queries using flat extraction (`process=False`), rendering query dropdowns instantly (~0.5s instead of ~10.7s).
 * **Lazy Stream Resolution**: Resolves the streaming media URL on-demand right before the track is played in the voice channel.
+* **Advanced Player Controls**: Integrated `seek`, `forward`, `rewind`, queue shuffling, loop modes (Off, Repeat One, Repeat All), Spotify track resolution, and surprise genre command (`surprise`).
 * **Auto-Disconnect & Idle Cleanups**: Automatically leaves the channel if the bot is left alone with only bots for more than 1 minute, or if the queue is empty for over 5 minutes.
 
 ---
@@ -123,7 +127,7 @@ erDiagram
         BigInt id PK
         Int hp
         Int max_hp
-        Json data "Level, EXP, Coins, Karma, Stats"
+        Json data "Level, EXP, Coins, Karma, Stats, Titles, Active_title"
         DateTime premiumUntil
     }
 

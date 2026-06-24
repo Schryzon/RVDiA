@@ -206,7 +206,7 @@
     },
     "event": {
         "info_author": "Event Berlangsung:",
-        "info_desc": "# RVDiA IS BACK!\n\nRVDiA telah kembali dengan peningkatan besar-besaran di segala aspek! Dari sistem Guild yang baru, mekanik pertarungan proporsional, hingga AI yang jauh lebih pintar dan menantang.\n\nTerima kasih atas kesabaran kalian selama masa pengembangan ini. Rebirth ini adalah bukti dedikasiku untuk memberikan pengalaman yang lebih seru dan mendalam bagi seluruh Hunter di Re:Volution!\n\n**Update Log:**\n- `Guild System`: Buat dan kelola guildmu sendiri!\n- `Proportional Combat`: Damage dan heal sekarang berdasarkan persentase HP.\n- `Smart AI`: Musuh sekarang bisa beralih strategi dan memata-matai statsmu!\n- `Karma Luck`: Keberuntunganmu sekarang benar-benar berpengaruh di pertempuran.\n\nTerima kasih banyak!\n-Schryzon, May 2026",
+        "info_desc": "# PERAYAAN PELUNCURAN TELEGRAM!\n\nKami sangat senang mengumumkan bahwa RVDiA secara resmi meluncur di Telegram! Kamu sekarang bisa bermain, mengelola profil, berpetualang, dan melawan World Boss langsung dari Telegram menggunakan **@RVDiA_Official_bot** (t.me/RVDiA_Official_bot).\n\nDengan peluncuran ini, ekosistem RVDiA terbagi menjadi dua entitas utama:\n- **RVDiA Genryu** (versi saat ini: `Rebirth v3.0.0 (Genryu)`): Koordinator utama bot Discord yang mengelola AI chat, perutean GPU lokal, pemutaran suara, dan cog permainan.\n- **RVDiA Zora** (bot Telegram): Klien bot Telegram yang tersinkronisasi database, memungkinkan dukungan multi-play client yang tersinkronisasi.\n\nCobalah bot Telegram sekarang!\n-Schryzon, Juni 2026",
         "info_footer": "Revolusioner, Virtual, Independen."
     },
     "moderation": {
@@ -864,7 +864,7 @@
         "guide_desc": "Halo, Sang Pemimpi! 💫\nSelamat datang di **Re:Volution ~ The Dream World**. Aku akan memandumu memahami dunia ini!\n\n🛡️ **Memulai Petualangan**\nGunakan `/game register` untuk membuat akunmu. Setelah itu, kamu bisa mulai menjelajah!\n\n⚔️ **Pertarungan (Combat)**\n• `/game battle`: Lawan monster untuk mendapatkan EXP, Koin, dan Karma.\n• `/game fight`: Tantang temanmu dalam pertarungan PvP yang sengit!\n• Selama bertarung, kamu bisa Menyerang (Attack), Bertahan (Defend), menggunakan Item, atau Skill.\n• **Karma**: Semakin tinggi Karma, semakin besar peluang Critical Hit dan Dodge!\n\n💰 **Ekonomi & Kekuatan**\n• `/game shop`: Beli item konsumsi, perlengkapan (Equipment), atau pelajari Skill baru.\n• `/game account`: Lihat statusmu, koin, dan karma.\n• `/game adventure`: Jalankan petualangan singkat untuk hadiah cepat.\n\n📜 **Tips dari RVDiA**\n*\"Jangan lupa untuk selalu melengkapi equipment terbaikmu sebelum melawan Boss! Jika merasa lelah, beristirahatlah sejenak di Xaneria.\"*",
         "guide_footer": "Semoga beruntung di dalam mimpi ini!",
         "changelog_title": "📜 Catatan Pembaruan Re:Volution",
-        "changelog_desc": "**Versi 2.0.0 - Rebirth & Rebalance**\n*\"Dunia mimpi ini telah berevolusi menjadi lebih menantang dan terstruktur.\"*\n\n🔰 **Sistem & Fitur Baru**\n• `/game leaderboard`: Pantau siapa Sang Pemimpi terkuat secara global.\n• `/game guide`: Panduan lengkap untuk memulai petualanganmu.\n• `/game fix_account`: Perbaiki dan migrasikan struktur datamu ke sistem terbaru.\n• `/game enemies`: Tampilan daftar musuh kini menggunakan sistem halaman (dimulai dari Boss).\n\n⚔️ **Keseimbangan & Konten**\n• **Global Rebalance**: Semua musuh telah disesuaikan stat dan HP-nya untuk pertempuran yang lebih adil.\n• **Final Boss Tier**: Schryzon & RVDiA kini berada di kasta tertinggi dengan kekuatan yang melampaui batas.\n• **New Bosses**: Selamat datang **Mira** (Adik Historia) dan **Victoria** (Kakak Historia) ke dalam Bestiary.\n• **Smarter AI**: Musuh kini lebih sering menganalisa statistikmu di tengah pertempuran.\n\n👜 **Perbaikan Toko**\n• Logika penyimpanan item kini lebih terorganisir antara Skill, Equipment, dan Item.\n• Status kepemilikan Skill kini ditampilkan secara biner (YA/TIDAK).",
+        "changelog_desc": "**Versi 3.0.0 - Integrasi Telegram & Gamifikasi**\n*\"Memperluas batas-batas Re:Volution melampaui Discord.\"*\n\n🤖 **Dukungan Telegram (RVDiA Zora)**\n• Peluncuran **RVDiA Zora** (t.me/RVDiA_Official_bot) - mainkan game di Telegram dengan sinkronisasi database real-time!\n\n🔥 **Gamifikasi & Multiplier**\n• **Integrasi Vote Top.gg (v1)**: Gandakan hadiah login harianmu (koin, EXP, karma) dengan melakukan vote di Top.gg!\n• **Streak Login Harian**: Login berturut-turut untuk membangun streak dan dapatkan bonus hadiah hingga +50%!\n\n👹 **World Boss Co-op**\n• **Rekrut Hunter**: Kirim panggilan bala bantuan langsung dari layar status World Boss.\n\n🎵 **Kontrol Musik Lanjutan**\n• Menambahkan seek, forward, rewind, shuffle, looping, resolusi trek Spotify, dan command surprise genre.",
         "changelog_footer": "Terima kasih telah menjadi bagian dari Re:Volution!",
         "resign_confirm": "Apakah kamu yakin akan menghapus akunmu?\nKamu punya 20 detik untuk menentukan keputusanmu.",
         "resign_timeout": "Waktu habis, penghapusan akun dibatalkan.",
@@ -1052,6 +1052,11 @@
         "daily_already": "Kamu sudah login hari ini!\nKamu bisa login lagi pada <t:{timestamp}:f>",
         "daily_success_title": "Bonus Harianmu",
         "daily_footer": "Bonus selanjutnya pada ",
+        "daily_multipliers_title": "Status Multiplier",
+        "daily_streak_info": "🔥 Streak Harian: **{streak} hari** (bonus +{bonus}%)",
+        "daily_vote_info": "🗳️ Vote Top.gg: **Multiplier hadiah 2x** diterapkan!",
+        "worldboss_recruit_btn": "Rekrut Hunter",
+        "worldboss_recruit_msg": "📢 **{user}** sedang merekrut hunter untuk mengalahkan **{boss}**! Bergabunglah dalam pertempuran dengan menggunakan `/game worldboss attack`!",
         "fix_success": "✅ Akunmu telah diperbaiki!",
         "fix_moved_skills": "- Berhasil memindahkan `{count}` skill.",
         "fix_moved_equips": "- Berhasil memindahkan `{count}` perlengkapan.",
@@ -1997,6 +2002,39 @@
         },
         "queue": {
             "description": "Tampilkan antrean musik saat ini."
+        },
+        "seek": {
+            "description": "Cari/lompat ke timestamp tertentu pada lagu saat ini.",
+            "arguments": {
+                "position": "Timestamp target (misal: '1:30', '45s', '90')"
+            }
+        },
+        "forward": {
+            "description": "Lompati maju lagu saat ini dengan durasi tertentu.",
+            "arguments": {
+                "duration": "Waktu lompat maju (misal: '30s', '1m', '15')"
+            }
+        },
+        "rewind": {
+            "description": "Lompati mundur lagu saat ini dengan durasi tertentu.",
+            "arguments": {
+                "duration": "Waktu lompat mundur (misal: '30s', '1m', '15')"
+            }
+        },
+        "loop": {
+            "description": "Atur mode pengulangan lagu.",
+            "arguments": {
+                "mode": "Mode pengulangan ('off', 'single', 'all')"
+            }
+        },
+        "shuffle": {
+            "description": "Acak urutan antrean musik saat ini."
+        },
+        "surprise": {
+            "description": "Masukkan lagu acak ke antrean berdasarkan genre atau tag!",
+            "arguments": {
+                "genre": "Genre yang dipilih atau tag kustom"
+            }
         }
     },
     "music": {
@@ -2023,6 +2061,9 @@
         "skipped": "Berhasil melewati lagu saat ini!",
         "search_results_title": "Hasil Pencarian SoundCloud",
         "search_results_desc": "Silakan pilih satu atau lebih lagu dari menu dropdown untuk dimasukkan ke antrean:",
-        "select_song_placeholder": "Pilih lagu yang ingin diputar..."
+        "select_song_placeholder": "Pilih lagu yang ingin diputar...",
+        "loop_off": "Loop Mati",
+        "loop_single": "Ulangi Satu",
+        "loop_all": "Ulangi Semua"
     }
 }

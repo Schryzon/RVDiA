@@ -150,7 +150,7 @@ async def change_status():
   all_status=['in my room', 'in front of a mirror', '"How to be cute"', 'you', 'everyone!',
                   'RVDiA Genryu', f"{user_count_status}", f'{rvdia.__version__}',
                   '/help', 'in my dream world', 'Add me!', is_event, '~♪',
-                  'Re:Volution'
+                  'Re:Volution', 't.me/RVDiA_Official_bot'
                 ]
   status = rand(all_status)
   # Just count, I'm trying to save space!

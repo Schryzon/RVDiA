@@ -206,7 +206,7 @@
     },
     "event": {
         "info_author": "Active Event:",
-        "info_desc": "# RVDiA IS BACK!\n\nRVDiA has returned with major upgrades across the board! From the brand new Guild system, proportional combat mechanics, to a much smarter and more challenging AI.\n\nThank you for your patience during this development phase. This Rebirth is proof of my dedication to delivering a more exciting and deep experience for all Hunters in Re:Volution!\n\n**Update Log:**\n- `Guild System`: Create and manage your own guild!\n- `Proportional Combat`: Damage and healing are now based on HP percentages.\n- `Smart AI`: Enemies can now switch strategies and spy on your stats!\n- `Karma Luck`: Your luck now truly affects the battlefield.\n\nThank you very much!\n-Schryzon, May 2026",
+        "info_desc": "# TELEGRAM LAUNCH CELEBRATION!\n\nWe are thrilled to announce that RVDiA is officially launching on Telegram! You can now play, manage your profile, adventure, and fight World Bosses directly from Telegram using **@RVDiA_Official_bot** (t.me/RVDiA_Official_bot).\n\nWith this launch, the RVDiA ecosystem is split into two major entities:\n- **RVDiA Genryu** (current version: `Rebirth v3.0.0 (Genryu)`): The primary Discord bot coordinator managing AI chat, local GPU routing, voice playback, and game cogs.\n- **RVDiA Zora** (Telegram bot): The database-synced Telegram bot client, allowing database-synced multi-play client support.\n\nTry out the Telegram bot now!\n-Schryzon, June 2026",
         "info_footer": "Revolutionary, Virtual, Independent."
     },
     "moderation": {
@@ -864,7 +864,7 @@
         "guide_desc": "Hello, Dreamer! 💫\nWelcome to **Re:Volution ~ The Dream World**. I will guide you to understand this world!\n\n🛡️ **Starting Adventure**\nUse `/game register` to create your account. After that, you can start exploring!\n\n⚔️ **Combat**\n• `/game battle`: Fight monsters to gain EXP, Coins, and Karma.\n• `/game fight`: Challenge your friends to a fierce PvP battle!\n• During battle, you can Attack, Defend, use an Item, or use a Skill.\n• **Karma**: The higher the Karma, the higher the chance of Critical Hits and Dodges!\n\n💰 **Economy & Power**\n• `/game shop`: Buy consumable items, equipment, or learn new skills.\n• `/game account`: View your stats, coins, and karma.\n• `/game adventure`: Run a short adventure for quick rewards.\n\n📜 **Tips from RVDiA**\n*\"Don't forget to always equip your best gear before fighting a Boss! If you feel tired, take a rest in Xaneria.\"*",
         "guide_footer": "Good luck in this dream!",
         "changelog_title": "📜 Re:Volution Changelog",
-        "changelog_desc": "**Version 2.0.0 - Rebirth & Rebalance**\n*\"This dream world has evolved to be more challenging and structured.\"*\n\n🔰 **New Systems & Features**\n• `/game leaderboard`: Monitor who is the strongest Dreamer globally.\n• `/game guide`: Full guide to start your adventure.\n• `/game fix_account`: Fix and migrate your data structure to the latest system.\n• `/game enemies`: The bestiary now uses a paginated system (starting with Bosses).\n\n⚔️ **Balance & Content**\n• **Global Rebalance**: Adjusted all enemy stats and HP for fairer battles.\n• **Final Boss Tier**: Schryzon & RVDiA are now at the highest tier with powers beyond limits.\n• **New Bosses**: Welcome **Mira** (Historia's younger sister) and **Victoria** (Historia's older sister) to the Bestiary.\n• **Smarter AI**: Enemies will now analyze your stats more frequently during combat.\n\n👜 **Shop Fixes**\n• Item storage logic is now more organized between Skills, Equipment, and Items.\n• Skill ownership status is now displayed in binary (YES/NO).",
+        "changelog_desc": "**Version 3.0.0 - Telegram Integration & Gamification**\n*\"Expanding the boundaries of Re:Volution beyond Discord.\"*\n\n🤖 **Telegram Support (RVDiA Zora)**\n• Launch of **RVDiA Zora** (t.me/RVDiA_Official_bot) - play the game on Telegram with real-time database synchronization!\n\n🔥 **Gamification & Multipliers**\n• **Top.gg Vote Integration (v1)**: Double your daily login rewards (coins, EXP, karma) by voting on Top.gg!\n• **Daily Login Streaks**: Login consecutively to build a streak and get up to +50% bonus rewards!\n\n👹 **Co-op World Boss**\n• **Recruit Hunters**: Send localized reinforcements calls directly from the World Boss status screen.\n\n🎵 **Advanced Music Controls**\n• Added seek, forward, rewind, shuffle, looping, Spotify track resolution, and surprise genre command.",
         "changelog_footer": "Thank you for being part of Re:Volution!",
         "resign_confirm": "Are you sure you want to delete your account?\nYou have 20 seconds to make your decision.",
         "resign_timeout": "Time's up, account deletion cancelled.",
@@ -1052,6 +1052,11 @@
         "daily_already": "You already logged in today!\nYou can login again at <t:{timestamp}:f>",
         "daily_success_title": "Your Daily Bonus",
         "daily_footer": "Next bonus at ",
+        "daily_multipliers_title": "Multiplier Status",
+        "daily_streak_info": "🔥 Daily Streak: **{streak} days** (+{bonus}% bonus)",
+        "daily_vote_info": "🗳️ Top.gg Vote: **2x reward multiplier** applied!",
+        "worldboss_recruit_btn": "Recruit Hunters",
+        "worldboss_recruit_msg": "📢 **{user}** is recruiting hunters to defeat **{boss}**! Join the battle using `/game worldboss attack`!",
         "fix_success": "✅ Your account has been fixed!",
         "fix_moved_skills": "- Successfully moved `{count}` skills.",
         "fix_moved_equips": "- Successfully moved `{count}` equipments.",
@@ -1997,6 +2002,39 @@
         },
         "queue": {
             "description": "Show the current music queue."
+        },
+        "seek": {
+            "description": "Seek to a specific timestamp in the current song.",
+            "arguments": {
+                "position": "Target timestamp (e.g. '1:30', '45s', '90')"
+            }
+        },
+        "forward": {
+            "description": "Fast forward the current song by a duration.",
+            "arguments": {
+                "duration": "Time to skip forward (e.g. '30s', '1m', '15')"
+            }
+        },
+        "rewind": {
+            "description": "Rewind the current song by a duration.",
+            "arguments": {
+                "duration": "Time to rewind (e.g. '30s', '1m', '15')"
+            }
+        },
+        "loop": {
+            "description": "Set the loop/repeat mode.",
+            "arguments": {
+                "mode": "Repeat mode ('off', 'single', 'all')"
+            }
+        },
+        "shuffle": {
+            "description": "Shuffle the current music queue."
+        },
+        "surprise": {
+            "description": "Queue random tracks based on a genre or tag!",
+            "arguments": {
+                "genre": "Selected genre or custom tag"
+            }
         }
     },
     "music": {
@@ -2023,6 +2061,9 @@
         "skipped": "Skipped the current track!",
         "search_results_title": "SoundCloud Search Results",
         "search_results_desc": "Please select one or more songs from the dropdown menu to queue them:",
-        "select_song_placeholder": "Select songs to play..."
+        "select_song_placeholder": "Select songs to play...",
+        "loop_off": "Loop Off",
+        "loop_single": "Repeat One",
+        "loop_all": "Repeat All"
     }
 }

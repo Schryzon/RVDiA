@@ -79,25 +79,37 @@ def has_pfp():
 
 def has_voted():
     async def predicate(ctx):
-        headers = {'Authorization': os.getenv('topggtoken')}
+        token = os.getenv('topggtoken')
+        if not token:
+            raise NotVoted('Top.gg API token is not configured!')
+        if not token.startswith('Bearer '):
+            token = f'Bearer {token}'
+        headers = {'Authorization': token}
         async with aiohttp.ClientSession(headers=headers) as session:
-            response = await session.get(f'https://top.gg/api/bots/{ctx.bot.user.id}/check?userId={ctx.author.id}')
-            data = await response.json()
-            if data['voted'] == 1:
-                return True
-            else:
-                raise NotVoted('User has not voted yet!')
+            url = f'https://top.gg/api/v1/projects/@me/votes/{ctx.author.id}?source=discord'
+            async with session.get(url) as response:
+                if response.status == 200:
+                    return True
+                elif response.status == 404:
+                    raise NotVoted('User has not voted yet!')
+                else:
+                    raise NotVoted('Failed to verify vote status from Top.gg API!')
         
     return commands.check(predicate)
 
-async def check_vote(user_id:int):
-    headers = {'Authorization': os.getenv('topggtoken')}
+async def check_vote(user_id: int, bot_id: int = None):
+    token = os.getenv('topggtoken')
+    if not token:
+        return False
+    if not token.startswith('Bearer '):
+        token = f'Bearer {token}'
+    headers = {'Authorization': token}
     async with aiohttp.ClientSession(headers=headers) as session:
-        response = await session.get(f'https://top.gg/api/bots/{os.getenv("rvdiaid")}/check?userId={user_id}')
-        data = await response.json()
-        if data['voted'] == 1:
-            return True
-        else:
+        try:
+            url = f'https://top.gg/api/v1/projects/@me/votes/{user_id}?source=discord'
+            async with session.get(url) as response:
+                return response.status == 200
+        except Exception:
             return False
 
 def has_registered():

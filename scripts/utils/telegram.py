@@ -115,15 +115,17 @@ class TelegramClient:
 
     async def get_user_profile_photo_file_id(self, user_id: int) -> str | None:
         url = f"{self.base_url}/getUserProfilePhotos"
-        params = {"user_id": user_id, "limit": 1}
+        payload = {"user_id": user_id, "limit": 1}
         
         try:
             session = await self.get_session()
-            async with session.get(url, params=params) as resp:
+            async with session.post(url, json=payload) as resp:
                 if resp.status == 200:
                     data = await resp.json()
                     if data.get("ok") and data["result"]["photos"]:
                         return data["result"]["photos"][0][-1]["file_id"]
+                else:
+                    logging.error(f"getUserProfilePhotos API returned status {resp.status}: {await resp.text()}")
         except Exception as e:
             logging.error(f"Error getting user profile photos: {e}")
         return None

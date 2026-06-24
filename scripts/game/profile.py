@@ -8,7 +8,7 @@ import time
 from datetime import datetime, timedelta, timezone
 from prisma import Json
 from discord.ui import View, Button, button
-from scripts.main import db
+from scripts.main import db, check_vote
 from scripts.game.game import (
     level_up,
     send_level_up_msg,
@@ -22,6 +22,135 @@ from scripts.utils.i18n import i18n
 async def get_user_lang(user_id: int) -> str:
     user_settings = await db.usersettings.find_unique(where={'userId': user_id})
     return user_settings.lang if user_settings else "en"
+
+PREDEFINED_TITLES = {
+    "novice_adventurer": {
+        "en": "Novice Adventurer",
+        "id": "Petualang Pemula",
+        "style": "default",
+        "color": (150, 200, 255, 255),
+        "bg_color": (150, 200, 255, 30),
+        "border_color": (150, 200, 255, 100)
+    },
+    "true_dreamer": {
+        "en": "The True Dreamer",
+        "id": "Sang Pemimpi Sejati",
+        "style": "rainbow",
+        "color": (255, 255, 255, 255),
+        "bg_color": (255, 255, 255, 20),
+        "border_color": (255, 255, 255, 100)
+    },
+    "undying_survivor": {
+        "en": "Undying Survivor",
+        "id": "Penyintas Abadi",
+        "style": "bloody_red",
+        "color": (255, 50, 50, 255),
+        "bg_color": (139, 0, 0, 50),
+        "border_color": (139, 0, 0, 200)
+    },
+    "titan_slayer": {
+        "en": "Titan Slayer",
+        "id": "Pembantai Titan",
+        "style": "gold_shiny",
+        "color": (255, 215, 0, 255),
+        "bg_color": (255, 215, 0, 30),
+        "border_color": (255, 215, 0, 180)
+    },
+    "bonus_hunter": {
+        "en": "Bonus Hunter",
+        "id": "Pemburu Bonus",
+        "style": "violet",
+        "color": (155, 89, 182, 255),
+        "bg_color": (155, 89, 182, 30),
+        "border_color": (155, 89, 182, 180)
+    },
+    "rvdias_favorite": {
+        "en": "RVDiA's Favorite",
+        "id": "Kesayangan RVDiA",
+        "style": "pink",
+        "color": (255, 105, 180, 255),
+        "bg_color": (255, 105, 180, 30),
+        "border_color": (255, 105, 180, 180)
+    },
+    "class_master": {
+        "en": "Class Master",
+        "id": "Master Kelas",
+        "style": "green",
+        "color": (46, 204, 113, 255),
+        "bg_color": (46, 204, 113, 30),
+        "border_color": (46, 204, 113, 180)
+    },
+    "wealthy_merchant": {
+        "en": "Wealthy Merchant",
+        "id": "Saudagar Kaya",
+        "style": "emerald",
+        "color": (26, 188, 156, 255),
+        "bg_color": (26, 188, 156, 30),
+        "border_color": (26, 188, 156, 180)
+    },
+    "karma_saint": {
+        "en": "Saint of Light",
+        "id": "Orang Suci Cahaya",
+        "style": "white",
+        "color": (240, 240, 245, 255),
+        "bg_color": (240, 240, 245, 30),
+        "border_color": (240, 240, 245, 200)
+    },
+    "karma_bringer": {
+        "en": "Chaos Bringer",
+        "id": "Pembawa Kekacauan",
+        "style": "dark_purple",
+        "color": (100, 30, 150, 255),
+        "bg_color": (50, 10, 80, 50),
+        "border_color": (100, 30, 150, 200)
+    },
+    "godlike_ascendant": {
+        "en": "Godlike Ascendant",
+        "id": "Pewaris Dewata",
+        "style": "glowing_gold",
+        "color": (255, 255, 255, 255),
+        "bg_color": (255, 215, 0, 40),
+        "border_color": (255, 215, 0, 255)
+    }
+}
+
+async def check_and_unlock_title(ctx, user_id: int, title_id: str, bot) -> bool:
+    user_record = await db.user.find_unique(where={'id': user_id})
+    if not user_record:
+        return False
+    data = user_record.data
+    titles = data.get('titles', ['novice_adventurer'])
+    if title_id in titles:
+        return False
+        
+    titles.append(title_id)
+    data['titles'] = titles
+    
+    await db.user.update(
+        where={'id': user_id},
+        data={'data': Json(data)}
+    )
+    
+    lang = await get_user_lang(user_id)
+    title_info = PREDEFINED_TITLES.get(title_id, {})
+    title_name = title_info.get(lang, title_info.get("en", title_id))
+    
+    mention_str = ctx.author.mention if hasattr(ctx, 'author') else f'<@{user_id}>'
+    msg = (
+        f"🏆 <b>New Title Unlocked!</b>\n"
+        f"Congratulations, {mention_str}! You have unlocked the title: <b>\"{title_name}\"</b>!"
+    ) if lang == "en" else (
+        f"🏆 <b>Gelar Baru Terbuka!</b>\n"
+        f"Selamat, {mention_str}! Kamu telah membuka gelar: <b>\"{title_name}\"</b>!"
+    )
+    
+    if hasattr(ctx, 'reply'):
+        await ctx.reply(msg)
+    elif hasattr(ctx, 'channel'):
+        await ctx.channel.send(msg)
+    elif hasattr(ctx, 'send'):
+        await ctx.send(msg)
+    return True
 
 def to_key(name: str) -> str:
     name = name.lower()
@@ -431,6 +560,68 @@ class UseView(View):
         super().__init__(timeout=30)
         self.add_item(UseDropdown(items, ctx, lang=lang))
 
+class TitlesDropdown(discord.ui.Select):
+    def __init__(self, unlocked_titles: list, active_title: str, lang="en"):
+        self.lang = lang
+        options = []
+        for t_id in unlocked_titles:
+            title_info = PREDEFINED_TITLES.get(t_id)
+            if not title_info:
+                continue
+            name = title_info.get(lang, title_info.get("en", t_id))
+            style = title_info.get("style", "default")
+            is_active = (t_id == active_title)
+            
+            label_suffix = " (Equipped)" if is_active else ""
+            options.append(discord.SelectOption(
+                label=f"{name}{label_suffix}",
+                value=t_id,
+                description=f"Style: {style}",
+                default=is_active
+            ))
+            
+        placeholder_text = "Choose a title to equip..." if lang == "en" else "Pilih gelar untuk dipasang..."
+        super().__init__(custom_id="titlesdrop", placeholder=placeholder_text, min_values=1, max_values=1, options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+        if not interaction.message.mentions or interaction.message.mentions[0] != interaction.user:
+            msg = "Not your menu!" if self.lang == "en" else "Bukan menumu!"
+            return await interaction.response.send_message(msg, ephemeral=True)
+            
+        selected_title = self.values[0]
+        user_record = await db.user.find_unique(where={'id': interaction.user.id})
+        if not user_record:
+            msg = i18n.get(self.lang, "game.profile_not_registered")
+            return await interaction.response.send_message(msg, ephemeral=True)
+            
+        data = user_record.data
+        unlocked_titles = data.get('titles', ['novice_adventurer'])
+        
+        if selected_title not in unlocked_titles:
+            msg = "You haven't unlocked this title yet!" if self.lang == "en" else "Kamu belum membuka gelar ini!"
+            return await interaction.response.send_message(msg, ephemeral=True)
+            
+        data['active_title'] = selected_title
+        await db.user.update(
+            where={'id': interaction.user.id},
+            data={'data': Json(data)}
+        )
+        
+        title_info = PREDEFINED_TITLES.get(selected_title, {})
+        title_name = title_info.get(self.lang, title_info.get("en", selected_title))
+        
+        msg = f"Title <b>\"{title_name}\"</b> equipped successfully!" if self.lang == "en" else f"Gelar <b>\"{title_name}\"</b> berhasil dipasang!"
+        await interaction.response.send_message(msg)
+        
+        # Disable dropdown after selection
+        self.disabled = True
+        await interaction.message.edit(view=self.view)
+
+class TitlesView(View):
+    def __init__(self, unlocked_titles: list, active_title: str, lang="en"):
+        super().__init__(timeout=30)
+        self.add_item(TitlesDropdown(unlocked_titles, active_title, lang=lang))
+
 class LeaderboardView(View):
     def __init__(self, ctx, data: list, title: str, type: str = "player", lang="en"):
         super().__init__(timeout=60)
@@ -584,29 +775,50 @@ async def execute_daily(ctx, bot):
     
     last_login_raw = data.get('last_login')
     if not last_login_raw:
-        last_login = datetime.now() - timedelta(days=1)
-    elif isinstance(last_login_raw, str):
-        last_login = datetime.fromisoformat(last_login_raw)
+        streak = 1
     else:
-        last_login = last_login_raw
+        if isinstance(last_login_raw, str):
+            last_login = datetime.fromisoformat(last_login_raw)
+        else:
+            last_login = last_login_raw
+            
+        current_time = datetime.now()
+        delta_time = current_time - last_login
         
-    current_time = datetime.now()
-    delta_time = current_time - last_login
-    next_login = last_login + timedelta(hours=24)
-    next_login_unix = int(time.mktime(next_login.timetuple()))
-    lang = await get_user_lang(ctx.author.id)
+        lang = await get_user_lang(ctx.author.id)
+        if delta_time.total_seconds() <= 24*60*60:
+            next_login = last_login + timedelta(hours=24)
+            next_login_unix = int(time.mktime(next_login.timetuple()))
+            msg = i18n.get(lang, "game.daily_already", timestamp=next_login_unix)
+            return await ctx.reply(msg)
+        elif delta_time.total_seconds() <= 48*60*60:
+            streak = data.get('daily_streak', 1) + 1
+        else:
+            streak = 1
 
-    if delta_time.total_seconds() <= 24*60*60:
-        msg = i18n.get(lang, "game.daily_already", timestamp=next_login_unix)
-        return await ctx.reply(msg)
+    lang = await get_user_lang(ctx.author.id)
+    current_time = datetime.now()
+    next_login = current_time + timedelta(hours=24)
     
-    new_coins = random.randint(15, 25)
-    new_karma = random.randint(1, 5)
-    new_exp = random.randint(10, 20)
+    base_coins = random.randint(15, 25)
+    base_karma = random.randint(1, 5)
+    base_exp = random.randint(10, 20)
     
-    data['coins'] += new_coins
-    data['karma'] += new_karma
-    data['exp'] += new_exp
+    streak_bonus = min(streak, 5) * 0.1
+    multiplier = 1.0 + streak_bonus
+    
+    # check top.gg vote status
+    voted = await check_vote(ctx.author.id, bot.user.id)
+    vote_multiplier = 2 if voted else 1
+    
+    final_coins = int(base_coins * multiplier * vote_multiplier)
+    final_karma = int(base_karma * multiplier * vote_multiplier)
+    final_exp = int(base_exp * multiplier * vote_multiplier)
+    
+    data['coins'] += final_coins
+    data['karma'] += final_karma
+    data['exp'] += final_exp
+    data['daily_streak'] = streak
     data['last_login'] = current_time.isoformat()
     
     await db.user.update(
@@ -620,11 +832,21 @@ async def execute_daily(ctx, bot):
     embed = discord.Embed(title=title, color=0x00FF00, timestamp=next_login)
     embed.set_thumbnail(url=ctx.author.display_avatar.url)
     
+    # multiplier status field
+    multipliers_title = i18n.get(lang, "game.daily_multipliers_title", default="Multiplier Status")
+    streak_bonus_pct = int(streak_bonus * 100)
+    streak_info = i18n.get(lang, "game.daily_streak_info", streak=streak, bonus=streak_bonus_pct)
+    info_value = f"{streak_info}"
+    if voted:
+        vote_info = i18n.get(lang, "game.daily_vote_info")
+        info_value += f"\n{vote_info}"
+    embed.add_field(name=multipliers_title, value=info_value, inline=False)
+    
     reward_title = i18n.get(lang, "game.combat_reward_title")
     coins_lbl = i18n.get(lang, "game.paywith_koin") if lang == "en" else "Koin"
-    reward_coins = f"{bot.coin_emoji_anim} `{new_coins}` {coins_lbl}"
-    reward_karma = i18n.get(lang, "game.combat_reward_karma", amount=new_karma)
-    reward_exp = i18n.get(lang, "game.combat_reward_exp", amount=new_exp)
+    reward_coins = f"{bot.coin_emoji_anim} `{final_coins}` {coins_lbl}"
+    reward_karma = i18n.get(lang, "game.combat_reward_karma", amount=final_karma)
+    reward_exp = i18n.get(lang, "game.combat_reward_exp", amount=final_exp)
     
     embed.add_field(name=reward_title, value=f"{reward_coins}\n{reward_karma}\n{reward_exp}!", inline=False)
     embed.set_footer(text=footer_text)
@@ -632,6 +854,37 @@ async def execute_daily(ctx, bot):
     level_uped = await level_up(ctx)
     if level_uped:
         return await send_level_up_msg(ctx)
+
+async def check_passive_titles(ctx, user_id: int, data: dict, bot) -> bool:
+    unlocked_any = False
+    
+    # 1. class_master: reach Level 50+
+    if data.get('level', 1) >= 50:
+        if await check_and_unlock_title(ctx, user_id, "class_master", bot):
+            unlocked_any = True
+            
+    # 2. wealthy_merchant: accumulate 10,000+ coins
+    if data.get('coins', 0) >= 10000:
+        if await check_and_unlock_title(ctx, user_id, "wealthy_merchant", bot):
+            unlocked_any = True
+            
+    # 3. karma_saint: accumulate +100+ karma
+    if data.get('karma', 0) >= 100:
+        if await check_and_unlock_title(ctx, user_id, "karma_saint", bot):
+            unlocked_any = True
+            
+    # 4. karma_bringer: accumulate -100 or less karma
+    if data.get('karma', 0) <= -100:
+        if await check_and_unlock_title(ctx, user_id, "karma_bringer", bot):
+            unlocked_any = True
+            
+    # 5. godlike_ascendant: ATK + DEF + AGL >= 300
+    total_stats = data.get('attack', 0) + data.get('defense', 0) + data.get('agility', 0)
+    if total_stats >= 300:
+        if await check_and_unlock_title(ctx, user_id, "godlike_ascendant", bot):
+            unlocked_any = True
+            
+    return unlocked_any
 
 async def execute_profile(ctx, bot, user=None):
     lang = await get_user_lang(ctx.author.id)
@@ -647,12 +900,17 @@ async def execute_profile(ctx, bot, user=None):
     except Exception:
         pass
         
+    # Check passive titles for target player
+    unlocked = await check_passive_titles(ctx, target.id, user_record.data, bot)
+    if unlocked:
+        user_record = await db.user.find_unique(where={'id': target.id})
+        
     from scripts.image.card_generator import generate_profile_card
     premium_time = user_record.premiumUntil
     if premium_time and premium_time.tzinfo is None:
         premium_time = premium_time.replace(tzinfo=timezone.utc)
     is_p = bool(premium_time and premium_time > datetime.now(timezone.utc))
-    card_file = await generate_profile_card(target, user_record, is_p)
+    card_file = await generate_profile_card(target, user_record, is_p, lang)
     await ctx.reply(file=card_file)
 
 async def execute_fix_account(ctx):
@@ -866,3 +1124,105 @@ async def execute_use(ctx, type_val):
         
     view = UseView(things, ctx, lang=lang)
     await ctx.reply(f'{ctx.author.mention}', view=view)
+
+async def execute_titles(ctx):
+    lang = await get_user_lang(ctx.author.id)
+    user_record = await db.user.find_unique(where={'id': ctx.author.id})
+    if not user_record:
+        msg = i18n.get(lang, "game.profile_not_registered")
+        return await ctx.reply(msg)
+        
+    data = user_record.data
+    
+    # Check passive titles first
+    unlocked_new = await check_passive_titles(ctx, ctx.author.id, data, ctx.bot)
+    if unlocked_new:
+        user_record = await db.user.find_unique(where={'id': ctx.author.id})
+        data = user_record.data
+        
+    unlocked_titles = data.get('titles', ['novice_adventurer'])
+    active_title = data.get('active_title', 'novice_adventurer')
+    
+    title_requirements = {
+        "novice_adventurer": {
+            "en": "Default title.",
+            "id": "Gelar bawaan."
+        },
+        "true_dreamer": {
+            "en": "Defeat Schryzon (Final Boss).",
+            "id": "Kalahkan Schryzon (Final Boss)."
+        },
+        "undying_survivor": {
+            "en": "Win a fight with 1 HP remaining, or defeat Young Xehanort.",
+            "id": "Menang pertarungan dengan sisa 1 HP, atau kalahkan Young Xehanort."
+        },
+        "titan_slayer": {
+            "en": "Defeat any FINAL BOSS.",
+            "id": "Kalahkan FINAL BOSS apa saja."
+        },
+        "bonus_hunter": {
+            "en": "Defeat any BONUS ENEMY.",
+            "id": "Kalahkan BONUS ENEMY apa saja."
+        },
+        "rvdias_favorite": {
+            "en": "Defeat RVDiA.",
+            "id": "Kalahkan RVDiA."
+        },
+        "class_master": {
+            "en": "Reach Level 50 or above.",
+            "id": "Mencapai Level 50 atau lebih."
+        },
+        "wealthy_merchant": {
+            "en": "Accumulate 10,000 or more Coins.",
+            "id": "Kumpulkan 10.000 Koin atau lebih."
+        },
+        "karma_saint": {
+            "en": "Accumulate +100 or more Karma.",
+            "id": "Kumpulkan +100 Karma atau lebih."
+        },
+        "karma_bringer": {
+            "en": "Accumulate -100 or less Karma.",
+            "id": "Kumpulkan -100 Karma atau kurang."
+        },
+        "godlike_ascendant": {
+            "en": "Accumulate total stats (ATK + DEF + AGL) of 300 or more.",
+            "id": "Kumpulkan total status (ATK + DEF + AGL) 300 atau lebih."
+        }
+    }
+    
+    embed_title = "🏆 Dream Titles & Nameplates" if lang == "en" else "🏆 Gelar & Papan Nama Mimpi"
+    embed_desc = (
+        "Equip your earned titles to customize your profile card badge!\n\n"
+        if lang == "en" else
+        "Pasang gelar yang telah kamu dapatkan untuk menyesuaikan lencana kartu profilmu!\n\n"
+    )
+    
+    embed = discord.Embed(title=embed_title, color=0x9b59b6, description=embed_desc)
+    
+    for t_id, t_info in PREDEFINED_TITLES.items():
+        name = t_info.get(lang, t_info.get("en", t_id))
+        is_unlocked = t_id in unlocked_titles
+        is_active = t_id == active_title
+        
+        status_emoji = "🟢" if is_active else ("✅" if is_unlocked else "🔒")
+        req_text = title_requirements.get(t_id, {}).get(lang, title_requirements.get(t_id, {}).get("en", ""))
+        
+        style = t_info.get("style", "default")
+        
+        field_value = (
+            f"**Requirement:** {req_text}\n"
+            f"**Style:** `{style}`"
+        ) if lang == "en" else (
+            f"**Syarat:** {req_text}\n"
+            f"**Gaya:** `{style}`"
+        )
+        
+        active_label = " [Equipped]" if is_active else ""
+        embed.add_field(
+            name=f"{status_emoji} {name}{active_label}",
+            value=field_value,
+            inline=False
+        )
+        
+    view = TitlesView(unlocked_titles, active_title, lang=lang)
+    await ctx.reply(f"{ctx.author.mention}", embed=embed, view=view)

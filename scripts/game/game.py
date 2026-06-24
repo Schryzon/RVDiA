@@ -12,6 +12,7 @@ default_data = {
     'exp':0,
     'next_exp':50,
     'last_login': datetime.now().isoformat(),
+    'daily_streak':0,
     'coins':100,
     'karma':10,             # Luck points
     'attack':10,
@@ -21,7 +22,9 @@ default_data = {
     'special_skills':[],
     'equipments':[],
     'class':'None',
-    'stat_points':0
+    'stat_points':0,
+    'titles': ['novice_adventurer'],
+    'active_title': 'novice_adventurer'
 }
 
 async def level_up(ctx):

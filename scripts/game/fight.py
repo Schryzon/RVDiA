@@ -926,6 +926,30 @@ class GameInstance():
             await asyncio.sleep(2.5)
 
         if self.user1_hp > self.user2_hp:
+            # Check title unlocks on win
+            from scripts.game.profile import check_and_unlock_title
+            
+            # 1. true_dreamer: defeat final boss Schryzon
+            if not isinstance(self.user2, discord.Member) and self.user2.get('name', '').lower() == "schryzon":
+                await check_and_unlock_title(self.ctx, self.user1.id, "true_dreamer", self.bot)
+                
+            # 2. undying_survivor: win with 1 HP or defeat Young Xehanort
+            has_young_xehanort = not isinstance(self.user2, discord.Member) and self.user2.get('name', '').lower() == "young xehanort"
+            if self.user1_hp == 1 or has_young_xehanort:
+                await check_and_unlock_title(self.ctx, self.user1.id, "undying_survivor", self.bot)
+                
+            # 3. titan_slayer: defeat any FINAL BOSS
+            if not isinstance(self.user2, discord.Member) and self.user2.get('tier') == "FINAL BOSS":
+                await check_and_unlock_title(self.ctx, self.user1.id, "titan_slayer", self.bot)
+                
+            # 4. bonus_hunter: defeat any BONUS ENEMY
+            if not isinstance(self.user2, discord.Member) and self.user2.get('tier') == "BONUS ENEMY":
+                await check_and_unlock_title(self.ctx, self.user1.id, "bonus_hunter", self.bot)
+                
+            # 5. rvdias_favorite: defeat RVDiA
+            if not isinstance(self.user2, discord.Member) and self.user2.get('name', '').lower() == "rvdia":
+                await check_and_unlock_title(self.ctx, self.user1.id, "rvdias_favorite", self.bot)
+
             title = i18n.get(self.lang, "game.combat_win_title", name=self.user1.display_name)
             desc = i18n.get(self.lang, "game.combat_win_desc", hp=self.user1_hp)
             embed = discord.Embed(title=title, color=0xffff00)

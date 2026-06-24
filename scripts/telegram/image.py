@@ -13,9 +13,14 @@ async def get_telegram_image_bytes(message, telegram_user_id) -> tuple[bytes, st
         raise ValueError("Telegram client not initialized!")
 
     photo = message.get("photo")
+    reply_to = message.get("reply_to_message")
+    
     if photo:
         file_id = photo[-1]["file_id"]
         filename = "input.png"
+    elif reply_to and reply_to.get("photo"):
+        file_id = reply_to["photo"][-1]["file_id"]
+        filename = "reply.png"
     else:
         file_id = await telegram_client.get_user_profile_photo_file_id(telegram_user_id)
         filename = "profile.png"
@@ -36,11 +41,13 @@ async def process_and_send_telegram_image(chat_id, message, telegram_user_id, la
             image_bytes, origin_filename = await get_telegram_image_bytes(message, telegram_user_id)
         except Exception as e:
             err_msg = (
-                f"⚠️ No photo attachment or profile photo found!\n"
-                f"Please upload a photo and use the command as a caption, or make sure you have a public profile photo."
+                "⚠️ <b>No photo attachment or profile photo found!</b>\n\n"
+                "To use your profile picture, please ensure your Profile Photo privacy is set to <b>'Everybody'</b> in Telegram settings (<i>Settings > Privacy and Security > Profile Photos</i>).\n\n"
+                "Alternatively, you can upload a photo directly and use the command as a caption, or reply to an existing photo in the chat!"
             ) if lang == "en" else (
-                f"⚠️ Tidak ada lampiran foto atau foto profil ditemukan!\n"
-                f"Silahkan unggah foto dan gunakan command sebagai caption, atau pastikan foto profil Anda publik."
+                "⚠️ <b>Tidak ada lampiran foto atau foto profil ditemukan!</b>\n\n"
+                "Untuk menggunakan foto profil Anda, pastikan privasi Foto Profil Anda diatur ke <b>'Semua Orang'</b> (Everybody) di pengaturan Telegram (<i>Pengaturan > Privasi dan Keamanan > Foto Profil</i>).\n\n"
+                "Alternatif lain, Anda dapat mengunggah foto secara langsung dan menggunakan command sebagai caption, atau membalas (reply) foto yang sudah ada di chat!"
             )
             return await send_telegram_message(chat_id, err_msg)
 
@@ -418,7 +425,15 @@ def setup(zora):
                     else:
                         file_id1 = await telegram_client.get_user_profile_photo_file_id(telegram_user_id)
                         if not file_id1:
-                            err_msg = "⚠️ No photo attachment or profile photo found!" if lang == "en" else "⚠️ Tidak ada lampiran foto atau foto profil ditemukan!"
+                            err_msg = (
+                                "⚠️ <b>No photo attachment or profile photo found!</b>\n\n"
+                                "To use your profile picture, please ensure your Profile Photo privacy is set to <b>'Everybody'</b> in Telegram settings (<i>Settings > Privacy and Security > Profile Photos</i>).\n\n"
+                                "Alternatively, you can upload a photo directly and use the command as a caption, or reply to an existing photo in the chat!"
+                            ) if lang == "en" else (
+                                "⚠️ <b>Tidak ada lampiran foto atau foto profil ditemukan!</b>\n\n"
+                                "Untuk menggunakan foto profil Anda, pastikan privasi Foto Profil Anda diatur ke <b>'Semua Orang'</b> (Everybody) di pengaturan Telegram (<i>Pengaturan > Privasi dan Keamanan > Foto Profil</i>).\n\n"
+                                "Alternatif lain, Anda dapat mengunggah foto secara langsung dan menggunakan command sebagai caption, atau membalas (reply) foto yang sudah ada di chat!"
+                            )
                             return await send_telegram_message(chat_id, err_msg)
                         img1_bytes = await telegram_client.get_file_bytes(file_id1)
                         
