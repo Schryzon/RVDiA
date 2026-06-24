@@ -136,12 +136,16 @@ async def check_and_unlock_title(ctx, user_id: int, title_id: str, bot) -> bool:
     title_name = title_info.get(lang, title_info.get("en", title_id))
     
     mention_str = ctx.author.mention if hasattr(ctx, 'author') else f'<@{user_id}>'
+    is_tg = type(ctx).__name__ == "TelegramMockCtx"
+    b_start = "<b>" if is_tg else "**"
+    b_end = "</b>" if is_tg else "**"
+    
     msg = (
-        f"🏆 <b>New Title Unlocked!</b>\n"
-        f"Congratulations, {mention_str}! You have unlocked the title: <b>\"{title_name}\"</b>!"
+        f"🏆 {b_start}New Title Unlocked!{b_end}\n"
+        f"Congratulations, {mention_str}! You have unlocked the title: {b_start}\"{title_name}\"{b_end}!"
     ) if lang == "en" else (
-        f"🏆 <b>Gelar Baru Terbuka!</b>\n"
-        f"Selamat, {mention_str}! Kamu telah membuka gelar: <b>\"{title_name}\"</b>!"
+        f"🏆 {b_start}Gelar Baru Terbuka!{b_end}\n"
+        f"Selamat, {mention_str}! Kamu telah membuka gelar: {b_start}\"{title_name}\"{b_end}!"
     )
     
     if hasattr(ctx, 'reply'):
@@ -610,7 +614,7 @@ class TitlesDropdown(discord.ui.Select):
         title_info = PREDEFINED_TITLES.get(selected_title, {})
         title_name = title_info.get(self.lang, title_info.get("en", selected_title))
         
-        msg = f"Title <b>\"{title_name}\"</b> equipped successfully!" if self.lang == "en" else f"Gelar <b>\"{title_name}\"</b> berhasil dipasang!"
+        msg = f"Title **\"{title_name}\"** equipped successfully!" if self.lang == "en" else f"Gelar **\"{title_name}\"** berhasil dipasang!"
         await interaction.response.send_message(msg)
         
         # Disable dropdown after selection
