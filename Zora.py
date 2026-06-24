@@ -10,6 +10,7 @@ class ZoraBot:
         self.loop = loop
         self.commands = {}
         self.chat_handler = None
+        self.username = None
 
     def command(self, names):
         def decorator(func):
@@ -53,6 +54,7 @@ async def handle_telegram_update(zora_bot, bot, update):
 
     chat = message["chat"]
     chat_id = chat["id"]
+    chat_type = chat.get("type", "private")  # private, group, supergroup, channel
     from_user = message["from"]
     telegram_user_id = from_user["id"]
     
@@ -71,11 +73,29 @@ async def handle_telegram_update(zora_bot, bot, update):
         lang = user_settings.lang
 
     parts = text.split()
-    command = parts[0].lower() if parts else ""
+    raw_command = parts[0].lower() if parts else ""
     args = parts[1:] if len(parts) > 1 else []
+
+    # Parse potential group command suffixes (e.g. /help@RVDiA_Official_bot)
+    command = raw_command
+    directed_to_us = False
+    has_mention = "@" in command
+
+    if has_mention:
+        cmd_part, bot_part = command.split("@", 1)
+        command = cmd_part
+        if zora_bot.username and bot_part == zora_bot.username:
+            directed_to_us = True
+    else:
+        if chat_type == "private":
+            directed_to_us = True
 
     # Route command to handlers
     if command in zora_bot.commands:
+        # Ignore command if it has a mention pointing to another bot
+        if has_mention and not directed_to_us:
+            return
+
         handler = zora_bot.commands[command]
         async def run_command_handler():
             try:
@@ -85,17 +105,46 @@ async def handle_telegram_update(zora_bot, bot, update):
                 raise e
         bot.loop.create_task(run_command_handler())
     elif command.startswith("/"):
-        unknown_msg = f"⚠️ Unknown command. Type /help to see all commands." if lang == "en" else f"⚠️ Command tidak dikenal. Ketik /help untuk melihat menu bantuan."
-        bot.loop.create_task(send_telegram_message(chat_id, unknown_msg))
+        # Reply with unknown command ONLY if in private DMs or explicitly directed to us in a group
+        if chat_type == "private" or directed_to_us:
+            unknown_msg = f"⚠️ Unknown command. Type /help to see all commands." if lang == "en" else f"⚠️ Command tidak dikenal. Ketik /help untuk melihat menu bantuan."
+            bot.loop.create_task(send_telegram_message(chat_id, unknown_msg))
     else:
         if zora_bot.chat_handler:
-            async def run_chat_handler():
-                try:
-                    await zora_bot.chat_handler(zora_bot, chat_id, telegram_user_id, username, full_name, text, lang)
-                except Exception as e:
-                    logging.error(f"Error running Telegram chat handler: {e}", exc_info=True)
-                    raise e
-            bot.loop.create_task(run_chat_handler())
+            # Check if we should reply to general chat in group chats
+            should_reply = False
+            clean_text = text
+
+            if chat_type == "private":
+                should_reply = True
+            else:
+                # 1. Mention check: e.g. "@botname hello"
+                mentioned_us = False
+                if zora_bot.username:
+                    mentioned_us = f"@{zora_bot.username}" in text.lower()
+                    if mentioned_us:
+                        import re
+                        clean_text = re.sub(rf"@{zora_bot.username}\b", "", text, flags=re.IGNORECASE).strip()
+
+                # 2. Reply check: is reply to one of our own bot messages
+                is_reply_to_us = False
+                reply_to = message.get("reply_to_message")
+                if reply_to and reply_to.get("from"):
+                    from_bot = reply_to["from"]
+                    if from_bot.get("is_bot") and zora_bot.username and from_bot.get("username", "").lower() == zora_bot.username:
+                        is_reply_to_us = True
+
+                if mentioned_us or is_reply_to_us:
+                    should_reply = True
+
+            if should_reply:
+                async def run_chat_handler():
+                    try:
+                        await zora_bot.chat_handler(zora_bot, chat_id, telegram_user_id, username, full_name, clean_text, lang)
+                    except Exception as e:
+                        logging.error(f"Error running Telegram chat handler: {e}", exc_info=True)
+                        raise e
+                bot.loop.create_task(run_chat_handler())
 
 async def start_zora(bot):
     token = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -112,6 +161,19 @@ async def start_zora(bot):
     logging.info("🚀 Telegram Bot Polling Adapter (RVDiA Zora) starting up...")
 
     async with aiohttp.ClientSession() as session:
+        try:
+            # Fetch bot details from Telegram to store the username
+            async with session.get(f"{url}/getMe") as resp:
+                if resp.status == 200:
+                    me_data = await resp.json()
+                    if me_data.get("ok"):
+                        zora_bot.username = me_data["result"]["username"].lower()
+                        logging.info(f"🤖 Connected as Telegram Bot: @{zora_bot.username}")
+                else:
+                    logging.warning(f"Failed to fetch Telegram bot info (/getMe returned status {resp.status})")
+        except Exception as e:
+            logging.error(f"Failed to fetch Telegram bot info: {e}")
+
         try:
             while True:
                 try:
