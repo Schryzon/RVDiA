@@ -68,14 +68,17 @@ async def trigger_alert(url, reason):
 @tasks.loop(minutes=15)
 async def monitor_websites():
     # Store targets as (display_name/key, request_url) to avoid logging secrets (like Telegram Bot Tokens)
-    telegram_token = getenv("TELEGRAM_BOT_TOKEN") or ""
+    telegram_token = (getenv("TELEGRAM_BOT_TOKEN") or "").strip('"')
     targets = [
         ("https://3dex.studio", "https://3dex.studio"),
         ("https://api.3dex.studio/health", "https://api.3dex.studio/health"),
         ("https://storage.3dex.studio/minio/health/live", "https://storage.3dex.studio/minio/health/live"),
-        ("https://rvdia.up.railway.app", "https://rvdia.up.railway.app"),
-        ("Zora (Telegram Bot API)", f"https://api.telegram.org/bot{telegram_token}/getMe")
+        ("https://rvdia.up.railway.app", "https://rvdia.up.railway.app")
     ]
+    if telegram_token:
+        targets.append(("Zora (Telegram Bot API)", f"https://api.telegram.org/bot{telegram_token}/getMe"))
+    else:
+        logging.warning("⚠️ TELEGRAM_BOT_TOKEN not found in env. Skipping Zora monitor.")
     
     history_file = "uptime_history.json"
     history = []
