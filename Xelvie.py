@@ -71,7 +71,8 @@ async def monitor_websites():
         "https://3dex.studio",
         "https://api.3dex.studio/health",
         "https://storage.3dex.studio/minio/health/live",
-        "https://rvdia.up.railway.app" 
+        "https://rvdia.up.railway.app",
+        "https://api.telegram.org/bot" + (getenv("TELEGRAM_BOT_TOKEN") or "") + "/getMe"
     ]
     
     history_file = "uptime_history.json"
@@ -102,12 +103,41 @@ async def monitor_websites():
                         status = "up"
                     else:
                         error_msg = f"HTTP {resp.status}"
-                        await trigger_alert(url, error_msg)
+                        if url == "https://rvdia.up.railway.app":
+                            logging.info("rvdia.up.railway.app returned non-200. Waiting 10 minutes to retry before alerting...")
+                            await asyncio.sleep(600)
+                            try:
+                                async with session.get(url, timeout=30) as retry_resp:
+                                    if retry_resp.status == 200:
+                                        status = "up"
+                                        error_msg = ""
+                                    else:
+                                        error_msg = f"HTTP {retry_resp.status} (Confirmed down after 10m cooldown)"
+                                        await trigger_alert(url, error_msg)
+                            except Exception as retry_err:
+                                error_msg = f"{retry_err} (Confirmed down after 10m cooldown)"
+                                await trigger_alert(url, error_msg)
+                        else:
+                            await trigger_alert(url, error_msg)
             except Exception as e:
                 latency = int((time.perf_counter() - start_time) * 1000)
                 error_msg = str(e)
-                # Optimistic error handling: if it dies, just alert
-                await trigger_alert(url, error_msg)
+                if url == "https://rvdia.up.railway.app":
+                    logging.info(f"rvdia.up.railway.app request failed ({e}). Waiting 10 minutes to retry before alerting...")
+                    await asyncio.sleep(600)
+                    try:
+                        async with session.get(url, timeout=30) as retry_resp:
+                            if retry_resp.status == 200:
+                                status = "up"
+                                error_msg = ""
+                            else:
+                                error_msg = f"HTTP {retry_resp.status} (Confirmed down after 10m cooldown)"
+                                await trigger_alert(url, error_msg)
+                    except Exception as retry_err:
+                        error_msg = f"{retry_err} (Confirmed down after 10m cooldown)"
+                        await trigger_alert(url, error_msg)
+                else:
+                    await trigger_alert(url, error_msg)
                 
             current_check["results"][url] = {
                 "status": status,
@@ -431,7 +461,8 @@ async def uptime(ctx: commands.Context):
         "https://3dex.studio",
         "https://api.3dex.studio/health",
         "https://storage.3dex.studio/minio/health/live",
-        "https://rvdia.up.railway.app"
+        "https://rvdia.up.railway.app",
+        "https://api.telegram.org/bot" + (getenv("TELEGRAM_BOT_TOKEN") or "") + "/getMe"
     ]
     
     dates = []
@@ -461,10 +492,13 @@ async def uptime(ctx: commands.Context):
         "https://3dex.studio": "#cba6f7",          # Lavender
         "https://api.3dex.studio/health": "#89b4fa",   # Blue
         "https://storage.3dex.studio/minio/health/live": "#a6e3a1", # Green
-        "https://rvdia.up.railway.app": "#f38ba8"    # Red/Peach
+        "https://rvdia.up.railway.app": "#f38ba8",    # Red/Peach
+        "https://api.telegram.org/bot" + (getenv("TELEGRAM_BOT_TOKEN") or "") + "/getMe": "#f9e2af" # Yellow (Zora Bot)
     }
     
     def clean_label(url):
+        if "api.telegram.org" in url:
+            return "Zora (Telegram Bot API)"
         return url.replace("https://", "").replace("www.", "")
 
     for url in urls:
