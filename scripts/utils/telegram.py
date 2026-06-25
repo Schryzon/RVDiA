@@ -35,13 +35,17 @@ class TelegramClient:
         if self._session and not self._session.closed:
             await self._session.close()
 
-    async def send_message(self, chat_id: int, text: str, parse_mode: str = "HTML") -> bool:
+    async def send_message(self, chat_id: int, text: str, parse_mode: str = "HTML", message_thread_id: int = None, reply_markup: dict = None) -> bool:
         url = f"{self.base_url}/sendMessage"
         payload = {
             "chat_id": chat_id,
             "text": text,
             "parse_mode": parse_mode
         }
+        if message_thread_id:
+            payload["message_thread_id"] = message_thread_id
+        if reply_markup:
+            payload["reply_markup"] = reply_markup
         
         # let it crash or log normally - we want control
         session = await self.get_session()
@@ -51,7 +55,49 @@ class TelegramClient:
                 return False
             return True
 
-    async def send_photo(self, chat_id: int, photo_url: str, caption: str = "", parse_mode: str = "HTML") -> bool:
+    async def edit_message_text(self, chat_id: int, message_id: int, text: str, parse_mode: str = "HTML", reply_markup: dict = None) -> bool:
+        url = f"{self.base_url}/editMessageText"
+        payload = {
+            "chat_id": chat_id,
+            "message_id": message_id,
+            "text": text,
+            "parse_mode": parse_mode
+        }
+        if reply_markup:
+            payload["reply_markup"] = reply_markup
+
+        session = await self.get_session()
+        async with session.post(url, json=payload) as resp:
+            if resp.status != 200:
+                logging.error(f"Failed to edit Telegram message: {resp.status} - {await resp.text()}")
+                return False
+            return True
+
+    async def answer_callback_query(self, callback_query_id: str, text: str = "") -> bool:
+        url = f"{self.base_url}/answerCallbackQuery"
+        payload = {"callback_query_id": callback_query_id}
+        if text:
+            payload["text"] = text
+
+        session = await self.get_session()
+        async with session.post(url, json=payload) as resp:
+            return resp.status == 200
+
+    async def send_reaction(self, chat_id: int, message_id: int, emoji: str) -> bool:
+        url = f"{self.base_url}/sendReaction"
+        payload = {
+            "chat_id": chat_id,
+            "message_id": message_id,
+            "reaction": [{"type": "emoji", "emoji": emoji}]
+        }
+        session = await self.get_session()
+        async with session.post(url, json=payload) as resp:
+            if resp.status != 200:
+                logging.warning(f"Failed to send reaction: {resp.status} - {await resp.text()}")
+                return False
+            return True
+
+    async def send_photo(self, chat_id: int, photo_url: str, caption: str = "", parse_mode: str = "HTML", message_thread_id: int = None) -> bool:
         url = f"{self.base_url}/sendPhoto"
         payload = {
             "chat_id": chat_id,
@@ -59,6 +105,8 @@ class TelegramClient:
             "caption": caption,
             "parse_mode": parse_mode
         }
+        if message_thread_id:
+            payload["message_thread_id"] = message_thread_id
         
         session = await self.get_session()
         async with session.post(url, json=payload) as resp:
@@ -67,7 +115,7 @@ class TelegramClient:
                 return False
             return True
 
-    async def send_photo_bytes(self, chat_id: int, photo_bytes: bytes, filename: str = "processed.png", caption: str = "") -> bool:
+    async def send_photo_bytes(self, chat_id: int, photo_bytes: bytes, filename: str = "processed.png", caption: str = "", message_thread_id: int = None) -> bool:
         url = f"{self.base_url}/sendPhoto"
         data = aiohttp.FormData()
         data.add_field("chat_id", str(chat_id))
@@ -75,6 +123,8 @@ class TelegramClient:
         if caption:
             data.add_field("caption", caption)
             data.add_field("parse_mode", "HTML")
+        if message_thread_id:
+            data.add_field("message_thread_id", str(message_thread_id))
             
         session = await self.get_session()
         async with session.post(url, data=data) as resp:
@@ -83,12 +133,14 @@ class TelegramClient:
                 return False
             return True
 
-    async def send_chat_action(self, chat_id: int, action: str = "typing") -> bool:
+    async def send_chat_action(self, chat_id: int, action: str = "typing", message_thread_id: int = None) -> bool:
         url = f"{self.base_url}/sendChatAction"
         payload = {
             "chat_id": chat_id,
             "action": action
         }
+        if message_thread_id:
+            payload["message_thread_id"] = message_thread_id
         
         session = await self.get_session()
         async with session.post(url, json=payload) as resp:
@@ -136,14 +188,14 @@ token = os.getenv("TELEGRAM_BOT_TOKEN")
 if token:
     telegram_client = TelegramClient(token)
 
-async def send_telegram_message(chat_id, text, parse_mode="HTML"):
+async def send_telegram_message(chat_id, text, parse_mode="HTML", thread_id=None, reply_markup=None):
     if telegram_client:
-        await telegram_client.send_message(chat_id, text, parse_mode)
+        await telegram_client.send_message(chat_id, text, parse_mode, message_thread_id=thread_id, reply_markup=reply_markup)
 
-async def send_telegram_photo(chat_id, photo_url, caption="", parse_mode="HTML"):
+async def send_telegram_photo(chat_id, photo_url, caption="", parse_mode="HTML", thread_id=None):
     if telegram_client:
-        await telegram_client.send_photo(chat_id, photo_url, caption, parse_mode)
+        await telegram_client.send_photo(chat_id, photo_url, caption, parse_mode, message_thread_id=thread_id)
 
-async def send_telegram_photo_bytes(chat_id, photo_bytes, filename="processed.png", caption=""):
+async def send_telegram_photo_bytes(chat_id, photo_bytes, filename="processed.png", caption="", thread_id=None):
     if telegram_client:
-        await telegram_client.send_photo_bytes(chat_id, photo_bytes, filename, caption)
+        await telegram_client.send_photo_bytes(chat_id, photo_bytes, filename, caption, message_thread_id=thread_id)

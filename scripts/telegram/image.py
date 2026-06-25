@@ -31,10 +31,10 @@ async def get_telegram_image_bytes(message, telegram_user_id) -> tuple[bytes, st
     img_bytes = await telegram_client.get_file_bytes(file_id)
     return img_bytes, filename
 
-async def process_and_send_telegram_image(chat_id, message, telegram_user_id, lang, process_func, filename="processed.png", caption="", *args, **kwargs):
+async def process_and_send_telegram_image(chat_id, message, telegram_user_id, lang, process_func, filename="processed.png", caption="", thread_id=None, *args, **kwargs):
     try:
         if telegram_client:
-            await telegram_client.send_chat_action(chat_id, "upload_photo")
+            await telegram_client.send_chat_action(chat_id, "upload_photo", message_thread_id=thread_id)
 
         # 1. Download image bytes
         try:
@@ -49,14 +49,14 @@ async def process_and_send_telegram_image(chat_id, message, telegram_user_id, la
                 "Untuk menggunakan foto profil Anda, pastikan privasi Foto Profil Anda diatur ke <b>'Semua Orang'</b> (Everybody) di pengaturan Telegram (<i>Pengaturan > Privasi dan Keamanan > Foto Profil</i>).\n\n"
                 "Alternatif lain, Anda dapat mengunggah foto secara langsung dan menggunakan command sebagai caption, atau membalas (reply) foto yang sudah ada di chat!"
             )
-            return await send_telegram_message(chat_id, err_msg)
+            return await send_telegram_message(chat_id, err_msg, thread_id=thread_id)
 
         # 2. Convert to OpenCV formats
         nparr = np.frombuffer(image_bytes, np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         if img is None:
             err_msg = "❌ Failed to read the image file." if lang == "en" else "❌ Gagal membaca file gambar."
-            return await send_telegram_message(chat_id, err_msg)
+            return await send_telegram_message(chat_id, err_msg, thread_id=thread_id)
 
         # Convert BGR to RGB for scripts.image.processing
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -78,12 +78,12 @@ async def process_and_send_telegram_image(chat_id, message, telegram_user_id, la
         processed_bytes = buffer.tobytes()
 
         # 4. Send photo
-        await send_telegram_photo_bytes(chat_id, processed_bytes, filename=filename, caption=caption)
+        await send_telegram_photo_bytes(chat_id, processed_bytes, filename=filename, caption=caption, thread_id=thread_id)
 
     except Exception as e:
         logging.error(f"Error processing Telegram image: {e}", exc_info=True)
         err_msg = f"❌ Error processing image: {str(e)}" if lang == "en" else f"❌ Terjadi kesalahan saat memproses gambar: {str(e)}"
-        await send_telegram_message(chat_id, err_msg)
+        await send_telegram_message(chat_id, err_msg, thread_id=thread_id)
 
 def setup(zora):
     image_filters = [
@@ -95,7 +95,7 @@ def setup(zora):
     ]
 
     @zora.command(image_filters)
-    async def handle_image_filter(zora_bot, chat_id, telegram_user_id, username, full_name, command, args, message, lang):
+    async def handle_image_filter(zora_bot, chat_id, telegram_user_id, username, full_name, command, args, message, lang, thread_id=None, **_):
         cmd_name = command.lstrip("/")
         filename = "processed.png"
         caption = "🎨 Filter Applied!" if lang == "en" else "🎨 Filter Diterapkan!"
@@ -403,7 +403,7 @@ def setup(zora):
             elif cmd_name in ["image_eval", "ieval"]:
                 if not args:
                     err_msg = "⚠️ Please specify a pipeline string (e.g. /image_eval grayscale,invert)" if lang == "en" else "⚠️ Harap tentukan string pipeline (misal: /image_eval grayscale,invert)"
-                    return await send_telegram_message(chat_id, err_msg)
+                    return await send_telegram_message(chat_id, err_msg, thread_id=thread_id)
                 pipeline_str = args[0]
                 
                 reply_to = message.get("reply_to_message")
@@ -434,13 +434,13 @@ def setup(zora):
                                 "Untuk menggunakan foto profil Anda, pastikan privasi Foto Profil Anda diatur ke <b>'Semua Orang'</b> (Everybody) di pengaturan Telegram (<i>Pengaturan > Privasi dan Keamanan > Foto Profil</i>).\n\n"
                                 "Alternatif lain, Anda dapat mengunggah foto secara langsung dan menggunakan command sebagai caption, atau membalas (reply) foto yang sudah ada di chat!"
                             )
-                            return await send_telegram_message(chat_id, err_msg)
+                            return await send_telegram_message(chat_id, err_msg, thread_id=thread_id)
                         img1_bytes = await telegram_client.get_file_bytes(file_id1)
                         
                 img1 = cv2.imdecode(np.frombuffer(img1_bytes, np.uint8), cv2.IMREAD_COLOR)
                 if img1 is None:
                     err_msg = "❌ Failed to read the image file." if lang == "en" else "❌ Gagal membaca file gambar."
-                    return await send_telegram_message(chat_id, err_msg)
+                    return await send_telegram_message(chat_id, err_msg, thread_id=thread_id)
                 img1_rgb = cv2.cvtColor(img1, cv2.COLOR_BGR2RGB)
                 
                 img2_rgb = None
@@ -456,9 +456,9 @@ def setup(zora):
             if func is None:
                 return
 
-            await process_and_send_telegram_image(chat_id, message, telegram_user_id, lang, func, filename=filename, caption=caption)
+            await process_and_send_telegram_image(chat_id, message, telegram_user_id, lang, func, filename=filename, caption=caption, thread_id=thread_id)
 
         except Exception as e:
             logging.error(f"Error handling Telegram image command: {e}", exc_info=True)
             err_msg = f"❌ Error: {str(e)}"
-            await send_telegram_message(chat_id, err_msg)
+            await send_telegram_message(chat_id, err_msg, thread_id=thread_id)

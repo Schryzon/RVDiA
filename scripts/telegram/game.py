@@ -2,11 +2,12 @@ import random
 import json
 import difflib
 import math
+from os import path
 from datetime import datetime, timedelta, timezone
 from prisma import Json
 from scripts.main import db
 from scripts.game.game import level_up, give_rewards, send_level_up_msg, split_reward_string
-from scripts.utils.telegram import TelegramMockCtx, TelegramMockMember, send_telegram_message
+from scripts.utils.telegram import TelegramMockCtx, TelegramMockMember, send_telegram_message, telegram_client
 from scripts.utils.i18n import i18n
 
 def to_key(name: str) -> str:
@@ -18,12 +19,12 @@ def to_key(name: str) -> str:
 
 def setup(zora):
     @zora.command("/daily")
-    async def handle_daily(zora_bot, chat_id, telegram_user_id, username, full_name, command, args, message, lang):
+    async def handle_daily(zora_bot, chat_id, telegram_user_id, username, full_name, command, args, message, lang, thread_id=None, **_):
         virtual_id = -telegram_user_id
         user_record = await db.user.find_unique(where={'id': virtual_id})
         if not user_record:
             msg = i18n.get(lang, "game.register_first") or "Please register first using /register."
-            return await send_telegram_message(chat_id, f"⚠️ {msg}")
+            return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
 
         data = user_record.data
         last_login_raw = data.get('last_login')
@@ -44,7 +45,7 @@ def setup(zora):
             minutes, _ = divmod(remainder, 60)
             
             cooldown_msg = f"⏳ Cooldown! Try again in {hours}h {minutes}m." if lang == "en" else f"⏳ Cooldown! Coba lagi dalam {hours} jam {minutes} menit."
-            return await send_telegram_message(chat_id, cooldown_msg)
+            return await send_telegram_message(chat_id, cooldown_msg, thread_id=thread_id)
 
         new_coins = random.randint(15, 25)
         new_karma = random.randint(1, 5)
@@ -80,15 +81,15 @@ def setup(zora):
             f"🎁 <b>Hadiah Harian Diklaim!</b>\n"
             f"Mendapatkan +{new_coins} Koin, +{new_karma} Karma, dan +{new_exp} EXP!"
         )
-        await send_telegram_message(chat_id, success_msg)
+        await send_telegram_message(chat_id, success_msg, thread_id=thread_id)
 
     @zora.command("/adventure")
-    async def handle_adventure(zora_bot, chat_id, telegram_user_id, username, full_name, command, args, message, lang):
+    async def handle_adventure(zora_bot, chat_id, telegram_user_id, username, full_name, command, args, message, lang, thread_id=None, **_):
         virtual_id = -telegram_user_id
         user_record = await db.user.find_unique(where={'id': virtual_id})
         if not user_record:
             msg = i18n.get(lang, "game.register_first") or "Please register first using /register."
-            return await send_telegram_message(chat_id, f"⚠️ {msg}")
+            return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
 
         exp_gain = random.randint(10, 25)
         coin_gain = random.randint(15, 35)
@@ -106,15 +107,15 @@ def setup(zora):
             f"🧭 <b>Petualangan Berhasil!</b>\n"
             f"Mendapatkan +{coin_gain} Koin dan +{exp_gain} EXP!"
         )
-        await send_telegram_message(chat_id, success_msg)
+        await send_telegram_message(chat_id, success_msg, thread_id=thread_id)
 
     @zora.command("/class")
-    async def handle_class(zora_bot, chat_id, telegram_user_id, username, full_name, command, args, message, lang):
+    async def handle_class(zora_bot, chat_id, telegram_user_id, username, full_name, command, args, message, lang, thread_id=None, **_):
         virtual_id = -telegram_user_id
         user_record = await db.user.find_unique(where={'id': virtual_id})
         if not user_record:
             msg = i18n.get(lang, "game.register_first") or "Please register first using /register."
-            return await send_telegram_message(chat_id, f"⚠️ {msg}")
+            return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
 
         data = user_record.data
         current_class = data.get('class', 'None')
@@ -124,7 +125,7 @@ def setup(zora):
             ) if lang == "en" else (
                 f"⚠️ Anda sudah memilih kelas: <b>{current_class}</b>!"
             )
-            return await send_telegram_message(chat_id, msg)
+            return await send_telegram_message(chat_id, msg, thread_id=thread_id)
 
         class_name = args[0] if args else None
         if not class_name:
@@ -135,7 +136,7 @@ def setup(zora):
                 f"⚠️ Harap tentukan kelas!\n"
                 f"Penggunaan: <code>/class [warrior|mage|rogue]</code>"
             )
-            return await send_telegram_message(chat_id, msg)
+            return await send_telegram_message(chat_id, msg, thread_id=thread_id)
 
         class_name_lower = class_name.lower()
         if class_name_lower not in ["warrior", "mage", "rogue"]:
@@ -144,7 +145,7 @@ def setup(zora):
             ) if lang == "en" else (
                 f"⚠️ Kelas tidak valid! Pilih antara: <b>Warrior</b>, <b>Mage</b>, atau <b>Rogue</b>."
             )
-            return await send_telegram_message(chat_id, msg)
+            return await send_telegram_message(chat_id, msg, thread_id=thread_id)
 
         hp_adjustment = 0
         atk_adjustment = 0
@@ -209,15 +210,15 @@ def setup(zora):
             f"✨ Poin status retroaktif diberikan: <b>{retroactive_points}</b>\n"
             f"Gunakan /profile untuk melihat status terbaru Anda!"
         )
-        await send_telegram_message(chat_id, msg)
+        await send_telegram_message(chat_id, msg, thread_id=thread_id)
 
     @zora.command("/allocate")
-    async def handle_allocate(zora_bot, chat_id, telegram_user_id, username, full_name, command, args, message, lang):
+    async def handle_allocate(zora_bot, chat_id, telegram_user_id, username, full_name, command, args, message, lang, thread_id=None, **_):
         virtual_id = -telegram_user_id
         user_record = await db.user.find_unique(where={'id': virtual_id})
         if not user_record:
             msg = i18n.get(lang, "game.register_first") or "Please register first using /register."
-            return await send_telegram_message(chat_id, f"⚠️ {msg}")
+            return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
 
         stat_name = args[0] if args else None
         amount_str = args[1] if len(args) > 1 else "1"
@@ -230,7 +231,7 @@ def setup(zora):
                 f"⚠️ Harap tentukan tipe status (ATK, DEF, AGL)!\n"
                 f"Penggunaan: <code>/allocate [ATK|DEF|AGL] [jumlah]</code>"
             )
-            return await send_telegram_message(chat_id, msg)
+            return await send_telegram_message(chat_id, msg, thread_id=thread_id)
 
         stat_str = stat_name.upper()
         if stat_str not in ["ATK", "DEF", "AGL"]:
@@ -239,7 +240,7 @@ def setup(zora):
             ) if lang == "en" else (
                 f"⚠️ Tipe status tidak valid! Pilih antara: <b>ATK</b>, <b>DEF</b>, atau <b>AGL</b>."
             )
-            return await send_telegram_message(chat_id, msg)
+            return await send_telegram_message(chat_id, msg, thread_id=thread_id)
 
         try:
             amount = int(amount_str)
@@ -252,7 +253,7 @@ def setup(zora):
             ) if lang == "en" else (
                 f"⚠️ Jumlah alokasi harus lebih dari 0!"
             )
-            return await send_telegram_message(chat_id, msg)
+            return await send_telegram_message(chat_id, msg, thread_id=thread_id)
 
         data = user_record.data
         available_points = data.get('stat_points', 0)
@@ -288,15 +289,15 @@ def setup(zora):
             f"✅ Mengalokasikan <b>{amount}</b> poin ke <b>{stat_display}</b>!\n"
             f"Sisa poin status: <b>{data['stat_points']}</b>"
         )
-        await send_telegram_message(chat_id, msg)
+        await send_telegram_message(chat_id, msg, thread_id=thread_id)
 
     @zora.command("/battle")
-    async def handle_battle(zora_bot, chat_id, telegram_user_id, username, full_name, command, args, message, lang):
+    async def handle_battle(zora_bot, chat_id, telegram_user_id, username, full_name, command, args, message, lang, thread_id=None, **_):
         virtual_id = -telegram_user_id
         player = await db.user.find_unique(where={'id': virtual_id})
         if not player:
             msg = i18n.get(lang, "game.register_first") or "Please register first using /register."
-            return await send_telegram_message(chat_id, f"⚠️ {msg}")
+            return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
 
         if player.hp <= 0:
             msg = (
@@ -304,7 +305,7 @@ def setup(zora):
             ) if lang == "en" else (
                 "❌ Anda sedang pingsan! Istirahat atau klaim hadiah harian untuk memulihkan HP."
             )
-            return await send_telegram_message(chat_id, msg)
+            return await send_telegram_message(chat_id, msg, thread_id=thread_id)
 
         tier_choice = args[0].lower() if args else None
         enemy_query = " ".join(args[1:]) if len(args) > 1 else None
@@ -318,7 +319,7 @@ def setup(zora):
                 f"⚠️ Harap tentukan tier musuh yang valid!\n"
                 f"Penggunaan: <code>/battle [low|normal|high|elite|bonus|boss] [nama_musuh_opsional]</code>"
             )
-            return await send_telegram_message(chat_id, msg)
+            return await send_telegram_message(chat_id, msg, thread_id=thread_id)
 
         # Load enemies file
         try:
@@ -353,7 +354,7 @@ def setup(zora):
 
             if not enemy:
                 msg = i18n.get(lang, "game.battle_enemy_not_found", name=enemy_query, tier=tier_choice.upper())
-                return await send_telegram_message(chat_id, f"❌ {msg}")
+                return await send_telegram_message(chat_id, f"❌ {msg}", thread_id=thread_id)
         else:
             enemy = random.choice(enemies)
 
@@ -524,4 +525,110 @@ def setup(zora):
             )
 
         battle_log.append(final_msg)
-        await send_telegram_message(chat_id, "\n".join(battle_log))
+        await send_telegram_message(chat_id, "\n".join(battle_log), thread_id=thread_id)
+
+    # ── Enemies Bestiary ─────────────────────────────────────
+
+    ENEMY_TIERS = ["boss", "bonus", "elite", "high", "normal", "low"]
+
+    def _enemies_load(tier):
+        enemy_path = path.join(path.dirname(__file__), '..', '..', 'src', 'game', 'enemies', f'{tier}.json')
+        with open(enemy_path, 'r') as f:
+            return json.load(f)
+
+    def _enemies_page_text(tier, lang):
+        enemies = _enemies_load(tier)
+        tier_label = tier.upper()
+        lines = [
+            f"⚔️ <b>BESTIARY — {tier_label} TIER</b>",
+            f"━━━━━━━━━━━━━━━━━━━",
+        ]
+        for idx, enemy in enumerate(enemies):
+            name = i18n.get(lang, f"game.enemy_{to_key(enemy['name'])}_name", default=enemy['name'])
+            lines.append(
+                f"<b>{idx+1}. {name}</b> ({enemy['tier']})\n"
+                f"   HP: <code>{enemy['hp']}</code> | ATK/DEF/AGL: <code>{enemy['atk']}/{enemy['def']}/{enemy['agl']}</code>"
+            )
+        lines.append(f"━━━━━━━━━━━━━━━━━━━")
+        page_idx = ENEMY_TIERS.index(tier)
+        footer = f"Page {page_idx+1}/{len(ENEMY_TIERS)} • Tap a number to see enemy details" if lang == "en" else f"Halaman {page_idx+1}/{len(ENEMY_TIERS)} • Ketuk angka untuk detail musuh"
+        lines.append(f"<i>{footer}</i>")
+        return "\n".join(lines), enemies
+
+    def _enemies_markup(tier, enemies, lang):
+        page_idx = ENEMY_TIERS.index(tier)
+        # Navigation row
+        nav_row = []
+        if page_idx > 0:
+            nav_row.append({"text": "◀ " + ENEMY_TIERS[page_idx-1].title(), "callback_data": f"enemies_page:{ENEMY_TIERS[page_idx-1]}"})
+        if page_idx < len(ENEMY_TIERS) - 1:
+            nav_row.append({"text": ENEMY_TIERS[page_idx+1].title() + " ▶", "callback_data": f"enemies_page:{ENEMY_TIERS[page_idx+1]}"})
+        # Number buttons (up to 10 per row, max 2 rows)
+        num_buttons = []
+        for idx in range(len(enemies)):
+            num_buttons.append({"text": str(idx+1), "callback_data": f"enemies_detail:{tier}:{idx}"})
+        # Group numbers into rows of 5
+        num_rows = [num_buttons[i:i+5] for i in range(0, len(num_buttons), 5)]
+        keyboard = ([nav_row] if nav_row else []) + num_rows
+        return {"inline_keyboard": keyboard}
+
+    @zora.command(["/enemies", "/enemy"])
+    async def handle_enemies(zora_bot, chat_id, telegram_user_id, username, full_name, command, args, message, lang, thread_id=None, **_):
+        tier = "boss"  # start at boss tier
+        text, enemies = _enemies_page_text(tier, lang)
+        markup = _enemies_markup(tier, enemies, lang)
+        await send_telegram_message(chat_id, text, thread_id=thread_id, reply_markup=markup)
+
+    @zora.callback_query("enemies_page:")
+    async def handle_enemies_page(zora_bot, chat_id, message_id, cq_id, telegram_user_id, username, full_name, data, lang):
+        # data = "enemies_page:boss"
+        tier = data.split(":", 1)[1]
+        if tier not in ENEMY_TIERS:
+            if telegram_client:
+                await telegram_client.answer_callback_query(cq_id, text="Unknown tier!")
+            return
+        text, enemies = _enemies_page_text(tier, lang)
+        markup = _enemies_markup(tier, enemies, lang)
+        if telegram_client:
+            await telegram_client.edit_message_text(chat_id, message_id, text, reply_markup=markup)
+            await telegram_client.answer_callback_query(cq_id)
+
+    @zora.callback_query("enemies_detail:")
+    async def handle_enemies_detail(zora_bot, chat_id, message_id, cq_id, telegram_user_id, username, full_name, data, lang):
+        # data = "enemies_detail:boss:0"
+        parts = data.split(":")
+        if len(parts) < 3:
+            if telegram_client:
+                await telegram_client.answer_callback_query(cq_id)
+            return
+        tier = parts[1]
+        idx = int(parts[2])
+        enemies = _enemies_load(tier)
+        if idx >= len(enemies):
+            if telegram_client:
+                await telegram_client.answer_callback_query(cq_id, text="Not found!")
+            return
+        enemy = enemies[idx]
+        name = i18n.get(lang, f"game.enemy_{to_key(enemy['name'])}_name", default=enemy['name'])
+        desc = i18n.get(lang, f"game.enemy_{to_key(enemy['name'])}_desc", default=enemy.get('desc', ''))
+        reward_str = ", ".join(enemy.get('reward', [])) if enemy.get('reward') else "N/A"
+        skills_text = ""
+        if enemy.get('skills'):
+            skill_lines = []
+            for s_idx, s in enumerate(enemy['skills']):
+                s_name = i18n.get(lang, f"game.enemy_skill_{to_key(enemy['name'])}_{s_idx}_name", default=s['name'])
+                skill_lines.append(f"✨ <b>{s_name}</b>: <code>{s['func']}</code>")
+            skills_text = "\n⚙️ <b>Skills:</b>\n" + "\n".join(skill_lines)
+        detail = (
+            f"👹 <b>{name}</b> ({enemy['tier']})\n"
+            f"━━━━━━━━━━━━━━━━━━━\n"
+            f"<i>{desc}</i>\n"
+            f"❤️ HP: <code>{enemy['hp']}</code>\n"
+            f"⚔️ ATK: <code>{enemy['atk']}</code> | 🛡️ DEF: <code>{enemy['def']}</code> | 💨 AGL: <code>{enemy['agl']}</code>\n"
+            f"🎁 Reward: <code>{reward_str}</code>"
+            f"{skills_text}"
+        )
+        if telegram_client:
+            await telegram_client.answer_callback_query(cq_id, text=f"👹 {name}")
+            await send_telegram_message(chat_id, detail)
+

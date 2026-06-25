@@ -1,4 +1,5 @@
 import os
+import random
 import asyncio
 import logging
 import aiohttp
@@ -10,6 +11,7 @@ class ZoraBot:
         self.loop = loop
         self.commands = {}
         self.chat_handler = None
+        self.callback_handlers = {}  # prefix → handler
         self.username = None
 
     def command(self, names):
@@ -19,6 +21,13 @@ class ZoraBot:
                     self.commands[name.lower()] = func
             else:
                 self.commands[names.lower()] = func
+            return func
+        return decorator
+
+    def callback_query(self, prefix):
+        """Register a handler for callback queries whose data starts with prefix."""
+        def decorator(func):
+            self.callback_handlers[prefix] = func
             return func
         return decorator
 
@@ -43,6 +52,59 @@ class ZoraBot:
             except Exception as e:
                 logging.error(f"❌ Failed to load Telegram module {module_name}: {e}", exc_info=True)
 
+
+
+async def _react_to(chat_id: int, message_id: int):
+    """React to a message: ❤️ normally, 🐳 or 👾 5% of the time."""
+    if not telegram_client or not message_id:
+        return
+    emoji = random.choice(["🐳", "👾"]) if random.random() < 0.05 else "❤️"
+    await telegram_client.send_reaction(chat_id, message_id, emoji)
+
+async def handle_callback_query(zora_bot, bot, callback_query):
+    """Dispatch inline keyboard button presses to registered callback handlers."""
+    from scripts.utils.telegram import telegram_client
+
+    cq_id = callback_query["id"]
+    data = callback_query.get("data", "")
+    user = callback_query["from"]
+    telegram_user_id = user["id"]
+    username = user.get("username", "")
+    full_name = user.get("first_name", "") + (" " + user.get("last_name", "") if user.get("last_name") else "")
+    message = callback_query.get("message", {})
+    chat_id = message.get("chat", {}).get("id")
+    message_id = message.get("message_id")
+
+    # Look up lang
+    virtual_id = -telegram_user_id
+    lang = "en"
+    try:
+        from scripts.main import db
+        user_settings = await db.usersettings.find_unique(where={"userId": virtual_id})
+        if user_settings:
+            lang = user_settings.lang
+    except Exception:
+        pass
+
+    # Route to first matching handler by prefix
+    handler = None
+    for prefix, h in zora_bot.callback_handlers.items():
+        if data.startswith(prefix):
+            handler = h
+            break
+
+    if handler:
+        try:
+            await handler(zora_bot, chat_id, message_id, cq_id, telegram_user_id, username, full_name, data, lang)
+        except Exception as e:
+            logging.error(f"Error in callback handler: {e}", exc_info=True)
+            if telegram_client:
+                await telegram_client.answer_callback_query(cq_id)
+    else:
+        # Acknowledge unknown buttons silently
+        if telegram_client:
+            await telegram_client.answer_callback_query(cq_id)
+
 async def handle_telegram_update(zora_bot, bot, update):
     message = update.get("message")
     if not message:
@@ -54,9 +116,9 @@ async def handle_telegram_update(zora_bot, bot, update):
 
     chat = message["chat"]
     chat_id = chat["id"]
-    chat_type = chat.get("type", "private")  # private, group, supergroup, channel
-    from_user = message["from"]
-    telegram_user_id = from_user["id"]
+    thread_id = message.get("message_thread_id")
+    from_user = message.get("from", {})
+    telegram_user_id = from_user.get("id")
     
     first_name = from_user.get("first_name", "Dreamer")
     last_name = from_user.get("last_name", "")
@@ -66,7 +128,6 @@ async def handle_telegram_update(zora_bot, bot, update):
     tg_lang = from_user.get("language_code", "en")
     lang = "id" if tg_lang.startswith("id") else "en"
 
-    # Override language if they have registered settings
     virtual_id = -telegram_user_id
     user_settings = await db.usersettings.find_unique(where={'userId': virtual_id})
     if user_settings:
@@ -76,75 +137,90 @@ async def handle_telegram_update(zora_bot, bot, update):
     raw_command = parts[0].lower() if parts else ""
     args = parts[1:] if len(parts) > 1 else []
 
-    # Parse potential group command suffixes (e.g. /help@RVDiA_Official_bot)
-    command = raw_command
-    directed_to_us = False
-    has_mention = "@" in command
+    is_command = raw_command.startswith("/")
+    is_at_mention = raw_command.startswith("@") and zora_bot.username and raw_command.lstrip("@") == zora_bot.username
 
-    if has_mention:
-        cmd_part, bot_part = command.split("@", 1)
-        command = cmd_part
-        if zora_bot.username and bot_part == zora_bot.username:
-            directed_to_us = True
-    else:
-        if chat_type == "private":
-            directed_to_us = True
-
-    # Route command to handlers
-    if command in zora_bot.commands:
-        # Ignore command if it has a mention pointing to another bot
-        if has_mention and not directed_to_us:
+    # Normalise: @botname [cmd_or_text] → shift args into command slot
+    if is_at_mention:
+        if args and args[0].startswith("/"):
+            # @botname /command args...
+            raw_command = args[0].lower()
+            args = args[1:]
+            is_command = True
+        elif args and f"/{args[0].lower()}" in zora_bot.commands:
+            # @botname help  →  treat as /help (Discord-style, no slash needed)
+            raw_command = f"/{args[0].lower()}"
+            args = args[1:]
+            is_command = True
+        elif args:
+            # @botname some unknown text → AI chat
+            clean_text = " ".join(args)
+            if zora_bot.chat_handler:
+                async def run_at_chat():
+                    try:
+                        await zora_bot.chat_handler(zora_bot, chat_id, telegram_user_id, username, full_name, clean_text, lang, thread_id)
+                    except Exception as e:
+                        logging.error(f"Error in chat handler: {e}", exc_info=True)
+                bot.loop.create_task(run_at_chat())
+            return
+        else:
+            # bare @botname with no args → ignore
             return
 
-        handler = zora_bot.commands[command]
-        async def run_command_handler():
-            try:
-                await handler(zora_bot, chat_id, telegram_user_id, username, full_name, command, args, message, lang)
-            except Exception as e:
-                logging.error(f"Error running Telegram command {command}: {e}", exc_info=True)
-                raise e
-        bot.loop.create_task(run_command_handler())
-    elif command.startswith("/"):
-        # Reply with unknown command ONLY if in private DMs or explicitly directed to us in a group
-        if chat_type == "private" or directed_to_us:
-            unknown_msg = f"⚠️ Unknown command. Type /help to see all commands." if lang == "en" else f"⚠️ Command tidak dikenal. Ketik /help untuk melihat menu bantuan."
-            bot.loop.create_task(send_telegram_message(chat_id, unknown_msg))
+    cmd_name = raw_command[1:] if is_command else raw_command
+    if "@" in cmd_name:
+        cmd_name, target_bot = cmd_name.split("@", 1)
+        is_directed = (zora_bot.username and target_bot.lower() == zora_bot.username)
     else:
-        if zora_bot.chat_handler:
-            # Check if we should reply to general chat in group chats
-            should_reply = False
-            clean_text = text
+        is_directed = True  # slash commands always directed at us
 
-            if chat_type == "private":
-                should_reply = True
-            else:
-                # 1. Mention check: e.g. "@botname hello"
-                mentioned_us = False
-                if zora_bot.username:
-                    mentioned_us = f"@{zora_bot.username}" in text.lower()
-                    if mentioned_us:
-                        import re
-                        clean_text = re.sub(rf"@{zora_bot.username}\b", "", text, flags=re.IGNORECASE).strip()
-
-                # 2. Reply check: is reply to one of our own bot messages
-                is_reply_to_us = False
-                reply_to = message.get("reply_to_message")
-                if reply_to and reply_to.get("from"):
-                    from_bot = reply_to["from"]
-                    if from_bot.get("is_bot") and zora_bot.username and from_bot.get("username", "").lower() == zora_bot.username:
-                        is_reply_to_us = True
-
-                if mentioned_us or is_reply_to_us:
-                    should_reply = True
-
-            if should_reply:
-                async def run_chat_handler():
+    # --- Route: known command ---
+    if is_command:
+        if not is_directed:
+            return  # aimed at another bot, ignore
+        if cmd_name in zora_bot.commands:
+            handler = zora_bot.commands[cmd_name]
+            message_id = message.get("message_id")
+            async def run_command_handler():
+                try:
+                    await _react_to(chat_id, message_id)
+                    await handler(zora_bot, chat_id, telegram_user_id, username, full_name, cmd_name, args, message, lang, thread_id=thread_id, via_mention=is_at_mention)
+                except Exception as e:
+                    logging.error(f"Error in command {cmd_name}: {e}", exc_info=True)
+            bot.loop.create_task(run_command_handler())
+            return
+        else:
+            # Unknown command — Discord-style: fall through to AI chat
+            if zora_bot.chat_handler:
+                message_id = message.get("message_id")
+                async def run_cmd_fallthrough():
                     try:
-                        await zora_bot.chat_handler(zora_bot, chat_id, telegram_user_id, username, full_name, clean_text, lang)
+                        await _react_to(chat_id, message_id)
+                        await zora_bot.chat_handler(zora_bot, chat_id, telegram_user_id, username, full_name, text, lang, thread_id)
                     except Exception as e:
-                        logging.error(f"Error running Telegram chat handler: {e}", exc_info=True)
-                        raise e
-                bot.loop.create_task(run_chat_handler())
+                        logging.error(f"Error in chat fallthrough: {e}", exc_info=True)
+                bot.loop.create_task(run_cmd_fallthrough())
+            return
+
+    # --- Route: plain text / mentions / replies ---
+    if zora_bot.chat_handler:
+        is_reply_to_us = (
+            message.get("reply_to_message", {}).get("from", {}).get("username", "").lower()
+            == zora_bot.username
+        )
+        is_mention = zora_bot.username and f"@{zora_bot.username}" in text.lower()
+
+        if chat["type"] == "private" or is_reply_to_us or is_mention:
+            import re
+            clean_text = re.sub(rf"@{zora_bot.username}\b", "", text, flags=re.IGNORECASE).strip() if is_mention else text
+            message_id = message.get("message_id")
+            async def run_chat_handler():
+                try:
+                    await _react_to(chat_id, message_id)
+                    await zora_bot.chat_handler(zora_bot, chat_id, telegram_user_id, username, full_name, clean_text, lang, thread_id)
+                except Exception as e:
+                    logging.error(f"Error in chat handler: {e}", exc_info=True)
+            bot.loop.create_task(run_chat_handler())
 
 async def start_zora(bot):
     token = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -185,8 +261,10 @@ async def start_zora(bot):
                                 for result in data.get("result", []):
                                     update_id = result["update_id"]
                                     offset = update_id + 1
-                                    # Process update
-                                    bot.loop.create_task(handle_telegram_update(zora_bot, bot, result))
+                                    if result.get("callback_query"):
+                                        bot.loop.create_task(handle_callback_query(zora_bot, bot, result["callback_query"]))
+                                    else:
+                                        bot.loop.create_task(handle_telegram_update(zora_bot, bot, result))
                         else:
                             logging.warning(f"Telegram API getUpdates returned status {resp.status}")
                             await asyncio.sleep(5)

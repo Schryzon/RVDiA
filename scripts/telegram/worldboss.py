@@ -9,7 +9,7 @@ from scripts.utils.i18n import i18n
 
 def setup(zora):
     @zora.command("/worldboss")
-    async def handle_worldboss(zora_bot, chat_id, telegram_user_id, username, full_name, command, args, message, lang):
+    async def handle_worldboss(zora_bot, chat_id, telegram_user_id, username, full_name, command, args, message, lang, thread_id=None, **_):
         boss = await get_active_boss()
         
         # Get contributions
@@ -64,15 +64,15 @@ def setup(zora):
             f"━━━━━━━━━━━━━━━━━━━\n"
             f"Ketik /attack untuk menyerang boss!"
         )
-        await send_telegram_message(chat_id, msg)
+        await send_telegram_message(chat_id, msg, thread_id=thread_id)
 
     @zora.command("/attack")
-    async def handle_attack(zora_bot, chat_id, telegram_user_id, username, full_name, command, args, message, lang):
+    async def handle_attack(zora_bot, chat_id, telegram_user_id, username, full_name, command, args, message, lang, thread_id=None, **_):
         virtual_id = -telegram_user_id
         player = await db.user.find_unique(where={"id": virtual_id})
         if not player:
             msg = i18n.get(lang, "game.register_first") or "Please register first using /register."
-            return await send_telegram_message(chat_id, f"⚠️ {msg}")
+            return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
 
         player_data = player.data
         level = player_data.get("level", 1)
@@ -82,7 +82,7 @@ def setup(zora):
             ) if lang == "en" else (
                 f"⚠️ Penyerangan World Boss membutuhkan level 10! Level sekarang: <b>{level}</b>."
             )
-            return await send_telegram_message(chat_id, msg)
+            return await send_telegram_message(chat_id, msg, thread_id=thread_id)
 
         if player.hp <= 0:
             msg = (
@@ -90,7 +90,7 @@ def setup(zora):
             ) if lang == "en" else (
                 f"⚠️ Anda sedang pingsan (HP: 0)! Harap istirahat atau naik level untuk memulihkan HP."
             )
-            return await send_telegram_message(chat_id, msg)
+            return await send_telegram_message(chat_id, msg, thread_id=thread_id)
 
         boss = await get_active_boss()
 
@@ -114,7 +114,7 @@ def setup(zora):
                 ) if lang == "en" else (
                     f"⏳ Cooldown! Anda bisa menyerang lagi dalam {minutes} menit {seconds} detik."
                 )
-                return await send_telegram_message(chat_id, cooldown_msg)
+                return await send_telegram_message(chat_id, cooldown_msg, thread_id=thread_id)
 
         # Roll damage based on stats
         atk = player_data.get("attack", 10)
@@ -210,4 +210,4 @@ def setup(zora):
                 f"<code>[{bar}]</code>"
             )
 
-        await send_telegram_message(chat_id, msg)
+        await send_telegram_message(chat_id, msg, thread_id=thread_id)
