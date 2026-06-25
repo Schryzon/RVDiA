@@ -67,12 +67,14 @@ async def trigger_alert(url, reason):
 
 @tasks.loop(minutes=15)
 async def monitor_websites():
+    # Store targets as (display_name/key, request_url) to avoid logging secrets (like Telegram Bot Tokens)
+    telegram_token = getenv("TELEGRAM_BOT_TOKEN") or ""
     targets = [
-        "https://3dex.studio",
-        "https://api.3dex.studio/health",
-        "https://storage.3dex.studio/minio/health/live",
-        "https://rvdia.up.railway.app",
-        "https://api.telegram.org/bot" + (getenv("TELEGRAM_BOT_TOKEN") or "") + "/getMe"
+        ("https://3dex.studio", "https://3dex.studio"),
+        ("https://api.3dex.studio/health", "https://api.3dex.studio/health"),
+        ("https://storage.3dex.studio/minio/health/live", "https://storage.3dex.studio/minio/health/live"),
+        ("https://rvdia.up.railway.app", "https://rvdia.up.railway.app"),
+        ("Zora (Telegram Bot API)", f"https://api.telegram.org/bot{telegram_token}/getMe")
     ]
     
     history_file = "uptime_history.json"
@@ -90,7 +92,7 @@ async def monitor_websites():
     }
     
     async with aiohttp.ClientSession() as session:
-        for url in targets:
+        for name, url in targets:
             start_time = time.perf_counter()
             status = "down"
             latency = -1
@@ -103,7 +105,7 @@ async def monitor_websites():
                         status = "up"
                     else:
                         error_msg = f"HTTP {resp.status}"
-                        if url == "https://rvdia.up.railway.app":
+                        if name == "https://rvdia.up.railway.app":
                             logging.info("rvdia.up.railway.app returned non-200. Waiting 10 minutes to retry before alerting...")
                             await asyncio.sleep(600)
                             try:
@@ -113,16 +115,16 @@ async def monitor_websites():
                                         error_msg = ""
                                     else:
                                         error_msg = f"HTTP {retry_resp.status} (Confirmed down after 10m cooldown)"
-                                        await trigger_alert(url, error_msg)
+                                        await trigger_alert(name, error_msg)
                             except Exception as retry_err:
                                 error_msg = f"{retry_err} (Confirmed down after 10m cooldown)"
-                                await trigger_alert(url, error_msg)
+                                await trigger_alert(name, error_msg)
                         else:
-                            await trigger_alert(url, error_msg)
+                            await trigger_alert(name, error_msg)
             except Exception as e:
                 latency = int((time.perf_counter() - start_time) * 1000)
                 error_msg = str(e)
-                if url == "https://rvdia.up.railway.app":
+                if name == "https://rvdia.up.railway.app":
                     logging.info(f"rvdia.up.railway.app request failed ({e}). Waiting 10 minutes to retry before alerting...")
                     await asyncio.sleep(600)
                     try:
@@ -132,14 +134,14 @@ async def monitor_websites():
                                 error_msg = ""
                             else:
                                 error_msg = f"HTTP {retry_resp.status} (Confirmed down after 10m cooldown)"
-                                await trigger_alert(url, error_msg)
+                                await trigger_alert(name, error_msg)
                     except Exception as retry_err:
                         error_msg = f"{retry_err} (Confirmed down after 10m cooldown)"
-                        await trigger_alert(url, error_msg)
+                        await trigger_alert(name, error_msg)
                 else:
-                    await trigger_alert(url, error_msg)
+                    await trigger_alert(name, error_msg)
                 
-            current_check["results"][url] = {
+            current_check["results"][name] = {
                 "status": status,
                 "latency": latency,
                 "error": error_msg
@@ -462,7 +464,7 @@ async def uptime(ctx: commands.Context):
         "https://api.3dex.studio/health",
         "https://storage.3dex.studio/minio/health/live",
         "https://rvdia.up.railway.app",
-        "https://api.telegram.org/bot" + (getenv("TELEGRAM_BOT_TOKEN") or "") + "/getMe"
+        "Zora (Telegram Bot API)"
     ]
     
     dates = []
@@ -493,12 +495,10 @@ async def uptime(ctx: commands.Context):
         "https://api.3dex.studio/health": "#89b4fa",   # Blue
         "https://storage.3dex.studio/minio/health/live": "#a6e3a1", # Green
         "https://rvdia.up.railway.app": "#f38ba8",    # Red/Peach
-        "https://api.telegram.org/bot" + (getenv("TELEGRAM_BOT_TOKEN") or "") + "/getMe": "#f9e2af" # Yellow (Zora Bot)
+        "Zora (Telegram Bot API)": "#f9e2af"          # Yellow (Zora Bot)
     }
     
     def clean_label(url):
-        if "api.telegram.org" in url:
-            return "Zora (Telegram Bot API)"
         return url.replace("https://", "").replace("www.", "")
 
     for url in urls:
