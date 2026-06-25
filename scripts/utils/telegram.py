@@ -184,9 +184,9 @@ class TelegramClient:
 
 # Global client wrapper instance for system-wide access
 telegram_client = None
-token = os.getenv("TELEGRAM_BOT_TOKEN")
-if token:
-    telegram_client = TelegramClient(token)
+token_raw = os.getenv("TELEGRAM_BOT_TOKEN")
+if token_raw:
+    telegram_client = TelegramClient(token_raw.strip('"'))
 
 async def send_telegram_message(chat_id, text, parse_mode="HTML", thread_id=None, reply_markup=None):
     if telegram_client:

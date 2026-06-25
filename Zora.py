@@ -240,10 +240,11 @@ async def handle_telegram_update(zora_bot, bot, update):
             bot.loop.create_task(run_chat_handler())
 
 async def start_zora(bot):
-    token = os.getenv("TELEGRAM_BOT_TOKEN")
-    if not token:
+    raw_token = os.getenv("TELEGRAM_BOT_TOKEN")
+    if not raw_token:
         logging.warning("TELEGRAM_BOT_TOKEN is not set in environment variables. Telegram adapter disabled.")
         return
+    token = raw_token.strip('"')
 
     # Create ZoraBot instance and load cogs
     zora_bot = ZoraBot(loop=bot.loop)
