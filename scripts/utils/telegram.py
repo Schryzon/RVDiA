@@ -93,7 +93,8 @@ class TelegramClient:
         session = await self.get_session()
         async with session.post(url, json=payload) as resp:
             if resp.status != 200:
-                logging.warning(f"Failed to send reaction: {resp.status} - {await resp.text()}")
+                if resp.status not in (400, 404):
+                    logging.warning(f"Failed to send reaction: {resp.status} - {await resp.text()}")
                 return False
             return True
 
