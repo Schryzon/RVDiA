@@ -216,6 +216,20 @@ async def handle_telegram_update(zora_bot, bot, update):
         if chat["type"] == "private" or is_reply_to_us or is_mention:
             import re
             clean_text = re.sub(rf"@{zora_bot.username}\b", "", text, flags=re.IGNORECASE).strip() if is_mention else text
+            
+            # Grok-like context retrieval: if replying to another message, embed its context
+            reply_to = message.get("reply_to_message")
+            if reply_to:
+                parent_sender = reply_to.get("from", {})
+                parent_name = parent_sender.get("first_name", "User")
+                parent_text = reply_to.get("text") or reply_to.get("caption") or ""
+                if parent_text:
+                    # Construct a combined prompt mimicking Grok's reference context
+                    clean_text = (
+                        f"[Context: User {parent_name} said: \"{parent_text}\"]\n"
+                        f"Question/Reply: {clean_text}"
+                    )
+
             message_id = message.get("message_id")
             async def run_chat_handler():
                 try:
