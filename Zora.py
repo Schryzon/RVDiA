@@ -18,9 +18,9 @@ class ZoraBot:
         def decorator(func):
             if isinstance(names, list):
                 for name in names:
-                    self.commands[name.lower()] = func
+                    self.commands[name.lower().lstrip("/")] = func
             else:
-                self.commands[names.lower()] = func
+                self.commands[names.lower().lstrip("/")] = func
             return func
         return decorator
 
@@ -54,9 +54,12 @@ class ZoraBot:
 
 
 
-async def _react_to(chat_id: int, message_id: int):
-    """React to a message: ❤️ normally, 🐳 or 👾 5% of the time."""
+async def _react_to(chat_id: int, message_id: int, message: dict = None):
+    """React to a message: ❤️ normally, 🐳 or 👾 5% of the time (skipped in private chats)."""
     if not telegram_client or not message_id:
+        return
+    # Telegram does not support bot reactions in private chats (DMs)
+    if message and message.get("chat", {}).get("type") == "private":
         return
     emoji = random.choice(["🐳", "👾"]) if random.random() < 0.05 else "❤️"
     await telegram_client.send_reaction(chat_id, message_id, emoji)
@@ -147,9 +150,9 @@ async def handle_telegram_update(zora_bot, bot, update):
             raw_command = args[0].lower()
             args = args[1:]
             is_command = True
-        elif args and f"/{args[0].lower()}" in zora_bot.commands:
+        elif args and args[0].lower().lstrip("/") in zora_bot.commands:
             # @botname help  →  treat as /help (Discord-style, no slash needed)
-            raw_command = f"/{args[0].lower()}"
+            raw_command = f"/{args[0].lower().lstrip('/')}"
             args = args[1:]
             is_command = True
         elif args:
@@ -183,7 +186,7 @@ async def handle_telegram_update(zora_bot, bot, update):
             message_id = message.get("message_id")
             async def run_command_handler():
                 try:
-                    await _react_to(chat_id, message_id)
+                    await _react_to(chat_id, message_id, message)
                     await handler(zora_bot, chat_id, telegram_user_id, username, full_name, cmd_name, args, message, lang, thread_id=thread_id, via_mention=is_at_mention)
                 except Exception as e:
                     logging.error(f"Error in command {cmd_name}: {e}", exc_info=True)
@@ -195,7 +198,7 @@ async def handle_telegram_update(zora_bot, bot, update):
                 message_id = message.get("message_id")
                 async def run_cmd_fallthrough():
                     try:
-                        await _react_to(chat_id, message_id)
+                        await _react_to(chat_id, message_id, message)
                         await zora_bot.chat_handler(zora_bot, chat_id, telegram_user_id, username, full_name, text, lang, thread_id)
                     except Exception as e:
                         logging.error(f"Error in chat fallthrough: {e}", exc_info=True)
@@ -216,7 +219,7 @@ async def handle_telegram_update(zora_bot, bot, update):
             message_id = message.get("message_id")
             async def run_chat_handler():
                 try:
-                    await _react_to(chat_id, message_id)
+                    await _react_to(chat_id, message_id, message)
                     await zora_bot.chat_handler(zora_bot, chat_id, telegram_user_id, username, full_name, clean_text, lang, thread_id)
                 except Exception as e:
                     logging.error(f"Error in chat handler: {e}", exc_info=True)
