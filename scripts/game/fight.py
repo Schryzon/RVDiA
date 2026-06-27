@@ -942,9 +942,9 @@ class GameInstance():
             if not isinstance(self.user2, discord.Member) and self.user2.get('tier') == "FINAL BOSS":
                 await check_and_unlock_title(self.ctx, self.user1.id, "titan_slayer", self.bot)
                 
-            # 4. bonus_hunter: defeat any BONUS ENEMY
+            # 4. bonus_dreamer: defeat any BONUS ENEMY
             if not isinstance(self.user2, discord.Member) and self.user2.get('tier') == "BONUS ENEMY":
-                await check_and_unlock_title(self.ctx, self.user1.id, "bonus_hunter", self.bot)
+                await check_and_unlock_title(self.ctx, self.user1.id, "bonus_dreamer", self.bot)
                 
             # 5. rvdias_favorite: defeat RVDiA
             if not isinstance(self.user2, discord.Member) and self.user2.get('name', '').lower() == "rvdia":

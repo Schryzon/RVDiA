@@ -494,11 +494,18 @@ class Utilities(commands.Cog):
         red = (hex_code >> 16) & 0xff
         green = (hex_code >> 8) & 0xff
         blue = hex_code & 0xff
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f'https://singlecolorimage.com/get/{hex}/500x500') as data:
-                image = BytesIO(await data.read())
-                await session.close()
-                await ctx.reply(content=f"Hex: #{hex.upper()}\nRGB: ({red}, {green}, {blue})", file=discord.File(image, f'{hex.upper()}.png'))
+
+        from PIL import Image
+        from io import BytesIO
+        try:
+            color_img = Image.new("RGB", (500, 500), (red, green, blue))
+            image = BytesIO()
+            color_img.save(image, format="PNG")
+            image.seek(0)
+            await ctx.reply(content=f"Hex: #{hex.upper()}\nRGB: ({red}, {green}, {blue})", file=discord.File(image, f'{hex.upper()}.png'))
+        except Exception as e:
+            logging.error(f"Error generating local hex image: {e}")
+            await ctx.reply("❌ Error generating color image.", ephemeral=True)
 
     @commands.hybrid_command(description="Show the color of an RGB value.")
     @app_commands.describe(
@@ -518,6 +525,55 @@ class Utilities(commands.Cog):
             return await ctx.reply(i18n.get(lang, "general.rgb_invalid"), ephemeral=True)
         hex_value = '{:02x}{:02x}{:02x}'.format(red, green, blue)
         await self.hex(ctx, hex_value)
+
+    @commands.hybrid_command(description="Search for a location and get a Google Maps link.")
+    @app_commands.describe(location="The city or area to find.")
+    @check_blacklist()
+    async def map(self, ctx: commands.Context, *, location: str):
+        """Search for a location and get a Google Maps link."""
+        try:
+            await ctx.defer()
+        except discord.NotFound:
+            pass
+
+        async with ctx.channel.typing():
+            user_settings = await db.usersettings.find_unique(where={'userId': ctx.author.id})
+            lang = user_settings.lang if user_settings else "en"
+
+            api_key = os.getenv("openweatherkey")
+            if not api_key:
+                return await ctx.send("⚠️ OpenWeather API key is not configured.")
+
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(f'http://api.openweathermap.org/geo/1.0/direct?q={location}&limit=1&appid={api_key}') as resp:
+                        data = await resp.json()
+
+                    if not data:
+                        err = i18n.get(lang, "general.weather_not_found")
+                        return await ctx.send(f"⚠️ {err}")
+
+                    lat = data[0]['lat']
+                    lon = data[0]['lon']
+                    name = data[0]['name']
+                    country = data[0].get('country', '')
+
+                    maps_url = f"https://www.google.com/maps/search/?api=1&query={lat},{lon}"
+                    
+                    title = "🗺️ Google Maps Location" if lang == "en" else "🗺️ Lokasi Google Maps"
+                    embed = discord.Embed(title=f"{title}: {name}, {country}", color=0x34a853)
+                    embed.add_field(name="📍 Coordinates" if lang == "en" else "📍 Koordinat", value=f"`{lat}, {lon}`", inline=False)
+                    embed.add_field(name="🔗 Google Maps Link" if lang == "en" else "🔗 Link Google Maps", value=f"[Click here to view / Klik di sini untuk melihat]({maps_url})", inline=False)
+                    
+                    static_map_url = f"https://static-maps.yandex.ru/1.x/?ll={lon},{lat}&z=12&l=map&size=600,450"
+                    embed.set_image(url=static_map_url)
+                    
+                    embed.set_footer(text=f"Requested by {ctx.author.name}")
+                    await ctx.reply(embed=embed)
+            except Exception as e:
+                logging.error(f"Error in map command: {e}")
+                err_msg = "❌ Failed to fetch location coordinates." if lang == "en" else "❌ Gagal mengambil koordinat lokasi."
+                await ctx.reply(err_msg)
 
     @commands.hybrid_command(aliases=['search'], description="Search the web using DuckDuckGo.")
     @app_commands.describe(query="Search keyword")

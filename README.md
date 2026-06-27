@@ -63,7 +63,7 @@
 * **Boss Fights & Elite Tiers**: Challenging bosses with complex phases (e.g., Demi-fiend, Nahobino) and unique mechanisms.
 * **Collectible Title Nameplates**: Unique achievements unlocked via boss battles or passive triggers, displayed as custom glowing/rainbow badges on high-resolution player profile cards.
 * **Daily Multipliers & Streaks**: Consecutive daily logins build a multiplier bonus (up to +50% rewards). Integrated with Top.gg vote checks to double daily rewards (EXP, Coins, Karma).
-* **Co-op World Boss Battles**: Face off against community-wide World Bosses with real-time HP synchronization. Recruit hunters directly from status screens to send reinforcements calls.
+* **Co-op World Boss Battles**: Face off against community-wide World Bosses with real-time HP synchronization. Recruit dreamers directly from status screens to send reinforcements calls.
 
 ### 🖼️ Advanced Image Processing Toolkit
 * **Mathematical Comparison**: Employs OpenCV and Matplotlib to analyze and graph visual histograms side-by-side. Supports multiple metric engines (`correl`, `chisqr`, `intersect`, `bhattacharyya`).

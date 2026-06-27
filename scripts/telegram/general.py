@@ -56,11 +56,11 @@ def setup(zora):
         if success:
             msg = (
                 f"🎉 <b>Registration Successful!</b>\n"
-                f"Welcome to Re:Volution dream world, Hunter <b>{full_name}</b>!\n"
+                f"Welcome to Re:Volution dream world, Dreamer <b>{full_name}</b>!\n"
                 f"Use /profile to check your initial stats."
             ) if lang == "en" else (
                 f"🎉 <b>Pendaftaran Berhasil!</b>\n"
-                f"Selamat datang di dunia mimpi Re:Volution, Hunter <b>{full_name}</b>!\n"
+                f"Selamat datang di dunia mimpi Re:Volution, Dreamer <b>{full_name}</b>!\n"
                 f"Gunakan /profile untuk melihat statistik awal Anda."
             )
         else:
@@ -200,7 +200,22 @@ def setup(zora):
             f"• <code>{p}enemies</code>  - Browse enemy bestiary\n"
             f"• <code>{p}worldboss</code> - View active World Boss status\n"
             f"• <code>{p}attack</code>   - Attack the active World Boss\n"
+            f"• <code>{p}bond</code>     - Manage your relationship status with RVDiA\n"
+            f"• <code>{p}ocr</code>      - Read text from image or PDF document\n"
+            f"• <code>{p}remind [time] [msg]</code> - Set a sleep/wake reminder\n"
             f"• <code>{p}lang [en|id]</code> - Change language settings\n\n"
+            f"🔮 <b>FUN & UTILITY:</b>\n"
+            f"• <code>{p}ship [name1] [name2]</code> - Test love compatibility\n"
+            f"• <code>{p}8ball [question]</code> - Magic 8-Ball response\n"
+            f"• <code>{p}roll [notation]</code> - Roll dice (e.g., 2d10)\n"
+            f"• <code>{p}coinflip</code> - Flip a coin\n"
+            f"• <code>{p}weather [location]</code> - Check current weather\n"
+            f"• <code>{p}time [location]</code> - Check timezone time\n"
+            f"• <code>{p}map [location]</code> - Show interactive Google Maps card\n"
+            f"• <code>{p}hex [code]</code> / <code>{p}rgb [r g b]</code> - Preview a color\n"
+            f"• <code>{p}search [query]</code> - Search DuckDuckGo\n\n"
+            f"🎬 <b>ROLEPLAY ACTIONS:</b>\n"
+            f"• <code>{p}hug</code>, <code>{p}kiss</code>, <code>{p}slap</code>, <code>{p}pat</code>, <code>{p}blush</code>, <code>{p}cry</code>, <code>{p}laugh</code>, <code>{p}happy</code>, <code>{p}think</code>, <code>{p}agree</code>, <code>{p}bored</code>\n\n"
             f"🎨 <b>IMAGE FILTERS (Use as photo caption):</b>\n"
             f"• <code>{p}grayscale</code>, <code>{p}invert</code>, <code>{p}circle</code>, <code>{p}sepia</code>, <code>{p}sharpen</code>, <code>{p}emboss</code>\n"
             f"• <code>{p}blur [strength]</code> - Apply box blur\n"

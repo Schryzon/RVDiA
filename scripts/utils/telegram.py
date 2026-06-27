@@ -147,6 +147,23 @@ class TelegramClient:
         async with session.post(url, json=payload) as resp:
             return resp.status == 200
 
+    async def send_location(self, chat_id: int, latitude: float, longitude: float, message_thread_id: int = None) -> bool:
+        url = f"{self.base_url}/sendLocation"
+        payload = {
+            "chat_id": chat_id,
+            "latitude": latitude,
+            "longitude": longitude
+        }
+        if message_thread_id:
+            payload["message_thread_id"] = message_thread_id
+            
+        session = await self.get_session()
+        async with session.post(url, json=payload) as resp:
+            if resp.status != 200:
+                logging.error(f"Failed to send Telegram location: {resp.status} - {await resp.text()}")
+                return False
+            return True
+
     async def get_file_bytes(self, file_id: str) -> bytes:
         url = f"{self.base_url}/getFile"
         params = {"file_id": file_id}
@@ -200,3 +217,7 @@ async def send_telegram_photo(chat_id, photo_url, caption="", parse_mode="HTML",
 async def send_telegram_photo_bytes(chat_id, photo_bytes, filename="processed.png", caption="", thread_id=None):
     if telegram_client:
         await telegram_client.send_photo_bytes(chat_id, photo_bytes, filename, caption, message_thread_id=thread_id)
+
+async def send_telegram_location(chat_id, latitude, longitude, thread_id=None):
+    if telegram_client:
+        await telegram_client.send_location(chat_id, latitude, longitude, message_thread_id=thread_id)

@@ -19,21 +19,21 @@ def make_progress_bar(current: int, maximum: int, size: int = 15) -> str:
     empty = size - filled
     return "█" * filled + "░" * empty
 
-class RecruitHuntersView(discord.ui.View):
+class RecruitDreamersView(discord.ui.View):
     def __init__(self, ctx, boss_name, lang):
         super().__init__(timeout=60.0)
         self.ctx = ctx
         self.boss_name = boss_name
         self.lang = lang
-        self.children[0].label = i18n.get(lang, "game.worldboss_recruit_btn", default="Recruit Hunters")
+        self.children[0].label = i18n.get(lang, "game.worldboss_recruit_btn", default="Recruit Dreamers")
 
-    @discord.ui.button(style=discord.ButtonStyle.primary, custom_id="recruit_hunters")
+    @discord.ui.button(style=discord.ButtonStyle.primary, custom_id="recruit_dreamers")
     async def recruit(self, interaction: discord.Interaction, button: discord.ui.Button):
         button.disabled = True
         await interaction.response.edit_message(view=self)
         
         user_mention = interaction.user.mention
-        msg_template = i18n.get(self.lang, "game.worldboss_recruit_msg", default="📢 {user} is recruiting hunters to defeat {boss}! Join the battle using `/game worldboss attack`!")
+        msg_template = i18n.get(self.lang, "game.worldboss_recruit_msg", default="📢 {user} is recruiting dreamers to defeat {boss}! Join the battle using `/game worldboss attack`!")
         announcement = msg_template.format(user=user_mention, boss=self.boss_name)
         await self.ctx.channel.send(announcement)
         
@@ -86,7 +86,7 @@ async def execute_worldboss_status(ctx):
 
     embed.set_footer(text=i18n.get(lang, "game.worldboss_status_footer"))
     
-    view = RecruitHuntersView(ctx, boss.name, lang)
+    view = RecruitDreamersView(ctx, boss.name, lang)
     view.message = await ctx.reply(embed=embed, view=view)
 
 async def execute_worldboss_attack(ctx):

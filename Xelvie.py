@@ -162,6 +162,18 @@ async def monitor_websites():
 async def on_ready():
   await xlv.wait_until_ready()
   logging.info('XLV is ready!')
+  
+  # Sync Command Tree to CyroN Guild only
+  guild_id = getenv("cyronguild")
+  if guild_id:
+      try:
+          guild = discord.Object(id=int(guild_id))
+          xlv.tree.copy_to(guild=guild)
+          await xlv.tree.sync(guild=guild)
+          logging.info(f"Command tree synced to CyroN Guild: {guild_id}")
+      except Exception as e:
+          logging.error(f"Failed to sync Xelvie command tree: {e}")
+
   if not monitor_websites.is_running():
       monitor_websites.start()
 
@@ -360,7 +372,7 @@ async def on_member_remove(user:discord.Member):
         channel = user.guild.get_channel(int(getenv("welcomechannel")))
         await channel.send(f"**`{user}`** has left CyroN. {random.choice(left)}")
     else: return
-@xlv.command(aliases=['purgeuser', 'cleanuser'])
+@xlv.hybrid_command(aliases=['purgeuser', 'cleanuser'])
 @commands.has_permissions(manage_messages=True)
 @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
 async def clearuser(ctx: commands.Context, user_id: str, limit: int = 100):
@@ -399,7 +411,7 @@ async def clearuser(ctx: commands.Context, user_id: str, limit: int = 100):
             await ctx.send(f"❌ Gagal menghapus pesan: `{str(e)}`", delete_after=10.0)
 
 
-@xlv.command(aliases=['nukeuser', 'purgeuserall', 'clearuserall'])
+@xlv.hybrid_command(aliases=['nukeuser', 'purgeuserall', 'clearuserall'])
 @commands.has_permissions(administrator=True)
 @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
 async def clearuserglobal(ctx: commands.Context, user_id: str, limit_per_channel: int = 100):
@@ -447,7 +459,7 @@ async def clearuserglobal(ctx: commands.Context, user_id: str, limit_per_channel
     await status_msg.edit(content=f"✅ Berhasil menghapus total **{total_deleted}** pesan dari {user_display} di **{channels_purged}** channel.")
 
 
-@xlv.command(aliases=['statusgraph', 'uptimes', 'pingall'])
+@xlv.hybrid_command(aliases=['statusgraph', 'uptimes', 'pingall'])
 async def uptime(ctx: commands.Context):
     history_file = "uptime_history.json"
     if not os.path.exists(history_file):
@@ -553,7 +565,7 @@ async def uptime(ctx: commands.Context):
     await ctx.reply(content=status_summary, file=file)
 
 
-@xlv.command(name='help')
+@xlv.hybrid_command(name='help')
 async def xlv_help(ctx: commands.Context):
     embed = discord.Embed(
         title="🛡️ X-LV (Xtreme Log-out Vigilante) Help Menu",

@@ -74,7 +74,7 @@ Embark on an immersive, text-based RPG journey directly in your channels:
 - **Guilds**: Form alliances, edit your guild tagline, and view the global guild leaderboard.
 - **Collectible Titles**: Unlock unique titles like *The True Dreamer*, *Titan Slayer*, or *Godlike Ascendant* through passive milestones or battles, and equip them to customize your profile card nameplate badge.
 - **Daily Multipliers**: Build consecutive login streaks (+50% bonus) and vote on Top.gg to double daily rewards (Coins, EXP, Karma).
-- **World Boss Co-op**: Face giant bosses as a community with synchronized health pools, and recruit hunters directly via channel pings.
+- **World Boss Co-op**: Face giant bosses as a community with synchronized health pools, and recruit dreamers directly via channel pings.
 
 ### 🖼️ 3. Advanced Image & Signal Processing
 
@@ -159,7 +159,7 @@ Petualangan RPG teks seru langsung di dalam saluran obrolan:
 - **Guild**: Buat guild impianmu, ubah tagline keren, dan pimpin papan peringkat guild terkuat.
 - **Gelar & Papan Nama**: Dapatkan gelar unik seperti *Sang Pemimpi Sejati*, *Pembantai Titan*, atau *Pewaris Dewata* melalui pencapaian pasif atau pertempuran bos, dan pasang gelar tersebut pada lencana profilmu!
 - **Multiplier Harian**: Dapatkan bonus login beruntun (+50% bonus) dan vote di Top.gg untuk melipatgandakan hadiah harian (Koin, EXP, Karma).
-- **World Boss Co-op**: Tantang bos raksasa bersama komunitas dengan sisa HP terintegrasi, dan rekrut hunter lain secara langsung lewat ping saluran.
+- **World Boss Co-op**: Tantang bos raksasa bersama komunitas dengan sisa HP terintegrasi, dan rekrut dreamer lain secara langsung lewat ping saluran.
 
 ### 🖼️ 3. Pemrosesan & Efek Gambar Canggih
 

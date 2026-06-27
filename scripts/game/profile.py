@@ -56,9 +56,9 @@ PREDEFINED_TITLES = {
         "bg_color": (255, 215, 0, 30),
         "border_color": (255, 215, 0, 180)
     },
-    "bonus_hunter": {
-        "en": "Bonus Hunter",
-        "id": "Pemburu Bonus",
+    "bonus_dreamer": {
+        "en": "Bonus Dreamer",
+        "id": "Pemimpi Bonus",
         "style": "violet",
         "color": (155, 89, 182, 255),
         "bg_color": (155, 89, 182, 30),
@@ -763,6 +763,18 @@ async def execute_changelog(ctx, bot):
     embed.set_footer(text=footer)
     await ctx.reply(embed=embed)
 
+async def execute_lore(ctx, bot):
+    lang = await get_user_lang(ctx.author.id)
+    title = i18n.get(lang, "game.lore_title")
+    desc = i18n.get(lang, "game.lore_desc")
+    footer = i18n.get(lang, "game.lore_footer")
+    
+    embed = discord.Embed(title=title, color=0x86273d)
+    embed.description = desc
+    embed.set_thumbnail(url=bot.user.display_avatar.url)
+    embed.set_footer(text=footer)
+    await ctx.reply(embed=embed)
+
 async def execute_resign(ctx):
     lang = await get_user_lang(ctx.author.id)
     view = ResignButton(ctx, lang=lang)
@@ -1164,7 +1176,7 @@ async def execute_titles(ctx):
             "en": "Defeat any FINAL BOSS.",
             "id": "Kalahkan FINAL BOSS apa saja."
         },
-        "bonus_hunter": {
+        "bonus_dreamer": {
             "en": "Defeat any BONUS ENEMY.",
             "id": "Kalahkan BONUS ENEMY apa saja."
         },

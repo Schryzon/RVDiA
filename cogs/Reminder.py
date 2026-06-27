@@ -59,14 +59,29 @@ class Reminder(commands.Cog):
                 channel_id = int(rem.channelId)
                 message = rem.message
 
-                channel = self.bot.get_channel(channel_id)
-                user = self.bot.get_user(user_id)
-                
                 try:
                     user_settings = await db.usersettings.find_unique(where={'userId': user_id})
                     lang = user_settings.lang if user_settings else "en"
                 except Exception:
                     lang = "en"
+
+                # Check if Telegram User
+                if user_id < 0:
+                    from scripts.utils.telegram import send_telegram_message
+                    alert_text = (
+                        f"🔔 <b>Reminder:</b> {message}"
+                    ) if lang == "en" else (
+                        f"🔔 <b>Pengingat:</b> {message}"
+                    )
+                    try:
+                        await send_telegram_message(channel_id, alert_text)
+                    except Exception as e:
+                        logging.error(f"Failed to send Telegram reminder: {e}")
+                    await db.reminder.delete(where={'id': rem.id})
+                    continue
+
+                channel = self.bot.get_channel(channel_id)
+                user = self.bot.get_user(user_id)
                     
                 alert_text = (
                     f"🔔 <@{user_id}> **Reminder:** {message}"

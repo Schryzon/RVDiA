@@ -16,6 +16,7 @@ from scripts.game.profile import (
     execute_leaderboard,
     execute_guide,
     execute_changelog,
+    execute_lore,
     execute_resign,
     execute_daily,
     execute_profile,
@@ -106,6 +107,14 @@ class Game(commands.Cog):
         Latest update list of Re:Volution.
         """
         await execute_changelog(ctx, self.bot)
+
+    @game.command(description='Backstory and lore of Re:Volution.')
+    @check_blacklist()
+    async def lore(self, ctx: commands.Context):
+        """
+        Backstory and lore of Re:Volution.
+        """
+        await execute_lore(ctx, self.bot)
 
     @game.command(description='Delete your Re:Volution account.')
     @has_registered()

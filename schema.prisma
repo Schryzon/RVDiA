@@ -87,6 +87,16 @@ model UserSettings {
   lang   String @default("en") // Default to "en" for globally-acceptable behavior
 }
 
+model Relationship {
+  userId        BigInt    @id // Discord User ID
+  affinity      Int       @default(0) // 0 - 1000 scale
+  stage         String    @default("stranger") // stranger | acquaintance | friend | crush | lover
+  userNickname  String?   // What RVDiA calls the user
+  rvdiaNickname String?   // What the user calls RVDiA
+  anniversary   DateTime? // Date they unlocked the "lover" stage
+  updatedAt     DateTime  @updatedAt
+}
+
 model WorldBoss {
   id            Int      @id @default(autoincrement())
   name          String

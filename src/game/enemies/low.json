@@ -29,7 +29,7 @@
         "color": "#57cace"
     },
     {
-        "name": "Novice Hunter",
+        "name": "Novice Dreamer",
         "tier": "LOW",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1122156472512544809/20230624_201413.png",
         "hp": 100,
@@ -51,7 +51,7 @@
                 "func": "hp+30"
             },
             {
-                "name": "Hunter Instinct",
+                "name": "Dreamer Instinct",
                 "func": "agl+8"
             }
         ],

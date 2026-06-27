@@ -5,6 +5,11 @@ from scripts.main import db
 from datetime import datetime, timezone
 import json
 import torch
+from functools import lru_cache
+
+@lru_cache(maxsize=128)
+def _encode_lru(model, text):
+    return model.encode(text, convert_to_tensor=False).tolist()
 
 class MemoryManager:
     def __init__(self):
@@ -16,13 +21,10 @@ class MemoryManager:
         self.model = SentenceTransformer(self.model_name, device="cpu")
 
     async def get_embedding(self, text: str):
-        """Generates embedding for the given text using local sentence-transformers."""
-        # SentenceTransformer.encode is synchronous, but we can wrap it or just run it
-        # Since it's a lightweight model on 8GB RAM, it should be very fast.
-        # We use loop.run_in_executor to avoid blocking the event loop.
+        """Generates embedding for the given text using local sentence-transformers (with LRU Cache)."""
         loop = asyncio.get_event_loop()
-        embedding = await loop.run_in_executor(None, lambda: self.model.encode(text, convert_to_tensor=False))
-        return embedding.tolist()
+        embedding = await loop.run_in_executor(None, _encode_lru, self.model, text)
+        return embedding
 
     async def add_memory(self, user_id: int, role: str, content: str, embedding: list = None):
         """Adds a message to sequential history and generates a long-term memory.
@@ -77,20 +79,20 @@ class MemoryManager:
         return deleted
 
     async def get_context(self, user_id: int, current_query: str, history_limit: int = 10, memory_limit: int = 5):
-        """Retrieves short-term history and semantically relevant long-term memories.
-        Returns the query embedding to be reused.
-        """
+        """Retrieves short-term history and semantically relevant long-term memories concurrently."""
         
-        # 1. Get short-term history (last N messages)
-        history = await db.message.find_many(
+        # 1. Run short-term history query and semantic embedding generation concurrently
+        history_task = db.message.find_many(
             where={'userId': user_id},
             order={'createdAt': 'desc'},
             take=history_limit
         )
+        embed_task = self.get_embedding(current_query)
+
+        history, query_embedding = await asyncio.gather(history_task, embed_task)
         history.reverse() # Order chronologically
 
         # 2. Get long-term memories (semantic search)
-        query_embedding = await self.get_embedding(current_query)
         vector_str = "[" + ",".join(map(str, query_embedding)) + "]"
         
         # Search using cosine similarity (<=> is cosine distance in pgvector)
