@@ -38,6 +38,56 @@ class Error(commands.Cog):
   """
   def __init__ (self, historia:commands.AutoShardedBot):
     self.historia = historia
+    historia.tree.on_error = self.on_app_command_error
+
+  async def on_app_command_error(self, interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
+    logging.error(f"AppCommand error in {interaction.command}: {str(error)}")
+    original_error = getattr(error, 'original', error)
+    
+    error_channel_id = os.getenv("errorchannel")
+    if error_channel_id:
+        try:
+            channel = self.historia.get_channel(int(error_channel_id))
+            embed = format_error_report(original_error, context=f"Slash Command: {interaction.command}\nUser: {interaction.user}")
+            if channel:
+                owner_id = os.getenv("schryzonid")
+                await channel.send(f"<@{owner_id}> **Error in App Command!**", embed=embed)
+        except Exception as e:
+            logging.error(f"Failed to send slash error to channel: {e}")
+            
+    try:
+        user_settings = await db.usersettings.find_unique(where={'userId': interaction.user.id})
+        lang = user_settings.lang if user_settings else "en"
+    except:
+        lang = "en"
+        
+    msg = i18n.get(lang, "errors.unhandled_error")
+    try:
+        if not interaction.response.is_done():
+            await interaction.response.send_message(msg, view=Support_Button(), ephemeral=True)
+        else:
+            await interaction.followup.send(msg, view=Support_Button(), ephemeral=True)
+    except Exception as e:
+        logging.error(f"Failed to respond to user in tree error: {e}")
+
+  @commands.Cog.listener()
+  async def on_error(self, event, *args, **kwargs):
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    if not exc_value:
+        return
+        
+    logging.error(f"Global event error in {event}: {str(exc_value)}")
+    
+    error_channel_id = os.getenv("errorchannel")
+    if error_channel_id:
+        try:
+            channel = self.historia.get_channel(int(error_channel_id))
+            embed = format_error_report(exc_value, context=f"Event: {event}\nArgs: {args}\nKwargs: {kwargs}")
+            if channel:
+                owner_id = os.getenv("schryzonid")
+                await channel.send(f"<@{owner_id}> **Global Event Error!**", embed=embed)
+        except Exception as e:
+            logging.error(f"Failed to send global event error to channel: {e}")
 
   @commands.Cog.listener()
   async def on_command_error(self, ctx:commands.Context, error):
@@ -240,6 +290,76 @@ class Error(commands.Cog):
       msg = i18n.get(lang, "errors.unhandled_error")
       await ctx.reply(msg, view=Support_Button(), ephemeral=True)
       logging.error(f"Error in command {ctx.command}: {str(error)}")
+
+# ── Global View Error Handler Patch ──────────────────────────
+_original_view_on_error = discord.ui.View.on_error
+
+async def custom_view_on_error(self, interaction: discord.Interaction, error: Exception, item):
+    logging.error(f"Error in View {self.__class__.__name__} for item {item.custom_id or item.__class__.__name__}: {str(error)}")
+    
+    error_channel_id = os.getenv("errorchannel")
+    if error_channel_id:
+        try:
+            bot = interaction.client
+            channel = bot.get_channel(int(error_channel_id))
+            embed = format_error_report(error, context=f"View: {self.__class__.__name__}\nItem: {item.custom_id or item.__class__.__name__}\nUser: {interaction.user}")
+            if channel:
+                owner_id = os.getenv("schryzonid")
+                await channel.send(f"<@{owner_id}> **Error in UI View!**", embed=embed)
+        except Exception as e:
+            logging.error(f"Failed to send view error to channel: {e}")
+            
+    try:
+        user_settings = await db.usersettings.find_unique(where={'userId': interaction.user.id})
+        lang = user_settings.lang if user_settings else "en"
+    except:
+        lang = "en"
+        
+    msg = i18n.get(lang, "errors.unhandled_error")
+    try:
+        if not interaction.response.is_done():
+            await interaction.response.send_message(msg, view=Support_Button(), ephemeral=True)
+        else:
+            await interaction.followup.send(msg, view=Support_Button(), ephemeral=True)
+    except Exception as e:
+        logging.error(f"Failed to respond to user in view on_error: {e}")
+
+discord.ui.View.on_error = custom_view_on_error
+
+# ── Global Modal Error Handler Patch ─────────────────────────
+_original_modal_on_error = discord.ui.Modal.on_error
+
+async def custom_modal_on_error(self, interaction: discord.Interaction, error: Exception):
+    logging.error(f"Error in Modal {self.__class__.__name__}: {str(error)}")
+    
+    error_channel_id = os.getenv("errorchannel")
+    if error_channel_id:
+        try:
+            bot = interaction.client
+            channel = bot.get_channel(int(error_channel_id))
+            embed = format_error_report(error, context=f"Modal: {self.__class__.__name__}\nUser: {interaction.user}")
+            if channel:
+                owner_id = os.getenv("schryzonid")
+                await channel.send(f"<@{owner_id}> **Error in UI Modal!**", embed=embed)
+        except Exception as e:
+            logging.error(f"Failed to send modal error to channel: {e}")
+            
+    try:
+        user_settings = await db.usersettings.find_unique(where={'userId': interaction.user.id})
+        lang = user_settings.lang if user_settings else "en"
+    except:
+        lang = "en"
+        
+    msg = i18n.get(lang, "errors.unhandled_error")
+    try:
+        if not interaction.response.is_done():
+            await interaction.response.send_message(msg, view=Support_Button(), ephemeral=True)
+        else:
+            await interaction.followup.send(msg, view=Support_Button(), ephemeral=True)
+    except Exception as e:
+        logging.error(f"Failed to respond to user in modal on_error: {e}")
+
+discord.ui.Modal.on_error = custom_modal_on_error
 
 async def setup(pandora):
   await pandora.add_cog(Error(pandora))

@@ -349,12 +349,13 @@ class ShopView(View):
         
     def get_owned_display(self, item):
         item_id = item['_id']
-        inventory = self.data.get('inventory', {})
+        inventory = getattr(self.data, 'inventory', None)
         
         check_list = []
-        if '1-' in item_id: check_list = inventory.get('equipments', [])
-        elif '2-' in item_id: check_list = inventory.get('skills', [])
-        else: check_list = inventory.get('items', [])
+        if inventory:
+            if '1-' in item_id: check_list = getattr(inventory, 'equipments', [])
+            elif '2-' in item_id: check_list = getattr(inventory, 'skills', [])
+            else: check_list = getattr(inventory, 'items', [])
         
         if not isinstance(check_list, list): check_list = []
         
