@@ -168,7 +168,7 @@ async def on_ready():
   if guild_id:
       try:
           guild = discord.Object(id=int(guild_id))
-          xlv.tree.copy_to(guild=guild)
+          xlv.tree.copy_global_to(guild=guild)
           await xlv.tree.sync(guild=guild)
           logging.info(f"Command tree synced to CyroN Guild: {guild_id}")
       except Exception as e:
