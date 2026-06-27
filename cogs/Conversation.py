@@ -233,7 +233,7 @@ class MemoryPersistenceView(View):
             options.append(discord.SelectOption(
                 label=f"{i+1}. {prefix}{label}",
                 value=str(mem.id),
-                description="Klik untuk toggle status Permanent/Temporary"
+                description="Click to toggle Permanent/Temporary status"
             ))
             
         self.select = discord.ui.Select(

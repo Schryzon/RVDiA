@@ -630,15 +630,6 @@ class GameInstance():
                         if not skills_text: skills_text = i18n.get(self.lang, "game.combat_no_skills")
                         embed.add_field(name=i18n.get(self.lang, "game.combat_enemy_skills_field"), value=skills_text, inline=False)
                         
-                        # Show Player Consumables (Items)
-                        inv_data = await db.inventory.find_unique(where={'userId': self.user1.id})
-                        if inv_data and inv_data.items:
-                            items_text = ""
-                            for item in inv_data.items:
-                                item_name = i18n.get(self.lang, f"game.item_{item['_id']}_name", default=item.get('name'))
-                                items_text += f"• **{item_name}** x{item.get('owned', 0)}\n"
-                            embed.add_field(name=i18n.get(self.lang, "game.combat_your_items_field"), value=items_text or i18n.get(self.lang, "game.combat_no_items"), inline=False)
-                        
                         embed.set_author(name=i18n.get(self.lang, "game.combat_enemy_info_header"))
                         try:
                             embed.set_thumbnail(url = self.enemy_avatar)
@@ -1291,7 +1282,7 @@ class ItemDropdown(discord.ui.Select):
                     description=no_item_desc
                 )
             )
-        placeholder_text = i18n.get(lang, "game.shop_select_item")
+        placeholder_text = i18n.get(lang, "game.use_select_item") if type == 'item' else i18n.get(lang, "game.use_select_skill")
         super().__init__(custom_id="itemdrop", placeholder=placeholder_text, min_values=1, max_values=1, options=options)
         self.user1 = user1
         self.items = items
@@ -1626,7 +1617,7 @@ class SpecificEnemyDropdown(discord.ui.Select):
         if enemy.get('avatar'):
             embed.set_thumbnail(url=enemy['avatar'])
             
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.response.send_message(embed=embed, ephemeral=False)
 
 class EnemyView(View):
     def __init__(self, enemies: list = None, lang="en"):

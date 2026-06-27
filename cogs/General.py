@@ -255,15 +255,15 @@ class General(commands.Cog):
             embed.set_footer(text=f"{ctx.author}", icon_url=ctx.author.display_avatar.url)
             await ctx.reply(embed=embed)
 
-    @user_command.command(name='info', aliases = ['whois'], description="Lihat info tentang seseorang di server ini.")
-    @app_commands.rename(member='pengguna')
+    @user_command.command(name='info', aliases = ['whois'], description="Show information about someone in this server.")
+    @app_commands.rename(member='user')
     @app_commands.describe(
-        member = 'Siapa yang ingin diketahui infonya?'
+        member = 'User whose information you want to view'
     )
     @check_blacklist()
     async def userinfo(self, ctx:commands.Context, *, member:discord.Member = None):
         """
-        Lihat info tentang seseorang di server ini.
+        Show information about someone in this server.
         Support: (ID, @Mention, username, name#tag)
         """
         async with ctx.typing():

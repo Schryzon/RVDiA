@@ -7,7 +7,7 @@ from scripts.utils.i18n import i18n
 
 class Event(commands.GroupCog, group_name = 'event'):
     """
-    Kumpulan command untuk event (ajang) yang sedang berlangsung.
+    Commands for ongoing events.
     """
 
     def __init__(self, bot) -> None:
@@ -20,12 +20,12 @@ class Event(commands.GroupCog, group_name = 'event'):
             case False: return False
             case _: return False
 
-    @app_commands.command(name='info', description = 'Lihat info event yang sedang berlangsung!')
+    @app_commands.command(name='info', description = 'View information about the ongoing event!')
     @event_available()
     @check_blacklist()
     async def info(self, interaction:discord.Interaction) -> None:
         """
-        Lihat info event yang sedang berlangsung!
+        View information about the ongoing event!
         """
         user_settings = await db.usersettings.find_unique(where={'userId': interaction.user.id})
         lang = user_settings.lang if user_settings else "en"

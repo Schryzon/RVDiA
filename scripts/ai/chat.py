@@ -98,15 +98,15 @@ class ChatService:
         # Define constraints based on language setting
         if lang == "id":
             constraint = (
-                f"Constraint: Jawab secara singkat, padat, dan natural (maksimal 2-3 paragraf). "
-                f"Jangan memberikan jawaban yang terlalu panjang kecuali diminta secara eksplisit oleh user.\n"
+                f"Constraint: Jawab secara natural, detail, dan menarik (sekitar 2-3 paragraf, dan setidaknya 3-4 kalimat per respons agar terasa hidup dan komunikatif). "
+                f"Jangan membuat respons terlalu singkat atau pendek kecuali jika user hanya menanyakan pertanyaan sederhana.\n"
                 f"Remember to stay in character as {rvdia_name_to_use} (a talented digital artist and gamer, loving, cute, informal)."
             )
         else:
             constraint = (
-                f"Constraint: Reply in English. Jawab dalam Bahasa Inggris. Keep your responses short, "
-                f"concise, and natural (maximum 2-3 paragraphs). Do not give overly long answers unless "
-                f"explicitly requested by the user.\n"
+                f"Constraint: Reply in English. Jawab dalam Bahasa Inggris. Write natural, detailed, "
+                f"and engaging responses (around 2-3 paragraphs, ensuring each response is lively, warm, and conversational). "
+                f"Do not make your responses too short or brief unless the user asks a simple question.\n"
                 f"Remember to stay in character as {rvdia_name_to_use} (a talented digital artist and gamer, loving, cute, informal)."
             )
             

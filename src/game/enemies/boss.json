@@ -14,39 +14,39 @@
         ],
         "skills": [
             {
-                "name": "Power of Conflict",
+                "name": "Creative Conflict",
                 "func": "dmg+25%",
-                "desc": "Kekuatan murni dari konflik yang menghancurkan segalanya."
+                "desc": "Simulasi pertempuran kreatif antar-Dreamer untuk menguji kemampuan."
             },
             {
-                "name": "Ultimate Entity",
+                "name": "Dreamer's Immunity",
                 "func": "def+15",
-                "desc": "Keberadaan absolut yang tidak terpengaruh oleh hukum dunia."
+                "desc": "Kekebalan mutlak sebagai sesama Dreamer yang tidak terpengaruh hukum manipulasi realitas."
             },
             {
-                "name": "Face the Reality",
+                "name": "Co-Dreaming Mastery",
                 "func": "atk+30",
-                "desc": "Memaksa lawan menghadapi realita yang pahit."
+                "desc": "Menyatukan imajinasi untuk memperkuat potensi serangan dalam pertarungan persahabatan."
             },
             {
-                "name": "Heal me, World",
+                "name": "Dreamer's Sanctuary",
                 "func": "hp+40%",
-                "desc": "Dunia bersujud untuk memulihkan lukanya."
+                "desc": "Memanfaatkan kanvas dunia mimpi untuk memulihkan vitalitas."
             },
             {
-                "name": "Your Life is Mine",
+                "name": "Friendly Challenge",
                 "func": "hp-20%",
-                "desc": "Menarik paksa vitalitas dari keberadaan lawan."
+                "desc": "Latihan tanding persahabatan yang menyerap energi target secara adil."
             },
             {
-                "name": "Die, Hero",
+                "name": "The Final Dream",
                 "func": "dmg+100%",
-                "desc": "Hukuman mati bagi mereka yang berani menantang Sang Pencipta."
+                "desc": "Pertunjukan imajinasi tingkat tertinggi sebagai salam perpisahan yang tak terlupakan."
             },
             {
-                "name": "Gaze of Void",
+                "name": "Universe Gaze",
                 "func": "agl-25",
-                "desc": "Tatapan hampa yang menghentikan pergerakan waktu."
+                "desc": "Menatap bintang-bintang di langit malam yang mewakili semesta para Dreamer."
             },
             {
                 "name": "Reality Overwrite",
@@ -54,14 +54,14 @@
                 "desc": "Menulis ulang hukum alam untuk meningkatkan seluruh status secara absolut."
             },
             {
-                "name": "Void Pressure",
+                "name": "Co-Dream Pressure",
                 "func": "all-20",
-                "desc": "Tekanan dari kehampaan yang meruntuhkan seluruh aspek target."
+                "desc": "Tekanan imajinasi gabungan yang membatasi seluruh status target."
             },
             {
                 "name": "Reality Warp",
                 "func": "def-50",
-                "desc": "Membengkokkan ruang untuk melenyapkan pertahanan musuh."
+                "desc": "Membengkokkan persepsi ruang untuk menurunkan pertahanan target."
             }
         ],
         "color": "#59c2e1"
@@ -151,7 +151,7 @@
         "color": "#1a3a47"
     },
     {
-        "name": "RVDiA",
+        "name": "Young RVDiA",
         "tier": "SUPER BOSS",
         "avatar": "https://cdn.discordapp.com/attachments/978258193710985246/1123190763442929835/RVDiA-Profile-Pic.png",
         "hp": 7500,
@@ -165,33 +165,39 @@
         ],
         "skills": [
             {
-                "name": "Beloved Princess",
-                "func": "def+20"
+                "name": "Aetherion Princess",
+                "func": "def+20",
+                "desc": "Perlindungan status sebagai putri dari floating empire Aetherion."
             },
             {
-                "name": "No Holding Back",
-                "func": "atk+15"
+                "name": "Bookworm Imagination",
+                "func": "atk+15",
+                "desc": "Kekuatan imajinasi dari buku-buku dongeng yang menjadi teman setianya."
             },
             {
-                "name": "Revolution",
-                "func": "dmg+50%"
+                "name": "Impossible Gift",
+                "func": "dmg+50%",
+                "desc": "Bakat mustahil yang mewujudkan apa pun yang diimajinasikannya menjadi kenyataan."
             },
             {
-                "name": "Slowmotion",
-                "func": "agl-20"
+                "name": "Quiet Cage",
+                "func": "agl-20",
+                "desc": "Melambatkan pergerakan lawan seperti kesunyian hidupnya di Royal Cage."
             },
             {
                 "name": "I'm Sorry",
-                "func": "dmg+30%"
+                "func": "dmg+30%",
+                "desc": "Permintaan maaf yang tulus karena ia terpaksa menyerang lawan."
             },
             {
                 "name": "Merciful Prayer",
-                "func": "hp+15%"
+                "func": "hp+15%",
+                "desc": "Doa tulus dari hati untuk memulihkan sebagian vitalitasnya."
             },
             {
-                "name": "Royal Decree",
+                "name": "Royal Cage Isolation",
                 "func": "all-8",
-                "desc": "Titah kerajaan yang menurunkan moral dan status lawan."
+                "desc": "Kurungan istana emas yang membatasi moral dan seluruh status target."
             }
         ],
         "color": "#56fa5f"

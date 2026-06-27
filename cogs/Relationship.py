@@ -129,7 +129,7 @@ class Relationship(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.hybrid_group(name="bond", description="Kelola hubungan dan kedekatanmu dengan RVDiA.", fallback="info")
+    @commands.hybrid_group(name="bond", description="Manage your bond and affinity with RVDiA.", fallback="info")
     @check_blacklist()
     async def bond(self, ctx: commands.Context):
         """Displays your relationship status, affinity progress bar, and active nicknames."""
@@ -205,7 +205,7 @@ class Relationship(commands.Cog):
 
         await ctx.reply(embed=embed)
 
-    @bond.command(name="start", description="Mulai menjalin ikatan dan hubungan dengan RVDiA.")
+    @bond.command(name="start", description="Start building a bond and relationship with RVDiA.")
     @check_blacklist()
     async def start(self, ctx: commands.Context):
         user_id = ctx.author.id
@@ -242,7 +242,7 @@ class Relationship(commands.Cog):
 
         await ctx.reply(embed=embed)
 
-    @bond.command(name="nickname", description="Ubah panggilan RVDiA untukmu atau panggilanmu untuknya.")
+    @bond.command(name="nickname", description="Change RVDiA's nickname for you or your nickname for her.")
     @app_commands.describe(
         target="Siapa yang panggilannya ingin diubah?",
         nickname="Nama panggilan baru (Max 15 karakter)"
@@ -285,7 +285,7 @@ class Relationship(commands.Cog):
 
         await ctx.reply(msg)
 
-    @bond.command(name="gift", description="Berikan hadiah dari inventarismu kepada RVDiA untuk menaikkan affinity.")
+    @bond.command(name="gift", description="Give a gift from your inventory to RVDiA to increase affinity.")
     @check_blacklist()
     async def gift(self, ctx: commands.Context):
         user_id = ctx.author.id
@@ -320,7 +320,7 @@ class Relationship(commands.Cog):
         prompt_msg = "Pilih item dari inventarismu untuk dihadiahkan kepada RVDiA:" if lang == "id" else "Select an item from your inventory to gift to RVDiA:"
         await ctx.reply(prompt_msg, view=view)
 
-    @bond.command(name="reset", description="Reset hubunganmu dengan RVDiA kembali ke awal.")
+    @bond.command(name="reset", description="Reset your relationship status with RVDiA.")
     @check_blacklist()
     async def reset(self, ctx: commands.Context):
         user_id = ctx.author.id

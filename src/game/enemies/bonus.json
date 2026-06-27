@@ -52,7 +52,7 @@
             },
             {
                 "name": "CHOU HENSHIN: RISING ULTIMATE",
-                "func": "atk+30"
+                "func": "atk+40"
             },
             {
                 "name": "Molecular Manipulation",
@@ -60,11 +60,7 @@
             },
             {
                 "name": "Ultimate Punch",
-                "func": "dmg+15%"
-            },
-            {
-                "name": "Rising Ultimate Transformation",
-                "func": "atk+40"
+                "func": "dmg+12%"
             }
         ],
         "color": "#c15a52"
@@ -121,7 +117,7 @@
         ],
         "skills": [
             {
-                "name": "Dragon Firestorm",
+                "name": "Advent",
                 "func": "DMG+16%"
             },
             {
@@ -142,7 +138,7 @@
             },
             {
                 "name": "Shoot Vent",
-                "func": "atk+15"
+                "func": "atk+12"
             },
             {
                 "name": "Trick Vent",
@@ -151,10 +147,6 @@
             {
                 "name": "Strange Vent",
                 "func": "atk+20"
-            },
-            {
-                "name": "Fire Wall",
-                "func": "def+25"
             }
         ],
         "color": "#e4df41"
@@ -228,7 +220,7 @@
             },
             {
                 "name": "Evolution Shield",
-                "func": "def+40"
+                "func": "def+35"
             }
         ],
         "color": "#cfcec6"
@@ -285,10 +277,6 @@
         ],
         "skills": [
             {
-                "name": "Hyper Clock Up",
-                "func": "AGL+60"
-            },
-            {
                 "name": "Hyper Kick",
                 "func": "DMG+25%"
             },
@@ -310,7 +298,23 @@
             },
             {
                 "name": "Maximum Hyper Typhoon",
-                "func": "dmg+50%"
+                "func": "dmg+45%"
+            },
+            {
+                "name": "Kabuto Power: Hyper Swing",
+                "func": "dmg+15%"
+            },
+            {
+                "name": "Sasword Power: Hyper Slash",
+                "func": "dmg+22%"
+            },
+            {
+                "name": "TheBee Power: Hyper Sting",
+                "func": "dmg+25%"
+            },
+            {
+                "name": "Drake Power: Hyper Shooting",
+                "func": "dmg+20%"
             }
         ],
         "color": "#de51ee"
@@ -383,10 +387,6 @@
                 "func": "atk+25"
             },
             {
-                "name": "Zanvat Sword Slash (True)",
-                "func": "dmg+22%"
-            },
-            {
                 "name": "Emperor Bat Form",
                 "func": "agl+35"
             }
@@ -412,8 +412,12 @@
                 "func": "DMG+30%"
             },
             {
-                "name": "Final Attack Ride",
+                "name": "Final Attack Ride: De-De-De-Decade",
                 "func": "DMG+60%"
+            },
+            {
+                "name": "Final Attack Ride: Di-Di-Di-Diend",
+                "func": "DMG+50%"
             },
             {
                 "name": "Attack Ride: Illusion",
@@ -425,7 +429,7 @@
             },
             {
                 "name": "K-Touch: Decade Complete 21",
-                "func": "atk+50"
+                "func": "all+25%"
             },
             {
                 "name": "FINAL KAMEN ATTACK FORM RIDE: DE-DE-DECADE",
@@ -450,18 +454,23 @@
         "skills": [
             {
                 "name": "Armageddon",
-                "func": "dmg+45%",
+                "func": "dmg+100%",
                 "desc": "Kombinasi kekuatan mutlak yang menghapuskan sebagian besar keberadaan target."
             },
             {
                 "name": "Morning Star",
-                "func": "dmg+20%",
+                "func": "dmg+70%",
                 "desc": "Cahaya fajar yang menghanguskan kegelapan dan musuh."
             },
             {
-                "name": "The Great Seal",
-                "func": "all-5",
+                "name": "Debilitate",
+                "func": "all-25%",
                 "desc": "Segel agung yang mengunci sebagian potensi kekuatan lawan."
+            },
+            {
+                "name": "Diarahan",
+                "func": "hp+100%",
+                "desc": "Sihir penyembuhan tingkat tinggi yang memulihkan seluruh HP."
             }
         ],
         "color": "#00a2ff"
@@ -494,6 +503,11 @@
                 "name": "Ziodyne",
                 "func": "agl-10",
                 "desc": "Sengatan listrik tingkat tinggi yang melumpuhkan pergerakan lawan."
+            },
+            {
+                "name": "Heat Riser",
+                "func": "all+20%",
+                "desc": "Meningkatkan kekuatan serang, pertahanan, dan kecepatan pengguna secara drastis."
             }
         ],
         "color": "#ffeb3b"
@@ -526,6 +540,11 @@
                 "name": "Showtime",
                 "func": "all+5",
                 "desc": "Pertunjukan spektakuler yang membangkitkan semangat dan seluruh status."
+            },
+            {
+                "name": "Mediarahan",
+                "func": "hp+100%",
+                "desc": "Sihir pemulihan legendaris yang mengembalikan seluruh vitalitas pengguna."
             }
         ],
         "color": "#ff1744"
