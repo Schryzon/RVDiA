@@ -4,7 +4,13 @@ import asyncio
 import logging
 import aiohttp
 from scripts.main import db
-from scripts.utils.telegram import telegram_client, send_telegram_message
+from scripts.utils.telegram import (
+    telegram_client,
+    send_telegram_message,
+    current_thread_id,
+    _dynamic_callbacks,
+    TelegramInteraction
+)
 
 class ZoraBot:
     def __init__(self, loop=None):
@@ -77,36 +83,53 @@ async def handle_callback_query(zora_bot, bot, callback_query):
     message = callback_query.get("message", {})
     chat_id = message.get("chat", {}).get("id")
     message_id = message.get("message_id")
+    thread_id = message.get("message_thread_id")
 
-    # Look up lang
-    virtual_id = -telegram_user_id
-    lang = "en"
+    token = current_thread_id.set(thread_id)
     try:
-        from scripts.main import db
-        user_settings = await db.usersettings.find_unique(where={"userId": virtual_id})
-        if user_settings:
-            lang = user_settings.lang
-    except Exception:
-        pass
-
-    # Route to first matching handler by prefix
-    handler = None
-    for prefix, h in zora_bot.callback_handlers.items():
-        if data.startswith(prefix):
-            handler = h
-            break
-
-    if handler:
+        # Look up lang
+        virtual_id = -telegram_user_id
+        lang = "en"
         try:
-            await handler(zora_bot, chat_id, message_id, cq_id, telegram_user_id, username, full_name, data, lang)
-        except Exception as e:
-            logging.error(f"Error in callback handler: {e}", exc_info=True)
+            from scripts.main import db
+            user_settings = await db.usersettings.find_unique(where={"userId": virtual_id})
+            if user_settings:
+                lang = user_settings.lang
+        except Exception:
+            pass
+
+        # Check if callback is a registered dynamic button
+        if data.startswith("dyn_") and data in _dynamic_callbacks:
+            handler = _dynamic_callbacks[data]
+            interaction = TelegramInteraction(zora_bot, chat_id, message_id, cq_id, telegram_user_id, username, full_name, data, lang)
+            try:
+                await handler(interaction)
+            except Exception as e:
+                logging.error(f"Error in dynamic callback handler: {e}", exc_info=True)
+                if telegram_client:
+                    await telegram_client.answer_callback_query(cq_id)
+            return
+
+        # Route to first matching handler by prefix
+        handler = None
+        for prefix, h in zora_bot.callback_handlers.items():
+            if data.startswith(prefix):
+                handler = h
+                break
+
+        if handler:
+            try:
+                await handler(zora_bot, chat_id, message_id, cq_id, telegram_user_id, username, full_name, data, lang)
+            except Exception as e:
+                logging.error(f"Error in callback handler: {e}", exc_info=True)
+                if telegram_client:
+                    await telegram_client.answer_callback_query(cq_id)
+        else:
+            # Acknowledge unknown buttons silently
             if telegram_client:
                 await telegram_client.answer_callback_query(cq_id)
-    else:
-        # Acknowledge unknown buttons silently
-        if telegram_client:
-            await telegram_client.answer_callback_query(cq_id)
+    finally:
+        current_thread_id.reset(token)
 
 async def handle_telegram_update(zora_bot, bot, update):
     message = update.get("message")
@@ -160,10 +183,13 @@ async def handle_telegram_update(zora_bot, bot, update):
             clean_text = " ".join(args)
             if zora_bot.chat_handler:
                 async def run_at_chat():
+                    token = current_thread_id.set(thread_id)
                     try:
                         await zora_bot.chat_handler(zora_bot, chat_id, telegram_user_id, username, full_name, clean_text, lang, thread_id)
                     except Exception as e:
                         logging.error(f"Error in chat handler: {e}", exc_info=True)
+                    finally:
+                        current_thread_id.reset(token)
                 bot.loop.create_task(run_at_chat())
             return
         else:
@@ -185,11 +211,14 @@ async def handle_telegram_update(zora_bot, bot, update):
             handler = zora_bot.commands[cmd_name]
             message_id = message.get("message_id")
             async def run_command_handler():
+                token = current_thread_id.set(thread_id)
                 try:
                     await _react_to(chat_id, message_id, message)
                     await handler(zora_bot, chat_id, telegram_user_id, username, full_name, cmd_name, args, message, lang, thread_id=thread_id, via_mention=is_at_mention)
                 except Exception as e:
                     logging.error(f"Error in command {cmd_name}: {e}", exc_info=True)
+                finally:
+                    current_thread_id.reset(token)
             bot.loop.create_task(run_command_handler())
             return
         else:
@@ -197,11 +226,14 @@ async def handle_telegram_update(zora_bot, bot, update):
             if zora_bot.chat_handler:
                 message_id = message.get("message_id")
                 async def run_cmd_fallthrough():
+                    token = current_thread_id.set(thread_id)
                     try:
                         await _react_to(chat_id, message_id, message)
                         await zora_bot.chat_handler(zora_bot, chat_id, telegram_user_id, username, full_name, text, lang, thread_id)
                     except Exception as e:
                         logging.error(f"Error in chat fallthrough: {e}", exc_info=True)
+                    finally:
+                        current_thread_id.reset(token)
                 bot.loop.create_task(run_cmd_fallthrough())
             return
 
@@ -232,11 +264,14 @@ async def handle_telegram_update(zora_bot, bot, update):
 
             message_id = message.get("message_id")
             async def run_chat_handler():
+                token = current_thread_id.set(thread_id)
                 try:
                     await _react_to(chat_id, message_id, message)
                     await zora_bot.chat_handler(zora_bot, chat_id, telegram_user_id, username, full_name, clean_text, lang, thread_id)
                 except Exception as e:
                     logging.error(f"Error in chat handler: {e}", exc_info=True)
+                finally:
+                    current_thread_id.reset(token)
             bot.loop.create_task(run_chat_handler())
 
 async def start_zora(bot):

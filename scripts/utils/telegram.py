@@ -1,6 +1,11 @@
 import os
 import logging
 import aiohttp
+import contextvars
+import uuid
+
+current_thread_id = contextvars.ContextVar("current_thread_id", default=None)
+_dynamic_callbacks = {}
 
 class TelegramMockMember:
     def __init__(self, id_val, mention_str):
@@ -18,6 +23,87 @@ class TelegramMockCtx:
     def __init__(self, user_id, chat_id, mention_str):
         self.author = TelegramMockMember(user_id, mention_str)
         self.channel = TelegramMockChannel(chat_id)
+
+class TelegramInteraction:
+    def __init__(self, zora_bot, chat_id, message_id, cq_id, telegram_user_id, username, full_name, data, lang):
+        self.bot = zora_bot
+        self.chat_id = chat_id
+        self.message_id = message_id
+        self.cq_id = cq_id
+        self.user_id = telegram_user_id
+        self.username = username
+        self.full_name = full_name
+        self.data = data
+        self.lang = lang
+        
+        self.user = TelegramMockMember(telegram_user_id, f"@{username}" if username else full_name)
+        self.author = self.user
+        self.channel = TelegramMockChannel(chat_id)
+        self.message = {
+            "chat": {"id": chat_id},
+            "message_id": message_id
+        }
+
+    async def respond(self, text: str, reply_markup: dict = None) -> bool:
+        if telegram_client:
+            await telegram_client.answer_callback_query(self.cq_id)
+        return await send_telegram_message(self.chat_id, text, reply_markup=reply_markup)
+
+    async def edit_message(self, text: str, reply_markup: dict = None) -> bool:
+        if telegram_client:
+            await telegram_client.answer_callback_query(self.cq_id)
+        if telegram_client:
+            return await telegram_client.edit_message_text(self.chat_id, self.message_id, text, reply_markup=reply_markup)
+        return False
+
+    async def answer(self, text: str = "") -> bool:
+        if telegram_client:
+            return await telegram_client.answer_callback_query(self.cq_id, text=text)
+        return False
+
+class TelegramButton:
+    def __init__(self, text: str, callback_data: str = None, callback = None, row: int = None):
+        self.text = text
+        self.callback = callback
+        self.row = row
+        
+        if callback is not None:
+            self.callback_id = f"dyn_{uuid.uuid4().hex[:12]}"
+            _dynamic_callbacks[self.callback_id] = callback
+            self.callback_data = self.callback_id
+        else:
+            self.callback_data = callback_data
+
+class TelegramView:
+    def __init__(self):
+        self.children = []
+
+    def add_item(self, item: TelegramButton):
+        self.children.append(item)
+
+    def to_markup(self) -> dict:
+        rows = {}
+        for btn in self.children:
+            r = btn.row if btn.row is not None else 999
+            if r not in rows:
+                rows[r] = []
+            rows[r].append({"text": btn.text, "callback_data": btn.callback_data})
+            
+        keyboard = []
+        for r in sorted(rows.keys()):
+            if r == 999:
+                default_row = []
+                for btn_data in rows[r]:
+                    default_row.append(btn_data)
+                    if len(default_row) == 2:
+                        keyboard.append(default_row)
+                        default_row = []
+                if default_row:
+                    keyboard.append(default_row)
+            else:
+                keyboard.append(rows[r])
+                
+        return {"inline_keyboard": keyboard}
 
 class TelegramClient:
     def __init__(self, token: str):
@@ -208,8 +294,9 @@ if token_raw:
 
 async def send_telegram_message(chat_id, text, parse_mode="HTML", thread_id=None, reply_markup=None):
     if telegram_client:
+        effective_thread_id = thread_id if thread_id is not None else current_thread_id.get()
         if len(text) <= 4000:
-            await telegram_client.send_message(chat_id, text, parse_mode, message_thread_id=thread_id, reply_markup=reply_markup)
+            await telegram_client.send_message(chat_id, text, parse_mode, message_thread_id=effective_thread_id, reply_markup=reply_markup)
             return
 
         lines = text.split('\n')
@@ -220,13 +307,13 @@ async def send_telegram_message(chat_id, text, parse_mode="HTML", thread_id=None
             if current_len + len(line) + 1 > 4000:
                 if current_chunk:
                     chunk_text = "\n".join(current_chunk)
-                    await telegram_client.send_message(chat_id, chunk_text, parse_mode, message_thread_id=thread_id)
+                    await telegram_client.send_message(chat_id, chunk_text, parse_mode, message_thread_id=effective_thread_id)
                     current_chunk = []
                     current_len = 0
                 
                 if len(line) > 4000:
                     for i in range(0, len(line), 4000):
-                        await telegram_client.send_message(chat_id, line[i:i+4000], parse_mode, message_thread_id=thread_id)
+                        await telegram_client.send_message(chat_id, line[i:i+4000], parse_mode, message_thread_id=effective_thread_id)
                     continue
 
             current_chunk.append(line)
@@ -234,16 +321,19 @@ async def send_telegram_message(chat_id, text, parse_mode="HTML", thread_id=None
 
         if current_chunk:
             chunk_text = "\n".join(current_chunk)
-            await telegram_client.send_message(chat_id, chunk_text, parse_mode, message_thread_id=thread_id, reply_markup=reply_markup)
+            await telegram_client.send_message(chat_id, chunk_text, parse_mode, message_thread_id=effective_thread_id, reply_markup=reply_markup)
 
 async def send_telegram_photo(chat_id, photo_url, caption="", parse_mode="HTML", thread_id=None):
     if telegram_client:
-        await telegram_client.send_photo(chat_id, photo_url, caption, parse_mode, message_thread_id=thread_id)
+        effective_thread_id = thread_id if thread_id is not None else current_thread_id.get()
+        await telegram_client.send_photo(chat_id, photo_url, caption, parse_mode, message_thread_id=effective_thread_id)
 
 async def send_telegram_photo_bytes(chat_id, photo_bytes, filename="processed.png", caption="", thread_id=None):
     if telegram_client:
-        await telegram_client.send_photo_bytes(chat_id, photo_bytes, filename, caption, message_thread_id=thread_id)
+        effective_thread_id = thread_id if thread_id is not None else current_thread_id.get()
+        await telegram_client.send_photo_bytes(chat_id, photo_bytes, filename, caption, message_thread_id=effective_thread_id)
 
 async def send_telegram_location(chat_id, latitude, longitude, thread_id=None):
     if telegram_client:
-        await telegram_client.send_location(chat_id, latitude, longitude, message_thread_id=thread_id)
+        effective_thread_id = thread_id if thread_id is not None else current_thread_id.get()
+        await telegram_client.send_location(chat_id, latitude, longitude, message_thread_id=effective_thread_id)
