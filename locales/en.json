@@ -2040,6 +2040,21 @@
             "arguments": {
                 "genre": "Selected genre or custom tag"
             }
+        },
+        "bond": {
+            "description": "Manage your bond and affinity with RVDiA."
+        },
+        "bond.start": {
+            "description": "Start building a bond and relationship with RVDiA."
+        },
+        "bond.nickname": {
+            "description": "Change RVDiA's nickname for you or your nickname for her."
+        },
+        "bond.gift": {
+            "description": "Give a gift from your inventory to RVDiA to increase affinity."
+        },
+        "bond.reset": {
+            "description": "Reset your relationship status with RVDiA."
         }
     },
     "music": {

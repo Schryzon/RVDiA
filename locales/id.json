@@ -2040,6 +2040,21 @@
             "arguments": {
                 "genre": "Genre yang dipilih atau tag kustom"
             }
+        },
+        "bond": {
+            "description": "Kelola hubungan dan kedekatanmu dengan RVDiA."
+        },
+        "bond.start": {
+            "description": "Mulai jalin hubungan kedekatan dengan RVDiA."
+        },
+        "bond.nickname": {
+            "description": "Ganti nama panggilanmu untuk RVDiA atau panggilan dia untukmu."
+        },
+        "bond.gift": {
+            "description": "Beri hadiah dari inventarismu ke RVDiA untuk meningkatkan kedekatan."
+        },
+        "bond.reset": {
+            "description": "Atur ulang (reset) status hubunganmu dengan RVDiA."
         }
     },
     "music": {

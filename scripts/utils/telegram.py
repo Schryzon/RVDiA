@@ -208,7 +208,33 @@ if token_raw:
 
 async def send_telegram_message(chat_id, text, parse_mode="HTML", thread_id=None, reply_markup=None):
     if telegram_client:
-        await telegram_client.send_message(chat_id, text, parse_mode, message_thread_id=thread_id, reply_markup=reply_markup)
+        if len(text) <= 4000:
+            await telegram_client.send_message(chat_id, text, parse_mode, message_thread_id=thread_id, reply_markup=reply_markup)
+            return
+
+        lines = text.split('\n')
+        current_chunk = []
+        current_len = 0
+
+        for line in lines:
+            if current_len + len(line) + 1 > 4000:
+                if current_chunk:
+                    chunk_text = "\n".join(current_chunk)
+                    await telegram_client.send_message(chat_id, chunk_text, parse_mode, message_thread_id=thread_id)
+                    current_chunk = []
+                    current_len = 0
+                
+                if len(line) > 4000:
+                    for i in range(0, len(line), 4000):
+                        await telegram_client.send_message(chat_id, line[i:i+4000], parse_mode, message_thread_id=thread_id)
+                    continue
+
+            current_chunk.append(line)
+            current_len += len(line) + 1
+
+        if current_chunk:
+            chunk_text = "\n".join(current_chunk)
+            await telegram_client.send_message(chat_id, chunk_text, parse_mode, message_thread_id=thread_id, reply_markup=reply_markup)
 
 async def send_telegram_photo(chat_id, photo_url, caption="", parse_mode="HTML", thread_id=None):
     if telegram_client:
