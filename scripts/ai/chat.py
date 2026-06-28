@@ -96,18 +96,26 @@ class ChatService:
         rolesys = os.getenv('rolesys', '')
         
         # Define constraints based on language setting
+        format_inst = (
+            "\nFormatting Instruction: Use Telegram HTML formatting tags to style your text. "
+            "Use <b>text</b> for bold, <i>text</i> for italic, and <code>code</code> for monospaced terms. "
+            "Do NOT use markdown bold (**text**) or markdown italic (*text* or _text_) under any circumstances."
+        )
+
         if lang == "id":
             constraint = (
                 f"Constraint: Jawab secara natural, detail, dan menarik (sekitar 2-3 paragraf, dan setidaknya 3-4 kalimat per respons agar terasa hidup dan komunikatif). "
                 f"Jangan membuat respons terlalu singkat atau pendek kecuali jika user hanya menanyakan pertanyaan sederhana.\n"
-                f"Remember to stay in character as {rvdia_name_to_use} (a talented digital artist and gamer, loving, cute, informal)."
+                f"Remember to stay in character as {rvdia_name_to_use} (a talented digital artist and gamer, loving, cute, informal).\n"
+                f"{format_inst}"
             )
         else:
             constraint = (
                 f"Constraint: Reply in English. Jawab dalam Bahasa Inggris. Write natural, detailed, "
                 f"and engaging responses (around 2-3 paragraphs, ensuring each response is lively, warm, and conversational). "
                 f"Do not make your responses too short or brief unless the user asks a simple question.\n"
-                f"Remember to stay in character as {rvdia_name_to_use} (a talented digital artist and gamer, loving, cute, informal)."
+                f"Remember to stay in character as {rvdia_name_to_use} (a talented digital artist and gamer, loving, cute, informal).\n"
+                f"{format_inst}"
             )
             
         sys_inst = (

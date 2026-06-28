@@ -3,9 +3,36 @@ import logging
 import aiohttp
 import contextvars
 import uuid
+import re
 
 current_thread_id = contextvars.ContextVar("current_thread_id", default=None)
 _dynamic_callbacks = {}
+
+def escape_telegram_html(text: str) -> str:
+    if not text:
+        return text
+    # 1. Convert markdown bold (**text**) to HTML (<b>text</b>)
+    text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', text)
+    
+    # 2. Convert markdown italic (*text* or _text_) to HTML (<i>text</i>)
+    text = re.sub(r'\*(.*?)\*', r'<i>\1</i>', text)
+    text = re.sub(r'_(.*?)_', r'<i>\1</i>', text)
+    
+    # 3. Convert markdown inline code (`code`) to HTML (<code>code</code>)
+    text = re.sub(r'`(.*?)`', r'<code>\1</code>', text)
+    
+    # 4. Escape raw HTML characters, but PRESERVE allowed Telegram HTML tags:
+    tag_regex = re.compile(r'(</?(?:b|strong|i|em|u|ins|s|strike|del|tg-spoiler|code|pre|a)(?:\s+[^>]*)?>)', re.IGNORECASE)
+    parts = tag_regex.split(text)
+    
+    for i in range(len(parts)):
+        if i % 2 == 0:
+            p = parts[i]
+            p = p.replace('&', '&amp;')
+            p = p.replace('<', '&lt;').replace('>', '&gt;')
+            parts[i] = p
+            
+    return "".join(parts)
 
 class TelegramMockMember:
     def __init__(self, id_val, mention_str):
@@ -143,6 +170,8 @@ class TelegramClient:
 
     async def edit_message_text(self, chat_id: int, message_id: int, text: str, parse_mode: str = "HTML", reply_markup: dict = None) -> bool:
         url = f"{self.base_url}/editMessageText"
+        if parse_mode == "HTML":
+            text = escape_telegram_html(text)
         payload = {
             "chat_id": chat_id,
             "message_id": message_id,
@@ -294,6 +323,8 @@ if token_raw:
 
 async def send_telegram_message(chat_id, text, parse_mode="HTML", thread_id=None, reply_markup=None):
     if telegram_client:
+        if parse_mode == "HTML":
+            text = escape_telegram_html(text)
         effective_thread_id = thread_id if thread_id is not None else current_thread_id.get()
         if len(text) <= 4000:
             await telegram_client.send_message(chat_id, text, parse_mode, message_thread_id=effective_thread_id, reply_markup=reply_markup)
@@ -325,11 +356,15 @@ async def send_telegram_message(chat_id, text, parse_mode="HTML", thread_id=None
 
 async def send_telegram_photo(chat_id, photo_url, caption="", parse_mode="HTML", thread_id=None):
     if telegram_client:
+        if parse_mode == "HTML" and caption:
+            caption = escape_telegram_html(caption)
         effective_thread_id = thread_id if thread_id is not None else current_thread_id.get()
         await telegram_client.send_photo(chat_id, photo_url, caption, parse_mode, message_thread_id=effective_thread_id)
 
 async def send_telegram_photo_bytes(chat_id, photo_bytes, filename="processed.png", caption="", thread_id=None):
     if telegram_client:
+        if caption:
+            caption = escape_telegram_html(caption)
         effective_thread_id = thread_id if thread_id is not None else current_thread_id.get()
         await telegram_client.send_photo_bytes(chat_id, photo_bytes, filename, caption, message_thread_id=effective_thread_id)
 
