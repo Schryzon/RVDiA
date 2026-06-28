@@ -287,19 +287,19 @@ class ShopDropdown(discord.ui.Select):
         target_field = 'items'
         current_list = user_items
         
-        if '1-' in item_id:
-            target_field = 'equipments'
-            current_list = user_equipments
-        elif '2-' in item_id:
+        if '2-' in item_id:
             target_field = 'skills'
             current_list = user_skills
             
         mongo_dict = {item['_id']: item for item in current_list}
         
-        if item_id in mongo_dict:
-            if '1-' in item_id:
+        if '1-' in item_id:
+            # Check if they already own this equipment in either inventory items or equipped items
+            all_owned_equip_ids = [x['_id'] for x in user_items if '1-' in x['_id']] + [x['_id'] for x in user_equipments]
+            if item_id in all_owned_equip_ids:
                 msg = i18n.get(self.lang, "game.shop_equipment_bought")
                 return await interaction.response.send_message(msg, ephemeral=True)
+        elif item_id in mongo_dict:
             if '2-' in item_id:
                 msg = i18n.get(self.lang, "game.shop_skill_learned")
                 return await interaction.response.send_message(msg, ephemeral=True)
@@ -436,8 +436,13 @@ class UseDropdown(discord.ui.Select):
         options = []
         for index, item in enumerate(items, start=1):
             item_name = i18n.get(self.lang, f"game.item_{item['_id']}_name", default=item['name'])
+            if item.get('is_equipped'):
+                suffix = " [Equipped]" if self.lang == "en" else " [Dipasang]"
+                lbl = f"{index}. {item_name}{suffix} ({item['usefor']})"
+            else:
+                lbl = f"{index}. {item_name} ({item['usefor']})" if not item['usefor'] == 'free' else f"{index}. {item_name}"
             options.append(discord.SelectOption(
-                label=f"{index}. {item_name} ({item['usefor']})" if not item['usefor'] == 'free' else f"{index}. {item_name}",
+                label=lbl,
                 description=f"{item['func'].upper()}",
                 value=item['_id']
             ))
@@ -482,12 +487,19 @@ class UseDropdown(discord.ui.Select):
                 new_equipments = [x for x in equipments if x['_id'] != item_id]
                 data[stat_key] -= stat_value
                 
+                all_items = inventory.items if isinstance(inventory.items, list) else []
+                new_items = list(all_items)
+                new_items.append(item_to_unequip)
+                
                 await db.user.update(
                     where={'id': interaction.user.id},
                     data={
                         'data': Json(data),
                         'inventory': {
-                            'update': {'equipments': Json(new_equipments)}
+                            'update': {
+                                'equipments': Json(new_equipments),
+                                'items': Json(new_items)
+                            }
                         }
                     }
                 )
@@ -508,6 +520,8 @@ class UseDropdown(discord.ui.Select):
                 stat_key = self.convert_to_db_stat_key(func[0])
                 stat_value = int(func[1])
                 
+                new_items = [x for x in all_items if x['_id'] != item_id]
+                
                 same_type = [x for x in equipments if x.get('usefor') == item_to_equip.get('usefor')]
                 if same_type:
                     old_item = same_type[0]
@@ -515,6 +529,7 @@ class UseDropdown(discord.ui.Select):
                     old_stat_key = self.convert_to_db_stat_key(old_func[0])
                     data[old_stat_key] -= int(old_func[1])
                     equipments = [x for x in equipments if x['_id'] != old_item['_id']]
+                    new_items.append(old_item)
                 
                 equipments.append(item_to_equip)
                 data[stat_key] += stat_value
@@ -524,7 +539,10 @@ class UseDropdown(discord.ui.Select):
                     data={
                         'data': Json(data),
                         'inventory': {
-                            'update': {'equipments': Json(equipments)}
+                            'update': {
+                                'equipments': Json(equipments),
+                                'items': Json(new_items)
+                            }
                         }
                     }
                 )
@@ -938,11 +956,9 @@ async def execute_fix_account(ctx):
         return await ctx.reply(msg)
         
     data = user_record.data
-    updated_data = False
     for key, value in default_data.items():
         if key not in data:
             data[key] = value
-            updated_data = True
     
     inventory = user_record.inventory
     if not inventory:
@@ -954,52 +970,129 @@ async def execute_fix_account(ctx):
         })
         inventory = await db.inventory.find_unique(where={'userId': ctx.author.id})
 
-    all_items = inventory.items if isinstance(inventory.items, list) else []
-    skills = inventory.skills if isinstance(inventory.skills, list) else []
-    equipments = inventory.equipments if isinstance(inventory.equipments, list) else []
+    raw_items = inventory.items if isinstance(inventory.items, list) else []
+    raw_skills = inventory.skills if isinstance(inventory.skills, list) else []
+    raw_equipments = inventory.equipments if isinstance(inventory.equipments, list) else []
     
-    new_items = []
-    new_skills = skills
-    new_equipments = equipments
-    moved_skills = 0
-    moved_equips = 0
+    consolidated_items = []
+    consolidated_skills = list(raw_skills)
+    consolidated_equipments = []
     
-    for item in all_items:
-        item_id = item.get('_id', '')
-        if item_id.startswith('1-'):
-            if not any(e['_id'] == item_id for e in new_equipments):
-                new_equipments.append(item)
-                moved_equips += 1
-        elif item_id.startswith('2-'):
-            if not any(s['_id'] == item_id for s in new_skills):
-                new_skills.append(item)
-                moved_skills += 1
+    all_equipments = []
+    seen_equip_ids = set()
+    
+    for item in raw_equipments:
+        if isinstance(item, dict) and item.get('_id'):
+            if item['_id'] not in seen_equip_ids:
+                all_equipments.append(item)
+                seen_equip_ids.add(item['_id'])
+                
+    for item in raw_items:
+        if isinstance(item, dict) and item.get('_id'):
+            item_id = item['_id']
+            if item_id.startswith('1-'):
+                if item_id not in seen_equip_ids:
+                    all_equipments.append(item)
+                    seen_equip_ids.add(item_id)
+            elif item_id.startswith('2-'):
+                if not any(s.get('_id') == item_id for s in consolidated_skills):
+                    consolidated_skills.append(item)
+            else:
+                consolidated_items.append(item)
         else:
-            new_items.append(item)
+            consolidated_items.append(item)
+
+    equipped_by_slot = {}
+    unequipped_items = []
+    previously_equipped_ids = {x['_id'] for x in raw_equipments if isinstance(x, dict) and x.get('_id')}
+    sorted_equipments = sorted(all_equipments, key=lambda x: 0 if x['_id'] in previously_equipped_ids else 1)
     
-    if updated_data:
-        await db.user.update(where={'id': ctx.author.id}, data={'data': Json(data)})
+    for eq in sorted_equipments:
+        slot = eq.get('usefor')
+        if slot in ["Senjata", "Armor", "Kaki", "Kepala"]:
+            if slot not in equipped_by_slot:
+                equipped_by_slot[slot] = eq
+                consolidated_equipments.append(eq)
+            else:
+                unequipped_items.append(eq)
+        else:
+            unequipped_items.append(eq)
+            
+    consolidated_items.extend(unequipped_items)
+    
+    level = data.get('level', 1)
+    player_class = data.get('class', 'None').lower()
+    
+    base_atk = 10
+    base_def = 7
+    base_agl = 8
+    base_max_hp = 100
+    
+    if player_class == "warrior":
+        base_max_hp += 30
+        base_atk += 5
+        base_def += 3
+    elif player_class == "mage":
+        base_max_hp -= 10
+        base_atk += 10
+        base_agl += 2
+    elif player_class == "rogue":
+        base_max_hp += 10
+        base_atk += 3
+        base_agl += 8
         
+    new_max_hp = base_max_hp + (level - 1) * 20
+    new_hp = min(user_record.hp, new_max_hp)
+    new_stat_points = (level - 1) * 5
+    
+    for eq in consolidated_equipments:
+        func = eq.get('func', '')
+        if '+' in func:
+            parts = func.split('+')
+            stat_name = parts[0].upper()
+            try:
+                stat_val = int(parts[1])
+            except ValueError:
+                stat_val = 0
+                
+            if stat_name == "ATK":
+                base_atk += stat_val
+            elif stat_name == "DEF":
+                base_def += stat_val
+            elif stat_name == "AGL":
+                base_agl += stat_val
+            elif stat_name == "ALL":
+                base_atk += stat_val
+                base_def += stat_val
+                base_agl += stat_val
+                
+    data['attack'] = base_atk
+    data['defense'] = base_def
+    data['agility'] = base_agl
+    data['stat_points'] = new_stat_points
+    
+    await db.user.update(
+        where={'id': ctx.author.id},
+        data={
+            'max_hp': new_max_hp,
+            'hp': new_hp,
+            'data': Json(data)
+        }
+    )
+    
     await db.inventory.update(
         where={'userId': ctx.author.id},
         data={
-            'items': Json(new_items),
-            'skills': Json(new_skills),
-            'equipments': Json(new_equipments)
+            'items': Json(consolidated_items),
+            'skills': Json(consolidated_skills),
+            'equipments': Json(consolidated_equipments)
         }
     )
     
     msg = i18n.get(lang, "game.fix_success")
-    if moved_skills > 0 or moved_equips > 0:
-        skills_lbl = i18n.get(lang, "game.fix_moved_skills", count=moved_skills)
-        equips_lbl = i18n.get(lang, "game.fix_moved_equips", count=moved_equips)
-        msg += f"\n{skills_lbl}\n{equips_lbl}"
-    if updated_data:
-        data_lbl = i18n.get(lang, "game.fix_updated_data")
-        msg += f"\n{data_lbl}"
-    if moved_skills == 0 and moved_equips == 0 and not updated_data:
-        msg = i18n.get(lang, "game.fix_already_optimal")
-        
+    refund_msg = "Semua poin statusmu telah dikembalikan! Silakan alokasikan kembali menggunakan `/game allocate`." if lang == "id" else "All your stat points have been refunded! Please reallocate them using `/game allocate`."
+    msg += f"\n\n{refund_msg}"
+    
     await ctx.reply(msg)
 
 async def execute_shop(ctx):
@@ -1134,7 +1227,14 @@ async def execute_use(ctx, type_val):
         case "item":
             things = [item for item in user_items if "0-" in item['_id'] and item.get('usefor') == "free"]
         case "equipment":
-            things = [item for item in user_items if "1-" in item['_id']]
+            user_equipments = inventory.equipments if isinstance(inventory.equipments, list) else []
+            unequipped = [dict(item) for item in user_items if "1-" in item['_id']]
+            equipped = []
+            for item in user_equipments:
+                d = dict(item)
+                d['is_equipped'] = True
+                equipped.append(d)
+            things = unequipped + equipped
         case _:
             msg = i18n.get(lang, "game.use_invalid_option")
             return await ctx.reply(msg, ephemeral=True)
