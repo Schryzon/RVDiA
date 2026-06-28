@@ -61,9 +61,15 @@ class FightView(View):
             msg = i18n.get(self.lang, "game.resign_button_not_allowed")
             return await interaction.response.send_message(msg, ephemeral=True)
         prefix = "Option selected: " if self.lang == "en" else "Opsi terpilih: "
-        await interaction.response.send_message(f"{prefix}{button.emoji}{button.label}")
+        try:
+            await interaction.response.send_message(f"{prefix}{button.emoji}{button.label}")
+        except discord.errors.NotFound:
+            await interaction.channel.send(f"{prefix}{button.emoji}{button.label}")
         await asyncio.sleep(0.5)
-        await interaction.message.delete(delay=5)
+        try:
+            await interaction.message.delete(delay=5)
+        except:
+            pass
 
     @button(label='Serang', custom_id='attack', style=discord.ButtonStyle.danger, emoji='💥')
     async def attack(self, interaction:discord.Interaction, button:Button):
