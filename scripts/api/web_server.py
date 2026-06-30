@@ -11,6 +11,8 @@ from discord.ext import commands
 from scripts.main import db
 from scripts.api.auth import setup_auth_routes, get_session
 from scripts.api.routes import setup_api_routes
+from scripts.api.saweria_webhook import handle_saweria_webhook
+from scripts.api.kofi_webhook import handle_kofi_webhook
 
 def load_locales():
     locales = {}
@@ -284,6 +286,8 @@ async def start_web_server(bot):
     app.router.add_get('/widget-demo', handle_widget_demo)
     app.router.add_get('/playground', handle_playground)
     app.router.add_post('/internal/dm', handle_internal_dm)
+    app.router.add_post('/webhook/saweria', handle_saweria_webhook)
+    app.router.add_post('/webhook/kofi', handle_kofi_webhook)
     
     runner = web.AppRunner(app)
     await runner.setup()

@@ -134,6 +134,10 @@ async def on_ready():
       change_status.start()
       logging.info('change_status() starting!')
 
+    if not vote_reminder_task.is_running():
+      vote_reminder_task.start()
+      logging.info('vote_reminder_task() starting!')
+
     logging.info("RVDiA (Genryu) is ready.")
 
 
@@ -163,6 +167,87 @@ async def change_status():
   else:
     type = discord.Game(status)
   await rvdia.change_presence(status = discord.Status.idle, activity=type)
+
+
+# ── Vote Reminder Task ───────────────────────────────────────
+
+_reminded_users: set = set()  # In-memory guard — clears on restart
+
+@tasks.loop(hours=1)
+async def vote_reminder_task():
+    """
+    Hourly: finds users whose last_login was ~12h ago and DMs them
+    to vote on Top.gg if they haven't voted yet this cycle.
+    """
+    from datetime import timezone as _tz, timedelta as _td
+    now = datetime.now(_tz.utc)
+    window_start = now - _td(hours=13)
+    window_end   = now - _td(hours=11)
+
+    try:
+        all_users = await db.user.find_many()
+    except Exception as e:
+        logging.warning(f"vote_reminder_task: DB error — {e}")
+        return
+
+    for user_record in all_users:
+        if user_record.id in _reminded_users:
+            continue
+
+        last_login_raw = user_record.data.get('last_login')
+        if not last_login_raw:
+            continue
+
+        try:
+            if isinstance(last_login_raw, str):
+                last_login = datetime.fromisoformat(last_login_raw)
+            else:
+                last_login = last_login_raw
+            if last_login.tzinfo is None:
+                last_login = last_login.replace(tzinfo=_tz.utc)
+        except Exception:
+            continue
+
+        if not (window_start <= last_login <= window_end):
+            continue
+
+        # Check if already voted
+        has_voted = await check_vote(user_record.id)
+        if has_voted:
+            _reminded_users.add(user_record.id)
+            continue
+
+        # DM the reminder
+        try:
+            from scripts.main import db as _db
+            user_settings = await _db.usersettings.find_unique(where={'userId': user_record.id})
+            lang = user_settings.lang if user_settings else "en"
+
+            discord_user = await rvdia.fetch_user(user_record.id)
+            topgg_url = f"https://top.gg/bot/{rvdia.user.id}/vote"
+
+            embed = discord.Embed(
+                title=i18n.get(lang, "game.vote_reminder_title"),
+                description=i18n.get(lang, "game.vote_reminder_desc"),
+                color=0xf7c948
+            )
+            embed.set_thumbnail(url=rvdia.user.display_avatar.url)
+
+            view = discord.ui.View(timeout=None)
+            view.add_item(discord.ui.Button(
+                label=i18n.get(lang, "game.vote_reminder_btn"),
+                emoji="🗳️",
+                style=discord.ButtonStyle.link,
+                url=topgg_url
+            ))
+
+            await discord_user.send(embed=embed, view=view)
+            _reminded_users.add(user_record.id)
+            logging.info(f"vote_reminder_task: Reminded user {user_record.id}.")
+        except discord.Forbidden:
+            _reminded_users.add(user_record.id)  # DMs closed — skip forever this cycle
+        except Exception as e:
+            logging.warning(f"vote_reminder_task: Could not DM {user_record.id} — {e}")
 
 
 # Handler variable

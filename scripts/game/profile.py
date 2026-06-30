@@ -743,6 +743,10 @@ async def execute_register(ctx, name=None):
     await asyncio.sleep(0.7)
     await execute_profile(ctx, ctx.bot)
 
+    # Fire onboarding DM in background — never blocks registration
+    from scripts.game.onboarding import send_onboarding_dm
+    asyncio.create_task(send_onboarding_dm(ctx.author, lang, ctx.bot))
+
 async def execute_leaderboard(ctx):
     lang = await get_user_lang(ctx.author.id)
     users = await db.user.find_many()

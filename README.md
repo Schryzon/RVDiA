@@ -93,11 +93,18 @@ RVDiA/
 │   ├── Music.py                # Music Player (SoundCloud + Fast Search)
 │   ├── Game.py                 # Turn-based RPG Battle Engine
 │   └── Verification.py         # Verification and Server Gateways
+├── docs/                       # Documentation & Reference Files
+│   ├── lore/                   # RVDiA Lore Bible (AI context)
+│   ├── game_manual.md          # In-game guide & manual reference
+│   ├── DISCOVERY.md            # Bot listing SEO & promotional copy
+│   └── image_eval.md           # Image processing evaluation notes
 ├── locales/                    # Multilingual Dictionaries (en.json / id.json)
 ├── scripts/                    # Parallel Adapters and Backend Logic
-│   ├── api/                    # Web Server, OAuth2, and REST APIs
+│   ├── api/                    # Web Server, OAuth2, REST APIs & Webhooks
 │   │   ├── web_server.py       # aiohttp Dashboard Entrypoint
-│   │   └── routes.py           # Dashboard API Endpoints
+│   │   ├── routes.py           # Dashboard API Endpoints
+│   │   ├── saweria_webhook.py  # Saweria Auto-Premium Webhook
+│   │   └── kofi_webhook.py     # Ko-fi Auto-Premium Webhook
 │   ├── ai/                     # GPU Server pipelines & Memory managers
 │   ├── telegram_bot.py         # Telegram Polling Adapter (Zora)
 │   └── main.py                 # Shared database (Prisma) connection

@@ -18,7 +18,7 @@ class ChatService:
         self.api_key = os.getenv("googlekey")
         
         # Load RVDiA Lore Bible
-        lore_path = os.path.join(os.path.dirname(__file__), "../../lore/RVDiA.md")
+        lore_path = os.path.join(os.path.dirname(__file__), "../../docs/lore/RVDiA.md")
         if os.path.exists(lore_path):
             try:
                 with open(lore_path, "r", encoding="utf-8") as f:
@@ -168,7 +168,7 @@ class ChatService:
             
         if needs_game_lore:
             try:
-                manual_path = os.path.join(os.path.dirname(__file__), "../../game_manual.md")
+                manual_path = os.path.join(os.path.dirname(__file__), "../../docs/game_manual.md")
                 if os.path.exists(manual_path):
                     with open(manual_path, "r", encoding="utf-8") as f:
                         lore = f.read()
