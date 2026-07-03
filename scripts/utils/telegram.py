@@ -213,7 +213,7 @@ class TelegramClient:
                 return False
             return True
 
-    async def send_photo(self, chat_id: int, photo_url: str, caption: str = "", parse_mode: str = "HTML", message_thread_id: int = None) -> bool:
+    async def send_photo(self, chat_id: int, photo_url: str, caption: str = "", parse_mode: str = "HTML", message_thread_id: int = None, reply_markup: dict = None) -> bool:
         url = f"{self.base_url}/sendPhoto"
         payload = {
             "chat_id": chat_id,
@@ -223,11 +223,40 @@ class TelegramClient:
         }
         if message_thread_id:
             payload["message_thread_id"] = message_thread_id
+        if reply_markup:
+            payload["reply_markup"] = reply_markup
         
         session = await self.get_session()
         async with session.post(url, json=payload) as resp:
             if resp.status != 200:
                 logging.error(f"Failed to send Telegram photo: {resp.status} - {await resp.text()}")
+                return False
+            return True
+
+    async def edit_message_media(self, chat_id: int, message_id: int, photo_url: str, caption: str = "", parse_mode: str = "HTML", reply_markup: dict = None) -> bool:
+        url = f"{self.base_url}/editMessageMedia"
+        if parse_mode == "HTML" and caption:
+            caption = escape_telegram_html(caption)
+        media = {
+            "type": "photo",
+            "media": photo_url,
+        }
+        if caption:
+            media["caption"] = caption
+            media["parse_mode"] = parse_mode
+
+        payload = {
+            "chat_id": chat_id,
+            "message_id": message_id,
+            "media": media
+        }
+        if reply_markup:
+            payload["reply_markup"] = reply_markup
+
+        session = await self.get_session()
+        async with session.post(url, json=payload) as resp:
+            if resp.status != 200:
+                logging.error(f"Failed to edit Telegram media: {resp.status} - {await resp.text()}")
                 return False
             return True
 
@@ -354,12 +383,12 @@ async def send_telegram_message(chat_id, text, parse_mode="HTML", thread_id=None
             chunk_text = "\n".join(current_chunk)
             await telegram_client.send_message(chat_id, chunk_text, parse_mode, message_thread_id=effective_thread_id, reply_markup=reply_markup)
 
-async def send_telegram_photo(chat_id, photo_url, caption="", parse_mode="HTML", thread_id=None):
+async def send_telegram_photo(chat_id, photo_url, caption="", parse_mode="HTML", thread_id=None, reply_markup=None):
     if telegram_client:
         if parse_mode == "HTML" and caption:
             caption = escape_telegram_html(caption)
         effective_thread_id = thread_id if thread_id is not None else current_thread_id.get()
-        await telegram_client.send_photo(chat_id, photo_url, caption, parse_mode, message_thread_id=effective_thread_id)
+        await telegram_client.send_photo(chat_id, photo_url, caption, parse_mode, message_thread_id=effective_thread_id, reply_markup=reply_markup)
 
 async def send_telegram_photo_bytes(chat_id, photo_bytes, filename="processed.png", caption="", thread_id=None):
     if telegram_client:

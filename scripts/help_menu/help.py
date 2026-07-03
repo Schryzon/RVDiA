@@ -4,6 +4,7 @@ Taken from discord-pretty-help, credits goes to the creator.
 
 __all__ = ["PrettyHelp", "Paginator"]
 from random import randint
+import os
 from typing import Any, Dict, List, Optional, Union
 
 import discord
@@ -412,6 +413,11 @@ class Help(HelpCommand, commands.Cog):
     async def filter_commands(self, commands, *, sort=False):
         """Bypass expensive permission/blacklist database checks in help menu generation."""
         filtered = [c for c in commands if not c.hidden]
+        if getattr(self, "show_owner_hidden", False):
+            filtered.extend(
+                c for c in commands
+                if c.hidden and getattr(c, "cog_name", None) == "Owner"
+            )
         if sort:
             filtered.sort(key=lambda c: c.name)
         return filtered
@@ -427,6 +433,13 @@ class Help(HelpCommand, commands.Cog):
         except Exception:
             self.lang = "en"
         self.paginator.lang = self.lang
+        owner_id_raw = os.getenv("schryzonid")
+        self.show_owner_hidden = False
+        if owner_id_raw:
+            try:
+                self.show_owner_hidden = ctx.author.id == int(owner_id_raw)
+            except ValueError:
+                self.show_owner_hidden = False
 
         if ctx.guild is not None:
             perms = ctx.channel.permissions_for(ctx.guild.me)

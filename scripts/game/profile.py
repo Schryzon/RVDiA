@@ -17,6 +17,7 @@ from scripts.game.game import (
     default_data,
     check_compatible
 )
+from scripts.game.item_pagination import PagedSelectionView
 from scripts.utils.i18n import i18n
 
 async def get_user_lang(user_id: int) -> str:
@@ -430,67 +431,86 @@ class ShopView(View):
         embed = await self.update_embed(last_page)
         await interaction.response.edit_message(embed=embed, view=self)
 
-class UseDropdown(discord.ui.Select):
-    def __init__(self, items: list, ctx, lang="en") -> None:
-        self.lang = lang
+class UseView(PagedSelectionView):
+    def __init__(self, items: list, ctx, mode: str, lang="en"):
+        self.ctx = ctx
+        self.mode = mode
+        super().__init__(
+            owner_id=ctx.author.id,
+            items=items,
+            lang=lang,
+            timeout=30,
+            page_size=25,
+            select_custom_id="usedrop"
+        )
+
+    def page_placeholder(self) -> str:
+        base = i18n.get(self.lang, "game.use_placeholder")
+        return f"{base} ({self.current_page + 1}/{self.max_pages})" if self.max_pages > 1 else base
+
+    def empty_option_label(self) -> str:
+        return i18n.get(self.lang, "game.use_no_items")
+
+    def empty_option_description(self) -> str:
+        return i18n.get(self.lang, "game.use_no_items_shop")
+
+    def build_options(self, page_items: list) -> list:
         options = []
-        for index, item in enumerate(items, start=1):
+        start_index = self.current_page * self.page_size
+
+        for index, item in enumerate(page_items, start=start_index + 1):
             item_name = i18n.get(self.lang, f"game.item_{item['_id']}_name", default=item['name'])
             if item.get('is_equipped'):
                 suffix = " [Equipped]" if self.lang == "en" else " [Dipasang]"
-                lbl = f"{index}. {item_name}{suffix} ({item['usefor']})"
+                label = f"{index}. {item_name}{suffix} ({item['usefor']})"
+            elif item.get('usefor') == 'free':
+                label = f"{index}. {item_name}"
             else:
-                lbl = f"{index}. {item_name} ({item['usefor']})" if not item['usefor'] == 'free' else f"{index}. {item_name}"
+                label = f"{index}. {item_name} ({item['usefor']})"
+
             options.append(discord.SelectOption(
-                label=lbl,
+                label=label,
                 description=f"{item['func'].upper()}",
                 value=item['_id']
             ))
-        if not options:
-            options.append(discord.SelectOption(
-                label=i18n.get(self.lang, "game.use_no_items"),
-                value="none",
-                description=i18n.get(self.lang, "game.use_no_items_shop")
-            ))
-        placeholder_text = i18n.get(self.lang, "game.use_placeholder")
-        super().__init__(custom_id="usedrop", placeholder=placeholder_text, min_values=1, max_values=1, options=options)
-        self.items = items
-        self.ctx = ctx
 
-    async def callback(self, interaction: discord.Interaction):
-        if interaction.message.mentions[0] != interaction.user:
+        return options
+
+    async def handle_selection(self, interaction: discord.Interaction, value: str):
+        if not interaction.message.mentions or interaction.message.mentions[0] != interaction.user:
             msg = i18n.get(self.lang, "game.use_not_owner")
             return await interaction.response.send_message(msg, ephemeral=True)
-        if self.values[0] == 'none':
+
+        if value == 'none':
             msg = i18n.get(self.lang, "game.use_no_items_shop")
             return await interaction.response.send_message(msg, ephemeral=True)
-        
+
         user_record = await db.user.find_unique(where={'id': interaction.user.id}, include={'inventory': True})
         if not user_record or not user_record.inventory:
             msg = i18n.get(self.lang, "game.use_account_issue")
             return await interaction.response.send_message(msg, ephemeral=True)
-            
+
         data = user_record.data
         inventory = user_record.inventory
-        item_id = self.values[0]
-        
-        if '1-' in item_id:
+        item_id = value
+
+        if self.mode == 'equipment':
             equipments = inventory.equipments if isinstance(inventory.equipments, list) else []
             matching = [x for x in equipments if x['_id'] == item_id]
-            
+
             if matching:
                 item_to_unequip = matching[0]
                 func = item_to_unequip['func'].split('+')
                 stat_key = self.convert_to_db_stat_key(func[0])
                 stat_value = int(func[1])
-                
+
                 new_equipments = [x for x in equipments if x['_id'] != item_id]
                 data[stat_key] -= stat_value
-                
+
                 all_items = inventory.items if isinstance(inventory.items, list) else []
                 new_items = list(all_items)
                 new_items.append(item_to_unequip)
-                
+
                 await db.user.update(
                     where={'id': interaction.user.id},
                     data={
@@ -505,69 +525,66 @@ class UseDropdown(discord.ui.Select):
                 )
                 item_name = i18n.get(self.lang, f"game.item_{item_to_unequip['_id']}_name", default=item_to_unequip['name'])
                 msg = i18n.get(self.lang, "game.use_unequip_success", name=item_name)
-                await interaction.response.send_message(msg)
-            
-            else:
-                all_items = inventory.items if isinstance(inventory.items, list) else []
-                item_match = [x for x in all_items if x['_id'] == item_id]
-                
-                if not item_match:
-                    msg = i18n.get(self.lang, "game.use_not_found")
-                    return await interaction.response.send_message(msg, ephemeral=True)
-                
-                item_to_equip = item_match[0]
-                func = item_to_equip['func'].split('+')
-                stat_key = self.convert_to_db_stat_key(func[0])
-                stat_value = int(func[1])
-                
-                new_items = [x for x in all_items if x['_id'] != item_id]
-                
-                same_type = [x for x in equipments if x.get('usefor') == item_to_equip.get('usefor')]
-                if same_type:
-                    old_item = same_type[0]
-                    old_func = old_item['func'].split('+')
-                    old_stat_key = self.convert_to_db_stat_key(old_func[0])
-                    data[old_stat_key] -= int(old_func[1])
-                    equipments = [x for x in equipments if x['_id'] != old_item['_id']]
-                    new_items.append(old_item)
-                
-                equipments.append(item_to_equip)
-                data[stat_key] += stat_value
-                
-                await db.user.update(
-                    where={'id': interaction.user.id},
-                    data={
-                        'data': Json(data),
-                        'inventory': {
-                            'update': {
-                                'equipments': Json(equipments),
-                                'items': Json(new_items)
-                            }
-                        }
-                    }
-                )
-                item_name = i18n.get(self.lang, f"game.item_{item_to_equip['_id']}_name", default=item_to_equip['name'])
-                msg = i18n.get(self.lang, "game.use_equip_success", name=item_name)
-                await interaction.response.send_message(msg)
-        
-        else:
+                return await interaction.response.send_message(msg)
+
             all_items = inventory.items if isinstance(inventory.items, list) else []
             item_match = [x for x in all_items if x['_id'] == item_id]
             if not item_match:
                 msg = i18n.get(self.lang, "game.use_not_found")
                 return await interaction.response.send_message(msg, ephemeral=True)
-            
-            item_to_use = item_match[0]
-            item_name = i18n.get(self.lang, f"game.item_{item_to_use['_id']}_name", default=item_to_use['name'])
+
+            item_to_equip = item_match[0]
+            func = item_to_equip['func'].split('+')
+            stat_key = self.convert_to_db_stat_key(func[0])
+            stat_value = int(func[1])
+
+            new_items = [x for x in all_items if x['_id'] != item_id]
+
+            same_type = [x for x in equipments if x.get('usefor') == item_to_equip.get('usefor')]
+            if same_type:
+                old_item = same_type[0]
+                old_func = old_item['func'].split('+')
+                old_stat_key = self.convert_to_db_stat_key(old_func[0])
+                data[old_stat_key] -= int(old_func[1])
+                equipments = [x for x in equipments if x['_id'] != old_item['_id']]
+                new_items.append(old_item)
+
+            equipments.append(item_to_equip)
+            data[stat_key] += stat_value
+
+            await db.user.update(
+                where={'id': interaction.user.id},
+                data={
+                    'data': Json(data),
+                    'inventory': {
+                        'update': {
+                            'equipments': Json(equipments),
+                            'items': Json(new_items)
+                        }
+                    }
+                }
+            )
+            item_name = i18n.get(self.lang, f"game.item_{item_to_equip['_id']}_name", default=item_to_equip['name'])
             msg = i18n.get(self.lang, "game.use_equip_success", name=item_name)
-            await interaction.response.send_message(msg)
-            
-            from scripts.game.fight import GameInstance
-            game_inst = GameInstance(self.ctx, interaction.user, None, self.ctx.bot)
-            game_inst.lang = self.lang
-            await game_inst.func_converter(item_to_use['func'], interaction.user, None)
-            await asyncio.sleep(1)
-            await level_up(self.ctx)
+            return await interaction.response.send_message(msg)
+
+        all_items = inventory.items if isinstance(inventory.items, list) else []
+        item_match = [x for x in all_items if x['_id'] == item_id]
+        if not item_match:
+            msg = i18n.get(self.lang, "game.use_not_found")
+            return await interaction.response.send_message(msg, ephemeral=True)
+
+        item_to_use = item_match[0]
+        item_name = i18n.get(self.lang, f"game.item_{item_to_use['_id']}_name", default=item_to_use['name'])
+        msg = i18n.get(self.lang, "game.use_equip_success", name=item_name)
+        await interaction.response.send_message(msg)
+
+        from scripts.game.fight import GameInstance
+        game_inst = GameInstance(self.ctx, interaction.user, None, self.ctx.bot)
+        game_inst.lang = self.lang
+        await game_inst.func_converter(item_to_use['func'], interaction.user, None)
+        await asyncio.sleep(1)
+        await level_up(self.ctx)
 
     def convert_to_db_stat_key(self, short_stat):
         mapping = {
@@ -578,10 +595,96 @@ class UseDropdown(discord.ui.Select):
         }
         return mapping.get(short_stat.upper(), short_stat.lower())
 
-class UseView(View):
+
+class SellView(PagedSelectionView):
     def __init__(self, items: list, ctx, lang="en"):
-        super().__init__(timeout=30)
-        self.add_item(UseDropdown(items, ctx, lang=lang))
+        self.ctx = ctx
+        super().__init__(
+            owner_id=ctx.author.id,
+            items=items,
+            lang=lang,
+            timeout=30,
+            page_size=25,
+            select_custom_id="selldrop"
+        )
+
+    def page_placeholder(self) -> str:
+        base = i18n.get(self.lang, "game.sell_placeholder")
+        return f"{base} ({self.current_page + 1}/{self.max_pages})" if self.max_pages > 1 else base
+
+    def empty_option_label(self) -> str:
+        return i18n.get(self.lang, "game.sell_no_items")
+
+    def empty_option_description(self) -> str:
+        return i18n.get(self.lang, "game.sell_no_items_desc")
+
+    def build_options(self, page_items: list) -> list:
+        options = []
+        start_index = self.current_page * self.page_size
+
+        for index, item in enumerate(page_items, start=start_index + 1):
+            item_name = i18n.get(self.lang, f"game.item_{item['_id']}_name", default=item['name'])
+            owned = item.get('owned', 1)
+            sale_value = max(1, round(item.get('cost', 0) * 0.5))
+            currency = "Coins" if self.lang == "en" else "Koin"
+            options.append(discord.SelectOption(
+                label=f"{index}. {item_name} x{owned}",
+                description=f"Sell for {sale_value} {currency}",
+                value=item['_id']
+            ))
+
+        return options
+
+    async def handle_selection(self, interaction: discord.Interaction, value: str):
+        if not interaction.message.mentions or interaction.message.mentions[0] != interaction.user:
+            msg = i18n.get(self.lang, "game.sell_not_owner")
+            return await interaction.response.send_message(msg, ephemeral=True)
+
+        if value == "none":
+            return await interaction.response.send_message(self.empty_option_description(), ephemeral=True)
+
+        user_record = await db.user.find_unique(where={'id': interaction.user.id}, include={'inventory': True})
+        if not user_record or not user_record.inventory:
+            msg = i18n.get(self.lang, "game.use_account_issue")
+            return await interaction.response.send_message(msg, ephemeral=True)
+
+        data = user_record.data
+        inventory = user_record.inventory
+        user_items = inventory.items if isinstance(inventory.items, list) else []
+        target_item = None
+
+        for item in user_items:
+            if item['_id'] == value and item.get('owned', 0) > 0:
+                target_item = item
+                break
+
+        if not target_item:
+            msg = i18n.get(self.lang, "game.use_not_found")
+            return await interaction.response.send_message(msg, ephemeral=True)
+
+        sale_value = max(1, round(target_item.get('cost', 0) * 0.5))
+        data['coins'] = data.get('coins', 0) + sale_value
+
+        if target_item.get('owned', 0) > 1:
+            target_item['owned'] -= 1
+        else:
+            user_items = [item for item in user_items if item['_id'] != value]
+
+        await db.user.update(
+            where={'id': interaction.user.id},
+            data={
+                'data': Json(data),
+                'inventory': {
+                    'update': {
+                        'items': Json(user_items)
+                    }
+                }
+            }
+        )
+
+        item_name = i18n.get(self.lang, f"game.item_{target_item['_id']}_name", default=target_item['name'])
+        msg = i18n.get(self.lang, "game.sell_success", name=item_name, amount=sale_value)
+        await interaction.response.send_message(msg)
 
 class TitlesDropdown(discord.ui.Select):
     def __init__(self, unlocked_titles: list, active_title: str, lang="en"):
@@ -1243,8 +1346,30 @@ async def execute_use(ctx, type_val):
             msg = i18n.get(lang, "game.use_invalid_option")
             return await ctx.reply(msg, ephemeral=True)
         
-    view = UseView(things, ctx, lang=lang)
+    view = UseView(things, ctx, type_val, lang=lang)
     await ctx.reply(f'{ctx.author.mention}', view=view)
+
+async def execute_sell(ctx):
+    lang = await get_user_lang(ctx.author.id)
+    user_record = await db.user.find_unique(where={'id': ctx.author.id}, include={'inventory': True})
+    if not user_record or not user_record.inventory:
+        msg = i18n.get(lang, "game.use_not_registered")
+        return await ctx.reply(msg, ephemeral=True)
+
+    inventory = user_record.inventory
+    user_items = inventory.items if isinstance(inventory.items, list) else []
+    sellable_items = [
+        item for item in user_items
+        if item.get('owned', 0) > 0 and item.get('_id') and item.get('cost') is not None
+    ]
+
+    if not sellable_items:
+        msg = i18n.get(lang, "game.sell_no_items_inventory")
+        return await ctx.reply(msg, ephemeral=True)
+
+    view = SellView(sellable_items, ctx, lang=lang)
+    msg = i18n.get(lang, "game.sell_prompt")
+    await ctx.reply(msg, view=view)
 
 async def execute_titles(ctx):
     lang = await get_user_lang(ctx.author.id)

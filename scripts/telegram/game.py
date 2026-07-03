@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 from prisma import Json
 from scripts.main import db
 from scripts.game.game import level_up, give_rewards, send_level_up_msg, split_reward_string
-from scripts.utils.telegram import TelegramMockCtx, TelegramMockMember, send_telegram_message, telegram_client
+from scripts.utils.telegram import TelegramMockCtx, TelegramMockMember, send_telegram_message, send_telegram_photo, telegram_client
 from scripts.utils.i18n import i18n
 
 def to_key(name: str) -> str:
@@ -16,6 +16,155 @@ def to_key(name: str) -> str:
     name = re.sub(r'[^a-z0-9\s_]', '', name)
     name = re.sub(r'[\s_]+', '_', name)
     return name
+
+
+SHOP_PAGE_SIZE = 5
+
+
+def _load_shop_items() -> list:
+    shop_path = path.join(path.dirname(__file__), '..', '..', 'src', 'game', 'shop.json')
+    with open(shop_path, 'r', encoding='utf-8') as file:
+        return json.load(file)
+
+
+def _item_name(lang: str, item: dict) -> str:
+    return i18n.get(lang, f"game.item_{item['_id']}_name", default=item.get('name', item.get('_id', 'Item')))
+
+
+def _item_desc(lang: str, item: dict) -> str:
+    return i18n.get(lang, f"game.item_{item['_id']}_desc", default=item.get('desc', 'No description.'))
+
+
+def _currency_name(lang: str, paywith: str) -> str:
+    if paywith == "Koin":
+        return "Coins" if lang == "en" else "Koin"
+    return "Karma"
+
+
+def _find_shop_item(items: list, query: str) -> dict | None:
+    if not query:
+        return None
+
+    query_norm = query.strip().lower()
+    if not query_norm:
+        return None
+
+    for item in items:
+        if item.get('_id', '').lower() == query_norm or item.get('name', '').lower() == query_norm:
+            return item
+
+    for item in items:
+        if query_norm in item.get('_id', '').lower() or query_norm in item.get('name', '').lower():
+            return item
+
+    item_names = [item.get('name', '') for item in items]
+    matches = difflib.get_close_matches(query, item_names, n=1, cutoff=0.45)
+    if matches:
+        for item in items:
+            if item.get('name') == matches[0]:
+                return item
+
+    return None
+
+
+def _parse_amount(args: list, default: int = 1) -> tuple[str | None, int]:
+    if not args:
+        return None, default
+
+    amount = default
+    query_args = list(args)
+    if len(query_args) > 1 and query_args[-1].isdigit():
+        amount = max(1, int(query_args.pop()))
+
+    return " ".join(query_args).strip(), amount
+
+
+def _owned_item_lookup(inventory_items: list, item_id: str) -> tuple[int, dict | None]:
+    for idx, item in enumerate(inventory_items):
+        if item.get('_id') == item_id and item.get('owned', 0) > 0:
+            return idx, item
+    return -1, None
+
+
+def _apply_func_to_player(data: dict, hp: int, max_hp: int, func: str, scale: int = 1) -> tuple[dict, int, str]:
+    parsed = func.lower().replace(" ", "")
+    if not parsed:
+        return data, hp, "ok"
+
+    if "+" in parsed:
+        key, raw_val = parsed.split("+", 1)
+        sign = 1
+    elif "-" in parsed:
+        key, raw_val = parsed.split("-", 1)
+        sign = -1
+    else:
+        return data, hp, "unsupported"
+
+    is_percent = raw_val.endswith("%")
+    amount = raw_val[:-1] if is_percent else raw_val
+    try:
+        value = int(amount)
+    except ValueError:
+        return data, hp, "unsupported"
+
+    delta = scale * sign * value
+    if is_percent:
+        delta = scale * sign * round(max_hp * (value / 100))
+
+    if key == "atk":
+        data["attack"] = data.get("attack", 10) + delta
+    elif key == "def":
+        data["defense"] = data.get("defense", 7) + delta
+    elif key == "agl":
+        data["agility"] = data.get("agility", 8) + delta
+    elif key == "all":
+        data["attack"] = data.get("attack", 10) + delta
+        data["defense"] = data.get("defense", 7) + delta
+        data["agility"] = data.get("agility", 8) + delta
+    elif key == "hp":
+        hp = max(0, min(max_hp, hp + delta))
+    elif key == "exp":
+        data["exp"] = data.get("exp", 0) + delta
+    else:
+        return data, hp, "unsupported"
+
+    return data, hp, "ok"
+
+
+def _format_shop_entry(index: int, item: dict, lang: str) -> str:
+    name = _item_name(lang, item)
+    desc = _item_desc(lang, item)
+    currency = _currency_name(lang, item.get('paywith', 'Koin'))
+    return (
+        f"{index}. <b>{name}</b>\n"
+        f"   <i>{desc}</i>\n"
+        f"   {item.get('type', 'Item')} • {item.get('func', '???')} • {item.get('cost', 0)} {currency}"
+    )
+
+
+def _format_inventory_entry(index: int, item: dict, lang: str, equipped: bool = False) -> str:
+    name = _item_name(lang, item)
+    qty = item.get('owned', 1)
+    func = item.get('func', '???')
+    type_name = item.get('type', 'Item')
+    slot = item.get('usefor', '')
+    suffix = f" • {slot}" if slot else ""
+    if equipped:
+        suffix += " • Equipped" if lang == "en" else " • Dipakai"
+    return f"{index}. <b>{name}</b> x{qty}\n   <i>{type_name}</i>{suffix}\n   <code>{func}</code>"
+
+
+def _inventory_matches(user_items: list, user_skills: list, user_equipments: list, item_id: str) -> tuple[str | None, int, dict | None]:
+    for idx, item in enumerate(user_items):
+        if item.get('_id') == item_id and item.get('owned', 0) > 0:
+            return "items", idx, item
+    for idx, item in enumerate(user_skills):
+        if item.get('_id') == item_id and item.get('owned', 0) > 0:
+            return "skills", idx, item
+    for idx, item in enumerate(user_equipments):
+        if item.get('_id') == item_id and item.get('owned', 0) > 0:
+            return "equipments", idx, item
+    return None, -1, None
 
 def setup(zora):
     @zora.command("/daily")
@@ -291,6 +440,418 @@ def setup(zora):
         )
         await send_telegram_message(chat_id, msg, thread_id=thread_id)
 
+    @zora.command(["/shop", "/store", "/toko"])
+    async def handle_shop(zora_bot, chat_id, telegram_user_id, username, full_name, command, args, message, lang, thread_id=None, **_):
+        page = 1
+        if args and args[0].isdigit():
+            page = max(1, int(args[0]))
+
+        items = _load_shop_items()
+        total_pages = max(1, (len(items) - 1) // SHOP_PAGE_SIZE + 1)
+        page = min(page, total_pages)
+        start = (page - 1) * SHOP_PAGE_SIZE
+        page_items = items[start:start + SHOP_PAGE_SIZE]
+
+        header = "🛍️ <b>Xaneria Shop</b>" if lang == "en" else "🛍️ <b>Toko Xaneria</b>"
+        lines = [
+            header,
+            "━━━━━━━━━━━━━━━━━━━",
+            i18n.get(lang, "game.shop_desc"),
+            "",
+        ]
+
+        for idx, item in enumerate(page_items, start=start + 1):
+            lines.append(_format_shop_entry(idx, item, lang))
+
+        footer = (
+            f"━━━━━━━━━━━━━━━━━━━\n"
+            f"Page {page}/{total_pages}\n"
+            f"Use <code>/buy [item name]</code> to purchase."
+        ) if lang == "en" else (
+            f"━━━━━━━━━━━━━━━━━━━\n"
+            f"Halaman {page}/{total_pages}\n"
+            f"Gunakan <code>/buy [nama item]</code> untuk membeli."
+        )
+        lines.append(footer)
+        await send_telegram_message(chat_id, "\n".join(lines), thread_id=thread_id)
+
+    @zora.command(["/buy", "/beli"])
+    async def handle_buy(zora_bot, chat_id, telegram_user_id, username, full_name, command, args, message, lang, thread_id=None, **_):
+        virtual_id = -telegram_user_id
+        user_record = await db.user.find_unique(where={'id': virtual_id}, include={'inventory': True})
+        if not user_record or not user_record.inventory:
+            msg = i18n.get(lang, "game.use_not_registered")
+            return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
+
+        item_query, amount = _parse_amount(args, default=1)
+        if not item_query:
+            msg = "Use <code>/buy [item name]</code>." if lang == "en" else "Gunakan <code>/buy [nama item]</code>."
+            return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
+
+        items = _load_shop_items()
+        matched = _find_shop_item(items, item_query)
+        if not matched:
+            msg = "Item not found in shop!" if lang == "en" else "Item tidak ditemukan di toko!"
+            return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
+
+        if matched.get('type') in {"Skill", "Equipment"}:
+            amount = 1
+
+        data = user_record.data
+        currency_key = 'coins' if matched.get('paywith') == "Koin" else 'karma'
+        total_cost = matched.get('cost', 0) * amount
+        if data.get(currency_key, 0) < total_cost:
+            currency = _currency_name(lang, matched.get('paywith', 'Koin'))
+            msg = (
+                f"⚠️ You don't have enough {currency.lower()} to buy this item."
+                if lang == "en"
+                else f"⚠️ Koin/Karma-mu tidak cukup untuk membeli item ini."
+            )
+            return await send_telegram_message(chat_id, msg, thread_id=thread_id)
+
+        inventory = user_record.inventory
+        user_items = inventory.items if isinstance(inventory.items, list) else []
+        user_skills = inventory.skills if isinstance(inventory.skills, list) else []
+        user_equipments = inventory.equipments if isinstance(inventory.equipments, list) else []
+
+        item_id = matched['_id']
+        item_name = _item_name(lang, matched)
+
+        if matched.get('type') == "Skill":
+            _, _, already_owned = _inventory_matches(user_items, user_skills, user_equipments, item_id)
+            if already_owned:
+                msg = i18n.get(lang, "game.shop_skill_learned")
+                return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
+
+            new_item = dict(matched)
+            new_item['owned'] = 1
+            user_skills.append(new_item)
+            inventory_update = {'skills': Json(user_skills)}
+
+        else:
+            _, _, already_owned = _inventory_matches(user_items, user_skills, user_equipments, item_id)
+            if matched.get('type') == "Equipment" and already_owned:
+                msg = i18n.get(lang, "game.shop_equipment_bought")
+                return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
+
+            if matched.get('type') == "Equipment":
+                new_item = dict(matched)
+                new_item['owned'] = 1
+                user_items.append(new_item)
+                inventory_update = {'items': Json(user_items)}
+            else:
+                item_index, current_item = _owned_item_lookup(user_items, item_id)
+                if current_item:
+                    user_items[item_index]['owned'] = current_item.get('owned', 0) + amount
+                else:
+                    new_item = dict(matched)
+                    new_item['owned'] = amount
+                    user_items.append(new_item)
+                inventory_update = {'items': Json(user_items)}
+
+        data[currency_key] = data.get(currency_key, 0) - total_cost
+        await db.user.update(
+            where={'id': virtual_id},
+            data={
+                'data': Json(data),
+                'inventory': {'update': inventory_update}
+            }
+        )
+
+        currency = _currency_name(lang, matched.get('paywith', 'Koin'))
+        success_msg = (
+            f"✅ Purchase successful!\nBought <b>{item_name}</b> x{amount} for <code>{total_cost}</code> {currency}."
+            if lang == "en" else
+            f"✅ Pembelian berhasil!\nKamu membeli <b>{item_name}</b> x{amount} seharga <code>{total_cost}</code> {currency}."
+        )
+        await send_telegram_message(chat_id, success_msg, thread_id=thread_id)
+
+    @zora.command(["/inventory", "/inv", "/items"])
+    async def handle_inventory(zora_bot, chat_id, telegram_user_id, username, full_name, command, args, message, lang, thread_id=None, **_):
+        virtual_id = -telegram_user_id
+        user_record = await db.user.find_unique(where={'id': virtual_id}, include={'inventory': True})
+        if not user_record or not user_record.inventory:
+            msg = i18n.get(lang, "game.use_not_registered")
+            return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
+
+        page = 1
+        if args and args[0].isdigit():
+            page = max(1, int(args[0]))
+
+        inventory = user_record.inventory
+        user_items = inventory.items if isinstance(inventory.items, list) else []
+        user_skills = inventory.skills if isinstance(inventory.skills, list) else []
+        user_equipments = inventory.equipments if isinstance(inventory.equipments, list) else []
+
+        entries = []
+        for item in user_items:
+            if item.get('owned', 0) > 0:
+                entries.append((item, False))
+        for item in user_skills:
+            if item.get('owned', 0) > 0:
+                entries.append((item, False))
+        for item in user_equipments:
+            if item.get('owned', 0) > 0:
+                entries.append((item, True))
+
+        if not entries:
+            msg = "🎒 Your inventory is empty." if lang == "en" else "🎒 Inventorimu kosong."
+            return await send_telegram_message(chat_id, msg, thread_id=thread_id)
+
+        total_pages = max(1, (len(entries) - 1) // 10 + 1)
+        page = min(page, total_pages)
+        start = (page - 1) * 10
+        page_entries = entries[start:start + 10]
+
+        title = "🎒 <b>Your Inventory</b>" if lang == "en" else "🎒 <b>Inventorimu</b>"
+        lines = [title, "━━━━━━━━━━━━━━━━━━━"]
+        for idx, (item, equipped) in enumerate(page_entries, start=start + 1):
+            lines.append(_format_inventory_entry(idx, item, lang, equipped=equipped))
+
+        footer = (
+            f"━━━━━━━━━━━━━━━━━━━\nPage {page}/{total_pages}\n"
+            f"Use <code>/use [item name]</code> or <code>/sell [item name]</code>."
+        ) if lang == "en" else (
+            f"━━━━━━━━━━━━━━━━━━━\nHalaman {page}/{total_pages}\n"
+            f"Gunakan <code>/use [nama item]</code> atau <code>/sell [nama item]</code>."
+        )
+        lines.append(footer)
+        await send_telegram_message(chat_id, "\n".join(lines), thread_id=thread_id)
+
+    @zora.command(["/use", "/pakai"])
+    async def handle_use_item(zora_bot, chat_id, telegram_user_id, username, full_name, command, args, message, lang, thread_id=None, **_):
+        virtual_id = -telegram_user_id
+        user_record = await db.user.find_unique(where={'id': virtual_id}, include={'inventory': True})
+        if not user_record or not user_record.inventory:
+            msg = i18n.get(lang, "game.use_not_registered")
+            return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
+
+        item_query = " ".join(args).strip()
+        if not item_query:
+            msg = "Use <code>/inventory</code> first, then <code>/use [item name]</code>." if lang == "en" else "Gunakan <code>/inventory</code> dulu, lalu <code>/use [nama item]</code>."
+            return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
+
+        items = _load_shop_items()
+        matched = _find_shop_item(items, item_query)
+        if not matched:
+            msg = "Item not found in your shop list." if lang == "en" else "Item tidak ditemukan di daftar toko."
+            return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
+
+        inventory = user_record.inventory
+        user_items = inventory.items if isinstance(inventory.items, list) else []
+        user_skills = inventory.skills if isinstance(inventory.skills, list) else []
+        user_equipments = inventory.equipments if isinstance(inventory.equipments, list) else []
+
+        item_id = matched['_id']
+        item_type = matched.get('type', 'Consumable')
+        data = user_record.data
+        hp = user_record.hp
+        max_hp = user_record.max_hp
+
+        if item_type == "Equipment":
+            equipped_index = next((idx for idx, item in enumerate(user_equipments) if item.get('_id') == item_id), -1)
+            if equipped_index >= 0:
+                equipped_item = user_equipments.pop(equipped_index)
+                data, hp, status = _apply_func_to_player(data, hp, max_hp, equipped_item.get('func', ''), scale=-1)
+                if status != "ok":
+                    msg = "This equipment cannot be unequipped here." if lang == "en" else "Equipment ini tidak bisa dilepas di sini."
+                    return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
+
+                user_items.append(equipped_item)
+                await db.user.update(
+                    where={'id': virtual_id},
+                    data={'hp': hp, 'data': Json(data)}
+                )
+                await db.inventory.update(
+                    where={'userId': virtual_id},
+                    data={'items': Json(user_items), 'equipments': Json(user_equipments)}
+                )
+                item_name = _item_name(lang, matched)
+                msg = i18n.get(lang, "game.use_unequip_success", name=item_name)
+                return await send_telegram_message(chat_id, msg, thread_id=thread_id)
+
+            item_index, owned_item = _owned_item_lookup(user_items, item_id)
+            if not owned_item:
+                msg = i18n.get(lang, "game.use_not_found")
+                return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
+
+            slot = matched.get('usefor')
+            replaced_index = next(
+                (idx for idx, item in enumerate(user_equipments) if item.get('usefor') == slot),
+                -1
+            )
+            if replaced_index >= 0:
+                replaced_item = user_equipments.pop(replaced_index)
+                data, hp, status = _apply_func_to_player(data, hp, max_hp, replaced_item.get('func', ''), scale=-1)
+                if status != "ok":
+                    msg = "This equipment cannot be equipped here." if lang == "en" else "Equipment ini tidak bisa dipakai di sini."
+                    return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
+                user_items.append(replaced_item)
+
+            equipped_item = dict(owned_item)
+            user_items.pop(item_index)
+            user_equipments.append(equipped_item)
+            data, hp, status = _apply_func_to_player(data, hp, max_hp, equipped_item.get('func', ''), scale=1)
+            if status != "ok":
+                msg = "This equipment cannot be equipped here." if lang == "en" else "Equipment ini tidak bisa dipakai di sini."
+                return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
+
+            await db.user.update(
+                where={'id': virtual_id},
+                data={'hp': hp, 'data': Json(data)}
+            )
+            await db.inventory.update(
+                where={'userId': virtual_id},
+                data={'items': Json(user_items), 'equipments': Json(user_equipments)}
+            )
+
+            item_name = _item_name(lang, matched)
+            msg = i18n.get(lang, "game.use_equip_success", name=item_name)
+            return await send_telegram_message(chat_id, msg, thread_id=thread_id)
+
+        if item_type == "Skill":
+            item_index, owned_item = _inventory_matches(user_items, user_skills, user_equipments, item_id)[1:]
+            if owned_item is None:
+                msg = i18n.get(lang, "game.use_not_found")
+                return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
+
+            func = owned_item.get('func', '')
+            if func.startswith("dmg"):
+                msg = "Battle-only skill. Use it during /battle." if lang == "en" else "Skill ini hanya bisa dipakai saat battle. Gunakan saat /battle."
+                return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
+
+            data, hp, status = _apply_func_to_player(data, hp, max_hp, func)
+            if status != "ok":
+                msg = "This skill cannot be used here." if lang == "en" else "Skill ini tidak bisa dipakai di sini."
+                return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
+
+            if owned_item.get('owned', 0) > 1:
+                user_skills[item_index]['owned'] -= 1
+            else:
+                user_skills.pop(item_index)
+
+            await db.user.update(
+                where={'id': virtual_id},
+                data={'hp': hp, 'data': Json(data)}
+            )
+            await db.inventory.update(
+                where={'userId': virtual_id},
+                data={'skills': Json(user_skills)}
+            )
+
+            item_name = _item_name(lang, matched)
+            msg = i18n.get(lang, "game.use_skill_success", user=f"@{username}" if username else full_name, skill=item_name, func=func.upper())
+            return await send_telegram_message(chat_id, msg, thread_id=thread_id)
+
+        item_index, owned_item = _owned_item_lookup(user_items, item_id)
+        if not owned_item:
+            msg = i18n.get(lang, "game.use_not_found")
+            return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
+
+        data, hp, status = _apply_func_to_player(data, hp, max_hp, owned_item.get('func', ''))
+        if status != "ok":
+            msg = "This item cannot be used here." if lang == "en" else "Item ini tidak bisa dipakai di sini."
+            return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
+
+        if owned_item.get('owned', 0) > 1:
+            user_items[item_index]['owned'] -= 1
+        else:
+            user_items.pop(item_index)
+
+        await db.user.update(
+            where={'id': virtual_id},
+            data={'hp': hp, 'data': Json(data)}
+        )
+        await db.inventory.update(
+            where={'userId': virtual_id},
+            data={'items': Json(user_items)}
+        )
+
+        item_name = _item_name(lang, matched)
+        msg = i18n.get(lang, "game.use_item_success", user=f"@{username}" if username else full_name, item=item_name, func=owned_item.get('func', '').upper())
+        await send_telegram_message(chat_id, msg, thread_id=thread_id)
+
+    @zora.command(["/sell", "/jual"])
+    async def handle_sell_item(zora_bot, chat_id, telegram_user_id, username, full_name, command, args, message, lang, thread_id=None, **_):
+        virtual_id = -telegram_user_id
+        user_record = await db.user.find_unique(where={'id': virtual_id}, include={'inventory': True})
+        if not user_record or not user_record.inventory:
+            msg = i18n.get(lang, "game.use_not_registered")
+            return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
+
+        item_query = " ".join(args).strip()
+        if not item_query:
+            msg = "Use <code>/sell [item name]</code>." if lang == "en" else "Gunakan <code>/sell [nama item]</code>."
+            return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
+
+        items = _load_shop_items()
+        matched = _find_shop_item(items, item_query)
+        if not matched:
+            msg = "Item not found in your inventory." if lang == "en" else "Item tidak ditemukan di inventarimu."
+            return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
+
+        if matched.get('type') == "Skill":
+            msg = "Skills cannot be sold here." if lang == "en" else "Skill tidak bisa dijual di sini."
+            return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
+
+        inventory = user_record.inventory
+        user_items = inventory.items if isinstance(inventory.items, list) else []
+        user_equipments = inventory.equipments if isinstance(inventory.equipments, list) else []
+
+        item_id = matched['_id']
+        item_index = -1
+        target_item = None
+        source = "items"
+        for idx, item in enumerate(user_items):
+            if item.get('_id') == item_id and item.get('owned', 0) > 0:
+                item_index = idx
+                target_item = item
+                source = "items"
+                break
+        if item_index < 0:
+            for idx, item in enumerate(user_equipments):
+                if item.get('_id') == item_id and item.get('owned', 0) > 0:
+                    item_index = idx
+                    target_item = item
+                    source = "equipments"
+                    break
+
+        if not target_item:
+            msg = i18n.get(lang, "game.use_not_found")
+            return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
+
+        sale_value = max(1, round(matched.get('cost', 0) * 0.5))
+        data = user_record.data
+        hp = user_record.hp
+        data['coins'] = data.get('coins', 0) + sale_value
+
+        if source == "equipments":
+            data, hp, status = _apply_func_to_player(data, hp, user_record.max_hp, target_item.get('func', ''), scale=-1)
+            if status != "ok":
+                msg = "This equipment cannot be sold here." if lang == "en" else "Equipment ini tidak bisa dijual di sini."
+                return await send_telegram_message(chat_id, f"⚠️ {msg}", thread_id=thread_id)
+
+        if target_item.get('owned', 0) > 1 and source == "items":
+            user_items[item_index]['owned'] -= 1
+        else:
+            if source == "items":
+                user_items = [item for item in user_items if item.get('_id') != item_id]
+            else:
+                user_equipments = [item for item in user_equipments if item.get('_id') != item_id]
+
+        await db.user.update(
+            where={'id': virtual_id},
+            data={'hp': hp, 'data': Json(data)}
+        )
+        await db.inventory.update(
+            where={'userId': virtual_id},
+            data={'items': Json(user_items), 'equipments': Json(user_equipments)}
+        )
+
+        item_name = _item_name(lang, matched)
+        msg = i18n.get(lang, "game.sell_success", name=item_name, amount=sale_value)
+        await send_telegram_message(chat_id, msg, thread_id=thread_id)
+
     @zora.command("/battle")
     async def handle_battle(zora_bot, chat_id, telegram_user_id, username, full_name, command, args, message, lang, thread_id=None, **_):
         virtual_id = -telegram_user_id
@@ -539,6 +1100,15 @@ def setup(zora):
     def _enemies_page_text(tier, lang):
         enemies = _enemies_load(tier)
         tier_label = tier.upper()
+        strongest = max(enemies, key=lambda x: x['hp'] + x['atk'] + x['def'] + x['agl'])
+        image_source = max(
+            (enemy for enemy in enemies if enemy.get('avatar')),
+            key=lambda x: x['hp'] + x['atk'] + x['def'] + x['agl'],
+            default=strongest
+        )
+        enemy_image = image_source.get('avatar')
+        strongest_name = i18n.get(lang, f"game.enemy_{to_key(strongest['name'])}_name", default=strongest['name'])
+
         lines = [
             f"⚔️ <b>BESTIARY — {tier_label} TIER</b>",
             f"━━━━━━━━━━━━━━━━━━━",
@@ -553,7 +1123,10 @@ def setup(zora):
         page_idx = ENEMY_TIERS.index(tier)
         footer = f"Page {page_idx+1}/{len(ENEMY_TIERS)} • Tap a number to see enemy details" if lang == "en" else f"Halaman {page_idx+1}/{len(ENEMY_TIERS)} • Ketuk angka untuk detail musuh"
         lines.append(f"<i>{footer}</i>")
-        return "\n".join(lines), enemies
+        caption = "\n".join(lines)
+        if len(caption) > 900:
+            caption = caption[:885] + "\n<i>[truncated]</i>"
+        return caption, enemies, enemy_image, strongest_name
 
     def _enemies_markup(tier, enemies, lang):
         page_idx = ENEMY_TIERS.index(tier)
@@ -575,9 +1148,19 @@ def setup(zora):
     @zora.command(["/enemies", "/enemy"])
     async def handle_enemies(zora_bot, chat_id, telegram_user_id, username, full_name, command, args, message, lang, thread_id=None, **_):
         tier = "boss"  # start at boss tier
-        text, enemies = _enemies_page_text(tier, lang)
+        text, enemies, enemy_image, strongest_name = _enemies_page_text(tier, lang)
         markup = _enemies_markup(tier, enemies, lang)
-        await send_telegram_message(chat_id, text, thread_id=thread_id, reply_markup=markup)
+        if enemy_image:
+            photo_caption = (
+                f"👹 <b>{strongest_name}</b>\n"
+                f"<i>{tier.upper()} preview</i>"
+            ) if lang == "en" else (
+                f"👹 <b>{strongest_name}</b>\n"
+                f"<i>Pratinjau {tier.upper()}</i>"
+            )
+            await send_telegram_photo(chat_id, enemy_image, caption=photo_caption, thread_id=thread_id, reply_markup=markup)
+        else:
+            await send_telegram_message(chat_id, text, thread_id=thread_id, reply_markup=markup)
 
     @zora.callback_query("enemies_page:")
     async def handle_enemies_page(zora_bot, chat_id, message_id, cq_id, telegram_user_id, username, full_name, data, lang):
@@ -587,10 +1170,13 @@ def setup(zora):
             if telegram_client:
                 await telegram_client.answer_callback_query(cq_id, text="Unknown tier!")
             return
-        text, enemies = _enemies_page_text(tier, lang)
+        text, enemies, enemy_image, strongest_name = _enemies_page_text(tier, lang)
         markup = _enemies_markup(tier, enemies, lang)
         if telegram_client:
-            await telegram_client.edit_message_text(chat_id, message_id, text, reply_markup=markup)
+            if enemy_image:
+                await telegram_client.edit_message_media(chat_id, message_id, enemy_image, text, reply_markup=markup)
+            else:
+                await telegram_client.edit_message_text(chat_id, message_id, text, reply_markup=markup)
             await telegram_client.answer_callback_query(cq_id)
 
     @zora.callback_query("enemies_detail:")
@@ -630,5 +1216,17 @@ def setup(zora):
         )
         if telegram_client:
             await telegram_client.answer_callback_query(cq_id, text=f"👹 {name}")
-            await send_telegram_message(chat_id, detail)
+            avatar = enemy.get('avatar')
+            if avatar:
+                caption = (
+                    f"👹 <b>{name}</b>\n"
+                    f"Tier: <b>{enemy['tier']}</b>\n"
+                    f"❤️ HP: <code>{enemy['hp']}</code>\n"
+                    f"⚔️ ATK: <code>{enemy['atk']}</code> | 🛡️ DEF: <code>{enemy['def']}</code> | 💨 AGL: <code>{enemy['agl']}</code>"
+                )
+                await send_telegram_photo(chat_id, avatar, caption=caption, thread_id=None)
+                if skills_text or desc or reward_str:
+                    await send_telegram_message(chat_id, detail)
+            else:
+                await send_telegram_message(chat_id, detail)
 

@@ -25,6 +25,7 @@ from scripts.game.profile import (
     execute_adventure,
     execute_transfer,
     execute_use,
+    execute_sell,
     execute_titles
 )
 
@@ -240,6 +241,16 @@ class Game(commands.Cog):
         Use an item or equipment!
         """
         await execute_use(ctx, type.value)
+
+    @game.command(description="Sell owned items for coins!")
+    @has_registered()
+    @check_compatible()
+    @check_blacklist()
+    async def sell(self, ctx: commands.Context):
+        """
+        Sell owned items for coins.
+        """
+        await execute_sell(ctx)
 
     @game.command(description="View and equip your unlocked titles/nameplates!")
     @has_registered()

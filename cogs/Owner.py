@@ -5,6 +5,7 @@ import logging
 from discord.ext import commands
 from pkgutil import iter_modules
 from contextlib import suppress
+from prisma import Json
 from scripts.main import db
 from scripts.game.worldboss import force_spawn_boss
 
@@ -14,6 +15,129 @@ class Owner(commands.Cog):
     """
     def __init__(self, bot):
         self.bot = bot
+
+    async def _get_game_user(self, user: discord.User):
+        return await db.user.find_unique(where={'id': user.id})
+
+    async def _save_user_data(self, user_id: int, data: dict, *, hp=None, max_hp=None):
+        payload = {'data': Json(data)}
+        if hp is not None:
+            payload['hp'] = hp
+        if max_hp is not None:
+            payload['max_hp'] = max_hp
+        await db.user.update(where={'id': user_id}, data=payload)
+
+    @commands.group(name="set", invoke_without_command=True, hidden=True)
+    @commands.is_owner()
+    async def set_(self, ctx: commands.Context):
+        """
+        Quick playtest setter commands.
+        """
+        await ctx.reply(
+            "Usage:\n"
+            "`set coins @user 1000`\n"
+            "`set karma @user 50`\n"
+            "`set level @user 10`\n"
+            "`set class @user warrior|mage|rogue`\n"
+            "`set stats @user 100 80 60`"
+        )
+
+    @set_.command(name="coins", hidden=True)
+    @commands.is_owner()
+    async def set_coins(self, ctx: commands.Context, user: discord.User, amount: int):
+        """
+        Set a player's coin balance.
+        """
+        record = await self._get_game_user(user)
+        if not record:
+            return await ctx.reply("Target user has no game account.")
+
+        data = record.data
+        data['coins'] = amount
+        await self._save_user_data(user.id, data)
+        await ctx.reply(f"Set `{user}` coins to `{amount}`.")
+
+    @set_.command(name="karma", hidden=True)
+    @commands.is_owner()
+    async def set_karma(self, ctx: commands.Context, user: discord.User, amount: int):
+        """
+        Set a player's karma.
+        """
+        record = await self._get_game_user(user)
+        if not record:
+            return await ctx.reply("Target user has no game account.")
+
+        data = record.data
+        data['karma'] = amount
+        await self._save_user_data(user.id, data)
+        await ctx.reply(f"Set `{user}` karma to `{amount}`.")
+
+    @set_.command(name="level", hidden=True)
+    @commands.is_owner()
+    async def set_level(self, ctx: commands.Context, user: discord.User, amount: int):
+        """
+        Set a player's level and refresh derived progress values.
+        """
+        record = await self._get_game_user(user)
+        if not record:
+            return await ctx.reply("Target user has no game account.")
+
+        if amount < 1:
+            return await ctx.reply("Level must be at least 1.")
+
+        data = record.data
+        data['level'] = amount
+        data['exp'] = 0
+        data['next_exp'] = round(50 * (1.2 ** (amount - 1)))
+        data['stat_points'] = (amount - 1) * 5
+
+        new_max_hp = 100 + (amount - 1) * 20
+        new_hp = min(record.hp, new_max_hp)
+        await self._save_user_data(user.id, data, hp=new_hp, max_hp=new_max_hp)
+        await ctx.reply(f"Set `{user}` level to `{amount}`.")
+
+    @set_.command(name="class", hidden=True)
+    @commands.is_owner()
+    async def set_class(self, ctx: commands.Context, user: discord.User, *, class_name: str):
+        """
+        Set a player's class string.
+        """
+        record = await self._get_game_user(user)
+        if not record:
+            return await ctx.reply("Target user has no game account.")
+
+        class_name_lower = class_name.lower().strip()
+        class_map = {
+            "warrior": "Warrior",
+            "mage": "Mage",
+            "rogue": "Rogue"
+        }
+        if class_name_lower not in class_map:
+            return await ctx.reply("Class must be warrior, mage, or rogue.")
+
+        data = record.data
+        data['class'] = class_map[class_name_lower]
+        await self._save_user_data(user.id, data)
+        await ctx.reply(f"Set `{user}` class to `{class_map[class_name_lower]}`.")
+
+    @set_.command(name="stats", hidden=True)
+    @commands.is_owner()
+    async def set_stats(self, ctx: commands.Context, user: discord.User, attack: int, defense: int, agility: int):
+        """
+        Set a player's ATK, DEF, and AGL stats.
+        """
+        record = await self._get_game_user(user)
+        if not record:
+            return await ctx.reply("Target user has no game account.")
+
+        data = record.data
+        data['attack'] = attack
+        data['defense'] = defense
+        data['agility'] = agility
+        await self._save_user_data(user.id, data)
+        await ctx.reply(
+            f"Set `{user}` stats to ATK `{attack}`, DEF `{defense}`, AGL `{agility}`."
+        )
 
     @commands.command(aliases=['on', 'enable'], hidden=True)
     @commands.is_owner()

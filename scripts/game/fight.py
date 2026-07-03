@@ -21,6 +21,7 @@ from scripts.game.game import (
     default_data,
     check_compatible
 )
+from scripts.game.item_pagination import PagedSelectionView
 from scripts.utils.i18n import i18n
 
 async def get_user_lang(user_id: int) -> str:
@@ -1252,77 +1253,88 @@ class AI():
         chosen_action = max(available_moods, key=lambda k: available_moods[k] + random.randint(0, 10))
         return chosen_action
 
-class ItemDropdown(discord.ui.Select):
-    def __init__(self, items:list, user1, type, lang="en") -> None:
+class ItemView(PagedSelectionView):
+    def __init__(self, items: list, user1, type, lang="en") -> None:
+        self.user1 = user1
+        self.types = type
+        filtered_items = self._filter_items(items)
+        super().__init__(
+            owner_id=user1.id,
+            items=filtered_items,
+            lang=lang,
+            timeout=20,
+            page_size=25,
+            select_custom_id="itemdrop"
+        )
+
+    def _filter_items(self, items: list) -> list:
+        filtered = []
+        for item in items or []:
+            if self.types == 'item' and '0-' in item['_id'] and item.get('usefor') == 'battle' and item.get('owned', 0) > 0:
+                filtered.append(item)
+            elif self.types == 'skill' and '2-' in item['_id'] and item.get('usefor') == 'battle' and item.get('owned', 0) > 0:
+                filtered.append(item)
+        return filtered
+
+    def page_placeholder(self) -> str:
+        base = i18n.get(self.lang, "game.use_select_item") if self.types == 'item' else i18n.get(self.lang, "game.use_select_skill")
+        return f"{base} ({self.current_page + 1}/{self.max_pages})" if self.max_pages > 1 else base
+
+    def empty_option_label(self) -> str:
+        return i18n.get(self.lang, "game.use_no_items") if self.types == 'item' else i18n.get(self.lang, "game.use_no_skills")
+
+    def empty_option_description(self) -> str:
+        return i18n.get(self.lang, "game.combat_no_items") if self.types == 'item' else i18n.get(self.lang, "game.combat_no_skills")
+
+    def build_options(self, page_items: list) -> list:
         options = []
-        for item in items:
-            name = i18n.get(lang, f"game.item_{item['_id']}_name", default=item.get('name'))
-            desc = i18n.get(lang, f"game.item_{item['_id']}_desc", default=item.get('desc', 'No description.'))
+        start_index = self.current_page * self.page_size
+
+        for index, item in enumerate(page_items, start=start_index + 1):
+            name = i18n.get(self.lang, f"game.item_{item['_id']}_name", default=item.get('name'))
+            desc = i18n.get(self.lang, f"game.item_{item['_id']}_desc", default=item.get('desc', 'No description.'))
             func = item.get('func', '???').upper()
             full_desc = f"{desc} ({func})"
             if len(full_desc) > 100:
                 full_desc = full_desc[:97] + "..."
 
-            if '0-' in item['_id'] and item['usefor'] == 'battle' and not item.get('owned', 0) <= 0 and type == 'item':
-                options.append(discord.SelectOption(
-                    label=name,
-                    value=item['_id'],
-                    description=full_desc
-                ))
-            elif '2-' in item['_id'] and item['usefor'] == 'battle' and not item.get('owned', 0) <= 0 and type == 'skill':
-                options.append(discord.SelectOption(
-                    label=name,
-                    value=item['_id'],
-                    description=full_desc
-                ))
-        
-        if len(options) > 25:
-            options = options[:25]
-
-        if not options:
-            no_item_lbl = i18n.get(lang, "game.use_no_items") if type == 'item' else i18n.get(lang, "game.use_no_skills")
-            no_item_desc = i18n.get(lang, "game.combat_no_items") if type == 'item' else i18n.get(lang, "game.combat_no_skills")
             options.append(discord.SelectOption(
-                    label=no_item_lbl,
-                    value="none",
-                    description=no_item_desc
-                )
-            )
-        placeholder_text = i18n.get(lang, "game.use_select_item") if type == 'item' else i18n.get(lang, "game.use_select_skill")
-        super().__init__(custom_id="itemdrop", placeholder=placeholder_text, min_values=1, max_values=1, options=options)
-        self.user1 = user1
-        self.items = items
-        self.types = type
-        self.lang = lang
+                label=f"{index}. {name}",
+                value=item['_id'],
+                description=full_desc
+            ))
 
-    async def callback(self, interaction:discord.Interaction):
-        if interaction.message.mentions[0].id != interaction.user.id:
+        return options
+
+    async def handle_selection(self, interaction:discord.Interaction, value: str):
+        if not interaction.message.mentions or interaction.message.mentions[0].id != interaction.user.id:
             msg = i18n.get(self.lang, "game.invite_view_not_for_you")
             return await interaction.response.send_message(msg, ephemeral=True)
-        if self.values[0] == 'none' and self.types == 'item':
+
+        if value == 'none' and self.types == 'item':
             msg = i18n.get(self.lang, "game.use_no_items")
             return await interaction.response.send_message(msg, ephemeral=True)
-        elif self.values[0] == 'none' and self.types == 'skill':
+        elif value == 'none' and self.types == 'skill':
             msg = i18n.get(self.lang, "game.use_no_skills")
             return await interaction.response.send_message(msg, ephemeral=True)
-        
+
         user_record = await db.user.find_unique(where={'id': self.user1.id}, include={'inventory': True})
         if not user_record or not user_record.inventory:
             msg = i18n.get(self.lang, "game.use_account_issue")
             return await interaction.response.send_message(msg, ephemeral=True)
-            
+
         inventory = user_record.inventory
         used_item = None
-        
+
         if self.types == 'item':
             user_items = inventory.items if isinstance(inventory.items, list) else []
             for item in user_items:
-                if item['_id'] == self.values[0] and item.get('owned', 0) > 0:
+                if item['_id'] == value and item.get('owned', 0) > 0:
                     item['owned'] -= 1
                     item_name = i18n.get(self.lang, f"game.item_{item['_id']}_name", default=item['name'])
                     used_item = [item_name, item['func']]
                     break
-            
+
             if used_item:
                 await db.inventory.update(
                     where={'userId': self.user1.id},
@@ -1331,7 +1343,7 @@ class ItemDropdown(discord.ui.Select):
         else:
             user_skills = inventory.skills if isinstance(inventory.skills, list) else []
             for item in user_skills:
-                if item['_id'] == self.values[0] and item.get('owned', 0) > 0:
+                if item['_id'] == value and item.get('owned', 0) > 0:
                     item_name = i18n.get(self.lang, f"game.item_{item['_id']}_name", default=item['name'])
                     used_item = [item_name, item['func']]
                     break
@@ -1339,18 +1351,13 @@ class ItemDropdown(discord.ui.Select):
         if used_item is None:
             msg = i18n.get(self.lang, "game.use_not_found")
             return await interaction.response.send_message(msg, ephemeral=True)
-            
+
         if self.types == 'item':
             msg = i18n.get(self.lang, "game.use_item_success", user=interaction.user.mention, item=used_item[0], func=used_item[1].upper())
             await interaction.response.send_message(msg)
         else:
             msg = i18n.get(self.lang, "game.use_skill_success", user=interaction.user.mention, skill=used_item[0], func=used_item[1].upper())
             await interaction.response.send_message(msg)
-
-class ItemView(View):
-    def __init__(self, items:list, user1, type, lang="en") -> None:
-        super().__init__(timeout=20)
-        self.add_item(ItemDropdown(items, user1, type, lang=lang))
 
 def guess_level_convert(level:str):
     """
